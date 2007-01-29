@@ -8,8 +8,11 @@ R: WikiSyntax 请参考
 = Q: 如何通过Subversion客户端工具 Check Out, Commit, Export 源代码？=
 R: 
 服务器：http://gforge.osdn.net.cn
+
 Responsitory Path: svn/openwsn
+
 进一步分成 tags, chunk, branches三个目录
+
 其中，chunk相当于我们本地 \dev\openwsn\source目录。例如，本地source下面有三个目录叫openwsn, libsink, worldview，则svn/openwsn/chunk下面可对应建三个目录 openwsn, libsink, worldview。
 
 在SVN中可使用如下Responsitory Path,注意匿名用户可以下载,但要上传的话必须要登陆.
