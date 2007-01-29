@@ -1,7 +1,9 @@
 #summary One-sentence summary of this page.
 
 = Q: 如何写作Wiki? =
-R: WikiSyntax 请参考 [http://code.google.com/p/support/wiki/WikiSyntax]
+R: WikiSyntax 请参考 
+
+[http://code.google.com/p/support/wiki/WikiSyntax]
 
 = Q: 如何通过Subversion客户端工具 Check Out, Commit, Export 源代码？=
 R: 
