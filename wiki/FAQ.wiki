@@ -1,11 +1,16 @@
 #summary One-sentence summary of this page.
 
+= Q: 如何写作Wiki? =
+R: WikiSyntax 请参考 [http://code.google.com/p/support/wiki/WikiSyntax]
+
 = Introduction =
 
 Add your content here.
 fdsf
 
 = Details =
+
+
 
 Add your content here.  Format your content with:
   * Text in *bold* or _italic_
