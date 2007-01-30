@@ -39,7 +39,13 @@ namespace WorldView
             return; 
         }
         public void Stop(){}
-        public void Read(){}
-        public void Write(){}
+        public int Read(char[] buf, int size, int opt) { return 0;  }
+        public int Write(char[] buf, int size, int opt) { return 0; }
+
+        public int ReadDataPacket(char[] packet, int size, int opt) { return 0; }
+        public int WriteDataPacket(char[] packet, int size, int opt) { return 0; }
+        public int ReadRoutingPacket(char[] packet, int size, int opt) { return 0; }
+        public int GetSinkState() { return 0; }
+        public int GetNodeData() { return 0; }
     }
 }
