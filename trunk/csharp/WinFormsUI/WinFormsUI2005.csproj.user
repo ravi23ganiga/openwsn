@@ -30,8 +30,7 @@
     </StartProgram>
     <StartURL>
     </StartURL>
-    <StartWorkingDirectory>
-    </StartWorkingDirectory>
+    <StartWorkingDirectory>..\..\bin</StartWorkingDirectory>
     <StartWithIE>true</StartWithIE>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
