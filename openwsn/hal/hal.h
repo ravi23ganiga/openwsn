@@ -68,5 +68,6 @@
 #include "hal_sensor_vibration.h"
 #include "hal_uniqueid.h"
 #include "hal_sensor_switch.h"
+#include "hal_openframe.h"
 
 #endif

@@ -30,7 +30,7 @@
 /*************************************************************
  * @author zhangwei on 2005-07-19
  * @note: Interface file CRC check module.
- *	thanks Chen Ruijie to give the original source code (first version). 
+ *	thanks Ruijie to give the original source code (first version). 
  * 
  * @history
  * 2005-07-19 first created by zhangwei

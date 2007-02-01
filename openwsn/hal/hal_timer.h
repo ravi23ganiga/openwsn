@@ -118,8 +118,9 @@ extern TTimer * g_timer2;
 #define timer_msecof(clocks) (clocks/TIMER_CLOCKS_PER_MILLISECOND)
 #define timer_clocksof(ms) (ms*TIMER_CLOCKS_PER_MILLISECOND)
 
-TTimer* timer_construct( uint8 id, uint8 channel, char * buf, uint8 size );
+TTimer* timer_construct( char * buf, uint8 size );
 void   timer_destroy( TTimer * timer );
+void   timer_init( TTimer * timer, uint8 id, uint8 channel );
 void   timer_configure( TTimer * timer, TEventHandler callback, void * data, uint8 priority );
 void   timer_setvalue( TTimer * timer, uint32 value );
 uint32 timer_getvalue( TTimer * timer );
