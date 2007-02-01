@@ -1,3 +1,32 @@
+/*****************************************************************************
+* This file is part of OpenWSN, the Open Wireless Sensor Network System.
+*
+* Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
+* 
+* OpenWSN is free software; you can redistribute it and/or modify it under
+* the terms of the GNU General Public License as published by the Free
+* Software Foundation; either version 2 or (at your option) any later version.
+* 
+* OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* for more details.
+* 
+* You should have received a copy of the GNU General Public License along
+* with eCos; if not, write to the Free Software Foundation, Inc.,
+* 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+* 
+* As a special exception, if other files instantiate templates or use macros
+* or inline functions from this file, or you compile this file and link it
+* with other works to produce a work based on this file, this file does not
+* by itself cause the resulting work to be covered by the GNU General Public
+* License. However the source code for this file must still be made available
+* in accordance with section (3) of the GNU General Public License.
+* 
+* This exception does not invalidate any other reasons why a work based on
+* this file might be covered by the GNU General Public License.
+* 
+****************************************************************************/ 
 #ifndef _TIMER_H_6828_
 #define _TIMER_H_6828_
 
@@ -18,12 +47,24 @@
  * 
  *  timer测试通过。本版本说明如下：
  *  timer_setvalue 和 timer_setcapture为空函数。
- *  timer_configure的priority参数表示了timer对象是否使用中断方式，priority * 为0-15表示使用中断方式，>15表示不使用中断。
- *  timer_VICinit只是根据timer对象的id 和 priority 设置了VIC地址，priority * 的值只能为0-15超出范围不赋予地址，此函数在timer_configure函数中调用，当 * timer_configure的参数priority在0-15之间。原本两个timer的VIC地址为同一个 *（timer_interrupt），经测试发现，当两个timer同时进入中断的时候因为使用同一 * 地址，会产生冲突。现在为每一个timer分配一个VIC地址（Timer0_Int for timer0  * and Timer1_Int for timer1）解决了这种冲突。
- *  从timer_VICinit中分离出timer_VICenable和timer_VICdisable控制整个timer的 * 使能或禁止，这两个函数在timer_start和timer_stop中根据timer->state被调用。
- *  timer_setinterval的计时最小间隔改为1ms，参数interval的值代表ms数。 * repeat功能恢复，repeat为0，只匹配一次；repeat为1，连续匹配。
- *  timer_enable和timer_disable是对timer的每个比较通道中断的使能或禁止，在 * 使用timer_expired的查询方式下，也需要使能比较通道的中断，以便产生中断标志， * 因此，这两个函数不能作为timer真正使用中断方式的表现，他们将不改变timer- * >state。
- *   timer_VICinit、timer_VICenable、timer_VICdisable、timer_enable、 * timer_disable对上层都是不可见的。
+ *  timer_configure的priority参数表示了timer对象是否使用中断方式，priority
+ * 为0-15表示使用中断方式，>15表示不使用中断。
+ *  timer_VICinit只是根据timer对象的id 和 priority 设置了VIC地址，priority
+ * 的值只能为0-15超出范围不赋予地址，此函数在timer_configure函数中调用，当
+ * timer_configure的参数priority在0-15之间。原本两个timer的VIC地址为同一个
+ *（timer_interrupt），经测试发现，当两个timer同时进入中断的时候因为使用同一
+ * 地址，会产生冲突。现在为每一个timer分配一个VIC地址（Timer0_Int for timer0 
+ * and Timer1_Int for timer1）解决了这种冲突。
+ *  从timer_VICinit中分离出timer_VICenable和timer_VICdisable控制整个timer的
+ * 使能或禁止，这两个函数在timer_start和timer_stop中根据timer->state被调用。
+ *  timer_setinterval的计时最小间隔改为1ms，参数interval的值代表ms数。
+ * repeat功能恢复，repeat为0，只匹配一次；repeat为1，连续匹配。
+ *  timer_enable和timer_disable是对timer的每个比较通道中断的使能或禁止，在
+ * 使用timer_expired的查询方式下，也需要使能比较通道的中断，以便产生中断标志，
+ * 因此，这两个函数不能作为timer真正使用中断方式的表现，他们将不改变timer-
+ * >state。
+ *   timer_VICinit、timer_VICenable、timer_VICdisable、timer_enable、
+ * timer_disable对上层都是不可见的。
  *
  * modified by zhangwei on 200612
  * timer的启动与停止建议使用start/stop，不要使用disable和enable

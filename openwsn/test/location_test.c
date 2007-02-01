@@ -9,10 +9,10 @@
 #include "location_test.h"
 #include "..\service\svc_location.h"
 
-//#define ANCHOR_NODE_1
+#define ANCHOR_NODE_1
 //#define ANCHOR_NODE_2
 //#define ANCHOR_NODE_3
-#define LOCATION_REQUEST_NODE
+//#define LOCATION_REQUEST_NODE
 
 static TLocationService m_loservice;
 static TLocation  m_location;
