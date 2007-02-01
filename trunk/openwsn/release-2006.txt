@@ -6,6 +6,13 @@ svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
 
+20070201
+module added (mainly related to openmac)
+hal\hal_openframe.*
+service\svc_openwsn.*
+test\openmac_test.*
+test\openmac_whitehole.*
+
 23:11 2007-01-19
 整个源代码目录改名为openwsn
 增加了一个新的工程文件openwsn.mcp，请HH今后用这个
