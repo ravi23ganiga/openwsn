@@ -28,8 +28,12 @@
  * 
  ****************************************************************************/ 
 
+#include "hal_foundation.h"
+#include "hal_openframe.h"
 #include "svc_foundation.h"
 #include "svc_openmac.h"
+
+#define MAC_DURATION_WAIT_CTS 200
 
 /* ACK frame
  * [2B frame control][1B seqid][2B addrfrom][2B addrto]
@@ -38,9 +42,9 @@
  * [2B frame control][1B seqid][2B addrfrom][2B addrto][1B cmdtype]
  */
 #define WLS_ACK_LENGTH 7
-static char m_ack_template[7] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static char m_rts_frame[10] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static char m_cts_frame[8] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
+static char m_ackframe[7] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static char m_rtsframe[10] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static char m_ctsframe[8] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
 
 TOpenMAC * mac_construct( char * buf, uint16 size )
 {
@@ -196,9 +200,9 @@ int8 mac_evolve( TOpenMAC * mac )
 {
 	boolean done = TRUE;
 	uint16 addr;
-	uint8 count;
-	int8 ret = 0;
-	char tmp;
+	uint8 id;
+	int8 count, ret = 0;
+	int8 failed;
 	
 	do{
 		switch (mac->state)
@@ -284,11 +288,11 @@ int8 mac_evolve( TOpenMAC * mac )
 					// the PHY layer 2420 chip can decide whether sending ACK 
 					// or not. so we can elimate such operations. 
 					//
-					// m_ack_template[1] |= 0x01;
-					// m_ack_template[2] = mac->rxbuf[2]; // update the sequence number
-					// m_ack_template[3] = 0x00; // @TODO checksum
-					// m_ack_template[4] = 0x00;
-					// cc2420_rawwrite( mac->phy, (char*)(&(m_ack_template[0])),12, 0x00 );  //12 is len, please modify
+					// m_ackframe[1] |= 0x01;
+					// m_ackframe[2] = mac->rxbuf[2]; // update the sequence number
+					// m_ackframe[3] = 0x00; // @TODO checksum
+					// m_ackframe[4] = 0x00;
+					// cc2420_rawwrite( mac->phy, (char*)(&(m_ackframe[0])),12, 0x00 );  //12 is len, please modify
 					//
 					mac->state = MAC_STATE_IDLE;
 					break;
@@ -332,7 +336,7 @@ int8 mac_evolve( TOpenMAC * mac )
 						done = FALSE;
 					}
 					else{
-						mac->sleepduration = (uint8)(* opf_msdu( &(m_rts_frame[0]) ));
+						mac->sleepduration = (uint8)(* opf_msdu( &(m_rtsframe[0]) ));
 						mac->rxlen = 0;
 						timer_setinterval( mac->timer, mac->sleepduration, 0x00 );
 						mac->state = MAC_STATE_PAUSE;
@@ -356,22 +360,22 @@ int8 mac_evolve( TOpenMAC * mac )
 			// assume you have received the RTS frame, then you should reply 
 			// CTS back
 			//
-			opf_setaddrfrom( m_rts_frame, &(mac->localaddr) );
-			opf_setaddrto( m_rts_frame, opf_addrto(m_rts_frame) );
+			opf_setaddrfrom( m_ctsframe, mac_getshortid(&(mac->localaddr)) );
+			opf_setaddrto( m_ctsframe, opf_addrto(m_rtsframe) );
 			
-			count = _hdl_rawwrite( mac->phy, &m_cts_frame, sizeof(m_cts_frame), 0x00 );
+			count = _hdl_rawwrite( mac->phy, m_ctsframe, sizeof(m_ctsframe), 0x00 );
 			if (count > 0)
 			{
-				mac->rts_sleepduration = 0;		
-				mac->state = MAC_STATE_WAITDATA;
+				mac->sleepduration = 0;		
+				mac->state = MAC_STATE_RX_WAITDATA;
 				timer_stop( mac->timer );
-				timer_setinterval( 2000 ); // maximum duration to wait data frame
+				timer_setinterval( mac->timer, 2000, 0 ); // maximum duration to wait data frame
 				done = FALSE;		
 			}
 			
 		case MAC_STATE_RX_WAITDATA:
 			failed = false;
-			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_MAX_LENGTH, 0x00 );
+			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_FRAME_SIZE, 0x00 );
 			if (count == 0)
 			{
 				if (timer_expired(mac->timer))
@@ -383,12 +387,12 @@ int8 mac_evolve( TOpenMAC * mac )
 				//timer_stop( mac->timer );
 
 				id = opf_seqid(mac->rxbuf);
-				if ((id <= mac->lastid) || ((id == 0xFF) && (mac->lastid == 0)))
+				if ((id <= mac->seqno) || ((id == 0xFF) && (mac->seqno == 0)))
 				{
 					// just drop the packet and continue wait
 				}
 				else{
-					mac->lastid = id;
+					mac->seqno = id;
 					mac->rxlen = count;					
 					//send ACK/NAK if necessary
 					mac->state = MAC_STATE_IDLE;
@@ -415,7 +419,7 @@ int8 mac_evolve( TOpenMAC * mac )
 				// relly lost during transmission. your master application should 
 				// consider this problem!
 				mac->txlen = 0;
-				mac->nextstate = MAC_STATE_IDLE;
+				mac->state = MAC_STATE_IDLE;
 			}
 			else{
 				mac->state = MAC_STATE_TX_DELAY;
@@ -423,7 +427,7 @@ int8 mac_evolve( TOpenMAC * mac )
 				mac->backoff = mac->backoff << 2;
 				//actsche->inputaction ?;
 				timer_stop( mac->timer );
-				timer_setinterval( mac->timer, mac->backoff );
+				timer_setinterval( mac->timer, mac->backoff, 0 );
 				done = false;
 			}
 			break;
@@ -431,8 +435,8 @@ int8 mac_evolve( TOpenMAC * mac )
 		case MAC_STATE_TX_DELAY:
 			if (timer_expired( mac->timer ))
 			{
-				_hdl_rawwrite( mac->phy, &m_rts_template, sizeof(m_rts_template), 0x00 );
-				timer_setinterval( mac->timer, MAC_DURATION_WAIT_CTS );	
+				_hdl_rawwrite( mac->phy, m_rtsframe, sizeof(m_rtsframe), 0x00 );
+				timer_setinterval( mac->timer, MAC_DURATION_WAIT_CTS, 0 );	
 				mac->state = MAC_STATE_TX_WAITCTS;
 			}			
 			break;
@@ -441,7 +445,7 @@ int8 mac_evolve( TOpenMAC * mac )
 			if (!timer_expired(mac->timer))
 			{
 				memset( mac->rxbuf, 0x00, OPENMAC_BUFFER_SIZE );
-				count = _hdl_rawread( mac->phy, &mac->rxbuf, OPENMAC_BUFFER_SIZE, 0x00 );
+				count = _hdl_rawread( mac->phy, mac->rxbuf, OPENMAC_BUFFER_SIZE, 0x00 );
 				// @TODO if mac->txbuf is a valid CTS
 				if ((count > 0) && (true))
 				{
@@ -475,24 +479,24 @@ int8 mac_evolve( TOpenMAC * mac )
 			break;
 			
 		case MAC_STATE_TX_WAITACK:
-			code = 0;
-			memset( mac, mac->rxbuf, OPENMAC_BUFFER_SIZE, 0x00 );
+			id = 0;
+			memset( mac->rxbuf, 0x00, OPENMAC_BUFFER_SIZE );
 			count = _hdl_rawread( mac->phy, mac->rxbuf, OPENMAC_BUFFER_SIZE, 0x00 );
 			// if this is a ACK frame, other case NAK frame
 			if (true)
 			{
-				code = 1;
+				id = 1;
 			}
 			else if (false)
 			{
-				code = 2;
+				id = 2;
 			}
 			else{
 				if (timer_expired(mac->timer))
-					code = 3;
+					id = 3;
 			}
 			
-			switch (code)
+			switch (id)
 			{
 			case 1:
 				timer_stop( mac->timer );
@@ -513,33 +517,18 @@ int8 mac_evolve( TOpenMAC * mac )
 		// will drag it to IDLE state.
 		//
 		default:
-			mac->nextstate = MAC_STATE_IDLE;
+			mac->state = MAC_STATE_IDLE;
 			break;
 		}
-	}while (!done)
+	}while (!done);
 	
 	return ret; 
 }
 
-int8 mac_state( TOpenMAC * mac )
+uint8 mac_state( TOpenMAC * mac )
 {
 	return mac->state;
 }
-/*
-int8  mac_evolve( TOpenMAC * mac )
-{
-	boolean done = TRUE;
-	uint8 count;
-	int8 ret = 0;
-	
-	do{
-		switch (mac->state)
-		{
-	}while (!done);				
-
-	return ret;
-}
-
 /*
 
 int8 mac_state_machine_evolve( TOpenMAC * mac )
