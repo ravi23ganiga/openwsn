@@ -67,26 +67,17 @@ static void __irq timer_interrupt( void );
 //	data		the parameter to be passed to the callback function.
 //	priority	the interrupt priority level. 0 is the highest and 15 is the lowest.
 //
-TTimer * timer_construct( uint8 id, uint8 channel, char * buf, uint8 size )
+TTimer * timer_construct( char * buf, uint8 size )
 {
 	TTimer * timer;
 	
 	if (sizeof(TTimer) > size)
-		timer = NULL;
-	else
-		timer = (TTimer *)buf;
-		
-	if (timer != NULL)
 	{
-		
+		timer = NULL;
+	}
+	else{
+		timer = (TTimer *)buf;
 		memset( buf, 0x00, sizeof(TTimer) );
-		timer->id =  ((id & 0x0F) << 4 | (channel & 0x0F));
-		timer->state = 0;
-		timer->interval = 0;
-		timer->data = NULL;
-		timer->callback = NULL;
-		timer->priority = 0;
-		timer->lasttime = 0;
 	}
 	
 	return timer;
@@ -103,6 +94,21 @@ void timer_destroy( TTimer * timer )
 	    timer_VICdisable( timer );	
 	}
 	timer = NULL;
+}
+
+void timer_init( TTimer * timer, uint8 id, uint8 channel )
+{
+	if (timer != NULL)
+	{
+		memset( timer, 0x00, sizeof(TTimer) );
+		timer->id =  ((id & 0x0F) << 4 | (channel & 0x0F));
+		timer->state = 0;
+		timer->interval = 0;
+		timer->data = NULL;
+		timer->callback = NULL;
+		timer->priority = 0;
+		timer->lasttime = 0;
+	}
 }
 
 // @param

@@ -1,95 +1,144 @@
+/*****************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+ *
+ * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
+ * 
+ * OpenWSN is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 or (at your option) any later version.
+ * 
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with eCos; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ * 
+ * As a special exception, if other files instantiate templates or use macros
+ * or inline functions from this file, or you compile this file and link it
+ * with other works to produce a work based on this file, this file does not
+ * by itself cause the resulting work to be covered by the GNU General Public
+ * License. However the source code for this file must still be made available
+ * in accordance with section (3) of the GNU General Public License.
+ * 
+ * This exception does not invalidate any other reasons why a work based on
+ * this file might be covered by the GNU General Public License.
+ * 
+ ****************************************************************************/ 
+
 #include "svc_foundation.h"
 #include "svc_openmac.h"
 
+/* ACK frame
+ * [2B frame control][1B seqid][2B addrfrom][2B addrto]
+ * 
+ * RTS/CTS frame
+ * [2B frame control][1B seqid][2B addrfrom][2B addrto][1B cmdtype]
+ */
 #define WLS_ACK_LENGTH 7
-static m_ack_template[7] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static char m_ack_template[7] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static char m_rts_frame[10] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static char m_cts_frame[8] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
 
-TMediumAccess * mac_construct( char * buf, uint16 size, TCc2420Driver * phy,  
-	TActionScheduler * actsche );
-void  mac_destroy( TMediumAccess * mac );
-void  mac_configure( TMediumAccess * mac, uint8 ctrlcode, uint8 value );
-
-// before you call mac_read(), you can call mac_accept() to get the address
-// information in the frame header. mac_read() will only return the payload.
-//
-uint8 mac_accept( TMediumAccess * mac, uint16 * panid, uint16 * addr )
+TOpenMAC * mac_construct( char * buf, uint16 size )
 {
-	// @TODO 
-	return 0;
+	TOpenMAC * mac = (TOpenMAC *)buf;
+	assert( sizeof(TOpenMAC) <= size );
+	memset( mac, 0x00, sizeof(TOpenMAC) );
+	return mac;
 }
-/*
-uint8 mac_read( TMediumAccess * mac, char * payload, uint8 size, uint8 opt )
-{
-	uint8 copied;
 
-	mac_evolve( mac );
-	if (mac->state == MAC_STATE_IDLE)
-	{
-		copied = min( size, mac->rxlen );
-		if (copied > 0)
-		{
-			memmove( payload, mac->rxbuf, copied );
-			mac->rxlen -= copied;
-			memmove( mac->txbuf, (char*)(mac->txbuf + copied), mac->rxlen );
-		}
-	}
-	
-	return copied;
+void  mac_destroy( TOpenMAC * mac )
+{
+	timer_stop( mac->timer );
 }
-*/
-uint8 mac_rawread( TMediumAccess * mac, char * frame, uint8 size, uint8 opt )
+
+//void  mac_init( TOpenMAC * mac, TCc2420Driver * phy, TActionScheduler * actsche, TTimer * timer )
+void  mac_init( TOpenMAC * mac, THdlDriver * phy, TTimer * timer )
+{
+	mac->state = MAC_STATE_IDLE;
+	mac->event = MAC_EVENT_NULL;
+	mac->retry = 0;
+	mac->phy = phy;
+	//mac->actsche = actsche;
+	mac->timer = timer;
+	mac->seqno = 0;
+	mac->txlen = 0;
+	mac->rxlen = 0;
+	mac->txframe = NULL;
+	mac->rxframe = NULL;
+	mac->backoff = 100;
+	mac->backoff_rule = 2;
+	mac->sleepduration = 0;
+	memset( &(mac->txbuf[0]), 0x00, OPF_FRAME_SIZE );
+	memset( &(mac->rxbuf[0]), 0x00, OPF_FRAME_SIZE );
+	memset( mac->rxheader, 0x00, 7 );
+	mac->timer = timer;
+	timer_init( timer, 1, 0 );
+}
+
+void  mac_configure( TOpenMAC * mac, uint8 ctrlcode, uint8 value )
+{
+}
+
+uint8 mac_read( TOpenMAC * mac, TOpenFrame * frame, uint8 size, uint8 opt )
+{
+	return mac_rawread( mac, (char *)frame, size, opt );
+}
+
+/* @param
+ * @attention
+ * 	the buffer "frame" will be used to hold the frame. if the "frame" buffer is 
+ * not large enough to hold the whole frame, then this function will just drop 
+ * the additional data.
+ * 
+ * @return
+ * 	= 0		success. no frame was sent.
+ * 	> 0		success. the value is the data actually sent. 
+ * 	< 0		failed. however, this will never occur in current implementation.
+ */
+uint8 mac_rawread( TOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt )
 {
 	uint8 copied = 0;
 	
 	mac_evolve( mac );
-	if (mac->state == MAC_STATE_IDLE)
+	if ((mac->state == MAC_STATE_IDLE) && (mac->rxlen))
 	{
 		copied = min( size, mac->rxlen );
 		if (copied > 0)
 		{
-			memmove( frame, mac->rxbuf, copied );
-			memmove( &(mac->rxframebak[0]), mac->rxframe, 7 ); // backup the current 
-														  // frame header for later visiting
-			// if the external "frame" buffer is not large enough to hold the 
-			// whole frame, then just drop the left data in the buffer.
+			memmove( framebuffer, &(mac->rxbuf[0]), copied );
+			memmove( &(mac->rxheader[0]), &(mac->rxbuf[0]), 7 ); // backup the header of the  														  
+                                                   			// current frame for later using
 			mac->rxlen = 0;
 		}
 	}
 		
 	return copied;
 }
-/*
-uint8 mac_write( TMediumAccess * mac, char * payload, uint8 len, uint8 opt )
-{
-	uint8 copied;
-	
-	if (mac->state == MAC_STATE_IDLE)
-	{
-		copied = min( MAC_FRAMEBUFFER_SIZE - mac->txlen, len );
-		if (copied > 0)
-		{
-			memmove( (char*)(mac->txbuf) + mac->txlen, payload, copied );
-			mac->txlen += copied;
-			mac->nextstate = MAC_STATE_SENDING;
-		}
-	}
-	mac_evolve( mac );
 
-	return copied;
+uint8 mac_write( TOpenMAC * mac, TOpenFrame * frame, uint8 len, uint8 opt )
+{
+	return mac_rawwrite( mac, (char*)frame, len, opt );
 }
-*/
-uint8 mac_rawwrite( TMediumAccess * mac, char * frame, uint8 len, uint8 opt )
+
+/* @attention
+ * 	the framebuffer's len should be less than MAC_FRAMEBUFFER_SIZE, so that 
+ * the entire frame can be accept by mac layer. or some of the data will be lost!
+ */  
+uint8 mac_rawwrite( TOpenMAC * mac, char * framebuffer, uint8 len, uint8 opt )
 {
 	uint8 copied = 0;
 	
 	if ((mac->state == MAC_STATE_IDLE) && (mac->txlen == 0))
 	{
-		copied = min( MAC_FRAMEBUFFER_SIZE, len );
+		copied = min( OPF_FRAME_SIZE, len );
 		if (copied > 0)
 		{
-			memmove( (char*)(mac->txbuf), frame, copied );
-			mac	->txlen = copied;
-			mac->nextstate = MAC_STATE_SENDING;
+			memmove( (char*)(mac->txbuf), framebuffer, copied );
+			mac->txlen = copied;
 		}
 	}
 	mac_evolve( mac );
@@ -97,68 +146,129 @@ uint8 mac_rawwrite( TMediumAccess * mac, char * frame, uint8 len, uint8 opt )
 	return copied;
 }
 
-uint8 mac_setrmtaddress( TMediumAccess * mac, uint32 addr );
-uint8 mac_setlocaladdress( TMediumAccess * mac, uint32 addr );
-uint8 mac_getrmtaddress( TMediumAccess * mac, uint32 * addr );
-uint8 mac_getlocaladdress( TMediumAccess * mac, uint32 * addr );
+/* if the mac layer is safe to sleep, then force it goto sleep state. 
+ * sometimes, the mac layer cannot go to sleep due to active data, then this 
+ * function does nothing.
+ */
+uint8 mac_sleep( TOpenMAC * mac )
+{
+	if ((mac->state == MAC_STATE_IDLE) && (mac->txlen ==0) && (mac->rxlen == 0))
+	{
+		_hdl_sleep( mac->phy );
+		mac->state = MAC_STATE_PAUSE;
+	}
+	return 0;
+}
 
+/* wake up the mac layer if it is in sleep mode */
+uint8 mac_wakeup( TOpenMAC * mac )
+{
+	if (mac->state == MAC_STATE_PAUSE)
+	{
+		_hdl_wakeup( mac->phy );
+		mac->state = MAC_STATE_IDLE;
+	}
+	return 0;
+}
 
-int8  mac_evolve( TMediumAccess * mac )
+/* evolve is a state transition function. it do state transition and perform 
+ * necessary actions. however, it won't do these itself. the master module
+ * should call it periodically (no matter timer driven of by a simple while loop) 
+ * to drive it on.
+ * 
+ * @attention 20070130
+ * some argue that the MAC software and the transceiver should goto SLEEP when
+ * it received a RTS/CTS pair if the transmission destination is the current node
+ * itself.  this may be true, but openwsn would NOT accept this due to hardware
+ * restrictions. though such sleep seems resever energy, the transceive may not 
+ * stable to perform so frequently switchings between sleep and active modes.
+ * => more experiments needed to confirm this. 
+ *  
+ * the current design in OpenMAC is: the node not the destination will go to a 
+ * PAUSE state. while, the transceive is still ON in PAUSE state so that the 
+ * system can read/write frames as fast as possible. in this case, there's no 
+ * transceiver startup time. this feature can improve the performance. 
+ * the design of OpenMAC (openwsn@gmail.com) thinks that the SLEEP/WAKEUP mechanism
+ * should be implemented by a separate module svc_energy. this service will 
+ * control the energy behavior of whole system rather than the OpenMAC itself does.
+ */
+int8 mac_evolve( TOpenMAC * mac )
 {
 	boolean done = TRUE;
+	uint16 addr;
 	uint8 count;
 	int8 ret = 0;
+	char tmp;
 	
 	do{
 		switch (mac->state)
 		{
+		// @attention: in current implementation of OpenMAC, the transceiver 
+		// will be still ON in PAUSE mode. and the MCU chip is active too.
+		// 
+		case MAC_STATE_PAUSE:
+			if (timer_expired(mac->timer))
+			{
+				_hdl_wakeup( mac->phy );
+				mac->state = MAC_STATE_IDLE;
+				done = FALSE;
+			}
+			break;
+			
 		// IDLE is the initial state of the state machine.
-		// only in IDLE state, you can call rawread() and rawwrite(), or else
-		// they simplely return 0 to indicate execution failure.
-		//
-		// @note 20061016
-		// some one may argue IDLE state is no use. that's really true. however, 
-		// it maybe more convenient when you dealing with SLEEP state. 
-		//
 		case MAC_STATE_IDLE:
-			if (mac->nextstate == MAC_STATE_SENDING)
+			if (mac->txlen > 0)
 			{
 				mac->state = MAC_STATE_SENDING;
 				done = FALSE;
-			}
-			else if (mac->nextstate == MAC_STATE_SLEEP)
-			{
-				cc2420_sleep( mac->phy );
-				mac->state = MAC_STATE_SLEEP;
 			}
 			else{
 				mac->state = MAC_STATE_RECVING;
 				done = FALSE;
 			}
 			break;
-		
+			
 		// start try to receving data.
+		// this state is not a stable state. it will transite to IDLE or WAITDATA
+		// state quickly.   
+		//
 		// if there's no frame received, then go back to IDLE state. this feature
-		// enable the user be able to call rawread()/rawwrite() successfully.
-		//	
+		// enable the user be able to continue call rawread()/rawwrite() successfully.
+		//
+		// the source code in the following is actually part of the IDLE state.
+		// though the source code in this state can be merged with the state IDLE, 
+		// but i still keep them here because this separation facilitates 
+		// the interaction with the interrupt routine. the interrupt can simply change 
+		// state variable to MAC_STATE_RECEIVING to trigger the following 
+		// processings without introducing other side effects.
+		// 
+		// assume: the ISR place the received packet in the buffer.
+		// 
 		case MAC_STATE_RECVING:
-			count = cc2420_rawread( mac->phy, mac->rxframe, MAC_FRAMEBUFFER_SIZE, 0x00 );
-			if (count > 0)
+		
+			// the interrupt sevice routine will place the received frame into
+			// the RX buffer and change the value of mac->rxlen.
+			//
+			// if the master module hasn't read the data out, then MAC layer
+			// will pause to read more data from PHY layer. this improves the 
+			// efficiency. however, this may also lead data loss in the PHY layer. 
+			// but we have no good idea to solve this, unless the master module
+			// can call mac_read() more frequently. the possibility of data loss
+			// will always exists! you cannot eliminate it by only allocate  
+			// large buffer.
+			//
+			if (mac->rxlen == 0)
 			{
-				mac->rxlen = count;
-				// rxbuf[0-1] is the frame control word. so you can judge the frame 
-				// type through this word. this application uses the last two bits
-				// to indicate such information:
-				//		0x0000 	00b data frame
-				//		0x0001  01b ACK frame
-				//		0x0003	11b NAK frame
-				// 
-				// the last bit indicates whether this is a data frame, and the 
-				// second bit indicates whether this is a ACK/NAK frame.
-				//
-				switch (mac->rxbuf[1] & 0x03)
+			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_FRAME_SIZE, 0x00 );
+			if (count == 0)
+			{
+				mac->state = MAC_STATE_IDLE;
+			}
+			else{
+				switch (opf_type(mac->rxbuf))
 				{
-				case 0x00:
+				/*
+				case OPF_TYPE_DATA:
 					// this is a data frame and do nothing now. just wait for the 
 					// master program retrieve the data out.
 					// @warning: the newest incoming frame may override the last 
@@ -169,21 +279,29 @@ int8  mac_evolve( TMediumAccess * mac )
 					// do check sum here
 					// if checksum successfully, then return ACK or else NAK
 					// do checksum for ACK frame
-					
-					m_ack_template[1] |= 0x01;
-					m_ack_template[2] = mac->rxbuf[2]; // update the sequence number
-					m_ack_template[3] = 0x00; // @TODO checksum
-					m_ack_template[4] = 0x00;
-					cc2420_rawwrite( mac->phy, (char*)(&(m_ack_template[0])),12, 0x00 );  //12 is len, please modify
+					//
+					// @attention
+					// the PHY layer 2420 chip can decide whether sending ACK 
+					// or not. so we can elimate such operations. 
+					//
+					// m_ack_template[1] |= 0x01;
+					// m_ack_template[2] = mac->rxbuf[2]; // update the sequence number
+					// m_ack_template[3] = 0x00; // @TODO checksum
+					// m_ack_template[4] = 0x00;
+					// cc2420_rawwrite( mac->phy, (char*)(&(m_ack_template[0])),12, 0x00 );  //12 is len, please modify
+					//
 					mac->state = MAC_STATE_IDLE;
 					break;
 					
-				case 0x01:
+				case OPF_TYPE_ACK:
 					// ACK frame received. 
 					// if the sequence id in the ACK packet equal to or larger than 
 					// the sequence id of the frame in the sending buffer.
+					// (rxbuf[2] and txbuf[2] contain the sequence id)
+					//
 					if (mac->rxbuf[2] >= mac->txbuf[2])
 					{
+						mac->seqno = txbuf[2]; //?
 						mac->retry = 0;
 						mac->txlen = 0;
 						//acts_cancelaction( mac->actsche, mac->waitack_action );
@@ -201,23 +319,97 @@ int8  mac_evolve( TMediumAccess * mac )
 						done = FALSE;
 					}
 					break;
+				*/
+					
+				case OPF_TYPE_MACCMD:
+					break;
+					
+				case OPF_TYPE_RTS:
+					addr = opf_addrto(mac->rxbuf);
+					if (addr == mac_getshortid(&(mac->localaddr)))
+					{  
+						mac->state = MAC_STATE_RECVING;
+						done = FALSE;
+					}
+					else{
+						mac->sleepduration = (uint8)(* opf_msdu( &(m_rts_frame[0]) ));
+						mac->rxlen = 0;
+						timer_setinterval( mac->timer, mac->sleepduration, 0x00 );
+						mac->state = MAC_STATE_PAUSE;
+					}
+					break;
+					
+				case OPF_TYPE_CTS:
+					break;
 					
 				default:
 					NULL;
 				}
 			}
-			else{
-				mac->state = MAC_STATE_IDLE;
+			}
+			break;
+			
+		// IDEL => RECVING: event = RTS arrival
+		// MAC will goto RECVING state when it received a RTS frame
+		// 
+		case MAC_STATE_RX_SENDCTS:
+			// assume you have received the RTS frame, then you should reply 
+			// CTS back
+			//
+			opf_setaddrfrom( m_rts_frame, &(mac->localaddr) );
+			opf_setaddrto( m_rts_frame, opf_addrto(m_rts_frame) );
+			
+			count = _hdl_rawwrite( mac->phy, &m_cts_frame, sizeof(m_cts_frame), 0x00 );
+			if (count > 0)
+			{
+				mac->rts_sleepduration = 0;		
+				mac->state = MAC_STATE_WAITDATA;
+				timer_stop( mac->timer );
+				timer_setinterval( 2000 ); // maximum duration to wait data frame
+				done = FALSE;		
+			}
+			
+		case MAC_STATE_RX_WAITDATA:
+			failed = false;
+			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_MAX_LENGTH, 0x00 );
+			if (count == 0)
+			{
+				if (timer_expired(mac->timer))
+					failed = true;
+			}			
+			
+			if ((!failed) && (count > 0))
+			{
+				//timer_stop( mac->timer );
+
+				id = opf_seqid(mac->rxbuf);
+				if ((id <= mac->lastid) || ((id == 0xFF) && (mac->lastid == 0)))
+				{
+					// just drop the packet and continue wait
+				}
+				else{
+					mac->lastid = id;
+					mac->rxlen = count;					
+					//send ACK/NAK if necessary
+					mac->state = MAC_STATE_IDLE;
+				}		
 			}
 			break;
 		
-		// start frame sending process. 
+		// start frame sending process
+		// this state is only a transition state. the system will perform some 
+		// actions in this state and then quickly goes into TX_DELAY state. 
+		// the state machine will not stay in this state.
+		//
+		// before you try to start sending, you must delay for a random time to 
+		// avoid collison. this is also called "backoff time". 
+		//
 		case MAC_STATE_SENDING:
 			if (mac->txlen == 0)
 			{
 				mac->state = MAC_STATE_IDLE;
 			}
-			else if (mac->retry > 3)
+			else if (mac->retry > OPENMAC_RETRY_LIMIT)
 			{
 				// this case should better not to happen! because this means a frame
 				// relly lost during transmission. your master application should 
@@ -226,87 +418,123 @@ int8  mac_evolve( TMediumAccess * mac )
 				mac->nextstate = MAC_STATE_IDLE;
 			}
 			else{
-				mac->state = MAC_STATE_WAIT_SENDRTS;
+				mac->state = MAC_STATE_TX_DELAY;
 				// 指数退避算法
 				mac->backoff = mac->backoff << 2;
 				//actsche->inputaction ?;
+				timer_stop( mac->timer );
+				timer_setinterval( mac->timer, mac->backoff );
 				done = false;
 			}
 			break;
-			
-		case MAC_STATE_WAIT_SENDRTS:
-			/*
-			// @TODO
-			//if actsche_expired() 
+				
+		case MAC_STATE_TX_DELAY:
+			if (timer_expired( mac->timer ))
 			{
-				cc2420_rawwrite( mac->phy, RTS );
-				mac->state = MAC_STATE_WAIT_CTS;
-				start timer
-			}
-			*/
+				_hdl_rawwrite( mac->phy, &m_rts_template, sizeof(m_rts_template), 0x00 );
+				timer_setinterval( mac->timer, MAC_DURATION_WAIT_CTS );	
+				mac->state = MAC_STATE_TX_WAITCTS;
+			}			
 			break;
-			
-		case MAC_STATE_WAIT_CTS:
-			/* memset(buf)
-			count = cc2420_rawread()
-			if (count == 0) && (actsche_expired)
+						
+		case MAC_STATE_TX_WAITCTS:
+			if (!timer_expired(mac->timer))
 			{
-				mac->state = MAC_STATE_SENDING;
-				计算重新发送RTS的时间
-				done = FALSE;
-			}
-			if (count > 0) && (valid CTS)
-			{
-				mac->txindex = 0;
-				count = cc2420_rawwrite( mac->phy, mac->txbuf,  0 );
-				if (count > 0)
+				memset( mac->rxbuf, 0x00, OPENMAC_BUFFER_SIZE );
+				count = _hdl_rawread( mac->phy, &mac->rxbuf, OPENMAC_BUFFER_SIZE, 0x00 );
+				// @TODO if mac->txbuf is a valid CTS
+				if ((count > 0) && (true))
 				{
-					//mac->waitack_action = acts_inputaction( mac->actsche, NULL, NULL, mac->waitack_duration );
-					mac->txlen -= count;
-					mac->nextstate = MAC_STATE_WAITACK;
-					启动等待WAITACK timer
+#ifdef OPENMAC_SUPPORT_ACK
+					count = _hdl_rawwrite( mac->phy, mac->txbuf, mac->txlen, 0x00 );
+					// post assertion: the packet should always be sent successfully 
+					// by hal driver.
+					assert( count > 0 );
+					timer_stop( mac->timer );
+					timer_setinterval( MAC_INTERVAL_WAITACK );
+					mac->state = MAC_STATE_TX_WAITACK;
 					done = FALSE;
+#endif
+
+#ifndef OPENMAC_SUPPORT_ACK
+					// @attention: for our cc2420 transceive, it can support ACK
+					// mechanism in the hardware. so faciliate the developing of 
+					// MAC software. 
+					count = _hdl_rawwrite( mac->phy, mac->txbuf, mac->txlen, 0x00 | 0x01 );
+					if (count <= 0)
+					{
+						mac->state = MAC_STATE_SENDING;
+					}
+					else{
+						mac->state = MAC_STATE_IDLE;
+					}
+					done = FALSE;
+#endif
 				}
 			}
-			*/
 			break;
 			
-		case MAC_STATE_WAIT_ACK:
-			// wait for ACK frame
-			// when acts_expired() return TRUE, it will automatically cancel the 
-			// pre-defined action. this feature will not lead to resource leakage.
-			//
-			/*
-			memset(buf)
-			count = cc2420_rawread()
-			if (count == 0) && (actsche_expired)
-			//if (acts_expired(mac->waitack_action))
-			if (FALSE)
+		case MAC_STATE_TX_WAITACK:
+			code = 0;
+			memset( mac, mac->rxbuf, OPENMAC_BUFFER_SIZE, 0x00 );
+			count = _hdl_rawread( mac->phy, mac->rxbuf, OPENMAC_BUFFER_SIZE, 0x00 );
+			// if this is a ACK frame, other case NAK frame
+			if (true)
 			{
-				mac->retry ++;
-				mac->txindex = 0;
-				mac->state = MAC_STATE_SENDING;
-				done = FALSE;
+				code = 1;
 			}
-			if (count > 0) && valid ACK/NAK
+			else if (false)
 			{
-				if ACK
-					mac->state = MAC_STATE_IDLE;
-				else
-					mac->state = MAC_STATE_SENDING;
-				done = FALSE;
-			}*/
+				code = 2;
+			}
+			else{
+				if (timer_expired(mac->timer))
+					code = 3;
+			}
+			
+			switch (code)
+			{
+			case 1:
+				timer_stop( mac->timer );
+				mac->txlen = 0;
+				mac->state = MAC_STATE_IDLE;
+				break;
+			case 2:
+			case 3:
+				timer_stop( mac->timer );
+				mac->retry ++;
+				mac->state = MAC_STATE_SENDING;
+				break;
+			}
+			done = FALSE;
 			break;
 
-		case MAC_STATE_SLEEP:
-			if (mac->nextstate != MAC_STATE_SLEEP)
-			{ 
-				cc2420_wakeup( mac->phy );
-				mac->state = MAC_STATE_IDLE;
-				done = FALSE;
-			}
-			break;			
+		// if the state machine is in any other state, then the following code
+		// will drag it to IDLE state.
+		//
+		default:
+			mac->nextstate = MAC_STATE_IDLE;
+			break;
 		}
+	}while (!done)
+	
+	return ret; 
+}
+
+int8 mac_state( TOpenMAC * mac )
+{
+	return mac->state;
+}
+/*
+int8  mac_evolve( TOpenMAC * mac )
+{
+	boolean done = TRUE;
+	uint8 count;
+	int8 ret = 0;
+	
+	do{
+		switch (mac->state)
+		{
 	}while (!done);				
 
 	return ret;
@@ -314,7 +542,7 @@ int8  mac_evolve( TMediumAccess * mac )
 
 /*
 
-int8 mac_state_machine_evolve( TMediumAccess * mac )
+int8 mac_state_machine_evolve( TOpenMAC * mac )
 {
 	boolean done = TRUE;
 	int8 ret = 0;
@@ -441,12 +669,27 @@ int8 mac_state_machine_evolve( TMediumAccess * mac )
 }
 */
 
+uint8 mac_setrmtaddress( TOpenMAC * mac, TOpenAddress * addr )
+{
+	return 0;
+}
 
-uint8 mac_mode( TMediumAccess * mac );
-uint8 mac_state( TMediumAccess * mac );
-uint8 mac_ioresult( TMediumAccess * mac );
-uint8 mac_sleep( TMediumAccess * mac );
-uint8 mac_wakeup( TMediumAccess * mac );
-uint8 mac_installnotify( TMediumAccess * mac, TEventHandler * callback, void * data );
+uint8 mac_setlocaladdress( TOpenMAC * mac, TOpenAddress * addr )
+{
+	return 0;
+}
 
+uint8 mac_getrmtaddress( TOpenMAC * mac, TOpenAddress * addr )
+{
+	return 0;
+}
 
+uint8 mac_getlocaladdress( TOpenMAC * mac, TOpenAddress * addr )
+{
+	return 0;
+}
+
+uint8 mac_installnotify( TOpenMAC * mac, TEventHandler * callback, void * owner )
+{
+	return 0;
+}

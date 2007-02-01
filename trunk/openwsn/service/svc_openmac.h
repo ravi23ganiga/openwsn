@@ -1,73 +1,148 @@
 #ifndef _OPENMAC_H_7248_
 #define _OPENMAC_H_7248_
 
-/*******************************************************************************
+/*****************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+ *
+ * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
+ * 
+ * OpenWSN is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 or (at your option) any later version.
+ * 
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with eCos; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ * 
+ * As a special exception, if other files instantiate templates or use macros
+ * or inline functions from this file, or you compile this file and link it
+ * with other works to produce a work based on this file, this file does not
+ * by itself cause the resulting work to be covered by the GNU General Public
+ * License. However the source code for this file must still be made available
+ * in accordance with section (3) of the GNU General Public License.
+ * 
+ * This exception does not invalidate any other reasons why a work based on
+ * this file might be covered by the GNU General Public License.
+ * 
+ ****************************************************************************/ 
+
+/******************************************************************************
  * @author zhangwei on 2006-07-20
  * OpenMAC
  * an distributed medium access layer. this layer is kind of ALOHA and use 
  * backoff to avoid collision.
- ******************************************************************************/
+ *****************************************************************************/
   
 #include "..\hal\hal_foundation.h"
 #include "..\hal\hal_cc2420.h"
 #include "..\hal\hal_timer.h"
+#include "..\hal\hal_openframe.h"
 #include "svc_foundation.h"
 #include "svc_actsche.h"
 
-#define MAC_FRAMEBUFFER_SIZE CONFIG_MAX_MAC_FRAME_LENGTH
-#define TOpenMAC TMediumAccess
-
-
-enum {MAC_STATE_IDLE=0, MAC_STATE_SLEEP, MAC_STATE_RECVING, MAC_STATE_SENDING, MAC_STATE_WAIT_ACK,
-	MAC_STATE_WAIT_SENDRTS, MAC_STATE_WAIT_CTS };
+/* The following macros are used as the network PHY layers interface.
+ * so you can easily port to other PHY implementations with the most less 
+ * modifications on current MAC source code. 
+ */
+#define THdlDriver TCc2420Driver 
+#define _hdl_read(cc,frame,size,opt) cc2420_readframe(cc,*frame)
+#define _hdl_write(cc,frame,size,opt) cc2420_writeframe(cc,frame)
+#define _hdl_rawread(cc,buf,size,opt) cc2420_rawread(cc,buf,size,opt)
+#define _hdl_rawwrite(cc,buf,size,opt) cc2420_rawwrite(cc,buf,size,opt) 
+#define _hdl_wakeup(phy) NULL
+#define _hdl_sleep(phy) NULL 
 	
+/******************************************************************************
+ * IEEE 802.15.4 PPDU format
+ * [4B Preamble][1B SFD][7b Framelength, 1b Reserved][nB PSDU/Payload]
+ * 
+ * IEEE 802.15.4 MAC DATA format (the payload of PHY frame)
+ * Beacon Frame
+ * [2B Frame Control] [1B Sequence Number][4 or 10 Address][2 Superframe Specification]
+ * 		[k GTS fields][m Padding address fields] [n Beacon payload][2 FCS]
+ * 
+ * Data Frame
+ * [2B Frame Control] [1B Sequence Number][4 or 20 Address][n Data Payload][2 FCS]
+ * 
+ * ACK Frame
+ * [2B Frame Control] [1B Sequence Number][2 FCS]
+ * 
+ * MAC Control Frame
+ * [2B Frame Control] [1B Sequence Number][4 or 20 ADdress][1 Command Type][n Command Payload][2 FCS]
+ *
+ * Frame Control
+ * b2b1b0  	frame type 000 beacon, 001 data 010 ACK 011 command 100-111 reserved
+ * b12b13 	reserved.
+ *  
+ *****************************************************************************/
+
+#define MAC_STATE_IDLE 0
+#define MAC_STATE_PAUSE 1
+#define MAC_STATE_RECVING 2
+#define MAC_STATE_RX_SENDCTS 8
+#define MAC_STATE_RX_WAITDATA 3
+#define MAC_STATE_SENDING 4
+#define MAC_STATE_TX_DELAY 5
+#define MAC_STATE_TX_WAITCTS 6
+#define MAC_STATE_TX_WAITACK 7
+
+#define MAC_EVENT_NULL 0
+
+/* #define OPENMAC_PAYLOAD_SIZE (CONFIG_MAX_MAC_FRAME_LENGTH-7)
+ */
+#define OPENMAC_PAYLOAD_SIZE OPF_PAYLOAD_SIZE
+#define OPENMAC_RETRY_LIMIT 3
+#define OPENMAC_BUFFER_SIZE OPF_FRAME_SIZE
+
+/* retry	the count retried. 已经retry的次数
+ * seqno	sequence number, 按照15.4规定
+ */
 typedef struct{
-  uint8 id;
-}TMacFrame;
+  uint8 	state;
+  uint8 	event;
+  THdlDriver * phy;
+  uint8 	retry;  
+  uint8 	seqno; 
+  TTimer *  timer; 
+  uint8 	txlen;
+  uint8 	rxlen;
+  char * 	txframe;
+  char * 	rxframe;
+  char * 	ackbuf;
+  uint8 	backoff;
+  uint8 	backoff_rule;
+  uint8 	sleepduration;
+  TOpenAddress localaddr;
+  TOpenAddress rmtaddr;
+  char 		txbuf[OPF_FRAME_SIZE];
+  char 		rxbuf[OPF_FRAME_SIZE];
+  char 		rxheader[7];
+}TOpenMAC;  
 
-typedef struct{
-  uint8 state;
-  uint8 nextstate;
-  TCc2420Driver * phy;
-  uint8 retry; // 已经retry的次数
-  uint8 retry_limit; // 最大允许的retry次数，通过configure配置，default = 3
-  uint8 seqno; // sequence number, 按照15.4规定
-  uint8 txlen;
-  uint8 rxlen;
-  char * txbuf;
-  char * rxbuf;
-  char * ackbuf;
-  uint8 backoff;
-  uint8 backoff_rule;
-  char txframe[255];
-  char rxframe[255];
-  char rxframebak[7];
-}TMediumAccess;  
+TOpenMAC * mac_construct( char * buf, uint16 size );
+void  mac_destroy( TOpenMAC * mac );
+void  mac_init( TOpenMAC * mac, THdlDriver * phy, TTimer * timer );
+//void  mac_init( TOpenMAC * mac, TCc2420Driver * phy, TActionScheduler * actsche, TTimer * timer ); 
+void  mac_configure( TOpenMAC * mac, uint8 ctrlcode, uint8 value );
 
-TMediumAccess * mac_construct( char * buf, uint16 size, TCc2420Driver * phy,  
-	TActionScheduler * actsche );
-void  mac_destroy( TMediumAccess * mac );
-void  mac_configure( TMediumAccess * mac, uint8 ctrlcode, uint8 value );
+uint8 mac_read( TOpenMAC * mac, TOpenFrame * frame, uint8 size, uint8 opt );
+uint8 mac_rawread( TOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt );
+uint8 mac_write( TOpenMAC * mac, TOpenFrame * frame, uint8 len, uint8 opt );
+uint8 mac_rawwrite( TOpenMAC * mac, char * framebuffer, uint8 len, uint8 opt );
+uint8 mac_sleep( TOpenMAC * mac );
+uint8 mac_wakeup( TOpenMAC * mac );
+int8  mac_evolve( TOpenMAC * mac );
+uint8 mac_state( TOpenMAC * mac );
 
-//uint8 mac_accept( TMediumAccess * mac, uint16 * panid, uint16 * addr );
-//uint8 mac_read( TMediumAccess * mac, char * payload, uint8 size, uint8 opt );
-uint8 mac_read( TMediumAccess * mac, TMacFrame * frame, uint8 opt );
-uint8 mac_rawread( TMediumAccess * mac, char * frame, uint8 size, uint8 opt );
-//uint8 mac_write( TMediumAccess * mac, char * payload, uint8 len, uint8 opt );
-uint8 mac_write( TMediumAccess * mac, TMacFrame * frame, uint8 opt );
-uint8 mac_rawwrite( TMediumAccess * mac, char * frame, uint8 len, uint8 opt );
-
-//uint8 mac_setrmtaddress( TMediumAccess * mac, uint32 addr );
-uint8 mac_setlocaladdress( TMediumAccess * mac, uint32 addr );
-//uint8 mac_getrmtaddress( TMediumAccess * mac, uint32 * addr );
-uint8 mac_getlocaladdress( TMediumAccess * mac, uint32 * addr );
-int8  mac_evolve( TMediumAccess * mac );
-
-//uint8 mac_mode( TMediumAccess * mac );
-//uint8 mac_state( TMediumAccess * mac );
-//uint8 mac_ioresult( TMediumAccess * mac );
-uint8 mac_sleep( TMediumAccess * mac );
-uint8 mac_wakeup( TMediumAccess * mac );
-uint8 mac_installnotify( TMediumAccess * mac, TEventHandler * callback, void * data );
+uint8 mac_setrmtaddress( TOpenMAC * mac, TOpenAddress * addr );
+uint8 mac_setlocaladdress( TOpenMAC * mac, TOpenAddress * addr );
+uint8 mac_getrmtaddress( TOpenMAC * mac, TOpenAddress * addr );
+uint8 mac_getlocaladdress( TOpenMAC * mac, TOpenAddress * addr );
+uint8 mac_installnotify( TOpenMAC * mac, TEventHandler * callback, void * owner );
 
 #endif
