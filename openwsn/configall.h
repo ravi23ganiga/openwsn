@@ -18,20 +18,6 @@
  * @modified by zhangwei on 20061-26
  * add macros to support different hardware platforms
  ******************************************************************************/
- 
-
-/*******************************************************************************
- * @attention
- *                        IMPORTANT ISSUE ON HOW TO USE THIS FILE
- *
- * if you want to cancel some macro, pls use #undef macro. you can just place
- * the #undef after the previous macro. if you want it to take effective, you 
- * can place the #undef XXX macro before the configuration macro.
- * 
- * NOT to use "//" to comment these macros. because future developes may think 
- * they are really comments and deleted them! 
- ******************************************************************************/
- 
 #define FOR_2420_TEST 
  
 #define MAJOR_VERSION 1
@@ -55,6 +41,7 @@
 
 #undef TARGET_OPENNODE_20
 #define TARGET_OPENNODE_20
+
 
 
 #define TARGET_WLSMODEM_11

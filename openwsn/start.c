@@ -144,6 +144,7 @@ void app_start()
 	
 	#ifdef TESTCASE_LOCATION
 	location_test();
+	//location_test_ago();
 	#endif
 	
 	#ifdef TESTCASE_uniqueid
