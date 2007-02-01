@@ -7,21 +7,21 @@
 #include "..\global.h"
 #include "openmac_whitehole.h"
 
-#define OPENMAC_BUFFER_SIZE 0x7E
 
 static TOpenMAC m_mac;
-static TOpenMAC * g_mac;
+static TOpenMAC * _mac;
 
-void openmac_whitehole()
+void openmac_whitehole( void )
 {
 	char txbuf[OPENMAC_BUFFER_SIZE];
 	char rxbuf[OPENMAC_BUFFER_SIZE];
 	char * buf;
+	int8 txlen, rxlen;
 
 	target_init();
 	global_construct();
-	g_mac = mac_construct( &m_mac, sizeof(m_mac) );
-	mac_init( g_mac, g_cc2420, NULL, g_timer1 );
+	_mac = mac_construct( (char*)(&m_mac), sizeof(m_mac) );
+	mac_init( _mac, g_cc2420, g_timer1 );
 	timer_init( g_timer1, 1, 2 );
 
 	// 在这里初始化一个OpenFrame
@@ -46,11 +46,11 @@ void openmac_whitehole()
 		
 		while (!timer_expired(g_timer1))
 		{
-			mac_write( g_mac, buf, OPENMAC_BUFFER_SIZE, 0x00 );
+			mac_rawwrite( _mac, buf, OPENMAC_BUFFER_SIZE, 0x00 );
 		}
 	}
 		
-	mac_destroy( g_mac );
+	mac_destroy( _mac );
 	global_destroy();	
 	return;
 }

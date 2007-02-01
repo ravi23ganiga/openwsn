@@ -41,13 +41,14 @@ void openmac_run( void )
 	uint16 nodefrom, nodeto;
 	TOpenMAC m_mac;
 	TOpenMAC * g_mac;
+	char * buf;
 
 	target_init();
 	global_construct();
 	uart_configure( g_uart, 115200, 0, 0, 0, 0 );
 	timer_init( g_timer1, 1, 2 );
-	g_mac = mac_construct( &m_mac, sizeof(m_mac) );
-	mac_init( g_mac, g_cc2420, NULL, g_timer1 );
+	g_mac = mac_construct( (char*)(&m_mac), sizeof(m_mac) );
+	mac_init( g_mac, g_cc2420, g_timer1 );
 	
 	memset( (char*)(&txbuf[0]), 0x00, OPENMAC_BUFFER_SIZE ); 
 	memset( (char*)(&rxbuf[0]), 0x00, OPENMAC_BUFFER_SIZE ); 
@@ -55,7 +56,7 @@ void openmac_run( void )
 	rxlen = 0;
 	
 	nodefrom = CONFIG_ADDRESS;
-	nextto = (nodefrom+1) % 3;
+	nodeto = (nodefrom+1) % 3;
 	
 	// sink node
 	#if (CONFIG_NODETYPE == 0)
@@ -64,7 +65,7 @@ void openmac_run( void )
 		buf = (char*)(rxbuf[0]);
 		if (rxlen == 0)
 		{
-			rxlen = mac_read( g_mac, buf, OPENMAC_BUFFER_SIZE, 0x00 );
+			rxlen = mac_rawread( g_mac, buf, OPENMAC_BUFFER_SIZE, 0x00 );
 		}
 		if (rxlen > 0)
 		{
@@ -79,7 +80,7 @@ void openmac_run( void )
 		}
 		if (txlen > 0)
 		{
-			if (mac_write( g_mac, buf, txlen, 0x00 ) > 0)
+			if (mac_rawwrite( g_mac, buf, txlen, 0x00 ) > 0)
 				txlen = 0;
 		}
 	}
@@ -92,7 +93,7 @@ void openmac_run( void )
 	{
 		if (rxlen == 0)
 		{
-			rxlen = mac_read( g_mac, buf, OPENMAC_BUFFER_SIZE, 0x00 );
+			rxlen = mac_rawread( g_mac, buf, OPENMAC_BUFFER_SIZE, 0x00 );
 		}
 		
 		if ((rxlen > 0) && (txlen == 0))
@@ -107,7 +108,7 @@ void openmac_run( void )
 		
 		if (txlen > 0)
 		{
-			if (mac_write( g_mac, buf, rxlen, 0x00 ) > 0)
+			if (mac_rawwrite( g_mac, buf, rxlen, 0x00 ) > 0)
 				rxlen = 0;
 		}
 	}
@@ -130,7 +131,7 @@ void openmac_run( void )
 		
 		while (!timer_expired(g_timer1))
 		{
-			mac_write( g_mac, buf, OPENMAC_BUFFER_SIZE, 0x00 );
+			mac_rawwrite( g_mac, buf, OPENMAC_BUFFER_SIZE, 0x00 );
 		}
 	}
 	#endif
