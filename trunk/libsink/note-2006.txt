@@ -1,4 +1,6 @@
-
+2007-02-01
+modified foundation.h by zhangwei.
+added some struct definitions today: TOpenPacket, TOpenFrame and THdlFrame.
 
 2007-01-07
 merged with zhousongli's modification. compile passed. 
