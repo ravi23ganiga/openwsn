@@ -191,6 +191,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\service\svc_dataqueue.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_dataqueue.h"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_foundation.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\service\svc_foundation.h"
 				>
 			</File>

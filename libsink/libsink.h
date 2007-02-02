@@ -5,23 +5,10 @@
 
 #ifndef _SVCAPI_H_
 #define  _SVCAPI_H_
+
 #include "foundation.h"
 #include "hal/hal_uart.h"
-
-#define MAX_DATAITEM_NUMBER 100
-
-typedef struct{
-char data[128];
-uint8 totalen;
-}TDataItem;
-
-typedef struct{
-TDataItem dataItem[MAX_DATAITEM_NUMBER];
-uint8 ptrhead;
-uint8 ptrtail;
-uint8 totalCnt;
-}TDataQueue;
-
+#include "service/svc_dataqueue.h"
 
 typedef struct{
 //TSinkService sinkServRoute;
@@ -62,10 +49,6 @@ DLLAPI void *   svc_create( uint16 id, uint16 opt );
 DLLAPI void svc_start(void * svc);
 DLLAPI void svc_stop(void *svc);
 
-uint8  svc_write_rxDataQueue(TDataQueue * rxDataQueue, char *buf, uint8 len, uint16 opt);
-uint8  svc_read_txDataQueue(TDataQueue *txDataQueue, char *buf, uint8 capacity, uint16 opt);
-uint8  svc_write_txDataQueue(TDataQueue * rxDataQueue, char *buf, uint8 len, uint16 opt);
-uint8  svc_read_rxDataQueue(TDataQueue *txDataQueue, char *buf, uint8 capacity, uint16 opt);
 
 DLLAPI uint8 svc_write( void * svc, char * buf, uint8 len, uint16 opt );
 DLLAPI uint8 svc_read( void * svc, char * buf, uint8 capacity, uint16 opt );

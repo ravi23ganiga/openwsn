@@ -73,5 +73,4 @@ typedef INT64                   int64;
 #define MAX(n,m) (((n) < (m)) ? (m) : (n))
 #define ABS(n) ((n < 0) ? -(n) : (n))
 
-
 #endif /*_FOUNDATION_H_*/
