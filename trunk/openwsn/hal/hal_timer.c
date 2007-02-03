@@ -20,7 +20,7 @@
 * or inline functions from this file, or you compile this file and link it
 * with other works to produce a work based on this file, this file does not
 * by itself cause the resulting work to be covered by the GNU General Public
-* License. However the source code for this file must still be made available
+* License. However t#include "hal_openframe.h"he source code for this file must still be made available
 * in accordance with section (3) of the GNU General Public License.
 * 
 * This exception does not invalidate any other reasons why a work based on
@@ -77,6 +77,10 @@ TTimer * timer_construct( char * buf, uint8 size )
 	}
 	else{
 		timer = (TTimer *)buf;
+		
+	if (timer != NULL)
+	{
+		
 		memset( buf, 0x00, sizeof(TTimer) );
 	}
 	
