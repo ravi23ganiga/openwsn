@@ -8,6 +8,7 @@
 #include "..\hal\hal_spi.h"
 #include "..\hal\hal.h"
 #include "start.h"
+#include "..\global.h"
 
 
     static TCc2420Frame location_tx_packet;

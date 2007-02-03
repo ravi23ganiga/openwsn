@@ -8,6 +8,7 @@
 #include "start.h"
 #include "location_test.h"
 #include "..\service\svc_location.h"
+#include "..\global.h"
 
 #define ANCHOR_NODE_1
 //#define ANCHOR_NODE_2
