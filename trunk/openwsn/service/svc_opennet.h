@@ -25,26 +25,13 @@
 #include "svc_foundation.h"
 #include ".\hal\hal_timer.h"
 #include ".\hal\hal_uniqueid.h"
+#include ".\hal\hal_openframe.h"
+#include "svc_openpacket.h"
 #include "svc_openmac.h"
 
-#define NET_MAX_PAYLOAD_LENGTH 128
 #define NET_ROUTE_TABLE_SIZE 16
 
-typedef uint32 TOpenAddress;
-  
-/* TOpenPacket
- * it represents the packet transmitted on the network layer. 
- * it's structure is visible for upper application developers.
- */
-typedef struct{
-  uint16 control;
-  uint8 seqid;
-  uint16 netaddr;
-  uint16 destaddr;
-  uint16 srcaddr;
-  uint8 datalen;
-  char data[NET_MAX_PAYLOAD_LENGTH];
-}TOpenPacket;
+//typedef uint32 TOpenAddress;
 
 typedef struct{
   uint8 state;
@@ -56,7 +43,7 @@ typedef struct{
 }TOpenNET;
 
 int8 net_construct( TOpenMAC * net, TActionScheduler * actsche );
-void net_destroy();
+void net_destroy( void );
 void net_configure( uint8 ctrlcode, uint8 value );
 int8 net_setaddress( char * addr, uint8 len );
 int8 net_getaddress( char * addr, uint8 capacity );
