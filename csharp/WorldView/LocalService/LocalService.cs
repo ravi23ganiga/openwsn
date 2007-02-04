@@ -25,31 +25,210 @@ using System.Windows.Forms;
 //
 namespace WorldView
 {
-    public struct RouteAddrItem
-    {
-        public ushort addr;
-    } 
-
+   /* 
     public struct RouteAddr
     {
-     public ushort srcAddr;
-     public ushort dstAddr;//destionateion node address;   
-     public  RouteAddrItem [] dstAddrItem ;
+        private ushort srcAddr;
+        private ushort dstAddr;//destionateion node address;   
+        private ushort [] leapStep;        
+        private byte steptotal;
+        
+        //public interface function;
+        public void setSrcAddr(ushort source) { srcAddr = source;}
+        public void setDestAddr(ushort destination) { dstAddr = destination; }
+        public ushort getSrcAddr() {return (srcAddr);}
+        public ushort getDestAddr() {return (dstAddr);}
+        
+        public ushort getIndexAddr(byte index) 
+        {
+            ushort result = 0;
+            if (index > totaleap) return result;
+            return (leapStep[index]);
+        }
+        public void addleap(ushort leap)
+        {
+            leapStep[steptotal++] = leap;
+        }
     }
+    */
 
     public struct TRoutePathCacheItem
     {
-     public ushort nodeid;
-     public ushort[] path; // path. we don't consider those exceed 15 hop 
-     public byte length;   // path length
-     public  bool  isOptimal;
-     public  DateTime updateTime;
+        private ushort srcNode;
+        private ushort dstNode;
+        private ushort[] leapStep; // path. we don't consider those exceed 15 hop 
+        private int leaptotal;   // path length
+        private bool isOptimal;
+        private DateTime updateTime;
+
+        public void setSrcNode(ushort source) { srcNode = source; }
+        public void setDestNode(ushort destination) { dstNode = destination; }
+
+        //public interface function;
+        public void construct(ushort source,ushort destination,int steptotal,bool opt)
+        {
+            setSrcNode(source);
+            setDestNode(destination);                      
+            leaptotal = steptotal;
+            isOptimal = opt;
+            updateTime = System.DateTime.Now;
+            leapStep = new ushort[steptotal];
+        }
+        public ushort getSrcNode() { return (srcNode); }
+        public ushort getDestNode() { return (dstNode); }
+        public DateTime getRevTime() { return (updateTime);}
+        public void setRevTime(DateTime time) { updateTime = time; }    
+
+        public ushort getLeapStep(int index)
+        {
+            ushort result = 0;
+            if (index > leapStep.Length || index <0) return result;
+            return (leapStep[index]);
+        }
+      
+        public void addleap(ushort leap)
+        {
+            leapStep[leapStep.Length] = leap;
+        }
+
+        public int getleaptotal() { return(leaptotal); }
+        public void setleaptotal(int total) { leaptotal = total; }
+        public bool getOptimal() { return(isOptimal);}
+        public void setOptimal(bool optimal) { isOptimal = optimal;}
+         
     }
 
 
     public  struct TRoutePathCache{
-     public  TRoutePathCacheItem [] RoutePathItem;
-     public  byte totalCnt;
+        private TRoutePathCacheItem [] RoutePathItem;
+        private byte cur_count;
+        private  byte max_count;
+        
+
+        //private functions:
+        private bool copyPathItem(ref TRoutePathCacheItem dest, TRoutePathCacheItem source)
+        {
+            //if (source == null || dest == null) return false;
+            dest.setSrcNode(source.getSrcNode());
+            dest.setDestNode(source.getDestNode());
+            dest.setOptimal(source.getOptimal());
+            dest.setleaptotal(source.getleaptotal());
+
+            for (int index = 0; index < source.getleaptotal(); index++)
+            {
+                dest.addleap(source.getLeapStep(index));
+            }
+
+            return true;
+        }
+
+        private bool camparePathItem(TRoutePathCacheItem item1, TRoutePathCacheItem item2)
+        {
+            bool result = true;
+            if (item1.getleaptotal() != item2.getleaptotal())
+            {
+                result = false;
+            }
+            else if (item1.getSrcNode() != item2.getSrcNode()) {
+                result = false;
+            }
+            else if (item1.getDestNode() != item2.getDestNode()){
+                result = false;
+            }
+            else if (item1.getOptimal() != item2.getOptimal()) {
+                result = false;
+            }
+            else if (item1.getRevTime() != item2.getRevTime()) {
+
+                result = false;
+            }
+
+            if (result)
+            {
+                for (int index = 0; index < item1.getleaptotal(); index++)
+                {
+                    if (item1.getLeapStep(index) == item2.getLeapStep(index))
+                        continue;
+                    result = false;
+                    break;
+                }
+            }
+            return result;
+        }
+
+        //public functions:
+        public void construct(byte count) 
+        { 
+          RoutePathItem = new TRoutePathCacheItem[count];
+          cur_count = 0;
+          max_count = count;
+        }
+        public bool isOverFlow() { return (cur_count >max_count); }
+
+        public bool appendRoutePath(TRoutePathCacheItem pathItem) 
+        { 
+            bool result = false;
+            if (cur_count >= max_count) return result;
+            RoutePathItem[cur_count].construct(pathItem.getSrcNode(),
+                pathItem.getDestNode(),
+                pathItem.getleaptotal(),
+                false);
+
+            for (int index =0; index < pathItem.getleaptotal();index++)
+                RoutePathItem[cur_count].addleap(pathItem.getLeapStep(index));
+            cur_count++;
+            result = true;
+            return result;            
+        }
+
+        public TRoutePathCacheItem getPathItem(byte index)
+        {            
+           return (RoutePathItem[index]);                 
+        }
+       
+        public byte getindex(TRoutePathCacheItem pathItem) 
+        {
+            byte index;
+            bool is_find = false;
+            for (index = 0; index < cur_count; index++)
+            {
+                if (!camparePathItem(RoutePathItem[index], pathItem))
+                    continue;
+                is_find = true;
+                break;
+            }
+
+            if (!is_find) index = max_count;
+            return index;
+        }
+
+        public bool deletePathItem(TRoutePathCacheItem pathItem) 
+        {
+            //if (pathItem == null) return false;
+            byte index = getindex(pathItem);
+            if (index == max_count) return true;//hasn't got the index;
+            while (index < cur_count)
+            {
+                copyPathItem(ref RoutePathItem[index], RoutePathItem[index + 1]);
+                index++;
+            }
+
+            cur_count--;
+            return true;
+        }
+
+        public bool deleteItemByIndex(int index)
+        {
+            if (index < 0 || index == max_count) return true;
+            while (index < cur_count)
+            {
+                copyPathItem( ref RoutePathItem[index], RoutePathItem[index + 1]);
+                index++;
+            }
+            cur_count--;
+            return true;        
+        }
+
     }
 
 
@@ -77,10 +256,12 @@ D3~D0 bits indicate the data type in the application. the range of the data valu
 
 D7~D4 bits show the number of the hop in the route trace in this frame.The maximum value is 15 and the minimum value is 1.*/
 
-     public   byte FrameControl;
-     public   byte seqNumber;
-     public   RouteAddr routeAddr;
-     public   byte [] pData;//[100-sizeof(RouteAddr)];//里面的常数不能修改；
+       public   byte FrameControl;
+       public   byte seqNumber;
+       public   ushort srcNodeid;
+       public   ushort dstNodeid;
+       public   ushort[] leapStep;   
+       public   byte [] pData;//[100-sizeof(RouteAddr)];//里面的常数不能修改；
     }
 
 
@@ -127,6 +308,7 @@ D7~D4 bits show the number of the hop in the route trace in this frame.The maxim
         public const byte MAX_LEAP_NUMBER = 0x0a;
         public const byte MAX_ROUTE_LIST_NUMBER = 0x04;
 
+
         public static TSinkService Service = new TSinkService();
 
         public void Start()
@@ -147,15 +329,17 @@ D7~D4 bits show the number of the hop in the route trace in this frame.The maxim
             }         
          
             Service.maxhop = MAX_ROUTE_PATH_NUMBER;
+            /*
             Service.pathCache.RoutePathItem = new TRoutePathCacheItem[MAX_ROUTE_PATH_NUMBER];
             for (byte i = 0; i < MAX_ROUTE_PATH_NUMBER; i++)
             {
                 Service.pathCache.RoutePathItem[i].length = 0;
                 Service.pathCache.RoutePathItem[i].nodeid = 0;
                 Service.pathCache.RoutePathItem[i].isOptimal = false;
-                Service.pathCache.RoutePathItem[i].path = new ushort[MAX_LEAP_NUMBER]; 
+                Service.pathCache.RoutePathItem[i].path = new ushort[MAX_LEAP_NUMBER];  
+                
             }    
-            
+            */
             return; 
         }
 
