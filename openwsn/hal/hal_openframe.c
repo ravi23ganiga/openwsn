@@ -92,7 +92,7 @@ uint8 opf_length( char * buf )
 }
 
 uint16 opf_control( char * buf )
-{
+{  
 	uint16 * addr = (uint16 *)(buf + 1);
 	return *addr;
 }
@@ -183,4 +183,10 @@ char * opf_psdu( char * buf )
 char * opf_msdu( char * buf )
 {
 	return buf + 8;
+}
+
+/* returns the pointer to the TOpenPacket */
+char * opf_packet( char * buf )
+{
+	return buf + 1;
 }
