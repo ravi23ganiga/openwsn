@@ -165,22 +165,6 @@ namespace WorldView
         }
         public bool isOverFlow() { return (cur_count >max_count); }
 
-        public bool appendRoutePath(TRoutePathCacheItem pathItem) 
-        { 
-            bool result = false;
-            if (cur_count >= max_count) return result;
-            RoutePathItem[cur_count].construct(pathItem.getSrcNode(),
-                pathItem.getDestNode(),
-                pathItem.getleaptotal(),
-                false);
-
-            for (int index =0; index < pathItem.getleaptotal();index++)
-                RoutePathItem[cur_count].addleap(pathItem.getLeapStep(index));
-            cur_count++;
-            result = true;
-            return result;            
-        }
-
         public TRoutePathCacheItem getPathItem(byte index)
         {            
            return (RoutePathItem[index]);                 
@@ -229,6 +213,23 @@ namespace WorldView
             return true;        
         }
 
+        public bool appendRoutePath(TRoutePathCacheItem pathItem)
+        {
+            if (cur_count >= max_count) return false;
+           
+            byte index = getindex(pathItem);
+            if (index < cur_count) return true;//has found the index;
+
+            RoutePathItem[cur_count].construct(pathItem.getSrcNode(),
+                pathItem.getDestNode(),
+                pathItem.getleaptotal(),
+                false);
+
+            for (int i = 0; i < pathItem.getleaptotal(); i++)
+                RoutePathItem[cur_count].addleap(pathItem.getLeapStep(i));
+            cur_count++;
+            return true;
+        }        
     }
 
 
@@ -259,7 +260,7 @@ D7~D4 bits show the number of the hop in the route trace in this frame.The maxim
        public   byte FrameControl;
        public   byte seqNumber;
        public   ushort srcNodeid;
-       public   ushort dstNodeid;
+       public   ushort destNodeid;
        public   ushort[] leapStep;   
        public   byte [] pData;//[100-sizeof(RouteAddr)];//里面的常数不能修改；
     }
@@ -300,8 +301,11 @@ D7~D4 bits show the number of the hop in the route trace in this frame.The maxim
 
         public const byte MAX_ROUTE_PATH_OPTIMAL_NUMBER = 50;
 
-        public const byte DATA_TYPE_BM = 0x0F;
-        public const byte ADDRLIST_LENTH = 0x0F;
+        public const byte DATA_TYPE_MASK = 0x0F;
+        public const byte DATA_TYPE_BM = 0x0;
+
+        public const byte ROUTE_ADDRLIST_MASK = 0x0F;
+        public const byte ROUTE_ADDRLIST_BM = 0x04;
 
         public const byte ADDRLIST_BM = 0xF0;
 
@@ -329,17 +333,8 @@ D7~D4 bits show the number of the hop in the route trace in this frame.The maxim
             }         
          
             Service.maxhop = MAX_ROUTE_PATH_NUMBER;
-            /*
-            Service.pathCache.RoutePathItem = new TRoutePathCacheItem[MAX_ROUTE_PATH_NUMBER];
-            for (byte i = 0; i < MAX_ROUTE_PATH_NUMBER; i++)
-            {
-                Service.pathCache.RoutePathItem[i].length = 0;
-                Service.pathCache.RoutePathItem[i].nodeid = 0;
-                Service.pathCache.RoutePathItem[i].isOptimal = false;
-                Service.pathCache.RoutePathItem[i].path = new ushort[MAX_LEAP_NUMBER];  
-                
-            }    
-            */
+            Service.pathCache.construct(MAX_ROUTE_PATH_NUMBER);
+      
             return; 
         }
 
@@ -420,9 +415,78 @@ That the value of D15~D14 is 00 means the type of the command is read;
             return cnt; 
         }
 
-        public int ReadDataPacket(byte[] packet, ushort size,ushort opt) { return 0; }
+
+        public int ReadDataPacket(byte[] packet, ushort size,ushort opt) 
+        {
+            byte[] tempdata = new byte[128];
+            int len = Read(tempdata,128,0);            
+            ushort  nextleap = 0;
+            int RouteleapNumber = 0;
+            int i = 0,j = 0;
+            if (len < 1) return 0;
+            //check the datatype.
+        
+            DataType datatype = (DataType) (tempdata[i] & DATA_TYPE_MASK >> DATA_TYPE_BM);
+            RouteleapNumber = tempdata[i++] & ROUTE_ADDRLIST_MASK >> ROUTE_ADDRLIST_BM;
+
+            PacketFrame pframe = new PacketFrame();
+            pframe.seqNumber = tempdata[i++];
+            pframe.srcNodeid = tempdata[i++];
+            pframe.srcNodeid += (ushort)(tempdata[i++] << 8);            
+            pframe.destNodeid = tempdata[i++];
+            pframe.destNodeid += (ushort)(tempdata[i++] << 8);
+            
+            for (j = 0; j < RouteleapNumber; j++)
+            { 
+                nextleap = tempdata[i++];
+                nextleap += (ushort)(tempdata[i++] << 8);
+                pframe.leapStep[j] = nextleap;
+            }
+
+            len = tempdata[i++];
+
+            for (j = 0; j < len; j++)
+            { 
+            
+                pframe.pData[j] = tempdata[i++];
+            }
+               
+         
+                switch (datatype)
+                {
+                    /*   case DataType.RouteRequest:
+                           break;
+                     */  
+
+                    case DataType.RouteFeedback://路由反馈包                    
+                        TRoutePathCacheItem pathitem = new TRoutePathCacheItem();
+                        pathitem.construct(pframe.srcNodeid, pframe.destNodeid, RouteleapNumber, false);       
+                      
+                        for (i = 0; i < RouteleapNumber; i++)
+                        {
+                             nextleap = pframe.leapStep[i];
+                             pathitem.addleap(nextleap);
+                        }
+                       
+                        Service.pathCache.appendRoutePath(pathitem);
+                        return 0;
+                    case DataType.QueryData:
+                        pframe.pData.CopyTo(packet,0);
+
+                        break;
+                    /*
+                       case DataType.QueryFeekback:
+                           break;
+                    */
+                }          
+           
+            return len; 
+        }
         public int WriteDataPacket(byte[] packet, ushort size, ushort opt) { return 0; }
-        public int ReadRoutingPacket(byte[] packet, ushort size, ushort opt) { return 0; }
+        public int ReadRoutingPacket(byte[] packet, ushort size, ushort opt) 
+        { 
+            return 0;
+        }
         public int GetSinkState() { return 0; }
         public int GetNodeData() { return 0; }
     }  
