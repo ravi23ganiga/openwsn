@@ -105,7 +105,9 @@ void   mac_setshortid( TOpenAddress * addr, uint16 id );
  * in the following structure byte by byte. you should attention this if you 
  * want to port OpenMAC to other platform and compiles.
  */
-typedef __packed struct{
+//typedef __packed struct{
+#pragma pack(1)   
+typedef struct{
 	uint8 	length;
 	uint16 	control;
 	uint8  	seqid;
@@ -113,6 +115,7 @@ typedef __packed struct{
 	uint16 	nodeid;
 	uint8  	payload[OPF_PAYLOAD_SIZE];
 }TOpenFrame;
+#pragma pack()   
 
 TOpenFrame * opf_init( char * buf, uint8 size );
 uint8  opf_type( char * buf );
