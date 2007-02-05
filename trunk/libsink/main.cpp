@@ -1,7 +1,8 @@
 #include <windows.h>
 //#include <stdio.h>
-#include "service/svc_siocomm.h"
-#include "service/svc_log4c.h"
+#include "service\svc_siocomm.h"
+#include "service\svc_log4c.h"
+#include "service\svc_dataqueue.h"
 #include "libsink.h"
 
 //extern CWinThread *pThread; 
@@ -151,7 +152,7 @@ void svc_optmize_path( TSinkService * svc )
 {
 }
 */
-
+/*
 uint8  svc_write_rxDataQueue(TDataQueue * rxDataQueue, char *buf, uint8 len, uint16 opt)
 {
     uint8 ptr;	
@@ -268,6 +269,7 @@ uint8  svc_write_txDataQueue(TDataQueue * txDataQueue, char *buf, uint8 len, uin
     //LeaveCriticalSection(&Section);
 	return len;
 }
+*/
 
 DLLAPI int8 svc_uart_open( void * svc, char * name)
 {
