@@ -2,6 +2,8 @@
 move four queue operation functions to service\svc_dataqueue.*
 add two configuration macros: CONFIG_PALTFORM_ARM and CONFIG_PLATFORM_ATMEL
 	in configall.h
+add module: hal/hal_openframe.*
+add module: service/svc_openpacket.*
 
 
 
