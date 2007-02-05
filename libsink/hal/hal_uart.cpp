@@ -77,7 +77,7 @@ int8 uart_open( TUartDriver * uart, char * name )
         //const char* psDevName = name;
 		//strncpy( &(uart->name[0]), name, 15 );
 		memmove(&(uart->name[0]),name,4);
-       
+/*       
 		// pls modify it for me, zhou songli
 		uart->handle = CreateFile((LPCSTR) &uart->name[0], 
 		          	GENERIC_READ | GENERIC_WRITE,// 允许读写
@@ -87,7 +87,7 @@ int8 uart_open( TUartDriver * uart, char * name )
 		        	//FILE_FLAG_OVERLAPPED,//使用异步通信
 					0,
 			        NULL);
-		                 
+*/		                 
 
         if ( uart->handle == INVALID_HANDLE_VALUE )
         {

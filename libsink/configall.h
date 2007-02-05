@@ -105,4 +105,14 @@
 #define CONFIG_DEFAULT_ESCAPE_CHAR 27
 #define CONFIG_DEFAULT_FRAME_PREFIX CONFIG_DEFAULT_ESCAPE_CHAR
 
+// @modified by zhangwei on 20070205 
+//  CONFIG_PLATFORM_ARM 
+//  CONFIG_PLATFORM_ATMEL 
+// these macros will help to choose the hardware platform it served for.
+// actually, these two macros are not necessary. but in this transition period, i think it's 
+// useful to keep they two. in the future, the Atmel GAINZ and ARM OpenWSN will share the 
+// same libsink source code.
+//
+#define CONFIG_PLATFORM_ATMEL
+
 #endif
