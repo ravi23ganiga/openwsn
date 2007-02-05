@@ -70,16 +70,21 @@
  * example:
  * 		[ODA_TYPE_UPGRADE 1][NEWDATA n]
  */
-typedef __packed struct{
+//typedef __packed struct{
+#pragma pack(1)   
+typedef struct{
   uint8 type;
   char value[NET_MAX_PAYLOAD_LENGTH-4];
 }TOpenData;
+#pragma pack()   
  
 /* TOpenPacket
  * it represents the packet transmitted on the network layer. 
  * it's structure is visible for upper application developers.
  */
-typedef __packed struct{
+//typedef __packed struct{
+#pragma pack(1)   
+typedef struct{
   uint16 control;
   uint8 seqid;
   uint16 netaddr;
@@ -88,11 +93,10 @@ typedef __packed struct{
   uint8 datalen;
   char data[NET_MAX_PAYLOAD_LENGTH];
 }TOpenPacket;
+#pragma pack()   
 
 char * opt_ownerframe( char * packet );
 char * opt_data( char * packet );
-
-
 
 #endif /* _SVC_OPENPACKET_H_3812_ */
 

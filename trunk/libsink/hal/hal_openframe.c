@@ -131,12 +131,12 @@ void opf_setlength( char * buf, uint8 length )
 
 void opf_setaddrfrom( char * buf, uint16 addrfrom )
 {
-	* opf_addrfrom_addr(buf) = addrfrom; 
+	* (uint16*)opf_addrfrom_addr(buf) = addrfrom; 
 }
 
 void opf_setaddrto( char * buf, uint16 addrto )
 {
-	* opf_addrto_addr(buf) = addrto; 
+	* (uint16*)opf_addrto_addr(buf) = addrto; 
 }
 
 char * opf_length_addr( char * buf )

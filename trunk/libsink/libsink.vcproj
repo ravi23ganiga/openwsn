@@ -214,6 +214,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\service\svc_openpacket.c"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_openpacket.h"
+				>
+			</File>
+			<File
 				RelativePath=".\service\svc_siocomm.cpp"
 				>
 			</File>
@@ -243,6 +251,14 @@
 			</File>
 			<File
 				RelativePath=".\hal\hal_global.h"
+				>
+			</File>
+			<File
+				RelativePath=".\hal\hal_openframe.c"
+				>
+			</File>
+			<File
+				RelativePath=".\hal\hal_openframe.h"
 				>
 			</File>
 			<File
