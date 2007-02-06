@@ -22,7 +22,7 @@
 #include ".\test\cc2420dev_test.h"
 #include ".\test\uartanddebug.h"
 #include ".\test\uartecho.h"
-#include ".\test\location.h"
+#include ".\test\location_test.h"
 #include ".\test\uniqueid_test.h"
 #include ".\test\sensor_test.h"
 
