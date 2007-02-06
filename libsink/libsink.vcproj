@@ -206,6 +206,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\service\svc_location.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_location.h"
+				>
+			</File>
+			<File
 				RelativePath=".\service\svc_log4c.cpp"
 				>
 			</File>
