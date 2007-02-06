@@ -77,7 +77,7 @@ TTimer * timer_construct( char * buf, uint8 size )
 	}
 	else{
 		timer = (TTimer *)buf;
-		
+	}	
 	if (timer != NULL)
 	{
 		

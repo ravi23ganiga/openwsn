@@ -28,8 +28,6 @@
  * 
  ****************************************************************************/ 
 
-#include "hal_foundation.h"
-#include "hal_openframe.h"
 #include "svc_foundation.h"
 #include "svc_openmac.h"
 
