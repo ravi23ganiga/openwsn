@@ -131,17 +131,23 @@ void opf_setlength( char * buf, uint8 length )
 */
 void opf_setpanid( char * buf, uint16 panid )
 {
-	* (uint16 *)opf_panid(buf) = panid; 
+	buf = opf_panid(buf); 
+	*buf = (uint8)panid;
+	*(buf+1) = (uint8)(panid >> 8);
 }
 
 void opf_setaddrfrom( char * buf, uint16 addrfrom )
 {
-	* (uint16 *)opf_addrfrom_addr(buf) = addrfrom; 
+	buf = opf_addrfrom_addr(buf); 
+	*buf = (uint8)addrfrom;
+	*(buf+1) = (uint8)(addrfrom >> 8);
 }
 
 void opf_setaddrto( char * buf, uint16 addrto )
 {
-	* (uint16*)opf_addrto_addr(buf) = addrto; 
+	buf = opf_addrto_addr(buf); 
+	*buf = (uint8)addrto;
+	*(buf+1) = (uint8)(addrto >> 8);
 }
 /*
 char * opf_length_addr( char * buf )

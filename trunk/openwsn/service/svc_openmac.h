@@ -45,6 +45,10 @@
 #include "svc_foundation.h"
 #include "svc_actsche.h"
 
+#define SIMPLE_MAC
+//#define FULL_MAC
+
+
 /* The following macros are used as the network PHY layers interface.
  * so you can easily port to other PHY implementations with the most less 
  * modifications on current MAC source code. 
