@@ -85,6 +85,7 @@ void cc2420_destroy( TCc2420Driver * cc )
 
 void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 size )
 {
+	
 	switch (ctrlcode)
 	{
 	case CC2420_BASIC_INIT:
@@ -191,9 +192,7 @@ void cc2420_init(TCc2420Driver * cc)
     
     SET_RESET_INACTIVE();
     halWait(500);
-    
     FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
-    
     halWait(1000);
     
     //FASTSPI_SETREG(CC2420_TXCTRL, 0xA0E3); // To control the output power, added by huanghuan
@@ -371,7 +370,7 @@ uint8 cc2420_rawread( TCc2420Driver * cc, char * frame, uint8 size, uint8 opt )
 	cc->if_read = 1;
 	IRQEnable();			
 		
-	cc->nextstate = CC_STATE_IDLE;
+	//cc->nextstate = CC_STATE_IDLE;
 	//cc2420_evolve( cc );
 	
 	return cc->receivepayload_len + 11;	
@@ -684,11 +683,11 @@ void cc2420_event_handler()
 
 void cc2420_receive_on(TCc2420Driver * cc) 
 {
-        led_twinkle(LED_RED,1);
+
         cc->rfSettings.receiveOn = TRUE;
-led_twinkle(LED_RED,1);
+
 	FAST2420_STROBE(cc->spi,CC2420_SRXON);
-led_twinkle(LED_RED,1);
+
 	FAST2420_STROBE(cc->spi,CC2420_SFLUSHRX);
 } 
 

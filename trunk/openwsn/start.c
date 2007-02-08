@@ -51,8 +51,11 @@
 #define TESTCASE_CC2420DEV
 #undef  TESTCASE_CC2420DEV
 
+#define TESTCASE_MAC
+//#undef  TESTCASE_MAC
+
 #define TESTCASE_LOCATION
-//#undef  TESTCASE_LOCATION
+#undef  TESTCASE_LOCATION
 
 #define TESTCASE_uniqueid
 #undef  TESTCASE_uniqueid
@@ -140,6 +143,10 @@ void app_start()
 	
 	#ifdef TESTCASE_CC2420DEV
 	cc2420dev_test();
+	#endif
+	
+	#ifdef TESTCASE_MAC
+	openmac_run();
 	#endif
 	
 	#ifdef TESTCASE_LOCATION

@@ -222,7 +222,7 @@ void timer_setinterval( TTimer * timer, uint32 interval, uint8 repeat )
 		case 0x10:
 	    	T1TC   = 0;			             /* 定时器初始值设置为0*/
 	    	T1PR   = 0;			             /* 时钟不分频*/
-	    	T1MCR |= 0x002;		             /* 设置T1MR0匹配后复位T1TC*/
+	    	T1MCR |= 0x003;		             /* 设置T1MR0匹配后复位T1TC*/
 	    	T1MR0  =(Fpclk / 1000)* interval;	 /*1ms定时*/
 	    	break;
 		case 0x11:
@@ -397,7 +397,7 @@ boolean timer_expired( TTimer * timer )
 	        expired = 1;
 	        T1IR = 0x01;
 	        if( checkperiod == 0)
-	            T1MCR &= ~0x007;
+	            T1MCR &= ~0x003;
 	    }    
 	    break;
 	case 0x11:

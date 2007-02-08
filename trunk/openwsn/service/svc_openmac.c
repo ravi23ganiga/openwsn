@@ -111,13 +111,14 @@ uint8 mac_rawread( TOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt )
 	mac_evolve( mac );
 	if ((mac->state == MAC_STATE_IDLE) && (mac->rxlen))
 	{
-		
 		copied = min( size, mac->rxlen );
 		if (copied > 0)
 		{
+		        
 			memmove( framebuffer, &(mac->rxbuf[0]), copied );
 			memmove( &(mac->rxheader[0]), &(mac->rxbuf[0]), 9 ); // backup the header of the  														  
                                                    			// current frame for later using
+			
 			mac->rxlen = 0;
 		}
 	}
@@ -269,6 +270,7 @@ int8 mac_evolve( TOpenMAC * mac )
 		{
 			
 			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_FRAME_SIZE, 0x00 );
+			
 			mac->rxlen = count;
 			if (count == 0)
 			{
