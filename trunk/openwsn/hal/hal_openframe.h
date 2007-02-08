@@ -105,6 +105,7 @@ void   mac_setshortid( TOpenAddress * addr, uint16 id );
  * in the following structure byte by byte. you should attention this if you 
  * want to port OpenMAC to other platform and compiles.
  */
+ /*
 typedef __packed struct{
 	uint8 	length;
 	uint16 	control;
@@ -113,29 +114,41 @@ typedef __packed struct{
 	uint16 	nodeid;
 	uint8  	payload[OPF_PAYLOAD_SIZE];
 }TOpenFrame;
+*/
+typedef __packed struct{
+WORD   frame_control;
+    BYTE   seqNumber;
+    WORD   PanId;
+    WORD   destAddr;
+    WORD   srcAddr;
+    BYTE   Payload[120];
+    WORD   footer;
+}TOpenFrame;
 
 TOpenFrame * opf_init( char * buf, uint8 size );
 uint8  opf_type( char * buf );
-uint8  opf_length( char * buf );
+//uint8  opf_length( char * buf );
 uint16 opf_control( char * buf );
 uint8  opf_seqid( char * buf );
 uint16 opf_addrfrom( char * buf );
 uint16 opf_addrto( char * buf );
-uint8  opf_command( char * buf );
+//uint8  opf_command( char * buf );
 
-void   opf_settype( char * buf, uint8 type );
-void   opf_setlength( char * buf, uint8 length );
+//void   opf_settype( char * buf, uint8 type );
+//void   opf_setlength( char * buf, uint8 length );
+void   opf_setpanid( char * buf, uint16 panid );
 void   opf_setaddrfrom( char * buf, uint16 addrfrom );
 void   opf_setaddrto( char * buf, uint16 addrto );
 
-char * opf_length_addr( char * buf );
-char * opf_control_addr( char * buf );
-char * opf_seqid_addr( char * buf );
+//char * opf_length_addr( char * buf );
+//char * opf_control_addr( char * buf );
+//char * opf_seqid_addr( char * buf );
+char * opf_panid( char * buf);
 char * opf_addrfrom_addr( char * buf );
 char * opf_addrto_addr( char * buf );
-char * opf_command_addr( char * buf );
-char * opf_psdu( char * buf );
+//char * opf_command_addr( char * buf );
+//char * opf_psdu( char * buf );
 char * opf_msdu( char * buf );
-char * opf_packet( char * buf );
+//char * opf_packet( char * buf );
 
 #endif
