@@ -99,6 +99,15 @@
 #define OPENMAC_RETRY_LIMIT 3
 #define OPENMAC_BUFFER_SIZE OPF_FRAME_SIZE
 
+#define MAC_CONFIG_PANID 			0x01 
+#define MAC_CONFIG_LOCALADDRESS		0x02 
+#define MAC_CONFIG_TUNNING_POWER 	0x03
+#define MAC_CONFIG_CHANNEL			0x04
+#define MAC_BASIC_INIT               0x05
+#define MAC_XTAL_SWITCH              0x06
+#define MAC_CONFIG_APPLY				0x07
+#define MAC_SET_ACKREQUEST           0x08
+
 /* retry	the count retried. 已经retry的次数
  * seqno	sequence number, 按照15.4规定
  */
@@ -128,7 +137,7 @@ TOpenMAC * mac_construct( char * buf, uint16 size );
 void  mac_destroy( TOpenMAC * mac );
 void  mac_init( TOpenMAC * mac, THdlDriver * phy, TTimer * timer );
 //void  mac_init( TOpenMAC * mac, TCc2420Driver * phy, TActionScheduler * actsche, TTimer * timer ); 
-void  mac_configure( TOpenMAC * mac, uint8 ctrlcode, uint8 value );
+void  mac_configure( TOpenMAC * mac, uint8 ctrlcode, uint16 value );
 
 uint8 mac_read( TOpenMAC * mac, TOpenFrame * frame, uint8 size, uint8 opt );
 uint8 mac_rawread( TOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt );
