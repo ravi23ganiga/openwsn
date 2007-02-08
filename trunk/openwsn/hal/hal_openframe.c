@@ -73,9 +73,9 @@ void  mac_setshortid( TOpenAddress * addr, uint16 id )
 TOpenFrame * opf_init( char * buf, uint8 size )
 {
 	TOpenFrame * opf;
-	assert( size <= OPF_FRAME_SIZE );
+	//assert( size <= OPF_FRAME_SIZE );
 	opf = (TOpenFrame *)buf;
-	opf->length = 0x7F & size;
+	//opf->length = 0x7F & size;
 	return opf;
 }
 
@@ -85,35 +85,35 @@ uint8 opf_type( char * buf )
 	uint8 type = (opf_control(buf) & 0x03);
 	return type;
 }
-
+/*
 uint8 opf_length( char * buf )
 {
 	return buf[0] & 0x7F;
 }
-
+*/
 uint16 opf_control( char * buf )
 {  
-	uint16 * addr = (uint16 *)(buf + 1);
+	uint16 * addr = (uint16 *)(buf);
 	return *addr;
 }
 
 uint8 opf_seqid( char * buf )
 {
-	return buf[3];
+	return buf[2];
 }
 
 uint16 opf_addrfrom( char * buf )
 {
-	uint16 * addr = (uint16 *)(buf + 4);
+	uint16 * addr = (uint16 *)(buf + 7);
 	return *addr;
 }
 
 uint16 opf_addrto( char * buf )
 {
-	uint16 * addr = (uint16 *)(buf + 6);
+	uint16 * addr = (uint16 *)(buf + 5);
 	return *addr;
 }
-
+/*
 uint8 opf_command( char * buf )
 {
 	return buf[8];
@@ -128,6 +128,11 @@ void opf_setlength( char * buf, uint8 length )
 {
 	buf[0] = length & 0x7F;
 }
+*/
+void opf_setpanid( char * buf, uint16 panid )
+{
+	* (uint16 *)opf_panid(buf) = panid; 
+}
 
 void opf_setaddrfrom( char * buf, uint16 addrfrom )
 {
@@ -138,7 +143,7 @@ void opf_setaddrto( char * buf, uint16 addrto )
 {
 	* (uint16*)opf_addrto_addr(buf) = addrto; 
 }
-
+/*
 char * opf_length_addr( char * buf )
 {
 	return buf;
@@ -153,29 +158,40 @@ char * opf_seqid_addr( char * buf )
 {
 	return buf + 3;
 }
+*/
+char * opf_panid(char * buf)
+{
+	return buf + 3;
+}
 
 char * opf_addrfrom_addr( char * buf )
 {
-	return buf + 4;
+	return buf + 7;
 }
 
 char * opf_addrto_addr( char * buf )
 {
-	return buf + 6;
+	return buf + 5;
 }
 
+/*
 char * opf_command_addr( char * buf )
 {
 	return buf + 8;
 }
+*/
 
 /* payload address of PHY data unit
  * the payload of PHY frame is essentially the MAC layer frame. 
  */
+ 
+ /*
 char * opf_psdu( char * buf )
 {
 	return buf + 1; 
 }
+*/
+
 
 /* payload address of MAC frame 
  * the payload of MAC frame is essentially the NET layer packet.
@@ -186,7 +202,7 @@ char * opf_msdu( char * buf )
 }
 
 /* returns the pointer to the TOpenPacket */
-char * opf_packet( char * buf )
-{
-	return buf + 1;
-}
+//char * opf_packet( char * buf )
+//{
+//	return buf + 1;
+//}
