@@ -30,6 +30,8 @@
 
 #include "svc_foundation.h"
 #include "svc_openmac.h"
+#include "..\hal\hal_led.h"
+#include "..\hal\hal_global.h"
 
 #define MAC_DURATION_WAIT_CTS 200
 
@@ -47,7 +49,7 @@ static char m_ctsframe[8] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 TOpenMAC * mac_construct( char * buf, uint16 size )
 {
 	TOpenMAC * mac = (TOpenMAC *)buf;
-	assert( sizeof(TOpenMAC) <= size );
+	//assert( sizeof(TOpenMAC) <= size );
 	memset( mac, 0x00, sizeof(TOpenMAC) );
 	return mac;
 }
@@ -71,7 +73,7 @@ void  mac_init( TOpenMAC * mac, THdlDriver * phy, TTimer * timer )
 	mac->rxlen = 0;
 	mac->txframe = NULL;
 	mac->rxframe = NULL;
-	mac->backoff = 100;
+	mac->backoff = 10;
 	mac->backoff_rule = 2;
 	mac->sleepduration = 0;
 	memset( &(mac->txbuf[0]), 0x00, OPF_FRAME_SIZE );
@@ -81,8 +83,10 @@ void  mac_init( TOpenMAC * mac, THdlDriver * phy, TTimer * timer )
 	timer_init( timer, 1, 0 );
 }
 
-void  mac_configure( TOpenMAC * mac, uint8 ctrlcode, uint8 value )
+
+void  mac_configure( TOpenMAC * mac, uint8 ctrlcode, uint16 value )
 {
+	cc2420_configure( mac->phy, ctrlcode, value, 0);
 }
 
 uint8 mac_read( TOpenMAC * mac, TOpenFrame * frame, uint8 size, uint8 opt )
@@ -104,20 +108,20 @@ uint8 mac_read( TOpenMAC * mac, TOpenFrame * frame, uint8 size, uint8 opt )
 uint8 mac_rawread( TOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt )
 {
 	uint8 copied = 0;
-	
 	mac_evolve( mac );
 	if ((mac->state == MAC_STATE_IDLE) && (mac->rxlen))
 	{
+		
 		copied = min( size, mac->rxlen );
 		if (copied > 0)
 		{
 			memmove( framebuffer, &(mac->rxbuf[0]), copied );
-			memmove( &(mac->rxheader[0]), &(mac->rxbuf[0]), 7 ); // backup the header of the  														  
+			memmove( &(mac->rxheader[0]), &(mac->rxbuf[0]), 9 ); // backup the header of the  														  
                                                    			// current frame for later using
 			mac->rxlen = 0;
 		}
 	}
-		
+	//uart_putchar(g_uart,copied);	
 	return copied;
 }
 
@@ -199,7 +203,7 @@ int8 mac_evolve( TOpenMAC * mac )
 	boolean done = TRUE;
 	uint16 addr;
 	uint8 id;
-	int8 count, ret = 0;
+	int8 count = 0, ret = 0;
 	int8 failed;
 	
 	do{
@@ -219,12 +223,14 @@ int8 mac_evolve( TOpenMAC * mac )
 			
 		// IDLE is the initial state of the state machine.
 		case MAC_STATE_IDLE:
+		
 			if (mac->txlen > 0)
 			{
 				mac->state = MAC_STATE_SENDING;
 				done = FALSE;
 			}
 			else{
+				
 				mac->state = MAC_STATE_RECVING;
 				done = FALSE;
 			}
@@ -247,7 +253,7 @@ int8 mac_evolve( TOpenMAC * mac )
 		// assume: the ISR place the received packet in the buffer.
 		// 
 		case MAC_STATE_RECVING:
-		
+		   
 			// the interrupt sevice routine will place the received frame into
 			// the RX buffer and change the value of mac->rxlen.
 			//
@@ -259,13 +265,18 @@ int8 mac_evolve( TOpenMAC * mac )
 			// will always exists! you cannot eliminate it by only allocate  
 			// large buffer.
 			//
-			if (mac->rxlen == 0)
-			{
+		if (mac->rxlen == 0)
+		{
+			
 			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_FRAME_SIZE, 0x00 );
+			mac->rxlen = count;
 			if (count == 0)
 			{
+				led_twinkle(LED_YELLOW,1);
 				mac->state = MAC_STATE_IDLE;
+				done = true;
 			}
+			
 			else{
 				switch (opf_type(mac->rxbuf))
 				{
@@ -323,6 +334,7 @@ int8 mac_evolve( TOpenMAC * mac )
 					break;
 				*/
 					
+				/*
 				case OPF_TYPE_MACCMD:
 					break;
 					
@@ -343,13 +355,17 @@ int8 mac_evolve( TOpenMAC * mac )
 					
 				case OPF_TYPE_CTS:
 					break;
-					
+				*/	
 				default:
 					NULL;
 				}
+				
+				done = true;
 			}
-			}
-			break;
+		}
+		mac->state = MAC_STATE_IDLE;
+		done = true;
+		break;
 			
 		// IDEL => RECVING: event = RTS arrival
 		// MAC will goto RECVING state when it received a RTS frame
@@ -407,6 +423,7 @@ int8 mac_evolve( TOpenMAC * mac )
 		// avoid collison. this is also called "backoff time". 
 		//
 		case MAC_STATE_SENDING:
+		uart_putchar(g_uart,1);
 			if (mac->txlen == 0)
 			{
 				mac->state = MAC_STATE_IDLE;
@@ -420,25 +437,32 @@ int8 mac_evolve( TOpenMAC * mac )
 				mac->state = MAC_STATE_IDLE;
 			}
 			else{
+			        uart_putchar(g_uart,2);
 				mac->state = MAC_STATE_TX_DELAY;
 				// Ö¸ÊýÍË±ÜËã·¨
 				mac->backoff = mac->backoff << 2;
 				//actsche->inputaction ?;
 				timer_stop( mac->timer );
 				timer_setinterval( mac->timer, mac->backoff, 0 );
+				timer_start( mac->timer );
 				done = false;
 			}
 			break;
 				
 		case MAC_STATE_TX_DELAY:
+		uart_putchar(g_uart,3);
 			if (timer_expired( mac->timer ))
 			{
-				_hdl_rawwrite( mac->phy, m_rtsframe, sizeof(m_rtsframe), 0x00 );
-				timer_setinterval( mac->timer, MAC_DURATION_WAIT_CTS, 0 );	
-				mac->state = MAC_STATE_TX_WAITCTS;
+				uart_putchar(g_uart,4);
+				//_hdl_rawwrite( mac->phy, m_rtsframe, sizeof(m_rtsframe), 0x00 );
+				_hdl_rawwrite( mac->phy, mac->txbuf, mac->txlen, 0x00 );
+				//timer_setinterval( mac->timer, MAC_DURATION_WAIT_CTS, 0 );	
+				//mac->state = MAC_STATE_TX_WAITCTS;
+				mac->state = MAC_STATE_IDLE;
+				done = true;
 			}			
 			break;
-						
+		/*				
 		case MAC_STATE_TX_WAITCTS:
 			if (!timer_expired(mac->timer))
 			{
@@ -510,7 +534,7 @@ int8 mac_evolve( TOpenMAC * mac )
 			}
 			done = FALSE;
 			break;
-
+                       */
 		// if the state machine is in any other state, then the following code
 		// will drag it to IDLE state.
 		//
