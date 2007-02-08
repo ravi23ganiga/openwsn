@@ -199,6 +199,124 @@ uint8 mac_wakeup( TOpenMAC * mac )
  * should be implemented by a separate module svc_energy. this service will 
  * control the energy behavior of whole system rather than the OpenMAC itself does.
  */
+ 
+#ifdef SIMPLE_MAC
+int8 mac_evolve( TOpenMAC * mac )
+{
+	boolean done = TRUE;
+	uint16 addr;
+	uint8 id;
+	int8 count = 0, ret = 0;
+	int8 failed;
+	
+	do{
+		switch (mac->state)
+		{	
+		// IDLE is the initial state of the state machine.
+		case MAC_STATE_IDLE:
+		
+			if (mac->txlen > 0)
+			{
+				mac->state = MAC_STATE_SENDING;
+				done = FALSE;
+			}
+			else{
+				
+				mac->state = MAC_STATE_RECVING;
+				done = FALSE;
+			}
+			break;
+			
+		// start try to receving data.
+		// this state is not a stable state. it will transite to IDLE or WAITDATA
+		// state quickly.   
+		//
+		// if there's no frame received, then go back to IDLE state. this feature
+		// enable the user be able to continue call rawread()/rawwrite() successfully.
+		//
+		// the source code in the following is actually part of the IDLE state.
+		// though the source code in this state can be merged with the state IDLE, 
+		// but i still keep them here because this separation facilitates 
+		// the interaction with the interrupt routine. the interrupt can simply change 
+		// state variable to MAC_STATE_RECEIVING to trigger the following 
+		// processings without introducing other side effects.
+		// 
+		// assume: the ISR place the received packet in the buffer.
+		// 
+		case MAC_STATE_RECVING:
+		   
+			// the interrupt sevice routine will place the received frame into
+			// the RX buffer and change the value of mac->rxlen.
+			//
+			// if the master module hasn't read the data out, then MAC layer
+			// will pause to read more data from PHY layer. this improves the 
+			// efficiency. however, this may also lead data loss in the PHY layer. 
+			// but we have no good idea to solve this, unless the master module
+			// can call mac_read() more frequently. the possibility of data loss
+			// will always exists! you cannot eliminate it by only allocate  
+			// large buffer.
+			//
+		if (mac->rxlen == 0)
+		{
+			
+			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_FRAME_SIZE, 0x00 );
+			
+			mac->rxlen = count;
+			if (count == 0)
+			{
+				led_twinkle(LED_YELLOW,1);
+				mac->state = MAC_STATE_IDLE;
+				done = true;
+			}
+			
+		}
+		mac->state = MAC_STATE_IDLE;
+		done = true;
+		break;
+		
+		
+		// start frame sending process
+		// this state is only a transition state. the system will perform some 
+		// actions in this state and then quickly goes into TX_DELAY state. 
+		// the state machine will not stay in this state.
+		//
+		// before you try to start sending, you must delay for a random time to 
+		// avoid collison. this is also called "backoff time". 
+		//
+		case MAC_STATE_SENDING:
+			if (mac->txlen == 0)
+			{
+				mac->state = MAC_STATE_IDLE;
+			}
+			else{
+				mac->state = MAC_STATE_TX_DELAY;
+				mac->backoff = timer_getvalue( g_timer1 );
+				uart_putchar(g_uart,(char)(mac->backoff));
+				done = false;
+			}
+			break;
+				
+		case MAC_STATE_TX_DELAY:
+		                halWait(mac->backoff);
+				_hdl_rawwrite( mac->phy, mac->txbuf, mac->txlen, 0x00 );
+				mac->state = MAC_STATE_IDLE;
+				done = true;		
+			break;
+		
+		// if the state machine is in any other state, then the following code
+		// will drag it to IDLE state.
+		//
+		default:
+			mac->state = MAC_STATE_IDLE;
+			break;
+		}
+	}while (!done);
+	
+	return ret; 
+}
+#endif
+
+#ifdef FULL_MAC
 int8 mac_evolve( TOpenMAC * mac )
 {
 	boolean done = TRUE;
@@ -548,6 +666,7 @@ int8 mac_evolve( TOpenMAC * mac )
 	
 	return ret; 
 }
+#endif
 
 uint8 mac_state( TOpenMAC * mac )
 {

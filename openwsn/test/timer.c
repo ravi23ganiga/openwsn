@@ -10,7 +10,10 @@ void timer1_callback( void * data );
 void timer_test( void )
 {
 	uint8 VICcheck;
+	uint32 value;
+	char * enter      = "\n";
 	
+	target_init();
 	global_construct();
 	
 
@@ -18,6 +21,15 @@ void timer_test( void )
 
 	timer_configure( g_timer0, (TEventHandler)timer_callback, NULL, 0 ); 
 	timer_configure( g_timer1, (TEventHandler)timer1_callback,NULL, 1 );
+	
+	timer_start( g_timer1 );
+	while(1)
+	{
+	    value = timer_getvalue( g_timer1 );	
+            uart_putchar(g_uart,(char)(value));
+            uart_putchar(g_uart,*enter);
+            led_twinkle(LED_RED,4);
+	}
     
 //    timer_VICinit( g_timer0 );
 //    timer_VICinit( g_timer1 );
