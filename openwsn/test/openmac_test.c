@@ -58,7 +58,7 @@
  * it is related to address
  * for node A, B, C, the address is 0x01, 0x02, 0x03 respectively.
  */
-#define CONFIG_NODETYPE 1
+#define CONFIG_NODETYPE 0
 #define CONFIG_ADDRESS CONFIG_NODETYPE
 
 #define PANID         0x2420
@@ -208,27 +208,30 @@ void openmac_run( void )
 	// you can change the node address here according to your own testing
 	// environment.
 	//
-	buf = txbuf;
-	opf_setaddrfrom( txbuf, 3 );
-	opf_setaddrto( txbuf, 1 );
-	
-	opf_setaddrfrom(txbuf,NODE_NOISE);
+	txlen = 0;
+	rxlen = 0;
+        opf_setaddrfrom(txbuf,NODE_NOISE);
         opf_setaddrto(txbuf,SINK_ADDR);
         mac_configure( g_mac, CC2420_CONFIG_LOCALADDRESS, NODE_NOISE);
+        
+        txlen = 11 + 10;
+		
+		
+	for (n = 0; n < 10; n++) {
+            txbuf[n+9] = 0x99;               //99 represents the noise signal
+        }        
 	
 	while (1)
 	{
 		
 		
-		timer_stop( g_timer1 );
-		timer_setinterval( g_timer1, 500, 0 );
-		timer_start( g_timer1 );
-		
-		while (!timer_expired(g_timer1))
+		buf = txbuf;
+		if (txlen > 0)
 		{
-			mac_rawwrite( g_mac, buf, OPENMAC_BUFFER_SIZE, 0x00 );
+			if (mac_rawwrite( g_mac, buf, txlen, 0x00 ) > 0)
+			txlen = 0;
 		}
-		
+		led_twinkle(LED_GREEN,1);
 		mac_evolve( g_mac );
 		led_twinkle(LED_RED,1);
 	}
