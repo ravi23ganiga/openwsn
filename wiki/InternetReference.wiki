@@ -1,0 +1,73 @@
+#summary One-sentence summary of this page.
+
+= Introduction =
+
+Add your content here.
+
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
+
+= Journals =
+
+International Journal of Sensor Networks (IJSNET)
+attention Volume 1 - Issue 3/4 - 2006
+Special Issue on Recent Developments in Wireless Sensor Networks
+Guest Editors: Dr. Jelena Mišić and Dr. Vojislav B. Mišić
+[http://www.inderscience.com/browse/index.php?journalID=186&year=2006&vol=1&issue=3/4 go...]
+
+Self-organisation of sensor networks using genetic algorithms
+
+ACM Transactions on Sensor Networks
+[http://www.acm.org/tosn/ go...]
+
+IEEE Network Magazine Special Issue on
+Wireless Mesh Networks: Applications, Architectures and Protocols
+
+!Blogs Through Google Blog Search
+
+[http://research.microsoft.com/~zhao/ Zhao Feng]
+Principal Researcher and Manager, Networked Embedded Computing Group, Microsoft Research
+
+Editor-In-Chief, ACM Transactions on Sensor Networks
+Steering Committee Chair, ACM/IEEE IPSN'07
+Technical Program Committee Co-Chair, ACM Sensys'05
+Member, Board of Directors, ACM SIGBED
+[http://research.microsoft.com/~zhao/]
+
+- Programming, Services, and Architectures
+- Optimization, Coordination, and Tools
+- Routing and Information Discovery
+
+OpenWSN
+[http://openwsn.blogspot.com]
+
+WSN Update
+http://www.wsnupdate.com/
+
+wsnblog by Marco Zennaro, Claro Noda and Muneeb Ali.
+[http://www.wsnblog.com/]
+
+Emerging Technologies for Virtual Instrumentation
+[http://emertech.blogspot.com/] 
+
+My Golden Daya
+[http://chinawangquan.spaces.live.com/]
+Provide a paper list on Location Problem in WSN.
+
+一个Robot个人爱好者的网站
+[http://eiart.net/blog/]
+
+无线传感器网络路由协议
+[http://4655260.blog.hexun.com/6981954_d.html]
+
+传感器网络标准方案——IEEE 802.15.4/Zigbee
+[http://bl0329.spaces.live.com/Blog/cns!25781EB46177A924!522.entry]
+
+
+
+
