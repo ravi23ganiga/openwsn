@@ -102,34 +102,34 @@ void lcs_destroy( TLocationService * lcs )
 void lcs_rssi2dist( TLocationService * lcs, uint8 rssi, uint16 * dis )
 {
 	if((rssi >= L_1_RSSI) || (rssi < 30))  {*dis = L_1;     return;}
-    if(rssi >= L_2_RSSI)                   {*dis = L_2 -  (rssi - L_2_RSSI)   / (L_3_RSSI - L_2_RSSI) * LENGTH_UNIT;   return;}
-    if(rssi >= L_3_RSSI)                   {*dis = L_3 -  (rssi - L_3_RSSI)   / (L_4_RSSI - L_3_RSSI) * LENGTH_UNIT;   return;}
-    if(rssi >= L_4_RSSI)                   {*dis = L_4 -  (rssi - L_4_RSSI)   / (L_5_RSSI - L_4_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_5_RSSI)                   {*dis = L_5 -  (rssi - L_5_RSSI)   / (L_6_RSSI - L_5_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_6_RSSI)                   {*dis = L_6 -  (rssi - L_6_RSSI)   / (L_7_RSSI - L_6_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_7_RSSI)                   {*dis = L_7 -  (rssi - L_7_RSSI)   / (L_8_RSSI - L_7_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_8_RSSI)                   {*dis = L_8 -  (rssi - L_8_RSSI)   / (L_9_RSSI - L_8_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_9_RSSI)                   {*dis = L_9 -  (rssi - L_9_RSSI)   / (L_10_RSSI - L_9_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_10_RSSI)                  {*dis = L_10 - (rssi - L_10_RSSI)  / (L_11_RSSI - L_10_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_11_RSSI)                  {*dis = L_11 - (rssi - L_11_RSSI)  / (L_12_RSSI - L_11_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_12_RSSI)                  {*dis = L_12 - (rssi - L_12_RSSI)  / (L_13_RSSI - L_12_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_13_RSSI)                  {*dis = L_13 - (rssi - L_13_RSSI)  / (L_14_RSSI - L_13_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_14_RSSI)                  {*dis = L_14 - (rssi - L_14_RSSI)  / (L_15_RSSI - L_14_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_15_RSSI)                  {*dis = L_15 - (rssi - L_15_RSSI)  / (L_16_RSSI - L_15_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_16_RSSI)                  {*dis = L_16 - (rssi - L_16_RSSI)  / (L_17_RSSI - L_16_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_17_RSSI)                  {*dis = L_17 - (rssi - L_17_RSSI)  / (L_18_RSSI - L_17_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_18_RSSI)                  {*dis = L_18 - (rssi - L_18_RSSI)  / (L_19_RSSI - L_18_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_19_RSSI)                  {*dis = L_19 - (rssi - L_19_RSSI)  / (L_20_RSSI - L_19_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_20_RSSI)                  {*dis = L_20 - (rssi - L_20_RSSI)  / (L_21_RSSI - L_20_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_21_RSSI)                  {*dis = L_21 - (rssi - L_21_RSSI)  / (L_22_RSSI - L_21_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_22_RSSI)                  {*dis = L_22 - (rssi - L_22_RSSI)  / (L_23_RSSI - L_22_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_23_RSSI)                  {*dis = L_23 - (rssi - L_23_RSSI)  / (L_24_RSSI - L_23_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_24_RSSI)                  {*dis = L_24 - (rssi - L_24_RSSI)  / (L_25_RSSI - L_24_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_25_RSSI)                  {*dis = L_25 - (rssi - L_25_RSSI)  / (L_26_RSSI - L_25_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_26_RSSI)                  {*dis = L_26 - (rssi - L_26_RSSI)  / (L_27_RSSI - L_26_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_27_RSSI)                  {*dis = L_27 - (rssi - L_27_RSSI)  / (L_28_RSSI - L_27_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_28_RSSI)                  {*dis = L_28 - (rssi - L_28_RSSI)  / (L_29_RSSI - L_28_RSSI) * LENGTH_UNIT;    return;}
-    if(rssi >= L_29_RSSI)                  {*dis = L_29 - (rssi - L_29_RSSI)  / (L_30_RSSI - L_29_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_2_RSSI)                   {*dis = L_2 -  (rssi - L_2_RSSI)   / (L_1_RSSI - L_2_RSSI) * LENGTH_UNIT;   return;}
+    if(rssi >= L_3_RSSI)                   {*dis = L_3 -  (rssi - L_3_RSSI)   / (L_2_RSSI - L_3_RSSI) * LENGTH_UNIT;   return;}
+    if(rssi >= L_4_RSSI)                   {*dis = L_4 -  (rssi - L_4_RSSI)   / (L_3_RSSI - L_4_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_5_RSSI)                   {*dis = L_5 -  (rssi - L_5_RSSI)   / (L_4_RSSI - L_5_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_6_RSSI)                   {*dis = L_6 -  (rssi - L_6_RSSI)   / (L_5_RSSI - L_6_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_7_RSSI)                   {*dis = L_7 -  (rssi - L_7_RSSI)   / (L_6_RSSI - L_7_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_8_RSSI)                   {*dis = L_8 -  (rssi - L_8_RSSI)   / (L_7_RSSI - L_8_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_9_RSSI)                   {*dis = L_9 -  (rssi - L_9_RSSI)   / (L_8_RSSI - L_9_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_10_RSSI)                  {*dis = L_10 - (rssi - L_10_RSSI)  / (L_9_RSSI - L_10_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_11_RSSI)                  {*dis = L_11 - (rssi - L_11_RSSI)  / (L_10_RSSI - L_11_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_12_RSSI)                  {*dis = L_12 - (rssi - L_12_RSSI)  / (L_11_RSSI - L_12_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_13_RSSI)                  {*dis = L_13 - (rssi - L_13_RSSI)  / (L_12_RSSI - L_13_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_14_RSSI)                  {*dis = L_14 - (rssi - L_14_RSSI)  / (L_13_RSSI - L_14_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_15_RSSI)                  {*dis = L_15 - (rssi - L_15_RSSI)  / (L_14_RSSI - L_15_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_16_RSSI)                  {*dis = L_16 - (rssi - L_16_RSSI)  / (L_15_RSSI - L_16_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_17_RSSI)                  {*dis = L_17 - (rssi - L_17_RSSI)  / (L_16_RSSI - L_17_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_18_RSSI)                  {*dis = L_18 - (rssi - L_18_RSSI)  / (L_17_RSSI - L_18_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_19_RSSI)                  {*dis = L_19 - (rssi - L_19_RSSI)  / (L_18_RSSI - L_19_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_20_RSSI)                  {*dis = L_20 - (rssi - L_20_RSSI)  / (L_19_RSSI - L_20_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_21_RSSI)                  {*dis = L_21 - (rssi - L_21_RSSI)  / (L_20_RSSI - L_21_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_22_RSSI)                  {*dis = L_22 - (rssi - L_22_RSSI)  / (L_21_RSSI - L_22_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_23_RSSI)                  {*dis = L_23 - (rssi - L_23_RSSI)  / (L_22_RSSI - L_23_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_24_RSSI)                  {*dis = L_24 - (rssi - L_24_RSSI)  / (L_23_RSSI - L_24_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_25_RSSI)                  {*dis = L_25 - (rssi - L_25_RSSI)  / (L_24_RSSI - L_25_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_26_RSSI)                  {*dis = L_26 - (rssi - L_26_RSSI)  / (L_25_RSSI - L_26_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_27_RSSI)                  {*dis = L_27 - (rssi - L_27_RSSI)  / (L_26_RSSI - L_27_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_28_RSSI)                  {*dis = L_28 - (rssi - L_28_RSSI)  / (L_27_RSSI - L_28_RSSI) * LENGTH_UNIT;    return;}
+    if(rssi >= L_29_RSSI)                  {*dis = L_29 - (rssi - L_29_RSSI)  / (L_28_RSSI - L_29_RSSI) * LENGTH_UNIT;    return;}
     *dis = 50;
 }
 

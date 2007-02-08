@@ -96,19 +96,19 @@ int8 hal_global_construct( void )
 	g_uart0 	= uart_construct( 0, (char*)(&m_uart0), sizeof(TUartDriver) ); 
 	//g_uart1     = uart_construct( 1, (char*)(&m_uart1), sizeof(TUartDriver) ); 
 	g_spi0 		= spi_construct( 0, (char*)(&m_spi0), sizeof(TSpiDriver) );
-	g_spi1 		= spi_construct( 1, (char*)(&m_spi1), sizeof(TSpiDriver) );
+	//g_spi1 		= spi_construct( 1, (char*)(&m_spi1), sizeof(TSpiDriver) );
 	
 	g_cc2420 	= cc2420_construct( (char*)(&m_cc2420), sizeof(TCc2420Driver), g_spi );
 	//g_mcp6s26 = mcp_construct( 0, (char*)(&m_mcp6s26), sizeof(TMcp6s26),g_spi0 );
 	//g_ad      = ad_construct( 0, (char*)(&m_ad),  sizeof(TAdConversion) );
         //g_vibration 	= vib_construct(0,(char*)(&m_vibration), sizeof(TVibrationSensor), g_mcp6s26, g_ad  );
 
-	/*
-	g_timer0 	= timer_construct( 0, 0, (char*)(&m_timer0), sizeof(TTimer) );
-	g_timer1 	= timer_construct( 0, 1, (char*)(&m_timer1), sizeof(TTimer) );
-	g_timer2 	= timer_construct( 1, 2, (char*)(&m_timer2), sizeof(TTimer) );
-	g_watchdog 	= watchdog_construct( (char*)(&m_watchdog), sizeof(TWatchdog), CONFIG_WATCHDOG_INTERVAL );
-
+	
+	g_timer0 	= timer_construct( (char*)(&m_timer0), sizeof(TTimer) );
+	g_timer1 	= timer_construct((char*)(&m_timer1), sizeof(TTimer) );
+	g_timer2 	= timer_construct( (char*)(&m_timer2), sizeof(TTimer) );
+	//g_watchdog 	= watchdog_construct( (char*)(&m_watchdog), sizeof(TWatchdog), CONFIG_WATCHDOG_INTERVAL );
+/*
 	if ( (g_uart0 == NULL) || (g_uart1 == NULL) || (g_spi == NULL) || (g_timer0 == NULL)
 		|| (g_cc2420 == NULL) || (g_watchdog == NULL) )
 	{
