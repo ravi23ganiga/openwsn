@@ -45,7 +45,9 @@
 #include "svc_foundation.h"
 #include "svc_actsche.h"
 
-
+/* @TODO: these two config macros will be moved to configure.h in the future
+ * as global effective configuration settings. 
+ */
 
 #undef CONFIG_OPENMAC_SIMPLE
 #define CONFIG_OPENMAC_SIMPLE
