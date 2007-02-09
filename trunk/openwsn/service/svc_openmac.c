@@ -178,15 +178,6 @@ uint8 mac_wakeup( TOpenMAC * mac )
 	return 0;
 }
 
-/*
-#MAC_VERSION_PASSTHROUGH
-int8 mac_evolve( TOpenMAC * mac )
-{
-	
-
-}
-#endif
-*/
 /* evolve is a state transition function. it do state transition and perform 
  * necessary actions. however, it won't do these itself. the master module
  * should call it periodically (no matter timer driven of by a simple while loop) 
