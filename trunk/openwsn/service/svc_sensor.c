@@ -35,7 +35,7 @@ static int8 sen_timer_callback( TSensorService * sen, TTimer * timer );
 
 TSensorService * sen_construct( char * buf, uint16 size )
 {
-	assert( sizeof(TSensorService) <= size );
+	//assert( sizeof(TSensorService) <= size );
 	memset( buf, 0x00, size );
 	return (TSensorService *)buf; 
 }

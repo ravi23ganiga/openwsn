@@ -93,14 +93,14 @@ int cc2420dev_test (void)
     //to write the payload
     for (n = 0; n < 10; n++) {
         tx_test.payload[n] = 2;
-        tx_frame[9 + n] = 2;
+        tx_frame[10 + n] = 2;
     }
     tx_test.payload[2] = 1;  
 
-    tx_frame[0] = tx_frame[1] = tx_frame[2] = 0;
-    tx_frame[3] = 0x20; tx_frame[4] = 0x24;
-    tx_frame[5] = 0x78; tx_frame[6] = 0x56;
-    tx_frame[7] = 0x34; tx_frame[8] = 0x12; 
+    tx_frame[1] = tx_frame[2] = tx_frame[3] = 0;
+    tx_frame[4] = 0x20; tx_frame[5] = 0x24;
+    tx_frame[6] = 0x78; tx_frame[7] = 0x56;
+    tx_frame[8] = 0x34; tx_frame[9] = 0x12; 
     
     
     cc2420_receive_on(g_cc2420);  
@@ -132,8 +132,8 @@ int cc2420dev_test (void)
 	  
 	  //transmit using char streams
 	  #ifdef CHAR_STREAM         
-          tx_frame[9]++;
-          if(tx_frame[9] = 5) tx_frame[9] = 1;
+          tx_frame[10]++;
+          if(tx_frame[10] = 5) tx_frame[10] = 1;
           cc2420_rawwrite( g_cc2420, (char *)tx_frame, 10 + 11,0);
           
           led_twinkle(LED_GREEN,1);
@@ -181,7 +181,7 @@ int cc2420dev_test (void)
 	  length = cc2420_rawread( g_cc2420,(char *)rx_frame, 0,0 );
 	  
 	  if(length > 11) {
-	  ledPeriod = rx_frame[9];
+	  ledPeriod = rx_frame[10];
 	  uart_write( g_uart, (char *)rx_frame, length ,0  );
 	  }
 	  #endif

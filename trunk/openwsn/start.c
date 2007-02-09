@@ -52,7 +52,7 @@
 #undef  TESTCASE_CC2420DEV
 
 #define TESTCASE_MAC
-//#undef  TESTCASE_MAC
+#undef  TESTCASE_MAC
 
 #define TESTCASE_LOCATION
 #undef  TESTCASE_LOCATION
@@ -65,6 +65,9 @@
 
 #define TESTCASE_WLSMODEM
 #undef  TESTCASE_WLSMODEM
+
+#define TESTCASE_FULL_NODE
+//#undef  TESTCASE_FULL_NODE
 
 #ifdef TESTCASE_NULL
   #undef TESTCASE_DEBUGUART
@@ -147,6 +150,10 @@ void app_start()
 	
 	#ifdef TESTCASE_MAC
 	openmac_run();
+	#endif
+	
+	#ifdef TESTCASE_FULL_NODE
+	fullnode_test();
 	#endif
 	
 	#ifdef TESTCASE_LOCATION
