@@ -33,6 +33,10 @@
 #include "..\hal\hal_led.h"
 #include "..\hal\hal_global.h"
 
+#MAC_VERSION_PASSTHROUGH
+#MAC_VERSION_SIMPLEDELAY
+#MAC_VERSION_FULLFUNCTION
+
 #define MAC_DURATION_WAIT_CTS 200
 
 /* ACK frame
@@ -178,6 +182,14 @@ uint8 mac_wakeup( TOpenMAC * mac )
 	return 0;
 }
 
+#MAC_VERSION_PASSTHROUGH
+int8 mac_evolve( TOpenMAC * mac )
+{
+	
+
+}
+#endif
+
 /* evolve is a state transition function. it do state transition and perform 
  * necessary actions. however, it won't do these itself. the master module
  * should call it periodically (no matter timer driven of by a simple while loop) 
@@ -199,8 +211,13 @@ uint8 mac_wakeup( TOpenMAC * mac )
  * should be implemented by a separate module svc_energy. this service will 
  * control the energy behavior of whole system rather than the OpenMAC itself does.
  */
+<<<<<<< .mine
+#MAC_VERSION_FULLFUNCTION
+
+=======
  
 #ifdef SIMPLE_MAC
+>>>>>>> .theirs
 int8 mac_evolve( TOpenMAC * mac )
 {
 	boolean done = TRUE;
