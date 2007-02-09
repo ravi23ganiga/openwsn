@@ -54,6 +54,9 @@
 #include ".\service\svc_debugio.h"
 #include ".\service\svc_configure.h"
 #include ".\service\svc_openmac.h"
+#include ".\service\svc_opennet.h"
+#include ".\service\svc_location.h"
+#include ".\service\svc_sensor.h"
 
 extern TActionScheduler * 	g_actsche;
 extern TSioComm *			g_sio;
@@ -62,7 +65,9 @@ extern TConsole *			g_console;
 extern TConfigure *			g_config;
 extern TDebugIo * 			g_debugio;
 extern TOpenMAC * 			g_mac;
-
+extern TOpenNET *			g_net;
+extern TSensorService *		g_sensors;
+extern TLocationService *	g_lcs;
 
 // construct all the necessary global object instances. The relationship between
 // all these objects are also created.

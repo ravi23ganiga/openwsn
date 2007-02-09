@@ -25,6 +25,9 @@
 #include ".\test\location_test.h"
 #include ".\test\uniqueid_test.h"
 #include ".\test\sensor_test.h"
+#include ".\test\openmac_test.h"
+#include ".\test\openmac_whitehole.h"
+#include ".\test\openmac_blackhole.h"
 
 void app_start( void );
 

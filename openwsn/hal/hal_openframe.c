@@ -207,8 +207,10 @@ char * opf_msdu( char * buf )
 	return buf + 8;
 }
 
-/* returns the pointer to the TOpenPacket */
-//char * opf_packet( char * buf )
-//{
-//	return buf + 1;
-//}
+/* returns the pointer to the TOpenPacket
+ * @modified by zhangwei on 20070207 
+ */
+char * opf_packet( char * buf )
+{
+	return buf + 1;
+}

@@ -1,10 +1,10 @@
-#ifndef _HAL_SENSOR_STRAIN_H_4729_
-#define _HAL_SENSOR_STRAIN_H_4729_
+#ifndef _FULLNODE_H_3128_
+#define _FULLNODE_H_3128_
 
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
- * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
+ * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
  * 
  * OpenWSN is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free
@@ -30,21 +30,30 @@
  * this file might be covered by the GNU General Public License.
  * 
  ****************************************************************************/ 
+
 /*****************************************************************************
- * @note
- * this module is based on hal_mcp6s26 and hal_ad
- * it provide a high level support to strain sensor
- ****************************************************************************/
- 
-#include "hal_mcp6s.h"
+ * @author zhangwei on 20070206
+ * this is the full function node of OpenWSN. this version module contains all 
+ * the necessary component for the wsn node, including timer, mac, net, sensing,
+ * and remote management/upgrade. (remote management and upgrate has not developed 
+ * yet)
+ * 
+ * @modified by zhangwei on 20070206
+ * 
+ * 
+ ****************************************************************************/ 
 
-typedef struct{
-  uint8 id;
-  TMcp6s26 * mcp;
-}TStrainSensor;
+#include ".\foundation.h"
 
-TStrainSensor * strain_construct( uint8 id, TStrainSensor * strain );
-void strain_destroy( TStrainSensor * strain );  
-uint8 strain_read( TStrainSensor * strain, char * buf, uint8 size, uint8 opt );
+/* the following two macro CONFIG_SINKNODE and CONFIG_GENERALNODE are used to define the type
+ * of the node. they two cannot be defined at the same time 
+ */
+#undef CONFIG_SINKNODE
+#define CONFIG_SINKNODE
+
+#define CONFIG_GENERALNODE
+#undef CONFIG_GENERALNODE
+
+void fullnode_test( void );
 
 #endif
