@@ -45,8 +45,11 @@
 #include "svc_foundation.h"
 #include "svc_actsche.h"
 
-#define SIMPLE_MAC
-//#define FULL_MAC
+/* @TODO: these two config macros will be moved to configure.h in the future
+ * as global effective configuration settings. 
+ */
+#CONFIG_OPENMAC_SIMPLE
+#CONFIG_OPENMAC_FULL
 
 
 /* The following macros are used as the network PHY layers interface.
