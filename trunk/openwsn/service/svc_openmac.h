@@ -54,8 +54,8 @@
  * modifications on current MAC source code. 
  */
 #define THdlDriver TCc2420Driver 
-#define _hdl_read(cc,frame,size,opt) cc2420_readframe(cc,*frame)
-#define _hdl_write(cc,frame,size,opt) cc2420_writeframe(cc,frame)
+#define _hdl_read(cc,frame,size,opt) cc2420_read(cc,*frame,len,opt)
+#define _hdl_write(cc,frame,size,opt) cc2420_write(cc,frame,length,opt)
 #define _hdl_rawread(cc,buf,size,opt) cc2420_rawread(cc,buf,size,opt)
 #define _hdl_rawwrite(cc,buf,size,opt) cc2420_rawwrite(cc,buf,size,opt) 
 #define _hdl_wakeup(phy) NULL

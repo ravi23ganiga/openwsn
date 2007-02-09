@@ -58,7 +58,7 @@
  * it is related to address
  * for node A, B, C, the address is 0x01, 0x02, 0x03 respectively.
  */
-#define CONFIG_NODETYPE 0
+#define CONFIG_NODETYPE 1
 #define CONFIG_ADDRESS CONFIG_NODETYPE
 
 #define PANID         0x2420

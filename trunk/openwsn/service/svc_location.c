@@ -145,16 +145,16 @@ int8 lcs_write( TLocationService * lcs, TLocation * loc, uint8 opt )
 
 void lcs_init(TLocationService * lcs,TCc2420Driver * cc )
 {
-    location_tx_packet.PanId = 0x2420;
-    location_rx_packet.PanId = 0x2420;
+    location_tx_packet.panid = 0x2420;
+    location_rx_packet.panid = 0x2420;
 
     
     if(!(lcs->state & LOC_TYPE_ARCHOR))  //unknow node
     {	
-      location_tx_packet.srcAddr = 0x1000;
-      cc2420_configure( cc, CC2420_CONFIG_LOCALADDRESS, location_tx_packet.srcAddr, 0);
+      location_tx_packet.nodefrom = 0x1000;
+      cc2420_configure( cc, CC2420_CONFIG_LOCALADDRESS, location_tx_packet.nodefrom, 0);
       for (n = 0; n < 2; n++) {
-        location_tx_packet.Payload[n] = 8;   //88 represents localize request
+        location_tx_packet.payload[n] = 8;   //88 represents localize request
       }
     }
    
@@ -164,29 +164,29 @@ void lcs_init(TLocationService * lcs,TCc2420Driver * cc )
       
       if(lcs->nodeid == 1)
       {
-        location_tx_packet.srcAddr = 0x1111;
-        cc2420_configure( cc, CC2420_CONFIG_LOCALADDRESS, location_tx_packet.srcAddr, 0);
-        location_tx_packet.Payload[0] = 0;
-        location_tx_packet.Payload[1] = 0;   //payload[0,1] represent anchor's x and y
+        location_tx_packet.nodefrom = 0x1111;
+        cc2420_configure( cc, CC2420_CONFIG_LOCALADDRESS, location_tx_packet.nodefrom, 0);
+        location_tx_packet.payload[0] = 0;
+        location_tx_packet.payload[1] = 0;   //payload[0,1] represent anchor's x and y
       }	
     
    
     	
       if(lcs->nodeid == 2)
       {
-        location_tx_packet.srcAddr = 0x2222;
-        cc2420_configure( cc, CC2420_CONFIG_LOCALADDRESS, location_tx_packet.srcAddr, 0);
-        location_tx_packet.Payload[0] = 10;
-        location_tx_packet.Payload[1] = 0;   //payload[0,1] represent anchor's x and y
+        location_tx_packet.nodefrom = 0x2222;
+        cc2420_configure( cc, CC2420_CONFIG_LOCALADDRESS, location_tx_packet.nodefrom, 0);
+        location_tx_packet.payload[0] = 10;
+        location_tx_packet.payload[1] = 0;   //payload[0,1] represent anchor's x and y
       }	
     	
     
       if(lcs->nodeid == 3)
       {
-        location_tx_packet.srcAddr = 0x3333;
-        cc2420_configure( cc, CC2420_CONFIG_LOCALADDRESS, location_tx_packet.srcAddr, 0);
-        location_tx_packet.Payload[0] = 0;
-        location_tx_packet.Payload[1] = 10;   //payload[0,1] represent anchor's x and y
+        location_tx_packet.nodefrom = 0x3333;
+        cc2420_configure( cc, CC2420_CONFIG_LOCALADDRESS, location_tx_packet.nodefrom, 0);
+        location_tx_packet.payload[0] = 0;
+        location_tx_packet.payload[1] = 10;   //payload[0,1] represent anchor's x and y
       }	
     }	
 
@@ -201,12 +201,12 @@ int8 lcs_evolve( TLocation * location,TLocationService * lcs,TCc2420Driver * cc 
     if(!(lcs->state & LOC_TYPE_ARCHOR))  //unknow node
     {	    
     	    //send request to anchor_1, if received infor of anchor_1, then do next
-    	    location_tx_packet.destAddr = 0x1111;
+    	    location_tx_packet.nodeto = 0x1111;
     	    while(1)
     	    {
     	        led_twinkle(LED_RED,1);
     	        led_toggle(LED_GREEN);
-    	        length = cc2420_writeframe( cc,location_tx_packet,2+11);
+    	        length = cc2420_write( cc,location_tx_packet,2+11,0);
     	        if(length != -1) break;
     	    }
     	    
@@ -214,7 +214,7 @@ int8 lcs_evolve( TLocation * location,TLocationService * lcs,TCc2420Driver * cc 
     	    while(1) 
     	    {
     	        led_twinkle(LED_GREEN,1);
-    	        length = cc2420_readframe( cc,&location_rx_packet);
+    	        length = cc2420_read( cc,&location_rx_packet,0,0);
 	        if(length > 11) 
 	        {
 	            uart_write(g_uart, a1_string,26, 0);
@@ -257,18 +257,18 @@ int8 lcs_evolve( TLocation * location,TLocationService * lcs,TCc2420Driver * cc 
     	    halWait(2000);
     	    
     	    //send request to anchor_2, if received infor of anchor_2, then do next
-    	    location_tx_packet.destAddr = 0x2222;
+    	    location_tx_packet.nodeto = 0x2222;
     	    while(1)
     	    {
     	        led_twinkle(LED_RED,2);
-    	        length = cc2420_writeframe( cc,location_tx_packet,2+11);
+    	        length = cc2420_write( cc,location_tx_packet,2+11,0);
     	        if(length != -1) break;
     	    }
     	    
     	    while(1) 
     	    {
     	        led_twinkle(LED_GREEN,2);
-    	        length = cc2420_readframe( cc,&location_rx_packet);
+    	        length = cc2420_read( cc,&location_rx_packet,0,0);
 	        if(length > 11) 
 	        {
 	            uart_write(g_uart, a2_string,26, 0);
@@ -311,16 +311,16 @@ int8 lcs_evolve( TLocation * location,TLocationService * lcs,TCc2420Driver * cc 
     	    halWait(2000);
     	    
     	    //send request to anchor_3, if received infor of anchor_3, then do next
-    	    location_tx_packet.destAddr = 0x3333;
+    	    location_tx_packet.nodeto = 0x3333;
     	    while(1)
     	    {
     	    	led_twinkle(LED_RED,3);
-    	        length = cc2420_writeframe( cc,location_tx_packet,2+11);
+    	        length = cc2420_write( cc,location_tx_packet,2+11,0);
     	        if(length != -1) break;
     	    }
     	    while(1) 
     	    {
-    	        length = cc2420_readframe( cc,&location_rx_packet);
+    	        length = cc2420_read( cc,&location_rx_packet,0,0);
 	        if(length > 11) 
 	        {
 	            uart_write(g_uart, a3_string,26, 0);
@@ -390,18 +390,18 @@ int8 lcs_evolve( TLocation * location,TLocationService * lcs,TCc2420Driver * cc 
     if(lcs->state & LOC_TYPE_ARCHOR)  //anchor node	
     {
     	led_twinkle(LED_GREEN,1);
-    	length = cc2420_readframe( cc,&location_rx_packet);
+    	length = cc2420_read( cc,&location_rx_packet,0,0);
 	if(length > 11) 
 	//if(length != 0)
     	{
-    	   if(location_rx_packet.Payload[0] == 8 && location_rx_packet.Payload[1] == 8)
+    	   if(location_rx_packet.payload[0] == 8 && location_rx_packet.payload[1] == 8)
     	   {
-    	      	location_tx_packet.destAddr = 0x1000;//location_rx_packet.srcAddr;
+    	      	location_tx_packet.nodeto = 0x1000;//location_rx_packet.srcAddr;
     	      	while(1)
     	        {
     	            
     	            led_twinkle(LED_YELLOW,1);	
-    	            length = cc2420_writeframe( cc,location_tx_packet,2+11);
+    	            length = cc2420_write( cc,location_tx_packet,2+11,0);
     	            if(length != -1) break;
     	        }
     	   } 	

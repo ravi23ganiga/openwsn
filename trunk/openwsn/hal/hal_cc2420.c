@@ -225,9 +225,9 @@ void cc2420_init(TCc2420Driver * cc)
     
 	// Set the protocol configuration
     //g_rfSettings.pRxInfo = pRRI;
-    cc->rfSettings.panId = cc->panid;
+    cc->rfSettings.panid = cc->panid;
     cc->rfSettings.myAddr = cc->address;
-    cc->rfSettings.txSeqNumber = 0;
+    cc->rfSettings.seqid = 0;
     cc->rfSettings.receiveOn = FALSE;
     cc->rfSettings.ackReceived = FALSE;
     cc->rfSettings.payload_length = 0;
@@ -287,10 +287,10 @@ int8 cc2420_rawwrite( TCc2420Driver * cc, char * frame, int8 length, uint8 opt )
 	
 	len = length;
 	
-	memmove(&cc->txbuffer[0].PanId, frame + 3,2 );
-	memmove(&cc->txbuffer[0].destAddr, frame + 5,2 );
-	memmove(&cc->txbuffer[0].srcAddr, frame + 7,2 );
-	memmove(&cc->txbuffer[0].Payload, frame + 9, length - 11 );     
+	memmove(&cc->txbuffer[0].panid, frame + 4,2 );
+	memmove(&cc->txbuffer[0].nodeto, frame + 6,2 );
+	memmove(&cc->txbuffer[0].nodefrom, frame + 8,2 );
+	memmove(&cc->txbuffer[0].payload, frame + 10, length - 11 );     
 	
 	if((opt & 0x01))  cc->ackrequest = 0;            
 
@@ -313,14 +313,14 @@ int8 cc2420_rawwrite( TCc2420Driver * cc, char * frame, int8 length, uint8 opt )
 }
 
 
-int8 cc2420_writeframe( TCc2420Driver * cc,TCc2420Frame packet, int8 length)
+int8 cc2420_write( TCc2420Driver * cc,TCc2420Frame frame, int8 length,uint8 opt)
 {
 	BOOL ack;
 	int8 len;
 	
 	len = length;
 	
-	cc->txbuffer[0] = packet;
+	cc->txbuffer[0] = frame;
 	
 	cc->sendpayload_len = length - 11;
 	
@@ -360,13 +360,14 @@ uint8 cc2420_rawread( TCc2420Driver * cc, char * frame, uint8 size, uint8 opt )
 	if(cc->if_read) return 0;
         
 	IRQDisable();
-	memmove( frame, &cc->rxbuffer[0].frame_control,2 );
-	memmove( frame+2, &cc->rxbuffer[0].seqNumber,1 );	
-	memmove( frame+3, &cc->rxbuffer[0].PanId,2 );
-	memmove( frame+5, &cc->rxbuffer[0].destAddr,2 );	
-	memmove( frame+7, &cc->rxbuffer[0].srcAddr,2 );
-	memmove( frame+9, cc->rxbuffer[0].Payload,cc->receivepayload_len);
-	memmove( frame+9 + cc->receivepayload_len, &cc->rxbuffer[0].footer,2 );
+	frame[0] = cc->receivepayload_len + 11;	
+	memmove( frame+1, &cc->rxbuffer[0].control,2 );
+	memmove( frame+3, &cc->rxbuffer[0].seqid,1 );	
+	memmove( frame+4, &cc->rxbuffer[0].panid,2 );
+	memmove( frame+6, &cc->rxbuffer[0].nodeto,2 );	
+	memmove( frame+8, &cc->rxbuffer[0].nodefrom,2 );
+	memmove( frame+10, cc->rxbuffer[0].payload,cc->receivepayload_len);
+	//memmove( frame+9 + cc->receivepayload_len, &cc->rxbuffer[0].footer,2 );
 	cc->if_read = 1;
 	IRQEnable();			
 		
@@ -376,13 +377,13 @@ uint8 cc2420_rawread( TCc2420Driver * cc, char * frame, uint8 size, uint8 opt )
 	return cc->receivepayload_len + 11;	
 }
 
-uint8 cc2420_readframe( TCc2420Driver * cc,TCc2420Frame * packet)
+uint8 cc2420_read( TCc2420Driver * cc,TCc2420Frame * frame,uint8 len, uint8 opt)
 {
 	
 	if(cc->if_read) return 0;
         
 	IRQDisable();
-	*packet = cc->rxbuffer[0];
+	*frame = cc->rxbuffer[0];
 	cc->if_read = 1;
 	IRQEnable();			
         
@@ -627,11 +628,11 @@ void cc2420_event_handler()
         g_cc2420->rfSettings.payload_length = length - BASIC_RF_PACKET_OVERHEAD_SIZE;
         // Read the frame control field and the data sequence number
         FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &frameControlField, 2);
-        g_cc2420->rfSettings.pRxInfo.frame_control = frameControlField;
+        g_cc2420->rfSettings.pRxInfo.control = frameControlField;
         ack = !!(frameControlField & BASIC_RF_FCF_ACK_BM);
-    	FAST2420_READ_FIFO_BYTE(g_cc2420->spi,(BYTE*)&g_cc2420->rfSettings.pRxInfo.seqNumber);
+    	FAST2420_READ_FIFO_BYTE(g_cc2420->spi,(BYTE*)&g_cc2420->rfSettings.pRxInfo.seqid);
 		// Is this an acknowledgment packet?
-    	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (frameControlField == BASIC_RF_ACK_FCF) && (g_cc2420->rfSettings.pRxInfo.seqNumber == g_cc2420->rfSettings.txSeqNumber)) {
+    	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (frameControlField == BASIC_RF_ACK_FCF) && (g_cc2420->rfSettings.pRxInfo.seqid == g_cc2420->rfSettings.seqid)) {
 
  	       	// Read the footer and check for CRC OK
 			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) pFooter, 2);
@@ -653,16 +654,16 @@ void cc2420_event_handler()
 			
 			
 			//Read the PanID
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->rfSettings.pRxInfo.PanId, 2);
+			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->rfSettings.pRxInfo.panid, 2);
 			
 			//Read the destination address(local address)
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->rfSettings.pRxInfo.destAddr, 2);
+			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->rfSettings.pRxInfo.nodeto, 2);
 
 			// Read the source address
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->rfSettings.pRxInfo.srcAddr, 2);
+			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->rfSettings.pRxInfo.nodefrom, 2);
 
 			// Read the packet payload
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) g_cc2420->rfSettings.pRxInfo.Payload, g_cc2420->rfSettings.payload_length);
+			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) g_cc2420->rfSettings.pRxInfo.payload, g_cc2420->rfSettings.payload_length);
 
 			// Read the footer to get the RSSI value
 			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) pFooter, 2);
@@ -766,11 +767,11 @@ BOOL _cc2420_sendframe(TCc2420Driver * cc) {
     frameControlField = cc->ackrequest ? BASIC_RF_FCF_ACK : BASIC_RF_FCF_NOACK;
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&packetLength, 1);               // Packet length
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&frameControlField, 2);         // Frame control field
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->rfSettings.txSeqNumber, 1);    // Sequence number
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].PanId, 2);          // Dest. PAN ID
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].destAddr, 2);            // Dest. address
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].srcAddr, 2);         // Source address
-	FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].Payload, cc->sendpayload_len);  // Payload
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->rfSettings.seqid, 1);    // Sequence number
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].panid, 2);          // Dest. PAN ID
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodeto, 2);            // Dest. address
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodefrom, 2);         // Source address
+	FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].payload, cc->sendpayload_len);  // Payload
 
 	// Wait for the transmission to begin before exiting (makes sure that this function cannot be called
 	// a second time, and thereby cancelling the first transmission (observe the FIFOP + SFD test above).
@@ -831,7 +832,7 @@ BOOL _cc2420_sendframe(TCc2420Driver * cc) {
 	if (!cc->rfSettings.receiveOn) FAST2420_STROBE(cc->spi,CC2420_SRFOFF);
 
     // Increment the sequence number, and return the result
-    cc->rfSettings.txSeqNumber++;
+    cc->rfSettings.seqid++;
     return success;
 
 } // halRfSendPacket

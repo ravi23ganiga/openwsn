@@ -111,6 +111,7 @@
 #include "hal_configall.h"
 #include "hal_spi.h"
 #include "hal_cc2420chip.h"
+#include "hal_openframe.h"
  
 /*******************************************************************************
  * IEEE 802.15.4 PPDU format
@@ -240,6 +241,7 @@ typedef struct {
 
 //Packet includes : frame control field(2B), sequence number(1B), PAN ID(2B), destination and source(4B),payload(nB),footer(2B)
 //This is an integrated MAC Frame Format
+/*
 typedef struct {
     WORD   frame_control;
     BYTE   seqNumber;
@@ -249,13 +251,16 @@ typedef struct {
     BYTE   Payload[120];
     WORD   footer;
 } TCc2420Frame;
+*/
+#define TCc2420Frame TOpenFrame
+
 
 typedef struct {
     TCc2420Frame pRxInfo;
     uint8 payload_length;
-    UINT8 txSeqNumber;
+    UINT8 seqid;
     volatile BOOL ackReceived;
-    WORD panId;
+    WORD panid;
     WORD myAddr;
     BOOL receiveOn;
     uint8 rssi;
@@ -450,8 +455,8 @@ void cc2420_wakeup( TCc2420Driver * cc );
 // not this one:
 void cc2420_setchannel( TCc2420Driver * cc);
 
-int8 cc2420_writeframe( TCc2420Driver * cc,TCc2420Frame packet, int8 length);
-uint8 cc2420_readframe( TCc2420Driver * cc,TCc2420Frame * packet);
+int8 cc2420_write( TCc2420Driver * cc,TCc2420Frame frame, int8 length,uint8 opt);
+uint8 cc2420_read( TCc2420Driver * cc,TCc2420Frame * frame,uint8 len,uint8 opt);
 
 void cc2420_receive_on(TCc2420Driver * cc);
 

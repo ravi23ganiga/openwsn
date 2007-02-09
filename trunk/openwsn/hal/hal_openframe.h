@@ -115,7 +115,8 @@ typedef __packed struct{
 	uint8  	payload[OPF_PAYLOAD_SIZE];
 }TOpenFrame;
 */
-typedef __packed struct{
+/*
+typedef  struct{
 WORD   frame_control;
     BYTE   seqNumber;
     WORD   PanId;
@@ -124,6 +125,18 @@ WORD   frame_control;
     BYTE   Payload[120];
     WORD   footer;
 }TOpenFrame;
+*/
+typedef  struct{
+        uint8 	length;
+	uint16 	control;
+	uint8  	seqid;
+	uint16 	panid;
+	uint16  nodeto;
+	uint16 	nodefrom;
+	uint8  	payload[OPF_PAYLOAD_SIZE];
+	uint16  footer;
+}TOpenFrame;
+
 
 TOpenFrame * opf_init( char * buf, uint8 size );
 uint8  opf_type( char * buf );

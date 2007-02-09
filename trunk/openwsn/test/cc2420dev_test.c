@@ -67,29 +67,29 @@ int cc2420dev_test (void)
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     
-    tx_test.PanId = 0x2420;
-    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.PanId, 0);
+    tx_test.panid = 0x2420;
+    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
     
     #ifdef TX	
-    tx_test.destAddr = 0x5678;
-    tx_test.srcAddr = 0x1234;
-    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.srcAddr, 0);
+    tx_test.nodeto = 0x5678;
+    tx_test.nodefrom = 0x1234;
+    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
     #endif
 
     
     #ifdef RX	
     tx_test.destAddr = 0x1234;
-    tx_test.srcAddr = 0x5678;
-    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.srcAddr, 0);
+    tx_test.nodefrom = 0x5678;
+    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
     #endif	
     
 
     //to write the payload
     for (n = 0; n < 10; n++) {
-        tx_test.Payload[n] = 2;
+        tx_test.payload[n] = 2;
         tx_frame[9 + n] = 2;
     }
-    tx_test.Payload[2] = 1;  
+    tx_test.payload[2] = 1;  
 
     tx_frame[0] = tx_frame[1] = tx_frame[2] = 0;
     tx_frame[3] = 0x20; tx_frame[4] = 0x24;
@@ -107,12 +107,12 @@ int cc2420dev_test (void)
           
           //transmit using packet
           #ifdef PACKET
-          tx_test.Payload[0]++;
-          if(tx_test.Payload[0] == 5) tx_test.Payload[0] = 1;
+          tx_test.payload[0]++;
+          if(tx_test.payload[0] == 5) tx_test.payload[0] = 1;
           
           led_twinkle(LED_GREEN,1);
           
-          length = cc2420_writeframe(g_cc2420,tx_test,10 + 11);
+          length = cc2420_write(g_cc2420,tx_test,10 + 11,0);
           
           /*
           if(length == -1) {led_twinkle(LED_RED,5);uart_putchar(g_uart,(char)0x00);}
@@ -148,10 +148,10 @@ int cc2420dev_test (void)
           #ifdef PACKET
 	  led_twinkle(LED_GREEN,ledPeriod);
 	  
-	  length = cc2420_readframe( g_cc2420,&rx_test);
+	  length = cc2420_read( g_cc2420,&rx_test,0,0);
 	  
 	  if(length > 11) {
-	  ledPeriod = rx_test.Payload[0];
+	  ledPeriod = rx_test.payload[0];
 	  
 	  temp = g_cc2420-> rssi;
 	  
