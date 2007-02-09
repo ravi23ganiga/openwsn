@@ -56,7 +56,8 @@ namespace WorldView
         RouteFeedback,
         QueryData,
         QueryFeekback,
-        GetSink        
+        GetSink,
+        DataStream
     }
 
     public struct PacketFrame
@@ -126,6 +127,7 @@ namespace WorldView
         public static byte maxhop;
         private static UInt32 updateperiod;
         public static TRoutePathCache pathCache;
+        public static TRoutePathItem routpath;
         public static dataRevCache revCache;
 
         public ushort getSink() { return (sinknode);}
@@ -316,37 +318,43 @@ namespace WorldView
         public int GetSinkState() { return 0; }
         public int GetNodeData() { return 0; }
 
-        public void generateCmdPacket(ref byte[] packet,ushort node, DataType datatype, byte seqNum) 
+        public byte generatePacketFrame(ref byte[] packet, byte[] payload,TRoutePathItem routePath, DataType datatype, byte seqNum)
         {
-           //生成针对某个节点的命令包；
-        }
-        public void generatePacketFrame(ref byte[] packet, byte[] payload, TRoutePathItem routePath, DataType datatype, byte seqNum)
-        {
-            int i = 0;
+            byte i = 0;
             int index;
             ushort nextleap;
             byte FrameControl = (byte)(((byte)datatype) << DATA_TYPE_BM);
             FrameControl &= (byte)(routePath.getleaptotal() << ROUTE_ADDRLIST_BM);
             packet[i++] = FrameControl;
             packet[i++] = seqNum;
-            ushort nodeid = routePath.getSrcNode();
 
-            packet[i++] = (byte)nodeid;
-            packet[i++] = (byte)(nodeid >> 8);
-            nodeid = routePath.getDestNode();
-            packet[i++] = (byte)nodeid;
-            packet[i++] = (byte)(nodeid >> 8);
-
-            for (index = 0; index < routePath.getleaptotal(); index++)
+            if (datatype != DataType.GetSink && datatype != DataType.RouteRequest)
             {
-                nextleap = routePath.getLeapStep(index);
-                packet[i++] = (byte)nextleap;
-                packet[i++] = (byte)(nextleap >> 8);
+                //有路由表信息或者信息不是发给sink节点的；
+                ushort nodeid = routePath.getSrcNode();
+                packet[i++] = (byte)nodeid;
+                packet[i++] = (byte)(nodeid >> 8);
+                nodeid = routePath.getDestNode();
+                packet[i++] = (byte)nodeid;
+                packet[i++] = (byte)(nodeid >> 8);
+
+                for (index = 0; index < routePath.getleaptotal(); index++)
+                {
+                    nextleap = routePath.getLeapStep(index);
+                    packet[i++] = (byte)nextleap;
+                    packet[i++] = (byte)(nextleap >> 8);
+                }
             }
-            packet[i++] = (byte)(payload.Length);
-            for (index = 0; index < payload.Length; index++)
-                packet[i++] = payload[index];
-            return;
+            else if (datatype == DataType.DataStream) 
+            {
+                packet[i++] = (byte)(payload.Length);
+                for (index = 0; index < payload.Length; index++)
+                    packet[i++] = payload[index];
+            }
+            else {
+                packet[i++] = 0;
+            }
+            return  (++i);
         }
 
         /*   public DataType phasePacket( byte[] packet, ushort size, ushort opt)
