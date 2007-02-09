@@ -45,15 +45,6 @@
 
 #include ".\foundation.h"
 
-/* the following two macro CONFIG_SINKNODE and CONFIG_GENERALNODE are used to define the type
- * of the node. they two cannot be defined at the same time 
- */
-#undef CONFIG_SINKNODE
-#define CONFIG_SINKNODE
-
-#define CONFIG_GENERALNODE
-#undef CONFIG_GENERALNODE
-
 void fullnode_test( void );
 
 #endif

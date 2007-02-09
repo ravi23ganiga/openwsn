@@ -32,10 +32,19 @@
 #include "..\service\svc.h"
 #include "..\global.h"
 
+/* the following two macro CONFIG_SINKNODE and CONFIG_GENERALNODE are used to define the type
+ * of the node. they two cannot be defined at the same time 
+ */
+#undef CONFIG_SINKNODE
+#define CONFIG_SINKNODE
+
+#define CONFIG_GENERALNODE
+#undef CONFIG_GENERALNODE
+
 static TOpenFrame m_txframe;
 static TOpenFrame m_rxframe;
-static char * m_txframe_buf;
-static char * m_rxframe_buf;
+static char * g_txframe_buf;
+static char * g_rxframe_buf;
 static char * g_txpkt_buf;
 static char * g_rxpkt_buf;
 static TLocation m_location;
@@ -75,13 +84,13 @@ void gnode_execute( void )
 	global_construct();
 	net_setlocaladdress( g_net, _localaddr[0], _localaddr[1] );
 	
-	opf_init( m_txframe_buf, sizeof(m_txframe) );
-	opf_init( m_rxframe_buf, sizeof(m_rxframe) );
+	opf_init( g_txframe_buf, sizeof(m_txframe) );
+	opf_init( g_rxframe_buf, sizeof(m_rxframe) );
 
-	m_txframe_buf = (char *)(&m_txframe);
-	m_rxframe_buf = (char *)(&m_rxframe);
-	g_txpkt_buf = opf_packet( m_txframe_buf );
-	g_rxpkt_buf = opf_packet( m_rxframe_buf );
+	g_txframe_buf = (char *)(&m_txframe);
+	g_rxframe_buf = (char *)(&m_rxframe);
+	g_txpkt_buf = opf_packet( g_txframe_buf );
+	g_rxpkt_buf = opf_packet( g_rxframe_buf );
 	memset( &m_location, 0x00, sizeof(m_location) );
 	
 	while (1)
@@ -92,27 +101,27 @@ void gnode_execute( void )
 		// read out by net_read() functions. these functions include those packets
 		// to be forwarded.
 		//
-		if (opf_length(m_rxframe_buf) == 0)
+		if (opf_length(g_rxframe_buf) == 0)
 		{
-			count = net_rawread( g_net, m_rxframe_buf, sizeof(TOpenFrame), 0x00 );
+			count = net_rawread( g_net, g_rxframe_buf, sizeof(TOpenFrame), 0x00 );
 			if (count > 0)
 			{
-				opf_setlength( m_rxframe_buf, count );
+				opf_setlength( g_rxframe_buf, count );
 			}
 		}
 		
-		if (opf_length(m_txframe_buf) > 0)
+		if (opf_length(g_txframe_buf) > 0)
 		{
-			count = net_rawwrite( g_net, m_txframe_buf, sizeof(TOpenFrame), 0x00 );
+			count = net_rawwrite( g_net, g_txframe_buf, sizeof(TOpenFrame), 0x00 );
 			if (count > 0)
 			{
-				opf_setlength( m_txframe_buf, 0 );
+				opf_setlength( g_txframe_buf, 0 );
 			}
 		}
 
-		if ((opf_length(m_rxframe_buf) > 0) && (opf_length(m_txframe_buf) == 0))		
+		if ((opf_length(g_rxframe_buf) > 0) && (opf_length(g_txframe_buf) == 0))		
 		{
-			gnode_interpret( (TOpenFrame *)m_rxframe_buf, (TOpenFrame *)m_txframe_buf );
+			gnode_interpret( (TOpenFrame *)g_rxframe_buf, (TOpenFrame *)g_txframe_buf );
 		}
 
 		debug_evolve( g_debugio );
@@ -141,13 +150,13 @@ void sinknode_execute( void )
 	global_construct();
 	net_setlocaladdress( g_net, _localaddr[0], _localaddr[1] );
 	
-	opf_init( m_txframe_buf, sizeof(m_txframe) );
-	opf_init( m_rxframe_buf, sizeof(m_rxframe) );
+	opf_init( g_txframe_buf, sizeof(m_txframe) );
+	opf_init( g_rxframe_buf, sizeof(m_rxframe) );
 
-	m_txframe_buf = (char *)(&m_txframe);
-	m_rxframe_buf = (char *)(&m_rxframe);
-	g_txpkt_buf = opf_packet( m_txframe_buf );
-	g_rxpkt_buf = opf_packet( m_rxframe_buf );
+	g_txframe_buf = (char *)(&m_txframe);
+	g_rxframe_buf = (char *)(&m_rxframe);
+	g_txpkt_buf = opf_packet( g_txframe_buf );
+	g_rxpkt_buf = opf_packet( g_rxframe_buf );
 	
 	memset( &m_location, 0x00, sizeof(m_location) );
 	
@@ -155,44 +164,47 @@ void sinknode_execute( void )
 	{
 		// try to read data from the UART/SIO connected to the host.
 		// if data received, then try to send them through net_rawwrite()
-		if (txlen == 0)
+		if ((opf_length(g_txframe_buf) == 0) || (txlen < opf_length(g_txframe_buf)))
 		{
 			// @TODO: change to sio_read in the near future
-			count = uart_read( g_sio->uart, m_txframe_buf + txlen, sizeof(TOpenFrame) - txlen, 0x00 );
+			count = uart_read( g_sio->uart, g_txframe_buf + txlen, sizeof(TOpenFrame) - txlen, 0x00 );
 			txlen += count;
 		}
 		
-		if ((txlen > 0) && (txlen >= opf_length(m_txframe_buf)))
+		if ((opf_length(g_txframe_buf) > 0) && (txlen >= opf_length(g_txframe_buf)))
 		{
-			count = net_rawwrite( g_net, m_txframe_buf, sizeof(TOpenFrame), 0x00 );
+			count = net_rawwrite( g_net, g_txframe_buf, sizeof(TOpenFrame), 0x00 );
 			if (count > 0)
 			{
+				opf_setlength( g_txframe_buf, 0 );
 				txlen = 0;
 			}
 		}
 		
 		// try to read data from the network. if data received, then try to send 
 		// them to the host through the UART/SIO.
-		if (rxlen == 0)
+		if (opf_length(g_rxframe_buf) == 0)
 		{
-			count = net_rawread( g_net, m_rxframe_buf, sizeof(TOpenFrame), 0x00 );
+			count = net_rawread( g_net, g_rxframe_buf, sizeof(TOpenFrame), 0x00 );
 			if (count > 0)
 			{
 				rxlen = count;
 			}
 		}
 		
-		if ((rxlen > 0) && (rxlen <= opf_length(m_rxframe_buf)))
+		if (opf_length(g_txframe_buf) > 0)
 		{ 
 			// @TODO: change to sio_write in the near future
-			count = opf_length(m_rxframe_buf) - rxlen;
-			count = uart_write( g_sio->uart, m_rxframe_buf + count, rxlen, 0x00 );
+			count = opf_length(g_rxframe_buf) - rxlen;
+			count = uart_write( g_sio->uart, g_rxframe_buf + rxlen, count, 0x00 );
 			if (count > 0)
 			{
-				if (rxlen <= count)
+				if (rxlen + count < opf_length(g_rxframe_buf))
+					rxlen += count;
+				else{
 					rxlen = 0;
-				else 
-					rxlen -= count;
+					opf_setlength( g_rxframe_buf, 0 );
+				}
 			}
 		}
 		
