@@ -65,22 +65,23 @@ typedef struct{
   uint8 state;
   TOpenMAC * mac;
   uint8 seqid;
-  char localaddr[8];
-  uint8 addrlen;
+  uint16 panid;
+  uint16 nodeid;
   TEventHandler * callback;
 }TOpenNET;
 
-int8 net_construct( TOpenMAC * net, TActionScheduler * actsche );
-void net_destroy( void );
-void net_configure( uint8 ctrlcode, uint8 value );
-int8 net_setaddress( char * addr, uint8 len );
-int8 net_getaddress( char * addr, uint8 capacity );
-int8 net_read( TOpenPacket * pkt, uint8 opt );
-int8 net_rawread( char * frame, uint8 size, uint8 opt );
-int8 net_write( TOpenPacket * pkt, uint8 opt );
-int8 net_rawwrite( char * frame, uint8 size, uint8 opt );
-int8 net_forward( TOpenPacket * pkt, uint8 opt );
-int8 net_rawforward( char * frame, uint8 size, uint8 opt );
+TOpenNET * net_construct( char * buf, uint16 size );
+void net_destroy( TOpenNET * net );
+void net_init( TOpenNET * net, TOpenMAC * mac, TActionScheduler * actsche );
+void net_configure( TOpenNET * net, uint8 ctrlcode, uint8 value );
+int8 net_setlocaladdress( TOpenNET * net, uint16 pan, uint16 nodeid );
+void net_getrmtaddress( TOpenNET * net, uint16 * pan, uint16 * nodeid );
+int8 net_read( TOpenNET * net, TOpenFrame * frame, uint8 size, uint8 opt );
+int8 net_rawread( TOpenNET * net, char * framebuf, uint8 size, uint8 opt );
+int8 net_write( TOpenNET * net, TOpenFrame * frame, uint8 len, uint8 opt );
+int8 net_rawwrite( TOpenNET * net, char * framebuf, uint8 len, uint8 opt );
+int8 net_forward( TOpenNET * net, TOpenFrame * pkt, uint8 len, uint8 opt );
+int8 net_rawforward( TOpenNET * net, char * framebuf, uint8 size, uint8 opt );
 int8 net_evolve( TOpenNET * net );
 
 int8 net_sleep( TOpenNET * net );

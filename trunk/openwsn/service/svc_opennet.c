@@ -106,73 +106,85 @@ typedef struct{
 TRouteTableItem g_routetable[ NET_ROUTE_TABLE_SIZE ];
 TOpenNET g_opennet;
 
-int8 net_construct( TOpenMAC * net, TActionScheduler * actsche )
+TOpenNET * net_construct( char * buf, uint16 size )
 {
-	return 0;
+	assert( sizeof(TOpenNET) <= size );
+	memset( buf, 0x00, size );
+	return (TOpenNET *)buf;
 }
 
-void net_destroy()
-{
-	return;
-}
-
-void net_configure( uint8 ctrlcode, uint8 value )
+void net_destroy( TOpenNET * net )
 {
 	return;
 }
 
-int8 net_setaddress( char * addr, uint8 len )
+void net_init( TOpenNET * net, TOpenMAC * mac, TActionScheduler * actsche )
 {
+	net->mac = mac;
+}
+
+void net_configure( TOpenNET * net, uint8 ctrlcode, uint8 value )
+{
+}
+
+int8 net_setlocaladdress( TOpenNET * net, uint16 pan, uint16 nodeid )
+{
+	//mac_setlocaladdress( );
 	return 0;
 }
 
-int8 net_getaddress( char * addr, uint8 capacity )
+void net_getrmtaddress( TOpenNET * net, uint16 * pan, uint16 * nodeid )
 {
+	*pan = net->panid;
+	*nodeid = net->nodeid;
+}
+
+int8 net_read( TOpenNET * net, TOpenFrame * frame, uint8 size, uint8 opt )
+{
+	return mac_read( net->mac, frame, size, opt );
+}
+
+int8 net_rawread( TOpenNET * net, char * framebuf, uint8 size, uint8 opt )
+{
+	return mac_rawread( net->mac, framebuf, size, opt );
+}
+
+int8 net_write( TOpenNET * net, TOpenFrame * frame, uint8 len, uint8 opt )
+{
+	return mac_write( net->mac, frame, len, opt );
+}
+
+int8 net_rawwrite( TOpenNET * net, char * framebuf, uint8 len, uint8 opt )
+{
+	return mac_rawread( net->mac, framebuf, len, opt );
+}
+
+int8 net_forward( TOpenNET * net, TOpenFrame * frame, uint8 len, uint8 opt )
+{
+	//return mac_forward( net->mac, frame, size, opt );
 	return 0;
 }
 
-int8 net_read( TOpenPacket * pkt, uint8 opt )
-{
-	return 0;
-}
-
-int8 net_rawread( char * frame, uint8 size, uint8 opt )
-{
-	return 0;
-}
-
-int8 net_write( TOpenPacket * pkt, uint8 opt )
-{
-	return 0;
-}
-
-int8 net_rawwrite( char * frame, uint8 size, uint8 opt )
-{
-	return 0;
-}
-
-int8 net_forward( TOpenPacket * pkt, uint8 opt )
-{
-	return 0;
-}
-
-int8 net_rawforward( char * frame, uint8 size, uint8 opt )
+int8 net_rawforward( TOpenNET * net, char * framebuf, uint8 size, uint8 opt )
 {
 	return 0;
 }
 
 int8 net_evolve( TOpenNET * net )
 {
+	mac_evolve( net->mac );
 	return 0;
 }
 
 int8 net_sleep( TOpenNET * net )
 {
+	mac_sleep( net->mac );
 	return 0;
 }
 
 int8 net_wakeup( TOpenNET * net )
 {
+	mac_wakeup( net->mac );
 	return 0;
 }
 
@@ -180,4 +192,5 @@ int8 net_installnotify( TOpenNET * net, TEventHandler * callback, void * data )
 {
 	return 0;
 }
+
 
