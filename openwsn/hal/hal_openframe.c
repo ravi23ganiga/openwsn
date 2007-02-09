@@ -99,18 +99,18 @@ uint16 opf_control( char * buf )
 
 uint8 opf_seqid( char * buf )
 {
-	return buf[2];
+	return buf[3];
 }
 
 uint16 opf_addrfrom( char * buf )
 {
-	uint16 * addr = (uint16 *)(buf + 7);
+	uint16 * addr = (uint16 *)(buf + 8);
 	return *addr;
 }
 
 uint16 opf_addrto( char * buf )
 {
-	uint16 * addr = (uint16 *)(buf + 5);
+	uint16 * addr = (uint16 *)(buf + 6);
 	return *addr;
 }
 /*
@@ -167,17 +167,17 @@ char * opf_seqid_addr( char * buf )
 */
 char * opf_panid(char * buf)
 {
-	return buf + 3;
+	return buf + 4;
 }
 
 char * opf_addrfrom_addr( char * buf )
 {
-	return buf + 7;
+	return buf + 8;
 }
 
 char * opf_addrto_addr( char * buf )
 {
-	return buf + 5;
+	return buf + 6;
 }
 
 /*

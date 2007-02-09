@@ -113,8 +113,8 @@ typedef __packed struct{
   uint16 control;
   uint8 seqid;
   uint16 netaddr;
-  uint16 destaddr;
-  uint16 srcaddr;
+  uint16 nodeto
+  uint16 nodefrom
   uint8 datalen;
   char data[NET_MAX_PAYLOAD_LENGTH];
 }TOpenPacket;
