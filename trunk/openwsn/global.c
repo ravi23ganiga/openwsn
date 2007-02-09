@@ -55,7 +55,10 @@ static TConsole *			m_console;
 static TConfigure 			m_configure;
 static TActionScheduler  	m_actsche;
 static TDebugIo 			m_debugio;
-//static TOpenMAC				m_mac;
+static TOpenMAC				m_mac;
+static TOpenNET				m_net;
+static TSensorService		m_sensors;
+static TLocationService		m_lcs;
 
 TActionScheduler *			g_actsche = NULL;
 TSioComm *					g_sio = NULL;
@@ -64,6 +67,9 @@ TConsole *					g_console = NULL;
 TConfigure * 				g_config = NULL;
 TDebugIo * 					g_debugio = NULL;
 TOpenMAC * 					g_mac = NULL;
+TOpenNET *					g_net = NULL;
+TSensorService *			g_sensors = NULL;
+TLocationService *			g_lcs = NULL;
 
 
 // an global variable to record whether the system is successfully initialized.
@@ -93,7 +99,13 @@ int8 global_construct( void )
 	//g_wls 		= wls_construct( (char*)(&m_wireless), sizeof(TWirelessComm), g_cc2420, g_actsche );
 	g_debugio 	= debug_construct( (char*)(&m_debugio), sizeof(TDebugIo), g_debuguart );
 	
-	//g_mac = mac_construct( (char*)(&m_mac), sizeof(TOpenMAC) );
+	g_mac = mac_construct( (char*)(&m_mac), sizeof(TOpenMAC) );
+	g_net = net_construct( (char*)(&m_net), sizeof(TOpenNET) );
+	g_sensors = sen_construct( (char*)(&m_sensors), sizeof(TSensorService) );
+	g_lcs = lcs_construct( (char*)(&m_lcs), sizeof(TLocationService) );
+	
+	net_init( g_net, g_mac, NULL );
+
 	
 	/*
 	if ( (g_debuguart == NULL) || (g_sio == NULL) || (g_wls == NULL)
@@ -145,6 +157,10 @@ int8 global_construct( void )
 
 int8 global_destroy( void )
 {
+	lcs_destroy( g_lcs );
+	sen_destroy( g_sensors );
+	net_destroy( g_net );
+	mac_destroy( g_mac );
 	debug_destroy( g_debugio );
 	config_destroy( g_config );
 	console_destroy( g_console );
@@ -152,5 +168,6 @@ int8 global_destroy( void )
 	sio_destroy( g_sio );
 	acts_destroy( g_actsche );
 	hal_global_destroy();
+
 	return 0;
 }

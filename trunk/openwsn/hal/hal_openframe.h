@@ -162,6 +162,6 @@ char * opf_addrto_addr( char * buf );
 //char * opf_command_addr( char * buf );
 //char * opf_psdu( char * buf );
 char * opf_msdu( char * buf );
-//char * opf_packet( char * buf );
+char * opf_packet( char * buf );
 
 #endif

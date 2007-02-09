@@ -1,3 +1,6 @@
+#ifndef _HAL_SENSOR_TEMP_H_2415_
+#define _HAL_SENSOR_TEMP_H_2415_
+
 /*****************************************************************************
 * This file is part of OpenWSN, the Open Wireless Sensor Network System.
 *
@@ -27,4 +30,16 @@
 * this file might be covered by the GNU General Public License.
 * 
 ****************************************************************************/ 
+#include "hal_foundation.h"
+
+
+typedef struct{ 
+  uint8 id;
+}TTempSensor;
+
+TTempSensor * temp_construct( uint8 id, TTempSensor * sen );
+void temp_destroy( TTempSensor * sen );  
+uint8 temp_read( TTempSensor * sen, char * buf, uint8 size, uint8 opt );
+
+#endif
 
