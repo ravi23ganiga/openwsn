@@ -108,7 +108,7 @@ TOpenNET g_opennet;
 
 TOpenNET * net_construct( char * buf, uint16 size )
 {
-	assert( sizeof(TOpenNET) <= size );
+	//assert( sizeof(TOpenNET) <= size );
 	memset( buf, 0x00, size );
 	return (TOpenNET *)buf;
 }
@@ -129,6 +129,8 @@ void net_configure( TOpenNET * net, uint8 ctrlcode, uint8 value )
 
 int8 net_setlocaladdress( TOpenNET * net, uint16 pan, uint16 nodeid )
 {
+	mac_configure( net->mac, MAC_CONFIG_PANID, pan);
+	mac_configure( net->mac, MAC_CONFIG_LOCALADDRESS, nodeid);
 	//mac_setlocaladdress( );
 	return 0;
 }
@@ -156,7 +158,7 @@ int8 net_write( TOpenNET * net, TOpenFrame * frame, uint8 len, uint8 opt )
 
 int8 net_rawwrite( TOpenNET * net, char * framebuf, uint8 len, uint8 opt )
 {
-	return mac_rawread( net->mac, framebuf, len, opt );
+	return mac_rawwrite( net->mac, framebuf, len, opt );
 }
 
 int8 net_forward( TOpenNET * net, TOpenFrame * frame, uint8 len, uint8 opt )

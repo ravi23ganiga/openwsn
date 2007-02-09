@@ -116,6 +116,7 @@ void openmac_run( void )
 	opf_setaddrfrom(txbuf,SINK_ADDR);
         opf_setaddrto(txbuf,NODE_1);
         mac_configure( g_mac, CC2420_CONFIG_LOCALADDRESS, SINK_ADDR);
+        
 	while (1)
 	{  
                 
@@ -168,7 +169,7 @@ void openmac_run( void )
 		
 		
 	for (n = 0; n < 10; n++) {
-            txbuf[n+9] = 0x55;
+            txbuf[n+10] = 0x55;
         }        
         
 	while (1)

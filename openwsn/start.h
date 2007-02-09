@@ -28,6 +28,7 @@
 #include ".\test\openmac_test.h"
 #include ".\test\openmac_whitehole.h"
 #include ".\test\openmac_blackhole.h"
+#include ".\test\fullnode.h"
 
 void app_start( void );
 
