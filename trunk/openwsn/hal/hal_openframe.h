@@ -69,7 +69,13 @@
  * b12b13 	reserved.
  * 
  *****************************************************************************/
- 
+
+/* the header size of a TOpenFrame
+ * note that this header is start from the length byte to nodeid byte
+ * it is 8  byte. = sizeof(TOpenFrame) - payload size
+ */
+#define OPF_HEADER_SIZE 8
+
 /* you cannot change following defination. they are defined according to 
  * IEEE 802.15.4 specification. RTS and CTS are exception!
  */  
@@ -140,15 +146,15 @@ typedef  struct{
 
 TOpenFrame * opf_init( char * buf, uint8 size );
 uint8  opf_type( char * buf );
-//uint8  opf_length( char * buf );
+uint8  opf_length( char * buf );
 uint16 opf_control( char * buf );
 uint8  opf_seqid( char * buf );
 uint16 opf_addrfrom( char * buf );
 uint16 opf_addrto( char * buf );
-//uint8  opf_command( char * buf );
+uint8  opf_command( char * buf );
 
-//void   opf_settype( char * buf, uint8 type );
-//void   opf_setlength( char * buf, uint8 length );
+void   opf_settype( char * buf, uint8 type );
+void   opf_setlength( char * buf, uint8 length );
 void   opf_setpanid( char * buf, uint16 panid );
 void   opf_setaddrfrom( char * buf, uint16 addrfrom );
 void   opf_setaddrto( char * buf, uint16 addrto );

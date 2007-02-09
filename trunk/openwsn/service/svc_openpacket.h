@@ -76,16 +76,21 @@
 #define ODA_TYPE_ADV 0x01
 #define ODA_TYPE_DATA 0x02
 #define ODA_TYPE_TIMESYNC 0x03
+#define ODA_TYPE_LOCATION_REQUEST 0x06
 #define ODA_TYPE_LOCATION 0x04
 #define ODA_TYPE_UPGRADE 0x05
 
 /* user defined data type 
  * the developer can add more TYPE defines if necessary. */
 #define ODA_TYPE_USER 0x80
-#define ODA_TYPE_TEMPSENSOR (ODA_TYPE_USER + 0) 
-#define ODA_TYPE_VIBSENSOR (ODA_TYPE_USER + 1) 
-#define ODA_TYPE_STRAINSENSOR (ODA_TYPE_USER + 2) 
-#define ODA_TYPE_LIGHTSENSOR (ODA_TYPE_USER + 3)
+#define ODA_TYPE_TEMPSENSOR_REQUEST (ODA_TYPE_USER + 0) 
+#define ODA_TYPE_TEMPSENSOR (ODA_TYPE_USER + 5) 
+#define ODA_TYPE_VIBSENSOR_REQUEST (ODA_TYPE_USER + 1) 
+#define ODA_TYPE_VIBSENSOR (ODA_TYPE_USER + 6) 
+#define ODA_TYPE_STRAINSENSOR_REQUEST (ODA_TYPE_USER + 2) 
+#define ODA_TYPE_STRAINSENSOR (ODA_TYPE_USER + 7) 
+#define ODA_TYPE_LIGHTSENSOR_REQUEST (ODA_TYPE_USER + 3)
+#define ODA_TYPE_LIGHTSENSOR (ODA_TYPE_USER + 8)
 
 /* TOpenData defination. It is often the payload of a TOpenPacket.
  * 	TOpenData == TOpenPacket.data
@@ -124,7 +129,6 @@ typedef __packed struct{
 
 char * opt_ownerframe( char * packet );
 char * opt_data( char * packet );
-
 
 
 #endif /* _SVC_OPENPACKET_H_3812_ */

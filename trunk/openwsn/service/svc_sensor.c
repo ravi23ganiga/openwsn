@@ -90,10 +90,26 @@ int8 sen_read( TSensorService * sen, char * buf, uint8 size, uint8 opt )
 int8 sen_fillpacket( TSensorService * sen, uint8 type, TOpenPacket * pkt, uint8 size )
 {
 	int8 ret;
-	TOpenData * data = (TOpenData *)opt_data( (char*)pkt );
-	data->type = type;
-	ret = sen_read( sen, data->value, sizeof(TOpenData)-1, type );
+	char * data = opt_data( (char*)pkt );
+	data[0] = type;
+	ret = sen_read( sen, data+1, sizeof(TOpenData)-1, type );
 	pkt->datalen = (uint8)(ret >= 0 ? ret : 0);
+	return ret;
+}
+
+/* frame structure is as the following
+ * [LENGTH 1][CONTROL 2][SEQU 1][PANID 2][NODEFROM 2][NODETO 2] [DATA TYPE 1] [DATA n]
+ * this structure is defined in "hal\hal_openframe.h" and also "service\svc_openpacket.h"
+ */
+int8 sen_fillframe( TSensorService * sen, uint8 type, TOpenFrame * frame, uint8 size )
+{
+	int8 ret;
+	char * data = opt_data( opf_packet((char *)frame) );
+	data[0] = type;
+	ret = sen_read( sen, data+1, sizeof(TOpenData)-1, type );
+	data --;
+	*data = (uint8)(ret >= 0 ? ret : 0);
+	frame->length = *data + OPF_HEADER_SIZE + 2;
 	return ret;
 }
 

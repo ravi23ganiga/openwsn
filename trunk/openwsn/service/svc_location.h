@@ -129,7 +129,7 @@ void lcs_destroy( TLocationService * lcs );
 void lcs_rssi2dist( TLocationService * lcs, uint8 rssi, uint16 * dis );
 int8 lcs_read( TLocationService * lcs, TLocation * loc, uint8 opt );
 int8 lcs_write( TLocationService * lcs, TLocation * loc, uint8 opt );
-int8 lcs_evolve( TLocation * location, TLocationService * lcs, TCc2420Driver * cc );
+int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * cc );
 void lcs_init(TLocationService * lcs,TCc2420Driver * cc );
 
 #endif
