@@ -64,6 +64,7 @@ void sen_configure( TSensorService * sen, TTempSensor * temp, TVibrationSensor *
 	TStrainSensor * strain, TTimer * timer );
 int8 sen_read( TSensorService * sen, char * buf, uint8 size, uint8 opt );
 int8 sen_fillpacket( TSensorService * sen, uint8 type, TOpenPacket * pkt, uint8 size );  
+int8 sen_fillframe( TSensorService * sen, uint8 type, TOpenFrame * frame, uint8 size );  
 int8 sen_start( TSensorService * sen, uint32 interval, uint32 delay );
 int8 sen_stop( TSensorService * sen );
 

@@ -32,12 +32,13 @@
 #include "..\service\svc.h"
 #include "..\global.h"
 
-static TOpenFrame g_txframe;
-static TOpenFrame g_rxframe;
-static char * g_txframebuf;
-static char * g_rxframebuf;
-static char * g_txpktbuf;
-static char * g_rxpktbuf;
+static TOpenFrame m_txframe;
+static TOpenFrame m_rxframe;
+static char * m_txframe_buf;
+static char * m_rxframe_buf;
+static char * g_txpkt_buf;
+static char * g_rxpkt_buf;
+static TLocation m_location;
 
 // the first WORD is the PAN id, the second WORD is the node id
 // they two forms a standard 802.15.4 short address.
@@ -65,22 +66,23 @@ void fullnode_test( void )
 // for generic node in sensor network, the main program is as the following.
 // if it received a packet from other node, it will forward it to its next hop.
 //
+#ifdef CONFIG_GENERALNODE
 void gnode_execute( void )
 {
-	char *txdata = NULL, *rxdata = NULL, *buf = NULL;
-	uint8 txlen = 0, rxlen = 0, len = 0, count = 0;
+	uint8 count = 0;
 	
     target_init();
 	global_construct();
 	net_setlocaladdress( g_net, _localaddr[0], _localaddr[1] );
 	
-	opf_init( g_txframebuf, sizeof(g_txframe) );
-	opf_init( g_rxframebuf, sizeof(g_rxframe) );
+	opf_init( m_txframe_buf, sizeof(m_txframe) );
+	opf_init( m_rxframe_buf, sizeof(m_rxframe) );
 
-	g_txframebuf = (char *)(&g_txframe);
-	g_rxframebuf = (char *)(&g_rxframe);
-	g_txpktbuf = opf_packet( g_txframebuf );
-	g_rxpktbuf = opf_packet( g_rxframebuf );
+	m_txframe_buf = (char *)(&m_txframe);
+	m_rxframe_buf = (char *)(&m_rxframe);
+	g_txpkt_buf = opf_packet( m_txframe_buf );
+	g_rxpkt_buf = opf_packet( m_rxframe_buf );
+	memset( &m_location, 0x00, sizeof(m_location) );
 	
 	while (1)
 	{
@@ -90,31 +92,30 @@ void gnode_execute( void )
 		// read out by net_read() functions. these functions include those packets
 		// to be forwarded.
 		//
-		if (rxlen == 0)
+		if (opf_length(m_rxframe_buf) == 0)
 		{
-			count = net_rawread( g_net, g_rxframebuf, sizeof(TOpenFrame), 0x00 );
+			count = net_rawread( g_net, m_rxframe_buf, sizeof(TOpenFrame), 0x00 );
 			if (count > 0)
 			{
-				rxlen = count;
-				
-				if (txlen == 0)
-				{
-					gnode_interpret( (TOpenFrame *)g_rxframebuf, (TOpenFrame *)g_txframebuf );
-				}
+				opf_setlength( m_rxframe_buf, count );
 			}
 		}
 		
-		if (txlen > 0)
+		if (opf_length(m_txframe_buf) > 0)
 		{
-			count = net_rawwrite( g_net, g_txframebuf, sizeof(TOpenFrame), 0x00 );
+			count = net_rawwrite( g_net, m_txframe_buf, sizeof(TOpenFrame), 0x00 );
 			if (count > 0)
 			{
-				txlen = 0;
+				opf_setlength( m_txframe_buf, 0 );
 			}
 		}
 
+		if ((opf_length(m_rxframe_buf) > 0) && (opf_length(m_txframe_buf) == 0))		
+		{
+			gnode_interpret( (TOpenFrame *)m_rxframe_buf, (TOpenFrame *)m_txframe_buf );
+		}
+
 		debug_evolve( g_debugio );
-		//lcs_evolve( g_lcs );
 		net_evolve( g_net );
 		mac_evolve( g_mac );
 	}
@@ -123,33 +124,32 @@ void gnode_execute( void )
 	
 	return;
 }
+#endif
+
 
 // for sink nodes in sensor network, the main program is as the following.
 // different to generic node in the network, it will forward the packet received
 // to host computer through the UART/SIO hardware. while, it will also send 
 // the packet received from the host to others nodes in the network.
 //
+#ifdef CONFIG_SINKNODE
 void sinknode_execute( void )
 {
-	char *txdata = NULL, *rxdata = NULL, *buf = NULL;
-	uint8 txlen = 0, rxlen = 0, len = 0, count = 0;
+	uint8 txlen=0, rxlen=0, count = 0;
 	
     target_init();
 	global_construct();
-	
-	net_init( g_net, g_mac, NULL );
 	net_setlocaladdress( g_net, _localaddr[0], _localaddr[1] );
 	
-	opf_init( g_txframebuf, sizeof(g_txframe) );
-	opf_init( g_rxframebuf, sizeof(g_rxframe) );
+	opf_init( m_txframe_buf, sizeof(m_txframe) );
+	opf_init( m_rxframe_buf, sizeof(m_rxframe) );
 
-	g_txframebuf = (char *)(&g_txframe);
-	g_rxframebuf = (char *)(&g_rxframe);
-	g_txpktbuf = opf_packet( g_txframebuf );
-	g_rxpktbuf = opf_packet( g_rxframebuf );
+	m_txframe_buf = (char *)(&m_txframe);
+	m_rxframe_buf = (char *)(&m_rxframe);
+	g_txpkt_buf = opf_packet( m_txframe_buf );
+	g_rxpkt_buf = opf_packet( m_rxframe_buf );
 	
-	//net_configure
-	//net_setaddress
+	memset( &m_location, 0x00, sizeof(m_location) );
 	
 	while (1)
 	{
@@ -158,13 +158,13 @@ void sinknode_execute( void )
 		if (txlen == 0)
 		{
 			// @TODO: change to sio_read in the near future
-			count = uart_read( g_sio->uart, g_txframebuf + txlen, sizeof(TOpenFrame) - txlen, 0x00 );
+			count = uart_read( g_sio->uart, m_txframe_buf + txlen, sizeof(TOpenFrame) - txlen, 0x00 );
 			txlen += count;
 		}
 		
-		if ((txlen > 0) && (txlen >= opf_length(g_txframebuf)))
+		if ((txlen > 0) && (txlen >= opf_length(m_txframe_buf)))
 		{
-			count = net_rawwrite( g_net, g_txframebuf, sizeof(TOpenFrame), 0x00 );
+			count = net_rawwrite( g_net, m_txframe_buf, sizeof(TOpenFrame), 0x00 );
 			if (count > 0)
 			{
 				txlen = 0;
@@ -175,18 +175,18 @@ void sinknode_execute( void )
 		// them to the host through the UART/SIO.
 		if (rxlen == 0)
 		{
-			count = net_rawread( g_net, g_rxframebuf, sizeof(TOpenFrame), 0x00 );
+			count = net_rawread( g_net, m_rxframe_buf, sizeof(TOpenFrame), 0x00 );
 			if (count > 0)
 			{
 				rxlen = count;
 			}
 		}
 		
-		if ((rxlen > 0) && (rxlen <= opf_length(g_rxframebuf)))
+		if ((rxlen > 0) && (rxlen <= opf_length(m_rxframe_buf)))
 		{ 
 			// @TODO: change to sio_write in the near future
-			count = opf_length(g_rxframebuf) - rxlen;
-			count = uart_write( g_sio->uart, g_rxframebuf + count, rxlen, 0x00 );
+			count = opf_length(m_rxframe_buf) - rxlen;
+			count = uart_write( g_sio->uart, m_rxframe_buf + count, rxlen, 0x00 );
 			if (count > 0)
 			{
 				if (rxlen <= count)
@@ -197,7 +197,6 @@ void sinknode_execute( void )
 		}
 		
 		debug_evolve( g_debugio );
-		//lcs_evolve( g_lcs );
 		net_evolve( g_net );
 		mac_evolve( g_mac );
 	}
@@ -206,25 +205,56 @@ void sinknode_execute( void )
 	
 	return;
 }
+#endif
 
 // this function will interpret the frame/packet received in txframebuf, and 
 // put the processing reply into rxframebuf
 //
 int8 gnode_interpret( TOpenFrame * rxframe, TOpenFrame * txframe )
-{/*
-	TOpenData * data = opt_data(opf_packet((char*)rxframe)); 
+{
+	char *txdata, *rxdata;
 	int8 ret=0;
-	
-	switch (data->type)
+
+	if ((rxframe->length == 0) || (txframe->length > 0))
 	{
-	case ODA_TYPE_TEMPSENSOR:
-	case ODA_TYPE_VIBSENSOR:
-	case ODA_TYPE_LIGHTSENSOR:
-		// @TODO: 这里应该将packet字段尽可能填写完整
-	 	//ret = sen_fillpacket( g_sensors, opf_packet((char*)txframe) );
+		return -1;
+	}
+
+	rxdata = opt_data(opf_packet((char*)rxframe)); 
+	txdata = opt_data(opf_packet((char*)txframe)); 
+
+	// these request are usually sent by the sink node. and the sink node hope the 
+	// sensor nodes can return some reply information.
+	// rxdata[0] is the data type
+	switch (rxdata[0])
+	{
+	// if the received packet is a LOCATION request, then fill the "txframe" with 
+	// location information and send it back. usually, the sink node will flooding 
+	// a LOCATION request and expect to receive the location information of all the 
+	// node. this is the APPLICATION layer mechanism. don't mix it with the "TLocationService"
+	// while, the "TLocationService" will send/received frames based on MAC layer 
+	// interface. 
+	//
+	case ODA_TYPE_LOCATION_REQUEST:
+		lcs_evolve( g_lcs, &m_location, g_cc2420 );
+		txdata[0] = ODA_TYPE_LOCATION;
+		memmove( txdata + 1, (char*)(&m_location), sizeof(m_location) );
+		txframe->length = OPF_HEADER_SIZE + 1 + sizeof(m_location);
+		break;
+
+	case ODA_TYPE_TEMPSENSOR_REQUEST:
+	 	sen_fillframe( g_sensors, ODA_TYPE_TEMPSENSOR, txframe, OPF_FRAME_SIZE );
+	 	break;
+
+	case ODA_TYPE_VIBSENSOR_REQUEST:
+	 	sen_fillframe( g_sensors, ODA_TYPE_VIBSENSOR, txframe, OPF_FRAME_SIZE );
+	 	break;
+
+	case ODA_TYPE_LIGHTSENSOR_REQUEST:
+	 	sen_fillframe( g_sensors, ODA_TYPE_LIGHTSENSOR, txframe, OPF_FRAME_SIZE );
 	 	break;
 	}
-	*/
-	return 0;
+
+	return ret;
 }
 

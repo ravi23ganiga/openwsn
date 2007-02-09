@@ -11,5 +11,9 @@
 #include "svc_openmac.h"
 #include "svc_siocomm.h"
 #include "svc_wlscomm.h"
+#include "svc_location.h"
+#include "svc_openmac.h"
+#include "svc_opennet.h"
+#include "svc_sensor.h"
 
 #endif

@@ -85,12 +85,12 @@ uint8 opf_type( char * buf )
 	uint8 type = (opf_control(buf) & 0x03);
 	return type;
 }
-/*
+
 uint8 opf_length( char * buf )
 {
 	return buf[0] & 0x7F;
 }
-*/
+
 uint16 opf_control( char * buf )
 {  
 	uint16 * addr = (uint16 *)(buf);
@@ -113,7 +113,7 @@ uint16 opf_addrto( char * buf )
 	uint16 * addr = (uint16 *)(buf + 6);
 	return *addr;
 }
-/*
+
 uint8 opf_command( char * buf )
 {
 	return buf[8];
@@ -128,7 +128,7 @@ void opf_setlength( char * buf, uint8 length )
 {
 	buf[0] = length & 0x7F;
 }
-*/
+
 void opf_setpanid( char * buf, uint16 panid )
 {
 	buf = opf_panid(buf); 

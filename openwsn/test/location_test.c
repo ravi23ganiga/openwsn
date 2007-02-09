@@ -15,7 +15,7 @@
 //#define ANCHOR_NODE_3
 //#define LOCATION_REQUEST_NODE
 
-static TLocationService m_loservice;
+static TLocationService m_locservice;
 static TLocation  m_location;
 
 void location_test()
@@ -28,7 +28,7 @@ void location_test()
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, g_cc2420->panid, 0);    
     //initialization
   
-    g_loservice 	= lcs_construct( (char*)(&m_loservice), sizeof(TLocationService));
+    g_loservice 	= lcs_construct( (char*)(&m_locservice), sizeof(TLocationService));
 
     #ifdef LOCATION_REQUEST_NODE
     g_loservice->state = 0x00;
@@ -53,7 +53,7 @@ void location_test()
     
     while(1) 
     {
-      lcs_evolve(&m_location,g_loservice,g_cc2420);   //enter location service
+      lcs_evolve(g_loservice,&m_location,g_cc2420);   //enter location service
                                                       //return x,y,z coordination 
                                                       //in the structure of m_location
     }

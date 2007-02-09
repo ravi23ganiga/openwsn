@@ -195,7 +195,7 @@ void lcs_init(TLocationService * lcs,TCc2420Driver * cc )
     IRQEnable();
 }
 
-int8 lcs_evolve( TLocation * location,TLocationService * lcs,TCc2420Driver * cc )
+int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * cc )
 {
     
     if(!(lcs->state & LOC_TYPE_ARCHOR))  //unknow node
