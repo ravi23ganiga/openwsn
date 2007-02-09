@@ -73,9 +73,11 @@
 
 /* system used data types */
 #define ODA_TYPE_DEBUG 0x00
-#define ODA_TYPE_TIMESYNC 0x00
-#define ODA_TYPE_LOCATION 0x00
-#define ODA_TYPE_UPGRADE 0x00
+#define ODA_TYPE_ADV 0x01
+#define ODA_TYPE_DATA 0x02
+#define ODA_TYPE_TIMESYNC 0x03
+#define ODA_TYPE_LOCATION 0x04
+#define ODA_TYPE_UPGRADE 0x05
 
 /* user defined data type 
  * the developer can add more TYPE defines if necessary. */
@@ -83,6 +85,7 @@
 #define ODA_TYPE_TEMPSENSOR (ODA_TYPE_USER + 0) 
 #define ODA_TYPE_VIBSENSOR (ODA_TYPE_USER + 1) 
 #define ODA_TYPE_STRAINSENSOR (ODA_TYPE_USER + 2) 
+#define ODA_TYPE_LIGHTSENSOR (ODA_TYPE_USER + 3)
 
 /* TOpenData defination. It is often the payload of a TOpenPacket.
  * 	TOpenData == TOpenPacket.data
@@ -113,8 +116,8 @@ typedef __packed struct{
   uint16 control;
   uint8 seqid;
   uint16 netaddr;
-  uint16 nodeto
-  uint16 nodefrom
+  uint16 nodeto;
+  uint16 nodefrom;
   uint8 datalen;
   char data[NET_MAX_PAYLOAD_LENGTH];
 }TOpenPacket;
