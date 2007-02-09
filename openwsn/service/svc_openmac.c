@@ -33,10 +33,6 @@
 #include "..\hal\hal_led.h"
 #include "..\hal\hal_global.h"
 
-#MAC_VERSION_PASSTHROUGH
-#MAC_VERSION_SIMPLEDELAY
-#MAC_VERSION_FULLFUNCTION
-
 #define MAC_DURATION_WAIT_CTS 200
 
 /* ACK frame
@@ -211,13 +207,8 @@ int8 mac_evolve( TOpenMAC * mac )
  * should be implemented by a separate module svc_energy. this service will 
  * control the energy behavior of whole system rather than the OpenMAC itself does.
  */
-<<<<<<< .mine
-#MAC_VERSION_FULLFUNCTION
 
-=======
- 
-#ifdef SIMPLE_MAC
->>>>>>> .theirs
+#ifdef CONFIG_OPENMAC_SIMPLE
 int8 mac_evolve( TOpenMAC * mac )
 {
 	boolean done = TRUE;
@@ -333,7 +324,7 @@ int8 mac_evolve( TOpenMAC * mac )
 }
 #endif
 
-#ifdef FULL_MAC
+#ifdef CONFIG_OPENMAC_FULL
 int8 mac_evolve( TOpenMAC * mac )
 {
 	boolean done = TRUE;
