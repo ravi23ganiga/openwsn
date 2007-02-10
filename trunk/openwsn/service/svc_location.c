@@ -10,6 +10,7 @@
 #include "start.h"
 #include "..\global.h"
 
+// @TODO: pls move these variables to the object definition
 
     static TCc2420Frame location_tx_packet;
     static TCc2420Frame location_rx_packet; 

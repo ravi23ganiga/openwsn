@@ -1,7 +1,3 @@
-
-#ifndef _SVC_LOCATION_H_4236_
-#define _SVC_LOCATION_H_4236_
-
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
@@ -32,8 +28,22 @@
  * 
  ****************************************************************************/ 
 
-#include "hal_foundation.h"
+#ifndef _SVC_LOCATION_H_4236_
+#define _SVC_LOCATION_H_4236_
+
+/*****************************************************************************
+ * @author zhangwei on 20061205
+ * 	TLocationService
+ * 	provide distributed location service in the WSN system.
+ * 
+ * @modified by huanghuan on 20061206
+ * 	moved the location source code from test to this file today.
+ * 	developed the TLocationService
+ ****************************************************************************/
+  
+#include "svc_foundation.h"
 #include "..\hal\hal_cc2420.h"
+#include "svc_openmac.h"
  
 /* state & LOC_TYPE_ARCHOR == 1, this is a archor node
  * state & LOC_TYPE_ARCHOR == 0, this is a non-archor node
@@ -114,6 +124,8 @@ typedef struct {
 typedef struct {
   uint8 state;
   uint16 nodeid;
+  TLocation location;
+  TOpenMAC * mac;
   //uint16 neighbors[8];
 } TLocationService;
 
@@ -126,11 +138,11 @@ typedef struct {
  */
 TLocationService * lcs_construct(char * buf, uint16 size);
 void lcs_destroy( TLocationService * lcs );
+void lcs_init(TLocationService * lcs, TCc2420Driver * cc );
 void lcs_rssi2dist( TLocationService * lcs, uint8 rssi, uint16 * dis );
 int8 lcs_read( TLocationService * lcs, TLocation * loc, uint8 opt );
 int8 lcs_write( TLocationService * lcs, TLocation * loc, uint8 opt );
 int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * cc );
-void lcs_init(TLocationService * lcs,TCc2420Driver * cc );
 
 #endif
 
