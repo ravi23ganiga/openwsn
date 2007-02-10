@@ -17,6 +17,8 @@ using System.Windows.Forms;
 using System.Data;
 using System.IO;
 using WeifenLuo.WinFormsUI;
+//using WorldView.LocalService;
+using WorldView.View;
 
 namespace WorldView
 {
@@ -34,9 +36,13 @@ namespace WorldView
 		private DummyTaskList m_taskList = new DummyTaskList();
 
         private ViewEnergy m_viewEnergy = new ViewEnergy();
-        private ViewFireField m_viewFireField = new ViewFireField();
+        private ViewNetwork m_viewFireField = new ViewNetwork();
         private ViewVibration m_viewVibration = new ViewVibration();
-       
+        private ViewAnalyzer m_frmAnalyzer = new ViewAnalyzer();
+        private ViewConsole m_frmConsole = new ViewConsole();
+        private ViewSniffer m_frmSniffer = new ViewSniffer();
+        private ViewTest m_frmTest = new ViewTest();
+        private ViewNetwork m_frmNetwork = new ViewNetwork();  
 
 		#if FRAMEWORK_VER_2x
 		private System.Windows.Forms.MenuStrip mainMenu;
@@ -100,6 +106,12 @@ namespace WorldView
         private ToolStripMenuItem imageToolStripMenuItem;
         private ToolStripMenuItem energyToolStripMenuItem;
         private ToolStripMenuItem locationToolStripMenuItem;
+        private ToolStripMenuItem testToolStripMenuItem;
+        private ToolStripMenuItem snifferToolStripMenuItem;
+        private ToolStripMenuItem analyzerToolStripMenuItem1;
+        private ToolStripMenuItem testToolStripMenuItem1;
+        private ToolStripMenuItem configureToolStripMenuItem;
+        private ToolStripMenuItem networkToolStripMenuItem;
 		private System.ComponentModel.IContainer components;
 		#else
 		private System.Windows.Forms.MainMenu mainMenu;
@@ -213,6 +225,11 @@ namespace WorldView
             this.imageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.energyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.locationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.testToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.configureToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.snifferToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.analyzerToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.testToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.menuItemView = new System.Windows.Forms.ToolStripMenuItem();
             this.menuItemSolutionExplorer = new System.Windows.Forms.ToolStripMenuItem();
             this.menuItemPropertyWindow = new System.Windows.Forms.ToolStripMenuItem();
@@ -257,6 +274,7 @@ namespace WorldView
             this.toolBarButtonSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.toolBarButtonLayoutByCode = new System.Windows.Forms.ToolStripButton();
             this.toolBarButtonLayoutByXml = new System.Windows.Forms.ToolStripButton();
+            this.networkToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mainMenu.SuspendLayout();
             this.toolBar.SuspendLayout();
             this.SuspendLayout();
@@ -266,6 +284,7 @@ namespace WorldView
             this.mainMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuItemFile,
             this.dataToolStripMenuItem,
+            this.testToolStripMenuItem,
             this.menuItemView,
             this.menuItemTools,
             this.menuItemWindow,
@@ -273,8 +292,9 @@ namespace WorldView
             this.mainMenu.Location = new System.Drawing.Point(0, 0);
             this.mainMenu.MdiWindowListItem = this.menuItemWindow;
             this.mainMenu.Name = "mainMenu";
-            this.mainMenu.Size = new System.Drawing.Size(579, 24);
+            this.mainMenu.Size = new System.Drawing.Size(579, 26);
             this.mainMenu.TabIndex = 7;
+            this.mainMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.mainMenu_ItemClicked);
             // 
             // menuItemFile
             // 
@@ -287,60 +307,61 @@ namespace WorldView
             this.menuItem4,
             this.menuItemExit});
             this.menuItemFile.Name = "menuItemFile";
-            this.menuItemFile.Size = new System.Drawing.Size(35, 20);
+            this.menuItemFile.Size = new System.Drawing.Size(40, 22);
             this.menuItemFile.Text = "&File";
             this.menuItemFile.DropDownOpening += new System.EventHandler(this.menuItemFile_Popup);
             // 
             // menuItemNew
             // 
             this.menuItemNew.Name = "menuItemNew";
-            this.menuItemNew.Size = new System.Drawing.Size(178, 22);
+            this.menuItemNew.Size = new System.Drawing.Size(219, 22);
             this.menuItemNew.Text = "&New";
             this.menuItemNew.Click += new System.EventHandler(this.menuItemNew_Click);
             // 
             // menuItemOpen
             // 
             this.menuItemOpen.Name = "menuItemOpen";
-            this.menuItemOpen.Size = new System.Drawing.Size(178, 22);
+            this.menuItemOpen.Size = new System.Drawing.Size(219, 22);
             this.menuItemOpen.Text = "&Open...";
             this.menuItemOpen.Click += new System.EventHandler(this.menuItemOpen_Click);
             // 
             // menuItemClose
             // 
             this.menuItemClose.Name = "menuItemClose";
-            this.menuItemClose.Size = new System.Drawing.Size(178, 22);
+            this.menuItemClose.Size = new System.Drawing.Size(219, 22);
             this.menuItemClose.Text = "&Close";
             this.menuItemClose.Click += new System.EventHandler(this.menuItemClose_Click);
             // 
             // menuItemCloseAll
             // 
             this.menuItemCloseAll.Name = "menuItemCloseAll";
-            this.menuItemCloseAll.Size = new System.Drawing.Size(178, 22);
+            this.menuItemCloseAll.Size = new System.Drawing.Size(219, 22);
             this.menuItemCloseAll.Text = "Close &All";
             this.menuItemCloseAll.Click += new System.EventHandler(this.menuItemCloseAll_Click);
             // 
             // menuItemCloseAllButThisOne
             // 
             this.menuItemCloseAllButThisOne.Name = "menuItemCloseAllButThisOne";
-            this.menuItemCloseAllButThisOne.Size = new System.Drawing.Size(178, 22);
+            this.menuItemCloseAllButThisOne.Size = new System.Drawing.Size(219, 22);
             this.menuItemCloseAllButThisOne.Text = "Close All &But This One";
             this.menuItemCloseAllButThisOne.Click += new System.EventHandler(this.menuItemCloseAllButThisOne_Click);
             // 
             // menuItem4
             // 
             this.menuItem4.Name = "menuItem4";
-            this.menuItem4.Size = new System.Drawing.Size(175, 6);
+            this.menuItem4.Size = new System.Drawing.Size(216, 6);
             // 
             // menuItemExit
             // 
             this.menuItemExit.Name = "menuItemExit";
-            this.menuItemExit.Size = new System.Drawing.Size(178, 22);
+            this.menuItemExit.Size = new System.Drawing.Size(219, 22);
             this.menuItemExit.Text = "&Exit";
             this.menuItemExit.Click += new System.EventHandler(this.menuItemExit_Click);
             // 
             // dataToolStripMenuItem
             // 
             this.dataToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.networkToolStripMenuItem,
             this.vibrationToolStripMenuItem,
             this.fireFieldToolStripMenuItem,
             this.temperatureToolStripMenuItem,
@@ -349,52 +370,91 @@ namespace WorldView
             this.energyToolStripMenuItem,
             this.locationToolStripMenuItem});
             this.dataToolStripMenuItem.Name = "dataToolStripMenuItem";
-            this.dataToolStripMenuItem.Size = new System.Drawing.Size(42, 20);
+            this.dataToolStripMenuItem.Size = new System.Drawing.Size(51, 22);
             this.dataToolStripMenuItem.Text = "Data";
             // 
             // vibrationToolStripMenuItem
             // 
             this.vibrationToolStripMenuItem.Name = "vibrationToolStripMenuItem";
-            this.vibrationToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.vibrationToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.vibrationToolStripMenuItem.Text = "Vibration";
             this.vibrationToolStripMenuItem.Click += new System.EventHandler(this.vibrationToolStripMenuItem_Click);
             // 
             // fireFieldToolStripMenuItem
             // 
             this.fireFieldToolStripMenuItem.Name = "fireFieldToolStripMenuItem";
-            this.fireFieldToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.fireFieldToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.fireFieldToolStripMenuItem.Text = "FireField";
             this.fireFieldToolStripMenuItem.Click += new System.EventHandler(this.fireFieldToolStripMenuItem_Click);
             // 
             // temperatureToolStripMenuItem
             // 
             this.temperatureToolStripMenuItem.Name = "temperatureToolStripMenuItem";
-            this.temperatureToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.temperatureToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.temperatureToolStripMenuItem.Text = "Temperature";
             // 
             // strainToolStripMenuItem
             // 
             this.strainToolStripMenuItem.Name = "strainToolStripMenuItem";
-            this.strainToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.strainToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.strainToolStripMenuItem.Text = "Strain";
             // 
             // imageToolStripMenuItem
             // 
             this.imageToolStripMenuItem.Name = "imageToolStripMenuItem";
-            this.imageToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.imageToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.imageToolStripMenuItem.Text = "Image";
             // 
             // energyToolStripMenuItem
             // 
             this.energyToolStripMenuItem.Name = "energyToolStripMenuItem";
-            this.energyToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.energyToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.energyToolStripMenuItem.Text = "Energy";
             // 
             // locationToolStripMenuItem
             // 
             this.locationToolStripMenuItem.Name = "locationToolStripMenuItem";
-            this.locationToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.locationToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.locationToolStripMenuItem.Text = "Location";
+            // 
+            // testToolStripMenuItem
+            // 
+            this.testToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.configureToolStripMenuItem,
+            this.snifferToolStripMenuItem,
+            this.analyzerToolStripMenuItem1,
+            this.testToolStripMenuItem1});
+            this.testToolStripMenuItem.Name = "testToolStripMenuItem";
+            this.testToolStripMenuItem.Size = new System.Drawing.Size(50, 22);
+            this.testToolStripMenuItem.Text = "Test";
+            // 
+            // configureToolStripMenuItem
+            // 
+            this.configureToolStripMenuItem.Name = "configureToolStripMenuItem";
+            this.configureToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.configureToolStripMenuItem.Text = "Configure";
+            this.configureToolStripMenuItem.Click += new System.EventHandler(this.configureToolStripMenuItem_Click);
+            // 
+            // snifferToolStripMenuItem
+            // 
+            this.snifferToolStripMenuItem.Name = "snifferToolStripMenuItem";
+            this.snifferToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.snifferToolStripMenuItem.Text = "Console";
+            this.snifferToolStripMenuItem.Click += new System.EventHandler(this.consoleToolStripMenuItem_Click);
+            // 
+            // analyzerToolStripMenuItem1
+            // 
+            this.analyzerToolStripMenuItem1.Name = "analyzerToolStripMenuItem1";
+            this.analyzerToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+            this.analyzerToolStripMenuItem1.Text = "Analyzer";
+            this.analyzerToolStripMenuItem1.Click += new System.EventHandler(this.analyzerToolStripMenuItem1_Click);
+            // 
+            // testToolStripMenuItem1
+            // 
+            this.testToolStripMenuItem1.Name = "testToolStripMenuItem1";
+            this.testToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+            this.testToolStripMenuItem1.Text = "Test";
+            this.testToolStripMenuItem1.Click += new System.EventHandler(this.testToolStripMenuItem1_Click);
             // 
             // menuItemView
             // 
@@ -412,13 +472,13 @@ namespace WorldView
             this.menuItemLayoutByXml});
             this.menuItemView.MergeIndex = 1;
             this.menuItemView.Name = "menuItemView";
-            this.menuItemView.Size = new System.Drawing.Size(41, 20);
+            this.menuItemView.Size = new System.Drawing.Size(49, 22);
             this.menuItemView.Text = "&View";
             // 
             // menuItemSolutionExplorer
             // 
             this.menuItemSolutionExplorer.Name = "menuItemSolutionExplorer";
-            this.menuItemSolutionExplorer.Size = new System.Drawing.Size(176, 22);
+            this.menuItemSolutionExplorer.Size = new System.Drawing.Size(210, 22);
             this.menuItemSolutionExplorer.Text = "&Solution Explorer";
             this.menuItemSolutionExplorer.Click += new System.EventHandler(this.menuItemSolutionExplorer_Click);
             // 
@@ -426,42 +486,42 @@ namespace WorldView
             // 
             this.menuItemPropertyWindow.Name = "menuItemPropertyWindow";
             this.menuItemPropertyWindow.ShortcutKeys = System.Windows.Forms.Keys.F4;
-            this.menuItemPropertyWindow.Size = new System.Drawing.Size(176, 22);
+            this.menuItemPropertyWindow.Size = new System.Drawing.Size(210, 22);
             this.menuItemPropertyWindow.Text = "&Property Window";
             this.menuItemPropertyWindow.Click += new System.EventHandler(this.menuItemPropertyWindow_Click);
             // 
             // menuItemToolbox
             // 
             this.menuItemToolbox.Name = "menuItemToolbox";
-            this.menuItemToolbox.Size = new System.Drawing.Size(176, 22);
+            this.menuItemToolbox.Size = new System.Drawing.Size(210, 22);
             this.menuItemToolbox.Text = "&Toolbox";
             this.menuItemToolbox.Click += new System.EventHandler(this.menuItemToolbox_Click);
             // 
             // menuItemOutputWindow
             // 
             this.menuItemOutputWindow.Name = "menuItemOutputWindow";
-            this.menuItemOutputWindow.Size = new System.Drawing.Size(176, 22);
+            this.menuItemOutputWindow.Size = new System.Drawing.Size(210, 22);
             this.menuItemOutputWindow.Text = "&Output Window";
             this.menuItemOutputWindow.Click += new System.EventHandler(this.menuItemOutputWindow_Click);
             // 
             // menuItemTaskList
             // 
             this.menuItemTaskList.Name = "menuItemTaskList";
-            this.menuItemTaskList.Size = new System.Drawing.Size(176, 22);
+            this.menuItemTaskList.Size = new System.Drawing.Size(210, 22);
             this.menuItemTaskList.Text = "Task &List";
             this.menuItemTaskList.Click += new System.EventHandler(this.menuItemTaskList_Click);
             // 
             // menuItem1
             // 
             this.menuItem1.Name = "menuItem1";
-            this.menuItem1.Size = new System.Drawing.Size(173, 6);
+            this.menuItem1.Size = new System.Drawing.Size(207, 6);
             // 
             // menuItemToolBar
             // 
             this.menuItemToolBar.Checked = true;
             this.menuItemToolBar.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menuItemToolBar.Name = "menuItemToolBar";
-            this.menuItemToolBar.Size = new System.Drawing.Size(176, 22);
+            this.menuItemToolBar.Size = new System.Drawing.Size(210, 22);
             this.menuItemToolBar.Text = "Tool &Bar";
             this.menuItemToolBar.Click += new System.EventHandler(this.menuItemToolBar_Click);
             // 
@@ -470,26 +530,26 @@ namespace WorldView
             this.menuItemStatusBar.Checked = true;
             this.menuItemStatusBar.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menuItemStatusBar.Name = "menuItemStatusBar";
-            this.menuItemStatusBar.Size = new System.Drawing.Size(176, 22);
+            this.menuItemStatusBar.Size = new System.Drawing.Size(210, 22);
             this.menuItemStatusBar.Text = "Status B&ar";
             this.menuItemStatusBar.Click += new System.EventHandler(this.menuItemStatusBar_Click);
             // 
             // menuItem2
             // 
             this.menuItem2.Name = "menuItem2";
-            this.menuItem2.Size = new System.Drawing.Size(173, 6);
+            this.menuItem2.Size = new System.Drawing.Size(207, 6);
             // 
             // menuItemLayoutByCode
             // 
             this.menuItemLayoutByCode.Name = "menuItemLayoutByCode";
-            this.menuItemLayoutByCode.Size = new System.Drawing.Size(176, 22);
+            this.menuItemLayoutByCode.Size = new System.Drawing.Size(210, 22);
             this.menuItemLayoutByCode.Text = "Layout By &Code";
             this.menuItemLayoutByCode.Click += new System.EventHandler(this.menuItemLayoutByCode_Click);
             // 
             // menuItemLayoutByXml
             // 
             this.menuItemLayoutByXml.Name = "menuItemLayoutByXml";
-            this.menuItemLayoutByXml.Size = new System.Drawing.Size(176, 22);
+            this.menuItemLayoutByXml.Size = new System.Drawing.Size(210, 22);
             this.menuItemLayoutByXml.Text = "Layout By &XML";
             this.menuItemLayoutByXml.Click += new System.EventHandler(this.menuItemLayoutByXml_Click);
             // 
@@ -510,89 +570,89 @@ namespace WorldView
             this.menuItemShowDocumentIcon});
             this.menuItemTools.MergeIndex = 2;
             this.menuItemTools.Name = "menuItemTools";
-            this.menuItemTools.Size = new System.Drawing.Size(44, 20);
+            this.menuItemTools.Size = new System.Drawing.Size(55, 22);
             this.menuItemTools.Text = "&Tools";
             this.menuItemTools.DropDownOpening += new System.EventHandler(this.menuItemTools_Popup);
             // 
             // menuItemLockLayout
             // 
             this.menuItemLockLayout.Name = "menuItemLockLayout";
-            this.menuItemLockLayout.Size = new System.Drawing.Size(234, 22);
+            this.menuItemLockLayout.Size = new System.Drawing.Size(294, 22);
             this.menuItemLockLayout.Text = "&Lock Layout";
             this.menuItemLockLayout.Click += new System.EventHandler(this.menuItemLockLayout_Click);
             // 
             // menuItem3
             // 
             this.menuItem3.Name = "menuItem3";
-            this.menuItem3.Size = new System.Drawing.Size(231, 6);
+            this.menuItem3.Size = new System.Drawing.Size(291, 6);
             // 
             // menuItemSchemaDefault
             // 
             this.menuItemSchemaDefault.Checked = true;
             this.menuItemSchemaDefault.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menuItemSchemaDefault.Name = "menuItemSchemaDefault";
-            this.menuItemSchemaDefault.Size = new System.Drawing.Size(234, 22);
+            this.menuItemSchemaDefault.Size = new System.Drawing.Size(294, 22);
             this.menuItemSchemaDefault.Text = "Schema: &Default";
             this.menuItemSchemaDefault.Click += new System.EventHandler(this.SetSchema);
             // 
             // menuItemSchemaOverride
             // 
             this.menuItemSchemaOverride.Name = "menuItemSchemaOverride";
-            this.menuItemSchemaOverride.Size = new System.Drawing.Size(234, 22);
+            this.menuItemSchemaOverride.Size = new System.Drawing.Size(294, 22);
             this.menuItemSchemaOverride.Text = "Schema: &Override From Default";
             this.menuItemSchemaOverride.Click += new System.EventHandler(this.SetSchema);
             // 
             // menuItemSchemaFromBase
             // 
             this.menuItemSchemaFromBase.Name = "menuItemSchemaFromBase";
-            this.menuItemSchemaFromBase.Size = new System.Drawing.Size(234, 22);
+            this.menuItemSchemaFromBase.Size = new System.Drawing.Size(294, 22);
             this.menuItemSchemaFromBase.Text = "Schema: &Built From Base";
             this.menuItemSchemaFromBase.Click += new System.EventHandler(this.SetSchema);
             // 
             // menuItem6
             // 
             this.menuItem6.Name = "menuItem6";
-            this.menuItem6.Size = new System.Drawing.Size(231, 6);
+            this.menuItem6.Size = new System.Drawing.Size(291, 6);
             // 
             // menuItemDockingMdi
             // 
             this.menuItemDockingMdi.Checked = true;
             this.menuItemDockingMdi.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menuItemDockingMdi.Name = "menuItemDockingMdi";
-            this.menuItemDockingMdi.Size = new System.Drawing.Size(234, 22);
+            this.menuItemDockingMdi.Size = new System.Drawing.Size(294, 22);
             this.menuItemDockingMdi.Text = "Document Style: Docking &MDI";
             this.menuItemDockingMdi.Click += new System.EventHandler(this.SetDocumentStyle);
             // 
             // menuItemDockingSdi
             // 
             this.menuItemDockingSdi.Name = "menuItemDockingSdi";
-            this.menuItemDockingSdi.Size = new System.Drawing.Size(234, 22);
+            this.menuItemDockingSdi.Size = new System.Drawing.Size(294, 22);
             this.menuItemDockingSdi.Text = "Document Style: Docking &SDI";
             this.menuItemDockingSdi.Click += new System.EventHandler(this.SetDocumentStyle);
             // 
             // menuItemDockingWindow
             // 
             this.menuItemDockingWindow.Name = "menuItemDockingWindow";
-            this.menuItemDockingWindow.Size = new System.Drawing.Size(234, 22);
+            this.menuItemDockingWindow.Size = new System.Drawing.Size(294, 22);
             this.menuItemDockingWindow.Text = "Document Style: Docking &Window";
             this.menuItemDockingWindow.Click += new System.EventHandler(this.SetDocumentStyle);
             // 
             // menuItemSystemMdi
             // 
             this.menuItemSystemMdi.Name = "menuItemSystemMdi";
-            this.menuItemSystemMdi.Size = new System.Drawing.Size(234, 22);
+            this.menuItemSystemMdi.Size = new System.Drawing.Size(294, 22);
             this.menuItemSystemMdi.Text = "Document Style: S&ystem MDI";
             this.menuItemSystemMdi.Click += new System.EventHandler(this.SetDocumentStyle);
             // 
             // menuItem5
             // 
             this.menuItem5.Name = "menuItem5";
-            this.menuItem5.Size = new System.Drawing.Size(231, 6);
+            this.menuItem5.Size = new System.Drawing.Size(291, 6);
             // 
             // menuItemShowDocumentIcon
             // 
             this.menuItemShowDocumentIcon.Name = "menuItemShowDocumentIcon";
-            this.menuItemShowDocumentIcon.Size = new System.Drawing.Size(234, 22);
+            this.menuItemShowDocumentIcon.Size = new System.Drawing.Size(294, 22);
             this.menuItemShowDocumentIcon.Text = "&Show Document Icon";
             this.menuItemShowDocumentIcon.Click += new System.EventHandler(this.menuItemShowDocumentIcon_Click);
             // 
@@ -602,13 +662,13 @@ namespace WorldView
             this.menuItemNewWindow});
             this.menuItemWindow.MergeIndex = 2;
             this.menuItemWindow.Name = "menuItemWindow";
-            this.menuItemWindow.Size = new System.Drawing.Size(57, 20);
+            this.menuItemWindow.Size = new System.Drawing.Size(70, 22);
             this.menuItemWindow.Text = "&Window";
             // 
             // menuItemNewWindow
             // 
             this.menuItemNewWindow.Name = "menuItemNewWindow";
-            this.menuItemNewWindow.Size = new System.Drawing.Size(136, 22);
+            this.menuItemNewWindow.Size = new System.Drawing.Size(159, 22);
             this.menuItemNewWindow.Text = "&New Window";
             this.menuItemNewWindow.Click += new System.EventHandler(this.menuItemNewWindow_Click);
             // 
@@ -618,13 +678,13 @@ namespace WorldView
             this.menuItemAbout});
             this.menuItemHelp.MergeIndex = 3;
             this.menuItemHelp.Name = "menuItemHelp";
-            this.menuItemHelp.Size = new System.Drawing.Size(40, 20);
+            this.menuItemHelp.Size = new System.Drawing.Size(48, 22);
             this.menuItemHelp.Text = "&Help";
             // 
             // menuItemAbout
             // 
             this.menuItemAbout.Name = "menuItemAbout";
-            this.menuItemAbout.Size = new System.Drawing.Size(168, 22);
+            this.menuItemAbout.Size = new System.Drawing.Size(200, 22);
             this.menuItemAbout.Text = "&About WorldView...";
             this.menuItemAbout.Click += new System.EventHandler(this.menuItemAbout_Click);
             // 
@@ -633,9 +693,9 @@ namespace WorldView
             this.dockPanel.ActiveAutoHideContent = null;
             this.dockPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dockPanel.Font = new System.Drawing.Font("Tahoma", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.World, ((byte)(0)));
-            this.dockPanel.Location = new System.Drawing.Point(0, 49);
+            this.dockPanel.Location = new System.Drawing.Point(0, 51);
             this.dockPanel.Name = "dockPanel";
-            this.dockPanel.Size = new System.Drawing.Size(579, 338);
+            this.dockPanel.Size = new System.Drawing.Size(579, 336);
             this.dockPanel.TabIndex = 0;
             // 
             // statusBar
@@ -674,7 +734,7 @@ namespace WorldView
             this.toolBarButtonSeparator2,
             this.toolBarButtonLayoutByCode,
             this.toolBarButtonLayoutByXml});
-            this.toolBar.Location = new System.Drawing.Point(0, 24);
+            this.toolBar.Location = new System.Drawing.Point(0, 26);
             this.toolBar.Name = "toolBar";
             this.toolBar.Size = new System.Drawing.Size(579, 25);
             this.toolBar.TabIndex = 6;
@@ -752,6 +812,13 @@ namespace WorldView
             this.toolBarButtonLayoutByXml.Name = "toolBarButtonLayoutByXml";
             this.toolBarButtonLayoutByXml.Size = new System.Drawing.Size(23, 22);
             this.toolBarButtonLayoutByXml.ToolTipText = "Show layout by predefined XML file";
+            // 
+            // networkToolStripMenuItem
+            // 
+            this.networkToolStripMenuItem.Name = "networkToolStripMenuItem";
+            this.networkToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
+            this.networkToolStripMenuItem.Text = "Network";
+            this.networkToolStripMenuItem.Click += new System.EventHandler(this.networkToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -1303,7 +1370,7 @@ namespace WorldView
 
 		private void menuItemNew_Click(object sender, System.EventArgs e)
 		{
-			ViewFireField dummyDoc = CreateNewDocument();
+			ViewNetwork dummyDoc = CreateNewDocument();
 			if (dockPanel.DocumentStyle == DocumentStyles.SystemMdi)
 			{
 				dummyDoc.MdiParent = this;
@@ -1313,9 +1380,9 @@ namespace WorldView
 				dummyDoc.Show(dockPanel);
 		}
 
-		private ViewFireField CreateNewDocument()
+		private ViewNetwork CreateNewDocument()
 		{
-			ViewFireField dummyDoc = new ViewFireField();
+			ViewNetwork dummyDoc = new ViewNetwork();
 
 			int count = 1;
 			string text = "Document" + count.ToString();
@@ -1328,9 +1395,9 @@ namespace WorldView
 			return dummyDoc;
 		}
 
-		private ViewFireField CreateNewDocument(string text)
+		private ViewNetwork CreateNewDocument(string text)
 		{
-			ViewFireField dummyDoc = new ViewFireField();
+			ViewNetwork dummyDoc = new ViewNetwork();
 			dummyDoc.Text = text;
 			return dummyDoc;
 		}
@@ -1355,7 +1422,7 @@ namespace WorldView
 					return;
 				}
 
-				ViewFireField dummyDoc = new ViewFireField();
+				ViewNetwork dummyDoc = new ViewNetwork();
 				dummyDoc.Text = fileName;
 				dummyDoc.Show(dockPanel);
 				try
@@ -1430,10 +1497,10 @@ namespace WorldView
 				if (parsedStrings.Length != 3)
 					return null;
 
-				if (parsedStrings[0] != typeof(ViewFireField).ToString())
+				if (parsedStrings[0] != typeof(ViewNetwork).ToString())
 					return null;
 
-				ViewFireField dummyDoc = new ViewFireField();
+				ViewNetwork dummyDoc = new ViewNetwork();
 				if (parsedStrings[1] != string.Empty)
 					dummyDoc.FileName = parsedStrings[1];
 				if (parsedStrings[2] != string.Empty)
@@ -1544,10 +1611,10 @@ namespace WorldView
 			m_taskList.Show(m_toolbox.Pane, DockAlignment.Left, 0.4);
 
 			CloseAllDocuments();
-			ViewFireField doc1 = CreateNewDocument("Document1");
-			ViewFireField doc2 = CreateNewDocument("Document2");
-			ViewFireField doc3 = CreateNewDocument("Document3");
-			ViewFireField doc4 = CreateNewDocument("Document4");
+			ViewNetwork doc1 = CreateNewDocument("Document1");
+			ViewNetwork doc2 = CreateNewDocument("Document2");
+			ViewNetwork doc3 = CreateNewDocument("Document3");
+			ViewNetwork doc4 = CreateNewDocument("Document4");
 			doc1.Show(dockPanel, DockState.Document);
 			doc2.Show(doc1.Pane, null);
 			doc3.Show(doc1.Pane, DockAlignment.Bottom, 0.5);
@@ -1686,6 +1753,75 @@ namespace WorldView
             m_viewFireField.Text = " Fire Field ";
         }
 
-       
-	}
+        private void mainMenu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+
+        }
+
+        private void snifferToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (dockPanel.DocumentStyle == DocumentStyles.SystemMdi)
+            {
+                m_frmSniffer.MdiParent = this;
+                m_frmSniffer.Show();
+            }
+            else
+                m_frmSniffer.Show(dockPanel);
+            m_frmSniffer.Text = " Sniffer";
+        }
+
+        private void testToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (dockPanel.DocumentStyle == DocumentStyles.SystemMdi)
+            {
+                m_frmTest.MdiParent = this;
+                m_frmTest.Show();
+            }
+            else
+                m_frmTest.Show(dockPanel);
+            m_frmTest.Text = " Test ";
+        }
+
+        private void analyzerToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (dockPanel.DocumentStyle == DocumentStyles.SystemMdi)
+            {
+                m_frmAnalyzer.MdiParent = this;
+                m_frmAnalyzer.Show();
+            }
+            else
+                m_frmAnalyzer.Show(dockPanel);
+            m_frmAnalyzer.Text = " Analyzer ";
+        }
+
+        private void consoleToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (dockPanel.DocumentStyle == DocumentStyles.SystemMdi)
+            {
+                m_frmConsole.MdiParent = this;
+                m_frmConsole.Show();
+            }
+            else
+                m_frmConsole.Show(dockPanel);
+            m_frmConsole.Text = " Console ";
+        }
+
+        private void configureToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            WorldView.OpenConfigure config = new WorldView.OpenConfigure();
+            config.ShowDialog();
+        }
+
+        private void networkToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (dockPanel.DocumentStyle == DocumentStyles.SystemMdi)
+            {
+                m_frmNetwork.MdiParent = this;
+                m_frmNetwork.Show();
+            }
+            else
+                m_frmNetwork.Show(dockPanel);
+            m_frmNetwork.Text = " Network ";
+        }
+    }
 }

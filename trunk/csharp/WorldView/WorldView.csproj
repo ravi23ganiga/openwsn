@@ -121,6 +121,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="ViewFireField.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="View\DummyDoc.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -186,16 +189,31 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Program.cs" />
-    <Compile Include="View\ViewEnergy.cs">
+    <Compile Include="View\OpenConfigure.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="View\ViewFireField.cs">
+    <Compile Include="View\OpenConfigure.Designer.cs">
+      <DependentUpon>OpenConfigure.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\ViewAnalyzer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\ViewConsole.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\ViewEnergy.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="View\ViewImage.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="View\ViewLocation.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\ViewNetwork.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\ViewSniffer.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="View\ViewStrain.cs">
@@ -220,6 +238,10 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\DockPanel.xml" />
+    <EmbeddedResource Include="ViewFireField.resx">
+      <DependentUpon>ViewFireField.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="View\DummyDoc.resx">
       <DependentUpon>DummyDoc.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -243,12 +265,20 @@
       <DependentUpon>MainForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="View\ViewEnergy.resx">
-      <DependentUpon>ViewEnergy.cs</DependentUpon>
+    <EmbeddedResource Include="View\OpenConfigure.resx">
+      <DependentUpon>OpenConfigure.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="View\ViewFireField.resx">
-      <DependentUpon>ViewFireField.cs</DependentUpon>
+    <EmbeddedResource Include="View\ViewAnalyzer.resx">
+      <DependentUpon>ViewAnalyzer.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\ViewConsole.resx">
+      <DependentUpon>ViewConsole.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\ViewEnergy.resx">
+      <DependentUpon>ViewEnergy.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="View\ViewImage.resx">
@@ -257,6 +287,14 @@
     </EmbeddedResource>
     <EmbeddedResource Include="View\ViewLocation.resx">
       <DependentUpon>ViewLocation.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\ViewNetwork.resx">
+      <DependentUpon>ViewNetwork.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\ViewSniffer.resx">
+      <DependentUpon>ViewSniffer.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="View\ViewStrain.resx">
