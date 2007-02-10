@@ -36,6 +36,7 @@ namespace WorldView
         private ViewEnergy m_viewEnergy = new ViewEnergy();
         private ViewFireField m_viewFireField = new ViewFireField();
         private ViewVibration m_viewVibration = new ViewVibration();
+       
 
 		#if FRAMEWORK_VER_2x
 		private System.Windows.Forms.MenuStrip mainMenu;
