@@ -1,6 +1,9 @@
 TODO:
 a test module on routing
 
+@modified by zhangwei on 20070210
+add class DllService. but it is empty now.
+
 @modified by zhousongli on 20070129
 merged with the old vibration module's source code
 

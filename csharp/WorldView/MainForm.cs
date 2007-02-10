@@ -1670,8 +1670,8 @@ namespace WorldView
             m_viewVibration.Show(dockPanel);
             m_viewVibration.Text = " Vibration Field ";
              * */
-            vibrationMain main = new vibrationMain();
-            main.ShowDialog();
+            //vibrationMain main = new vibrationMain();
+            //main.ShowDialog();
         }
 
         private void fireFieldToolStripMenuItem_Click(object sender, EventArgs e)

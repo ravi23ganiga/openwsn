@@ -115,18 +115,11 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="LocalService\DataRev.cs" />
-    <Compile Include="LocalService\RoutePath.cs" />
-    <Compile Include="Properties\Settings.Designer.cs">
+    <Compile Include="LocalService\DllService.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-    <Compile Include="vibrationMain.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="vibrationMain.Designer.cs">
-      <DependentUpon>vibrationMain.cs</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="View\DummyDoc.cs">
       <SubType>Form</SubType>
@@ -219,12 +212,14 @@
     </Compile>
     <EmbeddedResource Include="AboutDialog.resx">
       <DependentUpon>AboutDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\DockPanel.xml" />
-    <EmbeddedResource Include="vibrationMain.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>vibrationMain.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="View\DummyDoc.resx">
       <DependentUpon>DummyDoc.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -305,12 +300,6 @@
     <Content Include="Resources\App.ico" />
     <Content Include="Resources\JPEG Image File JPG.ico" />
     <Content Include="Note%282007%29.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

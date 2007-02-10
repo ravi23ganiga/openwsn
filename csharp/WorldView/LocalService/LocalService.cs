@@ -1,3 +1,33 @@
+/*****************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+ *
+ * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
+ * 
+ * OpenWSN is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 or (at your option) any later version.
+ * 
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with eCos; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ * 
+ * As a special exception, if other files instantiate templates or use macros
+ * or inline functions from this file, or you compile this file and link it
+ * with other works to produce a work based on this file, this file does not
+ * by itself cause the resulting work to be covered by the GNU General Public
+ * License. However the source code for this file must still be made available
+ * in accordance with section (3) of the GNU General Public License.
+ * 
+ * This exception does not invalidate any other reasons why a work based on
+ * this file might be covered by the GNU General Public License.
+ * 
+ ****************************************************************************/
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -128,9 +158,9 @@ namespace WorldView
         public static byte maxhop;
         private static UInt32 updateperiod;
        
-        public static TRoutePathCache pathCache;
-        public static TRoutePathItem routpath;
-        public static dataRevCache revCache;
+        //public static TRoutePathCache pathCache;
+        //public static TRoutePathItem routpath;
+        //public static dataRevCache revCache;
        
         public static byte seqNum;
         public static byte[] payload;
@@ -159,10 +189,10 @@ namespace WorldView
             }
 
             maxhop = MAX_ROUTE_PATH_NUMBER;
-            pathCache = new TRoutePathCache();
-            pathCache.construct(MAX_ROUTE_PATH_NUMBER);
-            revCache = new dataRevCache();
-            revCache.construct(10);
+            //pathCache = new TRoutePathCache();
+            //pathCache.construct(MAX_ROUTE_PATH_NUMBER);
+            //revCache = new dataRevCache();
+            //revCache.construct(10);
             seqNum = 1;
             return;
         }
@@ -289,6 +319,8 @@ namespace WorldView
                        break;
                  */
 
+                /* @modified by zhangwei 
+                 * comment the following to make it compile success 
                 case DataType.RouteFeedback://路由反馈包                    
                     TRoutePathItem pathitem = new TRoutePathItem();
                     pathitem.construct(pframe.srcNodeid, pframe.destNodeid, RouteleapNumber, false);
@@ -301,6 +333,7 @@ namespace WorldView
                     pathCache.appendRoutePath(pathitem);
                     //更新节点序列，需要检查一下是否已经存在，避免重复
                     return ;
+                 
                 case DataType.QueryData:
                     //pframe.pData.CopyTo(packet, 0);
                     dataRevItem item = new dataRevItem();
@@ -308,6 +341,7 @@ namespace WorldView
                     item.Write(temp, (ushort)len, 0);
                     revCache.appendataItem(item);
                     break;
+                */
                 /*
                    case DataType.QueryFeekback:
                        break;
@@ -322,7 +356,7 @@ namespace WorldView
         }
         public int GetSinkState() { return 0; }
         public int GetNodeData() { return 0; }
-
+/*
         public byte generatePacketFrame(ref byte[] packet, byte[] payload,TRoutePathItem routePath, DataType datatype)
         {
             byte i = 0;
@@ -369,7 +403,7 @@ namespace WorldView
             }
             return (i);
         }
-
+        */
         /*   public DataType phasePacket( byte[] packet, ushort size, ushort opt)
            {
                byte[] tempdata = new byte[128];
