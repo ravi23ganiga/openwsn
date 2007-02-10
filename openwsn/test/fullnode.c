@@ -33,25 +33,35 @@
 #include "..\global.h"
 #include "fullnode.h"
 
+/* the following two macro CONFIG_SINKNODE and CONFIG_GENERALNODE are used to define the type
+ * of the node. they two cannot be defined at the same time 
+ */
+
+#define CONFIG_SINKNODE
+//#undef CONFIG_SINKNODE
+
+#define CONFIG_GENERALNODE
+#undef CONFIG_GENERALNODE
+
 
 static TOpenMAC				m_mac;
 static TOpenNET				m_net;
 static TSensorService		m_sensors;
 static TLocationService		m_lcs;
 
-static TOpenFrame g_txframe;
-static TOpenFrame g_rxframe;
-static char * g_txframebuf;
-static char * g_rxframebuf;
-static char * g_txpktbuf;
-static char * g_rxpktbuf;
+static TOpenFrame			g_txframe;
+static TOpenFrame			g_rxframe;
+static char *				g_txframebuf = NULL;
+static char *				g_rxframebuf = NULL;
+static char *				g_txpktbuf = NULL;
+static char *				g_rxpktbuf = NULL;
 
 
 // the first WORD is the PAN id, the second WORD is the node id
 // they two forms a standard 802.15.4 short address.
 // you can freely changing this setting according to your own requirements.
 //
-static uint16 _localaddr[2] = {0x2420, 0x5678};
+static uint16 LOCAL_ADDRESS[2] = {0x2420, 0x5678};
 static void gnode_execute( void );
 static void sinknode_execute( void ); 
 static int8 gnode_interpret( TOpenFrame * rxframe, TOpenFrame * txframe );
@@ -80,9 +90,7 @@ void gnode_execute( void )
 	char *txdata = NULL, *rxdata = NULL, *buf = NULL;
 	uint8 txlen = 0, rxlen = 0, len = 0, count = 0,n;
 	
-
-	
-        target_init();
+       target_init();
 	global_construct();
 
 	spi_configure( g_spi );
@@ -209,7 +217,7 @@ void sinknode_execute( void )
 
 	opf_setpanid( g_txframebuf, 0x2420);
 	opf_setpanid( g_txframebuf, 0x2420);
-	net_setlocaladdress( g_net, _localaddr[0], _localaddr[1] );
+	net_setlocaladdress( g_net, LOCAL_ADDRESS[0], LOCAL_ADDRESS[1] );
 	opf_setaddrfrom(g_txframebuf,0x5678);
         opf_setaddrto(g_txframebuf,0x1234);
 	//net_configure
