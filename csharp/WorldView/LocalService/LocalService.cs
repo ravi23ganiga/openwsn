@@ -321,6 +321,7 @@ namespace WorldView
 
                 /* @modified by zhangwei 
                  * comment the following to make it compile success 
+                 * 
                 case DataType.RouteFeedback://路由反馈包                    
                     TRoutePathItem pathitem = new TRoutePathItem();
                     pathitem.construct(pframe.srcNodeid, pframe.destNodeid, RouteleapNumber, false);
