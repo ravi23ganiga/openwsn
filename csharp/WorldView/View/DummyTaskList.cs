@@ -15,7 +15,7 @@ using System.ComponentModel;
 using System.Windows.Forms;
 using WeifenLuo.WinFormsUI;
 
-namespace WorldView
+namespace WorldView.View
 {
 	/// <summary>
 	/// Summary description for DummyPropertyGrid.
