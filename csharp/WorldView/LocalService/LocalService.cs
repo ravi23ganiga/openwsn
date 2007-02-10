@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 using System.Collections;
 using System.Threading;
 
-/*using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Windows.Forms;
-*/
+//using System.ComponentModel;
+//using System.Data;
+//using System.Drawing;
+//using System.Windows.Forms;
+
 
 // @modified by zhangwei on 20070123
 // for Zhou Songli
@@ -79,13 +79,13 @@ namespace WorldView
     class LocalService
     {
         [DllImport("libsink", EntryPoint = "svc_read", CharSet = CharSet.Auto)]
-        public unsafe static extern byte svc_read(void* svc, [In, Out]/* out*/ byte* buf, byte capacity, ushort opt);
+        public unsafe static extern byte svc_read(void* svc, [In, Out] byte* buf, byte capacity, ushort opt);
 
         [DllImport("libsink", EntryPoint = "svc_write")]
         public unsafe static extern byte svc_write(void* svc, byte[] buf, byte len, ushort opt);
 
         [DllImport("libsink", EntryPoint = "svc_create")]
-        public unsafe static extern void* svc_create(ushort id, ushort opt);
+        public unsafe static extern void* svc_create(ushort id, ushort opt);                                                        
 
         [DllImport("libsink", EntryPoint = "svc_start")]
         public unsafe static extern void* svc_start(void* svc);
@@ -101,6 +101,7 @@ namespace WorldView
 
         [DllImport("libsink", EntryPoint = "svc_uart_configure")]
         public unsafe static extern sbyte svc_uart_configure(void* svc, uint baudrate, byte databits, byte stopbits, byte parity, byte optflag);
+      
 
         public static unsafe void* svc = null;
         public static UInt16 id, opt;
@@ -126,9 +127,13 @@ namespace WorldView
         private static ushort sinknode;
         public static byte maxhop;
         private static UInt32 updateperiod;
+       
         public static TRoutePathCache pathCache;
         public static TRoutePathItem routpath;
         public static dataRevCache revCache;
+       
+        public static byte seqNum;
+        public static byte[] payload;
 
         public ushort getSink() { return (sinknode);}
         public UInt32 getUpdatePeriod() {return (updateperiod);}
@@ -158,7 +163,7 @@ namespace WorldView
             pathCache.construct(MAX_ROUTE_PATH_NUMBER);
             revCache = new dataRevCache();
             revCache.construct(10);
-            
+            seqNum = 1;
             return;
         }
 
@@ -318,15 +323,19 @@ namespace WorldView
         public int GetSinkState() { return 0; }
         public int GetNodeData() { return 0; }
 
-        public byte generatePacketFrame(ref byte[] packet, byte[] payload,TRoutePathItem routePath, DataType datatype, byte seqNum)
+        public byte generatePacketFrame(ref byte[] packet, byte[] payload,TRoutePathItem routePath, DataType datatype)
         {
             byte i = 0;
             int index;
             ushort nextleap;
-            byte FrameControl = (byte)(((byte)datatype) << DATA_TYPE_BM);
-            FrameControl &= (byte)(routePath.getleaptotal() << ROUTE_ADDRLIST_BM);
-            packet[i++] = FrameControl;
-            packet[i++] = seqNum;
+            byte PacketControl = (byte)(((byte)datatype) << DATA_TYPE_BM);
+
+            if (datatype != DataType.GetSink && datatype != DataType.RouteRequest)
+            {
+                PacketControl &= (byte)(routePath.getleaptotal() << ROUTE_ADDRLIST_BM);
+            }
+            packet[i++] = PacketControl;
+            packet[i++] = seqNum++;
 
             if (datatype != DataType.GetSink && datatype != DataType.RouteRequest)
             {
@@ -335,6 +344,7 @@ namespace WorldView
                 packet[i++] = (byte)nodeid;
                 packet[i++] = (byte)(nodeid >> 8);
                 nodeid = routePath.getDestNode();
+               
                 packet[i++] = (byte)nodeid;
                 packet[i++] = (byte)(nodeid >> 8);
 
@@ -344,17 +354,20 @@ namespace WorldView
                     packet[i++] = (byte)nextleap;
                     packet[i++] = (byte)(nextleap >> 8);
                 }
-            }
-            else if (datatype == DataType.DataStream) 
+                
+            }                 
+
+            if (datatype == DataType.DataStream)
             {
                 packet[i++] = (byte)(payload.Length);
                 for (index = 0; index < payload.Length; index++)
                     packet[i++] = payload[index];
             }
-            else {
+            else
+            {
                 packet[i++] = 0;
             }
-            return  (++i);
+            return (i);
         }
 
         /*   public DataType phasePacket( byte[] packet, ushort size, ushort opt)
