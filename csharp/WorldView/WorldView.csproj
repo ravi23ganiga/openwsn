@@ -114,11 +114,19 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="LocalService\DataRev.cs" />
     <Compile Include="LocalService\DllService.cs" />
+    <Compile Include="LocalService\RoutePath.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="vibrationMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="vibrationMain.Designer.cs">
+      <DependentUpon>vibrationMain.cs</DependentUpon>
     </Compile>
     <Compile Include="ViewFireField.cs">
       <SubType>Form</SubType>
@@ -237,6 +245,10 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\DockPanel.xml" />
+    <EmbeddedResource Include="vibrationMain.resx">
+      <DependentUpon>vibrationMain.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="ViewFireField.resx">
       <DependentUpon>ViewFireField.cs</DependentUpon>
       <SubType>Designer</SubType>
