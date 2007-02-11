@@ -158,9 +158,9 @@ namespace WorldView
         public static byte maxhop;
         private static UInt32 updateperiod;
        
-        //public static TRoutePathCache pathCache;
-        //public static TRoutePathItem routpath;
-        //public static dataRevCache revCache;
+        public static TRoutePathCache pathCache;
+        public static TRoutePathItem routpath;
+        public static dataRevCache revCache;
        
         public static byte seqNum;
         public static byte[] payload;
@@ -169,7 +169,6 @@ namespace WorldView
         public UInt32 getUpdatePeriod() {return (updateperiod);}
         public void setUpdatePeriod(UInt32 period) { updateperiod = period; }
         public void setSink(ushort node) { sinknode = node; }
-
 
         public void Start()
         {
@@ -189,10 +188,13 @@ namespace WorldView
             }
 
             maxhop = MAX_ROUTE_PATH_NUMBER;
-            //pathCache = new TRoutePathCache();
-            //pathCache.construct(MAX_ROUTE_PATH_NUMBER);
-            //revCache = new dataRevCache();
-            //revCache.construct(10);
+            pathCache = new TRoutePathCache();
+            pathCache.construct(MAX_ROUTE_PATH_NUMBER);
+            revCache = new dataRevCache();
+            revCache.construct(10);
+           
+            routpath = new TRoutePathItem();
+            
             seqNum = 1;
             return;
         }
@@ -240,7 +242,6 @@ namespace WorldView
 
                 lock (this)
                 {
-
                     //cnt = svc_read(svc,out DataReved.Text.ToCharArray(),(byte)DataReved.Text.Length, 0);
                     fixed (byte* p = buf)
                     {
@@ -276,7 +277,7 @@ namespace WorldView
 
 
        // public int ReadDataPacket(ref byte[] packet, ushort size, ushort opt)
-        public void phaseDataRev()
+        public DataType phaseDataRev()
         {
             byte[] tempdata = new byte[128];
             int len = Read(ref tempdata, 128, 0);
@@ -315,13 +316,7 @@ namespace WorldView
     
             switch (datatype)
             {
-                /*   case DataType.RouteRequest:
-                       break;
-                 */
 
-                /* @modified by zhangwei 
-                 * comment the following to make it compile success 
-                 * 
                 case DataType.RouteFeedback://路由反馈包                    
                     TRoutePathItem pathitem = new TRoutePathItem();
                     pathitem.construct(pframe.srcNodeid, pframe.destNodeid, RouteleapNumber, false);
@@ -342,13 +337,18 @@ namespace WorldView
                     item.Write(temp, (ushort)len, 0);
                     revCache.appendataItem(item);
                     break;
-                */
+              
+                case DataType.DataStream:
+                    break;
+                case DataType.GetSink:  
+                    //sinknode =;
+                    break;                 
                 /*
                    case DataType.QueryFeekback:
                        break;
                 */
             }
-           return;
+           return datatype;
         }
         public int WriteDataPacket(byte[] packet, ushort size, ushort opt) { return 0; }
         public int ReadRoutingPacket(byte[] packet, ushort size, ushort opt)
@@ -357,7 +357,7 @@ namespace WorldView
         }
         public int GetSinkState() { return 0; }
         public int GetNodeData() { return 0; }
-/*
+
         public byte generatePacketFrame(ref byte[] packet, byte[] payload,TRoutePathItem routePath, DataType datatype)
         {
             byte i = 0;
@@ -404,11 +404,11 @@ namespace WorldView
             }
             return (i);
         }
-        */
-        /*   public DataType phasePacket( byte[] packet, ushort size, ushort opt)
+      
+          public int phasePacket( byte[] packet, ushort size, ushort opt)
            {
                byte[] tempdata = new byte[128];
-               int len = Read(tempdata, 128, 0);
+               int len = Read(ref tempdata, 128, 0);
                ushort nextleap = 0;
                int RouteleapNumber = 0;
                int i = 0, j = 0;
@@ -445,7 +445,7 @@ namespace WorldView
         
 
                    case DataType.RouteFeedback://路由反馈包                    
-                       TRoutePathCacheItem pathitem = new TRoutePathCacheItem();
+                       TRoutePathItem pathitem = new TRoutePathItem();
                        pathitem.construct(pframe.srcNodeid, pframe.destNodeid, RouteleapNumber, false);
 
                        for (i = 0; i < RouteleapNumber; i++)
@@ -454,17 +454,15 @@ namespace WorldView
                            pathitem.addleap(nextleap);
                        }
 
-                       Service.pathCache.appendRoutePath(pathitem);
+                       pathCache.appendRoutePath(pathitem);
                        return 0;
                    case DataType.QueryData:
                        pframe.pData.CopyTo(packet, 0);
-
-                       break;
-                
+                       break;                
                }
 
                return len;
            }
-         */
+        
     }
 }
