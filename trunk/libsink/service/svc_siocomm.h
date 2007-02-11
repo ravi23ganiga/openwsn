@@ -49,11 +49,13 @@
  * this occurs when you receive half a frame in the "rxbuf", however, this case
  * seldom happens. 
  */
-#define SIO_CONFIG_VERSION_10
 #undef  SIO_CONFIG_VERSION_10
+#define SIO_CONFIG_VERSION_10
 
-#undef  SIO_CONFIG_VERSION_30
+
 #define SIO_CONFIG_VERSION_30
+#undef  SIO_CONFIG_VERSION_30
+
 
 /* configure TSioComm's internal buffer size
  * MAX_FRAAME_LENGTH should be less than 0xFF. the maximum value of it is 0xFE
@@ -64,6 +66,8 @@
 #define SIO_TXBUFFER_CAPACITY SIO_FRAMEBUFFER_LENGTH
 
 #define SIO_DEFAULT_ESCAPE CONFIG_START_OF_FRAME 
+ 
+#define SIOCOMM_RXBUFFER_CAPACITY 100
 
 /* this object is built on top of TUartDriver object. It functions like the 
  * data link layer. 

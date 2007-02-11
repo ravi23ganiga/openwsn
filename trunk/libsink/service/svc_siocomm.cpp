@@ -230,7 +230,7 @@ uint8 sio_rawread( TSioComm * sio, char * buf, uint8 size, uint8 opt )
  */ 
 uint16 sio_write( TSioComm * sio, char * payload, uint16 len, uint16 opt )
 {
-	return sio_rawwrite( sio, payload, len, opt );
+	return sio_rawwrite( sio, payload, (uint8)len, opt );
 }
 #endif
 
