@@ -9,37 +9,21 @@ using System.Runtime.InteropServices;
 
 namespace WorldView
 {
-
+    
     public partial class vibrationMain : Form
     {
-
-         LocalService service = new LocalService();
-   
+        LocalService service = new LocalService();
         public vibrationMain()
         {
-            InitializeComponent();           
-            LocalService.seqNum = 0;
-            service.Start();
+            InitializeComponent(); 
+            service.Start(100, 0);      
         }
-
-        private void vibrationMain_Load(object sender, EventArgs e)
-        {
-
-        }
-
+       
         private void queryTimer_Tick(object sender, EventArgs e)
         {
-           DataType datatype =  service.phaseDataRev();
-           switch(datatype)
-           {
-               case DataType.GetSink:
-                   statusStrip1.Items.Add();
-                   break;
-               case DataType.QueryFeekback:
-                   break;
-               case DataType.RouteFeedback:
-                   break;
-           }
+           service.phaseDataRev();
+           ushort nodeid = service.getSink();
+           if (nodeid != 0) MessageBox.Show(nodeid.ToString());
         }
 
         private void dispData_Click(object sender, EventArgs e)

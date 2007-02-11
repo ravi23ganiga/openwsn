@@ -22,6 +22,8 @@ DLLAPI void * svc_create( uint16 id, uint16 opt )
 	TSvcPacket * pSvcPack;
 	uint16 opt1 = opt;
 	pSvcPack = new TSvcPacket();
+	if (pSvcPack == 0) return pSvcPack;
+
 	pSvcPack->id = id;
 	pSvcPack->type = 0;
 	pSvcPack->cancel = false;
@@ -30,8 +32,7 @@ DLLAPI void * svc_create( uint16 id, uint16 opt )
 	g_pTUartDriver = uart_construct(0, (char *)&m_TUartDriver, sizeof(TUartDriver));
 
 	uart_configure(g_pTUartDriver,57600,8,1,0,0);
-	//uart_open(g_pTUartDriver,"COM1");
-	
+	//uart_open(g_pTUartDriver,"COM1");	
 
 	pSvcPack->pSioComm = sio_construct((char *)&m_TSioComm, 
 			sizeof(TSioComm), 

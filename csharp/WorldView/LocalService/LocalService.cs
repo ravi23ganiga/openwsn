@@ -100,9 +100,9 @@ namespace WorldView
 
         public byte FrameControl;
         public byte seqNumber;
-        public ushort srcNodeid;
-        public ushort destNodeid;
-        public ushort[] leapStep;
+        //public ushort srcNodeid;
+        //public ushort destNodeid;
+        //public ushort[] leapStep;
         public byte[] pData;//[100-sizeof(RouteAddr)];//里面的常数不能修改；
     }
       
@@ -134,7 +134,7 @@ namespace WorldView
       
 
         public static unsafe void* svc = null;
-        public static UInt16 id, opt;
+        public static ushort id, opt;
 
         public const byte MAX_DATA_REV_NUMBER = 0x0f;
 
@@ -170,20 +170,13 @@ namespace WorldView
         public void setUpdatePeriod(UInt32 period) { updateperiod = period; }
         public void setSink(ushort node) { sinknode = node; }
 
-        public void Start()
+        public void Start(ushort id,ushort opt)
         {
-            if (id == 0)
-            {
-                id = 100;
-                opt = 0;
-            }
-
             unsafe
             {
-                svc = null;
                 svc = svc_create(id, opt);
                 if (svc != null)
-                    svc_start(svc);
+                svc_start(svc);
 
             }
 
@@ -260,7 +253,7 @@ namespace WorldView
             */
             return cnt;
         }
-
+        
         public int Write(byte[] buf, byte size, ushort opt)
         {
             byte cnt;
@@ -277,10 +270,11 @@ namespace WorldView
 
 
        // public int ReadDataPacket(ref byte[] packet, ushort size, ushort opt)
-        public DataType phaseDataRev()
+        public void phaseDataRev()
         {
             byte[] tempdata = new byte[128];
             int len = Read(ref tempdata, 128, 0);
+            ushort srcNode, dstNode;
             ushort nextleap = 0;
             int RouteleapNumber = 0;
             int i = 0, j = 0;
@@ -288,10 +282,10 @@ namespace WorldView
             //check the datatype.        
             DataType datatype = (DataType)(tempdata[i] & DATA_TYPE_MASK >> DATA_TYPE_BM);
             RouteleapNumber = tempdata[i++] & ROUTE_ADDRLIST_MASK >> ROUTE_ADDRLIST_BM;
-
-            PacketFrame pframe = new PacketFrame();
+                       
+          /*  PacketFrame pframe = new PacketFrame();
             pframe.seqNumber = tempdata[i++];
-            pframe.srcNodeid = tempdata[i++];
+             pframe.srcNodeid = tempdata[i++];
             pframe.srcNodeid += (ushort)(tempdata[i++] << 8);
             pframe.destNodeid = tempdata[i++];
             pframe.destNodeid += (ushort)(tempdata[i++] << 8);
@@ -302,24 +296,20 @@ namespace WorldView
                 nextleap += (ushort)(tempdata[i++] << 8);
                 pframe.leapStep[j] = nextleap;
             }
+            */
+            i++;//the second datum is the  sequence number of the data received;
+            len = tempdata[i++];//the third one is the length of the data received.
 
-            len = tempdata[i++];
-            byte[] temp = new byte[len];
-
-            for (j = 1; j <= len; j++)
-            {
-                pframe.pData[j] = tempdata[i];
-                temp[j - 1] = tempdata[i];
-                i++;
-            }
-
-    
             switch (datatype)
             {
-
+                case DataType.GetSink:
+                    srcNode = tempdata[i++];
+                    srcNode +=(ushort)(tempdata[i++]<<8);
+                    sinknode = srcNode;
+                    break;
                 case DataType.RouteFeedback://路由反馈包                    
                     TRoutePathItem pathitem = new TRoutePathItem();
-                    pathitem.construct(pframe.srcNodeid, pframe.destNodeid, RouteleapNumber, false);
+                   /* pathitem.construct(pframe.srcNodeid, pframe.destNodeid, RouteleapNumber, false);
 
                     for (i = 0; i < RouteleapNumber; i++)
                     {
@@ -327,28 +317,27 @@ namespace WorldView
                         pathitem.addleap(nextleap);
                     }
                     pathCache.appendRoutePath(pathitem);
+                    * */
                     //更新节点序列，需要检查一下是否已经存在，避免重复
-                    return ;
-                 
+                    return;
+
                 case DataType.QueryData:
                     //pframe.pData.CopyTo(packet, 0);
                     dataRevItem item = new dataRevItem();
-                    item.construct(pframe.srcNodeid, 128);
-                    item.Write(temp, (ushort)len, 0);
+                   // item.construct(pframe.srcNodeid, 128);
+                   // item.Write(temp, (ushort)len, 0);
                     revCache.appendataItem(item);
                     break;
-              
+
                 case DataType.DataStream:
                     break;
-                case DataType.GetSink:  
-                    //sinknode =;
-                    break;                 
                 /*
                    case DataType.QueryFeekback:
                        break;
                 */
             }
-           return datatype;
+    
+           return;
         }
         public int WriteDataPacket(byte[] packet, ushort size, ushort opt) { return 0; }
         public int ReadRoutingPacket(byte[] packet, ushort size, ushort opt)
@@ -405,7 +394,7 @@ namespace WorldView
             return (i);
         }
       
-          public int phasePacket( byte[] packet, ushort size, ushort opt)
+     /*     public int phasePacket( byte[] packet, ushort size, ushort opt)
            {
                byte[] tempdata = new byte[128];
                int len = Read(ref tempdata, 128, 0);
@@ -463,6 +452,6 @@ namespace WorldView
 
                return len;
            }
-        
+        */
     }
 }

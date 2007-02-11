@@ -172,6 +172,8 @@ namespace WorldView
 		private System.ComponentModel.IContainer components;
 		#endif
 
+        
+        
 		public MainForm()
 		{
 			m_deserializeDockContent = new DeserializeDockContent(GetContentFromPersistString);
@@ -180,7 +182,7 @@ namespace WorldView
 			//
 			InitializeComponent();
 
-			//
+		//
 			// TODO: Add any constructor code after InitializeComponent call
 			//
 
@@ -299,7 +301,7 @@ namespace WorldView
             this.mainMenu.Name = "mainMenu";
             this.mainMenu.Size = new System.Drawing.Size(579, 26);
             this.mainMenu.TabIndex = 7;
-            this.mainMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.mainMenu_ItemClicked);
+            
             // 
             // menuItemFile
             // 
@@ -1520,9 +1522,7 @@ namespace WorldView
 			string configFile = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "DockPanel.config");
 
 			if (File.Exists(configFile))
-				dockPanel.LoadFromXml(configFile, m_deserializeDockContent);          
-                     
-            
+				dockPanel.LoadFromXml(configFile, m_deserializeDockContent);
 		}
 
 		private void MainForm_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -1758,11 +1758,7 @@ namespace WorldView
             m_viewFireField.Text = " Fire Field ";
         }
 
-        private void mainMenu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-
-        }
-
+       
         private void snifferToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (dockPanel.DocumentStyle == DocumentStyles.SystemMdi)
