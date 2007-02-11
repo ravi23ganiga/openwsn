@@ -36,6 +36,8 @@ namespace WorldView
             this.listViewDataRev = new System.Windows.Forms.ListView();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.listViewRouteInfo = new System.Windows.Forms.ListView();
+            this.nodeid = new System.Windows.Forms.ColumnHeader();
+            this.route = new System.Windows.Forms.ColumnHeader();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.sendCmd = new System.Windows.Forms.Button();
             this.dispData = new System.Windows.Forms.Button();
@@ -43,21 +45,22 @@ namespace WorldView
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.cmdList = new System.Windows.Forms.ComboBox();
-            this.nodeid = new System.Windows.Forms.ColumnHeader();
-            this.route = new System.Windows.Forms.ColumnHeader();
+            this.sinknode = new System.Windows.Forms.ToolStripStatusLabel();
+            this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // statusStrip1
             // 
+            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.sinknode});
             this.statusStrip1.Location = new System.Drawing.Point(0, 439);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(508, 22);
             this.statusStrip1.TabIndex = 0;
-            this.statusStrip1.Text = "statusStrip1";
             // 
             // queryTimer
             // 
-            this.queryTimer.Interval = 2000;
+            this.queryTimer.Interval = 1000;
             this.queryTimer.Tick += new System.EventHandler(this.queryTimer_Tick);
             // 
             // checkRouteTimer
@@ -100,6 +103,14 @@ namespace WorldView
             this.listViewRouteInfo.TabIndex = 5;
             this.listViewRouteInfo.UseCompatibleStateImageBehavior = false;
             this.listViewRouteInfo.SelectedIndexChanged += new System.EventHandler(this.listViewRouteInfo_SelectedIndexChanged);
+            // 
+            // nodeid
+            // 
+            this.nodeid.Text = "节点号";
+            // 
+            // route
+            // 
+            this.route.Text = "路由信息";
             // 
             // groupBox2
             // 
@@ -171,13 +182,10 @@ namespace WorldView
             this.cmdList.Size = new System.Drawing.Size(75, 21);
             this.cmdList.TabIndex = 13;
             // 
-            // nodeid
+            // sinknode
             // 
-            this.nodeid.Text = "节点号";
-            // 
-            // route
-            // 
-            this.route.Text = "路由信息";
+            this.sinknode.Name = "sinknode";
+            this.sinknode.Size = new System.Drawing.Size(0, 17);
             // 
             // vibrationMain
             // 
@@ -199,6 +207,8 @@ namespace WorldView
             this.Name = "vibrationMain";
             this.Text = "vibrationMain";
             this.Load += new System.EventHandler(this.vibrationMain_Load);
+            this.statusStrip1.ResumeLayout(false);
+            this.statusStrip1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -222,5 +232,6 @@ namespace WorldView
         private System.Windows.Forms.ComboBox cmdList;
         public System.Windows.Forms.ColumnHeader nodeid;
         public System.Windows.Forms.ColumnHeader route;
+        private System.Windows.Forms.ToolStripStatusLabel sinknode;
     }
 }
