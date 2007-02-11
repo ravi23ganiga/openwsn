@@ -30,6 +30,7 @@ namespace WorldView
         {
             this.components = new System.ComponentModel.Container();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.sinknode = new System.Windows.Forms.ToolStripStatusLabel();
             this.queryTimer = new System.Windows.Forms.Timer(this.components);
             this.checkRouteTimer = new System.Windows.Forms.Timer(this.components);
             this.nodeList = new System.Windows.Forms.ComboBox();
@@ -45,7 +46,6 @@ namespace WorldView
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.cmdList = new System.Windows.Forms.ComboBox();
-            this.sinknode = new System.Windows.Forms.ToolStripStatusLabel();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -55,8 +55,13 @@ namespace WorldView
             this.sinknode});
             this.statusStrip1.Location = new System.Drawing.Point(0, 439);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(508, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(500, 22);
             this.statusStrip1.TabIndex = 0;
+            // 
+            // sinknode
+            // 
+            this.sinknode.Name = "sinknode";
+            this.sinknode.Size = new System.Drawing.Size(0, 17);
             // 
             // queryTimer
             // 
@@ -182,16 +187,11 @@ namespace WorldView
             this.cmdList.Size = new System.Drawing.Size(75, 21);
             this.cmdList.TabIndex = 13;
             // 
-            // sinknode
-            // 
-            this.sinknode.Name = "sinknode";
-            this.sinknode.Size = new System.Drawing.Size(0, 17);
-            // 
             // vibrationMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(508, 461);
+            this.ClientSize = new System.Drawing.Size(500, 461);
             this.Controls.Add(this.cmdList);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -206,7 +206,6 @@ namespace WorldView
             this.Controls.Add(this.groupBox2);
             this.Name = "vibrationMain";
             this.Text = "vibrationMain";
-            this.Load += new System.EventHandler(this.vibrationMain_Load);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
             this.ResumeLayout(false);
