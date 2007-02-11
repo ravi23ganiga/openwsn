@@ -42,7 +42,9 @@ namespace WorldView
         private ViewConsole m_frmConsole = new ViewConsole();
         private ViewSniffer m_frmSniffer = new ViewSniffer();
         private ViewTest m_frmTest = new ViewTest();
-        private ViewNetwork m_frmNetwork = new ViewNetwork();  
+        private ViewNetwork m_frmNetwork = new ViewNetwork();
+
+        private Context m_context = new Context();
 
 		#if FRAMEWORK_VER_2x
 		private System.Windows.Forms.MenuStrip mainMenu;
@@ -181,7 +183,10 @@ namespace WorldView
 			//
 			// TODO: Add any constructor code after InitializeComponent call
 			//
-		}
+
+            // for zhou songli, you can add init code here
+            //m_frmConsole.Init( m_context);
+        }
 
 		/// <summary>
 		/// Clean up any resources being used.
