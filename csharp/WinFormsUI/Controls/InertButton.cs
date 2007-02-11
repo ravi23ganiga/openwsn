@@ -115,7 +115,8 @@ namespace WeifenLuo.WinFormsUI
 		[Category("Appearance")]
 		[LocalizedDescription("InertButton.BorderColor.Description")]
         #if FRAMEWORK_VER_2x
-		public new Color BorderColor
+		//public new Color BorderColor
+          public  Color BorderColor
         #else
         public Color BorderColor
         #endif
