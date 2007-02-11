@@ -13,6 +13,8 @@ namespace WorldView
 	/// </summary>
 	public class ViewConsole : DockContent
 	{
+        Context m_context;
+
         #if FRAMEWORK_VER_2x
 		private System.Windows.Forms.RichTextBox richTextBox1;
 		private System.Windows.Forms.MenuStrip mainMenu;
@@ -356,5 +358,12 @@ namespace WorldView
 			if (FileName == string.Empty)
 				this.richTextBox1.Text = Text;
 		}
+        /*
+        public void Init(Context context)
+        {
+            m_context = context;
+            // so you can use m_context.getLocalService() now
+        }
+         */
 	}
 }
