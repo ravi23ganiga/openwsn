@@ -9,14 +9,29 @@ using System.Runtime.InteropServices;
 
 namespace WorldView
 {
-    
+   
     public partial class vibrationMain : Form
     {
         LocalService service = new LocalService();
+        private unsafe void* svc = null;
+        private TRoutePathCache pathCache;
+        private TRoutePathItem  pathitem;
+        private byte pathItemCnt;
+        
+        private dataRevCache revDataCache;
+        private byte dataRevItemCnt;
+      
         public vibrationMain()
         {
-            InitializeComponent(); 
-            service.Start(100, 0);      
+            InitializeComponent();
+            unsafe
+            {
+                svc = service.Start(100, 0);
+            }
+            pathCache = service.getPathCache();
+            pathItemCnt = pathCache.itemCount();
+            revDataCache = service.getRevDataCache();
+            dataRevItemCnt = revDataCache.getcount();
         }
        
         private void queryTimer_Tick(object sender, EventArgs e)
@@ -28,7 +43,7 @@ namespace WorldView
 
         private void dispData_Click(object sender, EventArgs e)
         {
-           byte count = LocalService.revCache.getcount();
+                   
            //ListView view = new ListView();
            ListViewItem nodeid = listViewDataRev.Items.Add("nodeid", 0);
            ListViewItem datatype = listViewDataRev.Items.Add("datatype", 1);
@@ -37,9 +52,9 @@ namespace WorldView
            int len = 0;
            dataRevItem dataitem = new dataRevItem();
            
-           for (byte index = 0; index < count; index++)
+           for (byte index = 0; index < dataRevItemCnt; index++)
            {
-              dataitem = LocalService.revCache.getDataItem(index);
+              dataitem = revDataCache.getDataItem(index);
               len = dataitem.Read(ref tempdata,128,0);
               if (len > 0)
               {
@@ -53,8 +68,7 @@ namespace WorldView
 
         private void dispRoute_Click(object sender, EventArgs e)
         {
-            byte count = LocalService.pathCache.itemCount();
-            
+                               
             //ListView view = new ListView();
             ListViewItem nodeid = listViewRouteInfo.Items.Add("nodeid", 0);
             ListViewItem contents = listViewRouteInfo.Items.Add("contents", 1);
@@ -62,9 +76,9 @@ namespace WorldView
             int len = 0;
             TRoutePathItem routeitem = new TRoutePathItem();
 
-            for (byte index = 0; index < count; index++)
+            for (byte index = 0; index < pathItemCnt; index++)
             {
-                routeitem = LocalService.pathCache.getPathItem(index);
+                routeitem = pathCache.getPathItem(index);
                 int j =0;
                 byte[] tempdata = new byte[128];
                 
@@ -86,24 +100,18 @@ namespace WorldView
         
         private void sendCmd_Click(object sender, EventArgs e)
         {
-            /*命令类型：获取Sink节点、路由请求、数据请求*/
-            /*  RouteRequest = 0x01,
-                RouteFeedback,
-                QueryData,
-                QueryFeekback，
-                GetSink        
-            */
+     
             DataType cmdtype = new DataType();
             switch(cmdList.Text.Trim())
             {
-                case "获取Sink节点":
-                    cmdtype = DataType.GetSink;
+              　case "获取Sink节点":
+                    cmdtype = DataType.DATA_TYPE_GET_NODE_ID_REQUEST;
                     break;
                 case "路由请求":
-                    cmdtype = DataType.RouteRequest;
+                    cmdtype = DataType.DATA_TYPE_ROUTE_REQUEST;
                     break;
-                case "数据请求":
-                    cmdtype = DataType.QueryData;
+                case "震动查询":
+                    cmdtype = DataType.DATA_TYPE_VIBSENSOR_QUERY_REQUEST;
                     break;
                 case "发送数据":
                     cmdtype = DataType.DataStream;
@@ -111,7 +119,7 @@ namespace WorldView
             }
             byte [] packet = new byte[60];
             
-            byte len =  service.generatePacketFrame(ref packet,LocalService.payload,LocalService.routpath,cmdtype);
+            byte len =  service.generatePacketFrame(ref packet,service.payload,pathitem,cmdtype);
             service.Write(packet,len,0);
 
             if (!queryTimer.Enabled) queryTimer.Enabled = true;

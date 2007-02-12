@@ -180,7 +180,7 @@ namespace WorldView
             this.cmdList.Items.AddRange(new object[] {
             "获取Sink节点",
             "路由请求",
-            "数据请求",
+            "震动查询",
             "发送数据"});
             this.cmdList.Location = new System.Drawing.Point(98, 405);
             this.cmdList.Name = "cmdList";

@@ -79,14 +79,20 @@ namespace WorldView
          }
      }
      */
-
     public enum DataType
     {
-        RouteRequest = 0x01,
-        RouteFeedback,
-        QueryData,
-        QueryFeekback,
-        GetSink,
+        DATA_TYPE_GET_NODE_ID_REQUEST = 0x00,
+        DATA_TYPE_ROUTE_REQUEST,
+        DATA_TYPE_TEMPSENSOR_QUERY_REQUEST ,
+        DATA_TYPE_VIBSENSOR_QUERY_REQUEST,
+        DATA_TYPE_STRAINSENSOR_QUERY_REQUEST,
+        DATA_TYPE_LIGHTSENSOR_QUERY_REQUEST,
+        DATA_TYPE_GET_NODE_ID_ACK = 0x08,
+        DATA_TYPE_ROUTE_ACK,        
+        DATA_TYPE_TEMPSENSOR_QUERY_ACK,        
+        DATA_TYPE_VIBSENSOR_QUERY_ACK,        
+        DATA_TYPE_STRAINSENSOR_QUERY_ACK,        
+        DATA_TYPE_LIGHTSENSOR_QUERY_ACK,
         DataStream
     }
 
@@ -98,7 +104,7 @@ namespace WorldView
 
       D7~D4 bits show the number of the hop in the route trace in this frame.The maximum value is 15 and the minimum value is 1.*/
 
-        public byte FrameControl;
+        public byte PacketControl;
         public byte seqNumber;
         //public ushort srcNodeid;
         //public ushort destNodeid;
@@ -112,7 +118,7 @@ namespace WorldView
         public unsafe static extern byte svc_read(void* svc, [In, Out] byte* buf, byte capacity, ushort opt);
 
         [DllImport("libsink", EntryPoint = "svc_write")]
-        public unsafe static extern byte svc_write(void* svc, byte[] buf, byte len, ushort opt);
+        public unsafe static extern byte svc_write(void* svc, char[] buf, byte len, ushort opt);
 
         [DllImport("libsink", EntryPoint = "svc_create")]
         public unsafe static extern void* svc_create(ushort id, ushort opt);                                                        
@@ -131,46 +137,52 @@ namespace WorldView
 
         [DllImport("libsink", EntryPoint = "svc_uart_configure")]
         public unsafe static extern sbyte svc_uart_configure(void* svc, uint baudrate, byte databits, byte stopbits, byte parity, byte optflag);
-      
 
-        public static unsafe void* svc = null;
-        public static ushort id, opt;
 
-        public const byte MAX_DATA_REV_NUMBER = 0x0f;
+        private  unsafe void* svc = null;
+        //private  ushort id, opt;
 
-        public const byte MAX_ROUTE_PATH_NUMBER = 200;
+        private const byte MAX_DATA_REV_NUMBER = 0x0f;
 
-        public const byte MAX_ROUTE_PATH_OPTIMAL_NUMBER = 50;
+        private const byte MAX_ROUTE_PATH_NUMBER = 200;
 
-        public const byte DATA_TYPE_MASK = 0x0F;
-        public const byte DATA_TYPE_BM = 0x0;
+        private const byte MAX_ROUTE_PATH_OPTIMAL_NUMBER = 50;
 
-        public const byte ROUTE_ADDRLIST_MASK = 0x0F;
-        public const byte ROUTE_ADDRLIST_BM = 0x04;
+        private const byte DATA_TYPE_MASK = 0x0F;
+        private const byte DATA_TYPE_BM = 0x0;
 
-        public const byte ADDRLIST_BM = 0xF0;
+        private const byte ROUTE_ADDRLIST_MASK = 0x0F;
+        private const byte ROUTE_ADDRLIST_BM = 0x04;
 
-        public const byte MAX_LEAP_NUMBER = 0x0a;
-        public const byte MAX_ROUTE_LIST_NUMBER = 0x04;
+        private const byte ADDRLIST_BM = 0xF0;
 
+        private const byte MAX_LEAP_NUMBER = 0x0a;
+        private const byte MAX_ROUTE_LIST_NUMBER = 0x04;
 
         private static ushort sinknode;
-        public static byte maxhop;
-        private static UInt32 updateperiod;
-       
-        public static TRoutePathCache pathCache;
-        public static TRoutePathItem routpath;
-        public static dataRevCache revCache;
-       
-        public static byte seqNum;
-        public static byte[] payload;
 
+        public  byte maxhop;
+        public  UInt32 updateperiod;
+
+        private  TRoutePathCache pathCache;
+        private  TRoutePathItem routpath;
+        private  dataRevCache revCache;
+       
+        private  byte seqNum;
+        public   byte[] payload;
+        
         public ushort getSink() { return (sinknode);}
         public UInt32 getUpdatePeriod() {return (updateperiod);}
         public void setUpdatePeriod(UInt32 period) { updateperiod = period; }
         public void setSink(ushort node) { sinknode = node; }
+       
+        public TRoutePathCache getPathCache() { return (pathCache);}
+        public TRoutePathItem getpathItem() { return (routpath);}
+        public dataRevCache getRevDataCache() { return (revCache);}
+        
+        public byte getSequenceNumber(){ return (seqNum);}      
 
-        public void Start(ushort id,ushort opt)
+        public unsafe void* Start(ushort id,ushort opt)
         {
             unsafe
             {
@@ -184,12 +196,10 @@ namespace WorldView
             pathCache = new TRoutePathCache();
             pathCache.construct(MAX_ROUTE_PATH_NUMBER);
             revCache = new dataRevCache();
-            revCache.construct(10);
-           
-            routpath = new TRoutePathItem();
-            
+            revCache.construct(10);           
+            routpath = new TRoutePathItem();            
             seqNum = 1;
-            return;
+            return svc;
         }
 
 
@@ -256,12 +266,12 @@ namespace WorldView
         
         public int Write(byte[] buf, byte size, ushort opt)
         {
-            byte cnt;
+            byte cnt =10;
             lock (this)
             {
                 unsafe
                 {
-                    cnt = svc_write(svc, buf, size, opt);
+                   // cnt = svc_write(svc, buf, size, opt);
                 }
             }
 
@@ -277,19 +287,26 @@ namespace WorldView
             ushort srcNode, dstNode;
             ushort nextleap = 0;
             int RouteleapNumber = 0;
-            int i = 0, j = 0;
+            int i = 0;//, j = 0;
             if (len < 1) return;
             //check the datatype.        
             DataType datatype = (DataType)(tempdata[i] & DATA_TYPE_MASK >> DATA_TYPE_BM);
             RouteleapNumber = tempdata[i++] & ROUTE_ADDRLIST_MASK >> ROUTE_ADDRLIST_BM;
                        
-          /*  PacketFrame pframe = new PacketFrame();
+            PacketFrame pframe = new PacketFrame();
             pframe.seqNumber = tempdata[i++];
-             pframe.srcNodeid = tempdata[i++];
-            pframe.srcNodeid += (ushort)(tempdata[i++] << 8);
-            pframe.destNodeid = tempdata[i++];
-            pframe.destNodeid += (ushort)(tempdata[i++] << 8);
-
+            srcNode = tempdata[i++];
+            srcNode += (ushort)(tempdata[i++] << 8);
+            dstNode = tempdata[i++];
+            dstNode += (ushort)(tempdata[i++] << 8);
+/*   public struct PacketFrame
+    {
+        public byte PacketControl;
+        public byte seqNumber;    
+        public byte[] pData;//[100-sizeof(RouteAddr)];//里面的常数不能修改；
+    }  
+  */ 
+            /*
             for (j = 0; j < RouteleapNumber; j++)
             {
                 nextleap = tempdata[i++];
@@ -302,30 +319,30 @@ namespace WorldView
 
             switch (datatype)
             {
-                case DataType.GetSink:
+                case DataType.DATA_TYPE_GET_NODE_ID_ACK:
                     srcNode = tempdata[i++];
                     srcNode +=(ushort)(tempdata[i++]<<8);
                     sinknode = srcNode;
                     break;
-                case DataType.RouteFeedback://路由反馈包                    
+                case DataType.DATA_TYPE_ROUTE_ACK://路由反馈包                    
                     TRoutePathItem pathitem = new TRoutePathItem();
-                   /* pathitem.construct(pframe.srcNodeid, pframe.destNodeid, RouteleapNumber, false);
+                    pathitem.construct(srcNode, dstNode, RouteleapNumber, false);
 
                     for (i = 0; i < RouteleapNumber; i++)
                     {
-                        nextleap = pframe.leapStep[i];
+                       // nextleap = pframe.leapStep[i];
                         pathitem.addleap(nextleap);
                     }
                     pathCache.appendRoutePath(pathitem);
-                    * */
+                    
                     //更新节点序列，需要检查一下是否已经存在，避免重复
                     return;
 
-                case DataType.QueryData:
+                case DataType.DATA_TYPE_LIGHTSENSOR_QUERY_ACK:
                     //pframe.pData.CopyTo(packet, 0);
                     dataRevItem item = new dataRevItem();
-                   // item.construct(pframe.srcNodeid, 128);
-                   // item.Write(temp, (ushort)len, 0);
+                    item.construct(srcNode, 128);
+                    item.Write(tempdata, (ushort)len, 0);
                     revCache.appendataItem(item);
                     break;
 
@@ -354,14 +371,14 @@ namespace WorldView
             ushort nextleap;
             byte PacketControl = (byte)(((byte)datatype) << DATA_TYPE_BM);
 
-            if (datatype != DataType.GetSink && datatype != DataType.RouteRequest)
+            if (datatype != DataType.DATA_TYPE_GET_NODE_ID_REQUEST && datatype != DataType.DATA_TYPE_ROUTE_REQUEST)
             {
                 PacketControl &= (byte)(routePath.getleaptotal() << ROUTE_ADDRLIST_BM);
             }
             packet[i++] = PacketControl;
             packet[i++] = seqNum++;
 
-            if (datatype != DataType.GetSink && datatype != DataType.RouteRequest)
+            if (datatype != DataType.DATA_TYPE_GET_NODE_ID_REQUEST && datatype != DataType.DATA_TYPE_ROUTE_REQUEST)
             {
                 //有路由表信息或者信息不是发给sink节点的；
                 ushort nodeid = routePath.getSrcNode();

@@ -1815,6 +1815,7 @@ namespace WorldView
 
         private void networkToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            /*
             if (dockPanel.DocumentStyle == DocumentStyles.SystemMdi)
             {
                 m_frmNetwork.MdiParent = this;
@@ -1823,6 +1824,9 @@ namespace WorldView
             else
                 m_frmNetwork.Show(dockPanel);
             m_frmNetwork.Text = " Network ";
+             */
+            Network network = new Network();            
+            network.ShowDialog();
         }
     }
 }
