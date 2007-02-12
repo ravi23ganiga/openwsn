@@ -78,8 +78,12 @@ int8 uart_open( TUartDriver * uart, char * name )
 		//strncpy( &(uart->name[0]), name, 15 );
 		memmove(&(uart->name[0]),name,4);
      
+	 
+           wchar_t   wch1[128];     
+		   mbstowcs(wch1,&uart->name[0],128);   
+
 		// pls modify it for me, zhou songli
-		uart->handle = CreateFile((LPCSTR) &uart->name[0], 
+		uart->handle = CreateFile(wch1, 
 		          	GENERIC_READ | GENERIC_WRITE,// 允许读写
 		        	0,// 此项必须为0
 		         	0, // no security attrs

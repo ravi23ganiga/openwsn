@@ -228,9 +228,9 @@ uint8 sio_rawread( TSioComm * sio, char * buf, uint8 size, uint8 opt )
  * @return
  * the char count wrotten successfully. 
  */ 
-uint16 sio_write( TSioComm * sio, char * payload, uint16 len, uint16 opt )
+uint8 sio_write( TSioComm * sio, char * payload, uint8 len, uint8 opt )
 {
-	return sio_rawwrite( sio, payload, (uint8)len, opt );
+	return sio_rawwrite( sio, payload, len, opt );
 }
 #endif
 
@@ -282,7 +282,7 @@ uint8 sio_rawwrite( TSioComm * sio, char * buf, uint8 len, uint8 opt )
  * 	construct the frame header (default settings) for the master program.
  * @return
  */
-uint8 sio_rawwrite( TSioComm * sio, char * buf, uint8 len, uint8 opt )
+uint8 sio_rawwrite( TSioComm * sio, char * buf, uint16 len, uint8 opt )
 {
 	uint8 count=0;
 	
