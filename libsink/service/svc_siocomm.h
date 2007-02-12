@@ -113,8 +113,9 @@ void sio_configure( TSioComm * sio, TTimer * timer, uint8 opt, uint8 sof );
 void sio_destroy( TSioComm * sio );
 uint8 sio_read( TSioComm * sio, char * payload, uint8 size, uint8 opt );
 uint8 sio_rawread( TSioComm * sio, char * buf, uint8 size, uint8 opt );
-//uint8 sio_write( TSioComm * sio, char * payload, uint8 len, uint8 opt );
-uint8 sio_write( TSioComm * sio, char * buf, uint8 len, uint8 opt );
+uint8 sio_write( TSioComm * sio, char * payload, uint8 len, uint8 opt );
+
+//uint8 sio_write( TSioComm * sio, char * buf, uint8 len, uint8 opt );
 uint8 sio_rawwrite( TSioComm * sio, char * buf, uint8 len, uint8 opt );
 void sio_evolve( TSioComm * sio );
 
