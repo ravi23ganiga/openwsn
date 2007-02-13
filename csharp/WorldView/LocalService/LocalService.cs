@@ -96,6 +96,82 @@ namespace WorldView
         DataStream
     }
 
+    public struct NodeList 
+    {
+        private ushort[] list;
+        private byte current_count;
+        private byte maxcnt;        
+        
+        //public function;
+        public byte getindex(ushort node)
+        {
+            byte index = 0;
+            bool isFind = false;
+            for (index = 0; index < current_count; index++)
+            {
+                if (list[index] == node)
+                {
+                    isFind = true;
+                    break;
+                }
+            }
+
+            if (isFind)
+                return index;
+            else
+                return maxcnt;
+        }
+
+        public ushort getnode(byte index)
+        { 
+            if (index <current_count)
+                return (list[index]);
+            else
+                return (0);             
+        }
+
+        public byte listCapacity() { return (maxcnt);}
+        public byte itemCount() { return (current_count);}
+
+        public void construct(byte count)
+        { 
+            list = new ushort[count];
+            maxcnt = count; 
+            current_count = 0;
+        }
+
+
+        public bool addNode(ushort node)
+        {
+            byte index = getindex(node);
+
+            if (index < maxcnt) return true;//已经把数据放到数组中；
+
+            if (current_count < maxcnt - 1)
+            {
+                list[current_count++] = node;                
+                return true;
+            }
+            else {
+                return false;//数组中没有足够的空间来存放节点信息；
+            }
+        }
+
+        public bool deleteNode(ushort node)
+        {
+            byte index = getindex(node);
+            if (index == maxcnt) return false;//没有找到要删除的节点信息；
+
+            for (int i = index; i < current_count; i++)
+            {
+                list[i] = list[i +1];
+            }
+            current_count--;
+            return true;            
+        }
+
+    }
+
     public struct PacketFrame
     {
         /* The FCF(frame control field) occupies one byte.It is an unsigned integer.The structure of the FCF  is defined as follow:
@@ -105,7 +181,7 @@ namespace WorldView
       D7~D4 bits show the number of the hop in the route trace in this frame.The maximum value is 15 and the minimum value is 1.*/
 
         public byte PacketControl;
-        public byte seqNumber;
+        //public byte seqNumber;
         //public ushort srcNodeid;
         //public ushort destNodeid;
         //public ushort[] leapStep;
@@ -118,7 +194,7 @@ namespace WorldView
         public unsafe static extern byte svc_read(void* svc, [In, Out] byte* buf, byte capacity, ushort opt);
 
         [DllImport("libsink", EntryPoint = "svc_write")]
-        public unsafe static extern byte svc_write(void* svc, char[] buf, byte len, ushort opt);
+        public unsafe static extern byte svc_write(void* svc, byte [] buf, byte len, ushort opt);
 
         [DllImport("libsink", EntryPoint = "svc_create")]
         public unsafe static extern void* svc_create(ushort id, ushort opt);                                                        
@@ -139,7 +215,7 @@ namespace WorldView
         public unsafe static extern sbyte svc_uart_configure(void* svc, uint baudrate, byte databits, byte stopbits, byte parity, byte optflag);
 
 
-        private  unsafe void* svc = null;
+        private static  unsafe void* svc = null;
         //private  ushort id, opt;
 
         private const byte MAX_DATA_REV_NUMBER = 0x0f;
@@ -165,45 +241,48 @@ namespace WorldView
         public  UInt32 updateperiod;
 
         private  TRoutePathCache pathCache;
-        private  TRoutePathItem routpath;
+        private  TRoutePathItem routepath;
         private  dataRevCache revCache;
-       
+        
+       　　　　　
         private  byte seqNum;
         public   byte[] payload;
-        
+        private NodeList nodelist;
+
         public ushort getSink() { return (sinknode);}
         public UInt32 getUpdatePeriod() {return (updateperiod);}
         public void setUpdatePeriod(UInt32 period) { updateperiod = period; }
         public void setSink(ushort node) { sinknode = node; }
        
         public TRoutePathCache getPathCache() { return (pathCache);}
-        public TRoutePathItem getpathItem() { return (routpath);}
+        public TRoutePathItem getpathItem() { return (routepath);}
         public dataRevCache getRevDataCache() { return (revCache);}
         
         public byte getSequenceNumber(){ return (seqNum);}      
 
-        public unsafe void* Start(ushort id,ushort opt)
+        public  unsafe void* Start(ushort id,ushort opt)
         {
-            unsafe
+
+            if (svc == null)
             {
                 svc = svc_create(id, opt);
                 if (svc != null)
-                svc_start(svc);
-
+                    svc_start(svc);
+                maxhop = MAX_ROUTE_PATH_NUMBER;
+                pathCache = new TRoutePathCache();
+                pathCache.construct(MAX_ROUTE_PATH_NUMBER);
+                revCache = new dataRevCache();
+                revCache.construct(10);
+                routepath = new TRoutePathItem();
+                nodelist = new NodeList();
+                nodelist.construct(20);
+                seqNum = 1;
             }
-
-            maxhop = MAX_ROUTE_PATH_NUMBER;
-            pathCache = new TRoutePathCache();
-            pathCache.construct(MAX_ROUTE_PATH_NUMBER);
-            revCache = new dataRevCache();
-            revCache.construct(10);           
-            routpath = new TRoutePathItem();            
-            seqNum = 1;
             return svc;
         }
 
 
-        public void Stop()
+        public static void Stop()
         {
             unsafe
             {
@@ -237,7 +316,7 @@ namespace WorldView
         11 means the type is delete.
        */
 
-        public int Read(ref byte[] buf, byte size, ushort opt)
+        public  int Read([In,Out] byte[] buf, byte size, ushort opt)
         {
             byte cnt = 0;
             unsafe
@@ -264,14 +343,15 @@ namespace WorldView
             return cnt;
         }
         
-        public int Write(byte[] buf, byte size, ushort opt)
+        public  int Write(byte[] buf, byte size, ushort opt)
         {
-            byte cnt =10;
+            byte cnt =10;    
+     
             lock (this)
             {
                 unsafe
                 {
-                   // cnt = svc_write(svc, buf, size, opt);
+                    cnt = svc_write(svc, buf, size, opt);
                 }
             }
 
@@ -283,66 +363,64 @@ namespace WorldView
         public void phaseDataRev()
         {
             byte[] tempdata = new byte[128];
-            int len = Read(ref tempdata, 128, 0);
+            int totalen = Read(tempdata, 128, 0);  
+            byte datalen = 0;
             ushort srcNode, dstNode;
             ushort nextleap = 0;
             int RouteleapNumber = 0;
-            int i = 0;//, j = 0;
-            if (len < 1) return;
+            int i = 0;
+            if (totalen < 1) return;
             //check the datatype.        
-            DataType datatype = (DataType)(tempdata[i] & DATA_TYPE_MASK >> DATA_TYPE_BM);
-            RouteleapNumber = tempdata[i++] & ROUTE_ADDRLIST_MASK >> ROUTE_ADDRLIST_BM;
-                       
-            PacketFrame pframe = new PacketFrame();
-            pframe.seqNumber = tempdata[i++];
+            DataType datatype = (DataType)(tempdata[0] & DATA_TYPE_MASK >> DATA_TYPE_BM);
+            RouteleapNumber = tempdata[0] & ROUTE_ADDRLIST_MASK >> ROUTE_ADDRLIST_BM;           
+            
+            i = tempdata[1] > 128 ? 2 : 1;
+            datalen = tempdata[i++];
+            /*获取序列号*/
+            seqNum = tempdata[i++];
+
             srcNode = tempdata[i++];
             srcNode += (ushort)(tempdata[i++] << 8);
-            dstNode = tempdata[i++];
-            dstNode += (ushort)(tempdata[i++] << 8);
-/*   public struct PacketFrame
-    {
-        public byte PacketControl;
-        public byte seqNumber;    
-        public byte[] pData;//[100-sizeof(RouteAddr)];//里面的常数不能修改；
-    }  
-  */ 
-            /*
-            for (j = 0; j < RouteleapNumber; j++)
-            {
-                nextleap = tempdata[i++];
-                nextleap += (ushort)(tempdata[i++] << 8);
-                pframe.leapStep[j] = nextleap;
-            }
-            */
-            i++;//the second datum is the  sequence number of the data received;
-            len = tempdata[i++];//the third one is the length of the data received.
 
+            //更新节点序列，需要检查一下是否已经存在，避免重复
+            nodelist.addNode(srcNode);
+            
             switch (datatype)
             {
                 case DataType.DATA_TYPE_GET_NODE_ID_ACK:
-                    srcNode = tempdata[i++];
-                    srcNode +=(ushort)(tempdata[i++]<<8);
                     sinknode = srcNode;
                     break;
-                case DataType.DATA_TYPE_ROUTE_ACK://路由反馈包                    
-                    TRoutePathItem pathitem = new TRoutePathItem();
-                    pathitem.construct(srcNode, dstNode, RouteleapNumber, false);
+                case DataType.DATA_TYPE_ROUTE_ACK://路由反馈包
+                    dstNode = tempdata[i++];
+                    dstNode += (ushort)(tempdata[i++] << 8);
 
-                    for (i = 0; i < RouteleapNumber; i++)
+                    //TRoutePathItem pathitem = new TRoutePathItem(); 
+                    routepath = new TRoutePathItem();
+                    routepath.construct(srcNode, dstNode, RouteleapNumber, false);
+                    for (byte index = 0; index < RouteleapNumber; index++)
                     {
                        // nextleap = pframe.leapStep[i];
-                        pathitem.addleap(nextleap);
+                        nextleap =  tempdata[i++];
+                        nextleap += (ushort)(tempdata[i++] << 8);
+                        
+                        routepath.addleap(nextleap);
                     }
-                    pathCache.appendRoutePath(pathitem);
-                    
-                    //更新节点序列，需要检查一下是否已经存在，避免重复
+                    pathCache.appendRoutePath(routepath);                    
                     return;
 
                 case DataType.DATA_TYPE_LIGHTSENSOR_QUERY_ACK:
                     //pframe.pData.CopyTo(packet, 0);
+                    datalen = (byte) (datalen - 1 - 4 - RouteleapNumber*2);
                     dataRevItem item = new dataRevItem();
                     item.construct(srcNode, 128);
-                    item.Write(tempdata, (ushort)len, 0);
+                    byte[] temp = new byte[datalen];
+
+                    if ((tempdata[1] & 0x8000) > 0)
+                    { //系统命令；
+                        tempdata.CopyTo(temp, (7 + RouteleapNumber * 2));
+                    }
+                    
+                    item.Write(temp, (ushort)datalen, 0);
                     revCache.appendataItem(item);
                     break;
 
@@ -364,11 +442,12 @@ namespace WorldView
         public int GetSinkState() { return 0; }
         public int GetNodeData() { return 0; }
 
-        public byte generatePacketFrame(ref byte[] packet, byte[] payload,TRoutePathItem routePath, DataType datatype)
+        public byte generatePacketFrame(ref byte[] packet, byte[] payload,TRoutePathItem routePath, DataType datatype,ushort opt)
         {
             byte i = 0;
             int index;
             ushort nextleap;
+            bool isSysCmd = false;
             byte PacketControl = (byte)(((byte)datatype) << DATA_TYPE_BM);
 
             if (datatype != DataType.DATA_TYPE_GET_NODE_ID_REQUEST && datatype != DataType.DATA_TYPE_ROUTE_REQUEST)
@@ -376,8 +455,22 @@ namespace WorldView
                 PacketControl &= (byte)(routePath.getleaptotal() << ROUTE_ADDRLIST_BM);
             }
             packet[i++] = PacketControl;
+
+            if (opt == 1)
+            {
+                /*如果opt为1，表示为系统命令,这是，第二个字节的D7为1，第三个字节为数据长度字节；这里的数据长度不包含
+             前面的数据信息以及数据长度自身所占的这个字节。最大值为98。*/
+                //the following code is to generate system command.
+                //pakcet[i++] = ？;
+                //system command is finished here.
+                isSysCmd = true;
+                i++;              
+            }
+
+            packet[i++] = 0;//第二个/三个字节为数据长度；           
             packet[i++] = seqNum++;
 
+            
             if (datatype != DataType.DATA_TYPE_GET_NODE_ID_REQUEST && datatype != DataType.DATA_TYPE_ROUTE_REQUEST)
             {
                 //有路由表信息或者信息不是发给sink节点的；
@@ -404,10 +497,15 @@ namespace WorldView
                 for (index = 0; index < payload.Length; index++)
                     packet[i++] = payload[index];
             }
-            else
+
+            if (isSysCmd)
             {
-                packet[i++] = 0;
+                packet[2] = (byte)(i - 3);
             }
+            else {
+                packet[1] = (byte)(i - 2);
+            }
+            
             return (i);
         }
       
