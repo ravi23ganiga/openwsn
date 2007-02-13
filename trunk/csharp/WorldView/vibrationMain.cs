@@ -37,8 +37,9 @@ namespace WorldView
         private void queryTimer_Tick(object sender, EventArgs e)
         {
            service.phaseDataRev();
-           ushort nodeid = service.getSink();
-           if (nodeid != 0) MessageBox.Show(nodeid.ToString());
+           //ushort nodeid = service.getSink();
+           //statusStrip1.Items.Add(nodeid.ToString());
+           
         }
 
         private void dispData_Click(object sender, EventArgs e)
@@ -119,7 +120,7 @@ namespace WorldView
             }
             byte [] packet = new byte[60];
             
-            byte len =  service.generatePacketFrame(ref packet,service.payload,pathitem,cmdtype);
+            byte len =  service.generatePacketFrame(ref packet,service.payload,pathitem,cmdtype,0);
             service.Write(packet,len,0);
 
             if (!queryTimer.Enabled) queryTimer.Enabled = true;
@@ -128,6 +129,11 @@ namespace WorldView
         private void listViewRouteInfo_SelectedIndexChanged(object sender, EventArgs e)
         {
             //LocalService.routpath = listViewRouteInfo.Items[listViewRouteInfo.Items.IndexOf(this.)];
+        }
+
+        private void stopRev_Click(object sender, EventArgs e)
+        {
+            if (queryTimer.Enabled) queryTimer.Enabled = false;
         }
     }
 }

@@ -46,6 +46,7 @@ namespace WorldView
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.cmdList = new System.Windows.Forms.ComboBox();
+            this.stopRev = new System.Windows.Forms.Button();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -187,11 +188,22 @@ namespace WorldView
             this.cmdList.Size = new System.Drawing.Size(75, 21);
             this.cmdList.TabIndex = 13;
             // 
+            // stopRev
+            // 
+            this.stopRev.Location = new System.Drawing.Point(289, 403);
+            this.stopRev.Name = "stopRev";
+            this.stopRev.Size = new System.Drawing.Size(85, 23);
+            this.stopRev.TabIndex = 14;
+            this.stopRev.Text = " Õ£÷πΩ” ’";
+            this.stopRev.UseVisualStyleBackColor = true;
+            this.stopRev.Click += new System.EventHandler(this.stopRev_Click);
+            // 
             // vibrationMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(500, 461);
+            this.Controls.Add(this.stopRev);
             this.Controls.Add(this.cmdList);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -215,7 +227,6 @@ namespace WorldView
 
         #endregion
 
-        private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.Timer queryTimer;
         private System.Windows.Forms.Timer checkRouteTimer;
         private System.Windows.Forms.ComboBox nodeList;
@@ -232,5 +243,7 @@ namespace WorldView
         public System.Windows.Forms.ColumnHeader nodeid;
         public System.Windows.Forms.ColumnHeader route;
         private System.Windows.Forms.ToolStripStatusLabel sinknode;
+        private System.Windows.Forms.Button stopRev;
+        public System.Windows.Forms.StatusStrip statusStrip1;
     }
 }
