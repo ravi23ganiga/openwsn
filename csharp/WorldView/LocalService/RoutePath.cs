@@ -33,7 +33,10 @@ namespace WorldView
             leaptotal = 0;
             isOptimal = opt;
             updateTime = System.DateTime.Now;
-            leapStep = new ushort[maxstep];
+            if (maxstep > 0)
+            {
+                leapStep = new ushort[maxstep];
+            }
         }
         public ushort getSrcNode() { return (srcNode); }
         public ushort getDestNode() { return (dstNode); }
@@ -48,16 +51,18 @@ namespace WorldView
         public ushort getLeapStep(int index)
         {
             ushort result = 0;
+            //没有数据在路由信息表里，这种情况下，源节点和目标sink节点只用一跳，不用路由。
+            if (getleaptotal() < 1) return result;
             if (index> getleaptotal() || index < 0) return result;
             return (leapStep[index]);
         }
 
         public void addleap(ushort leap)
         {
-            leapStep[leapStep.Length] = leap;
+            leapStep[leaptotal++] = leap;
         }
 
-
+  
 
         public void reverse()
         {
@@ -86,21 +91,7 @@ namespace WorldView
 
 
         //private functions:
-        private bool copyPathItem(ref TRoutePathItem dest, TRoutePathItem source)
-        {
-            //if (source == null || dest == null) return false;
-            dest.setSrcNode(source.getSrcNode());
-            dest.setDestNode(source.getDestNode());
-            dest.setOptimal(source.getOptimal());
-            dest.setleaptotal(source.getleaptotal());
-
-            for (int index = 0; index < source.getleaptotal(); index++)
-            {
-                dest.addleap(source.getLeapStep(index));
-            }
-
-            return true;
-        }
+  
 
         private bool camparePathItem(TRoutePathItem item1, TRoutePathItem item2)
         {
@@ -141,6 +132,24 @@ namespace WorldView
         }
 
         //public functions:
+
+        public bool copyPathItem(ref TRoutePathItem dest, TRoutePathItem source)
+        {
+            //if (source == null || dest == null) return false;
+            dest.setSrcNode(source.getSrcNode());
+            dest.setDestNode(source.getDestNode());
+            dest.setOptimal(source.getOptimal());
+            int leaptotal = source.getleaptotal();
+            dest.setleaptotal(leaptotal);
+
+            for (int index = 0; index < source.getleaptotal(); index++)
+            {
+                dest.addleap(source.getLeapStep(index));
+            }
+
+            return true;
+        }
+
         public void construct(byte count)
         {
             RoutePathItem = new TRoutePathItem[count];
@@ -202,10 +211,10 @@ namespace WorldView
         public bool appendRoutePath(TRoutePathItem pathItem)
         {
             if (cur_count >= max_count) return false;
-
             byte index = getindex(pathItem);
-            if (index < cur_count) return true;//has found the index;
 
+            if (index < cur_count) return true;//has found the index;
+            RoutePathItem[cur_count] = new TRoutePathItem();
             RoutePathItem[cur_count].construct(pathItem.getSrcNode(),
                 pathItem.getDestNode(),
                 pathItem.getleaptotal(),

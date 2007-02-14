@@ -37,7 +37,7 @@ namespace WorldView
             this.listViewDataRev = new System.Windows.Forms.ListView();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.listViewRouteInfo = new System.Windows.Forms.ListView();
-            this.nodeid = new System.Windows.Forms.ColumnHeader();
+            this.srcnodeid = new System.Windows.Forms.ColumnHeader();
             this.route = new System.Windows.Forms.ColumnHeader();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.sendCmd = new System.Windows.Forms.Button();
@@ -47,7 +47,11 @@ namespace WorldView
             this.label2 = new System.Windows.Forms.Label();
             this.cmdList = new System.Windows.Forms.ComboBox();
             this.stopRev = new System.Windows.Forms.Button();
+            this.columnNodeid = new System.Windows.Forms.ColumnHeader();
+            this.columnContent = new System.Windows.Forms.ColumnHeader();
+            this.dstnodeid = new System.Windows.Forms.ColumnHeader();
             this.statusStrip1.SuspendLayout();
+            this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // statusStrip1
@@ -83,11 +87,18 @@ namespace WorldView
             // 
             // listViewDataRev
             // 
+            this.listViewDataRev.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnNodeid,
+            this.columnContent});
+            this.listViewDataRev.FullRowSelect = true;
+            this.listViewDataRev.GridLines = true;
             this.listViewDataRev.Location = new System.Drawing.Point(42, 41);
             this.listViewDataRev.Name = "listViewDataRev";
             this.listViewDataRev.Size = new System.Drawing.Size(439, 146);
+            this.listViewDataRev.Sorting = System.Windows.Forms.SortOrder.Ascending;
             this.listViewDataRev.TabIndex = 3;
             this.listViewDataRev.UseCompatibleStateImageBehavior = false;
+            this.listViewDataRev.View = System.Windows.Forms.View.Details;
             // 
             // groupBox1
             // 
@@ -101,25 +112,32 @@ namespace WorldView
             // listViewRouteInfo
             // 
             this.listViewRouteInfo.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.nodeid,
+            this.srcnodeid,
+            this.dstnodeid,
             this.route});
-            this.listViewRouteInfo.Location = new System.Drawing.Point(42, 208);
+            this.listViewRouteInfo.FullRowSelect = true;
+            this.listViewRouteInfo.GridLines = true;
+            this.listViewRouteInfo.Location = new System.Drawing.Point(0, 14);
             this.listViewRouteInfo.Name = "listViewRouteInfo";
             this.listViewRouteInfo.Size = new System.Drawing.Size(439, 144);
             this.listViewRouteInfo.TabIndex = 5;
             this.listViewRouteInfo.UseCompatibleStateImageBehavior = false;
+            this.listViewRouteInfo.View = System.Windows.Forms.View.Details;
             this.listViewRouteInfo.SelectedIndexChanged += new System.EventHandler(this.listViewRouteInfo_SelectedIndexChanged);
             // 
-            // nodeid
+            // srcnodeid
             // 
-            this.nodeid.Text = "节点号";
+            this.srcnodeid.Text = "源节点号";
+            this.srcnodeid.Width = 66;
             // 
             // route
             // 
             this.route.Text = "路由信息";
+            this.route.Width = 358;
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.listViewRouteInfo);
             this.groupBox2.Location = new System.Drawing.Point(42, 194);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(439, 158);
@@ -198,6 +216,21 @@ namespace WorldView
             this.stopRev.UseVisualStyleBackColor = true;
             this.stopRev.Click += new System.EventHandler(this.stopRev_Click);
             // 
+            // columnNodeid
+            // 
+            this.columnNodeid.Text = "节点号";
+            this.columnNodeid.Width = 92;
+            // 
+            // columnContent
+            // 
+            this.columnContent.Text = "内容";
+            this.columnContent.Width = 333;
+            // 
+            // dstnodeid
+            // 
+            this.dstnodeid.Text = "目标节点号";
+            this.dstnodeid.Width = 82;
+            // 
             // vibrationMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -210,7 +243,6 @@ namespace WorldView
             this.Controls.Add(this.dispRoute);
             this.Controls.Add(this.sendCmd);
             this.Controls.Add(this.dispData);
-            this.Controls.Add(this.listViewRouteInfo);
             this.Controls.Add(this.nodeList);
             this.Controls.Add(this.listViewDataRev);
             this.Controls.Add(this.statusStrip1);
@@ -220,6 +252,7 @@ namespace WorldView
             this.Text = "vibrationMain";
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -240,10 +273,13 @@ namespace WorldView
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ComboBox cmdList;
-        public System.Windows.Forms.ColumnHeader nodeid;
+        public System.Windows.Forms.ColumnHeader srcnodeid;
         public System.Windows.Forms.ColumnHeader route;
         private System.Windows.Forms.ToolStripStatusLabel sinknode;
         private System.Windows.Forms.Button stopRev;
         public System.Windows.Forms.StatusStrip statusStrip1;
+        public System.Windows.Forms.ColumnHeader columnNodeid;
+        public System.Windows.Forms.ColumnHeader columnContent;
+        private System.Windows.Forms.ColumnHeader dstnodeid;
     }
 }
