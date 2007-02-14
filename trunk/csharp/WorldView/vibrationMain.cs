@@ -37,6 +37,16 @@ namespace WorldView
         private void queryTimer_Tick(object sender, EventArgs e)
         {
            service.phaseDataRev();
+           ushort node;
+           TRoutePathItem item;
+           for (byte index = 0; index < pathCache.itemCount(); index++)
+           {
+               item = pathCache.getPathItem(index);
+               node = item.getSrcNode();
+               if (!nodeList.Items.Contains(node.ToString())) nodeList.Items.Add(node.ToString());
+           }    
+              
+           
            //ushort nodeid = service.getSink();
            //statusStrip1.Items.Add(nodeid.ToString());
            
@@ -55,7 +65,7 @@ namespace WorldView
            
            for (byte index = 0; index < dataRevItemCnt; index++)
            {
-              dataitem = revDataCache.getDataItem(index);
+              dataitem = revDataCache.getDataItem(index);               
               len = dataitem.Read(ref tempdata,128,0);
               if (len > 0)
               {
@@ -69,33 +79,36 @@ namespace WorldView
 
         private void dispRoute_Click(object sender, EventArgs e)
         {
-                               
-            //ListView view = new ListView();
-            ListViewItem nodeid = listViewRouteInfo.Items.Add("nodeid", 0);
-            ListViewItem contents = listViewRouteInfo.Items.Add("contents", 1);
-          
+           
             int len = 0;
             TRoutePathItem routeitem = new TRoutePathItem();
-
+            pathItemCnt = pathCache.itemCount(); 
             for (byte index = 0; index < pathItemCnt; index++)
             {
                 routeitem = pathCache.getPathItem(index);
+                
                 int j =0;
                 byte[] tempdata = new byte[128];
                 
-                for (int i = 0; i < routeitem.getleaptotal();i++)
-                {
-                    tempdata[j++] = (byte) routeitem.getLeapStep(i);
-                    tempdata[j++] = (byte)(routeitem.getLeapStep(i) >> 8);
-                }
+ 
+                    ListViewItem item = listViewRouteInfo.Items.Add(routeitem.getSrcNode().ToString(),0);
+                    item.SubItems.Add(routeitem.getDestNode().ToString());
+                    len = routeitem.getleaptotal();
+                    for (int i = 0; i < len; i++)
+                    {
+                        tempdata[j++] = (byte) routeitem.getLeapStep(i);
+                        tempdata[j++] = (byte)(routeitem.getLeapStep(i) >> 8);
+                    }
 
-                if (len > 0)
-                {
-                    nodeid.SubItems.Add(routeitem.getSrcNode().ToString());
-                    string text = Encoding.UTF8.GetString(tempdata, 0, j);
-                    contents.SubItems.Add(text);
-                }
+                   //srcnodeid.SubItems.Add(routeitem.getSrcNode().ToString());
+                   
+                    if (len > 0)
+                    {
+                        string text = Encoding.UTF8.GetString(tempdata, 0, j);
+                        item.SubItems.Add(text);
+                    }
             }
+            
         }
 
         
@@ -129,6 +142,7 @@ namespace WorldView
         private void listViewRouteInfo_SelectedIndexChanged(object sender, EventArgs e)
         {
             //LocalService.routpath = listViewRouteInfo.Items[listViewRouteInfo.Items.IndexOf(this.)];
+            listViewRouteInfo.Items[0].GetSubItemAt(300,500);
         }
 
         private void stopRev_Click(object sender, EventArgs e)
