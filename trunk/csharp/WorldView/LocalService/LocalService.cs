@@ -469,7 +469,6 @@ namespace WorldView
 
             packet[i++] = 0;//第二个/三个字节为数据长度；           
             packet[i++] = seqNum++;
-
             
             if (datatype != DataType.DATA_TYPE_GET_NODE_ID_REQUEST && datatype != DataType.DATA_TYPE_ROUTE_REQUEST)
             {
@@ -477,8 +476,8 @@ namespace WorldView
                 ushort nodeid = routePath.getSrcNode();
                 packet[i++] = (byte)nodeid;
                 packet[i++] = (byte)(nodeid >> 8);
-                nodeid = routePath.getDestNode();
-               
+
+                nodeid = routePath.getDestNode();               
                 packet[i++] = (byte)nodeid;
                 packet[i++] = (byte)(nodeid >> 8);
 
