@@ -82,6 +82,7 @@ namespace WorldView
            
             int len = 0;
             TRoutePathItem routeitem = new TRoutePathItem();
+            listViewRouteInfo.Items.Clear();
             pathItemCnt = pathCache.itemCount(); 
             for (byte index = 0; index < pathItemCnt; index++)
             {
