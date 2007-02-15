@@ -108,7 +108,7 @@ namespace WorldView
             {
                 result = false;
             }
-            else if (item1.getOptimal() != item2.getOptimal())
+            /*else if (item1.getOptimal() != item2.getOptimal())
             {
                 result = false;
             }
@@ -117,7 +117,7 @@ namespace WorldView
 
                 result = false;
             }
-
+            */
             if (result)
             {
                 for (int index = 0; index < item1.getleaptotal(); index++)
