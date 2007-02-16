@@ -29,15 +29,16 @@ namespace WorldView
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.sinknode = new System.Windows.Forms.ToolStripStatusLabel();
             this.queryTimer = new System.Windows.Forms.Timer(this.components);
             this.checkRouteTimer = new System.Windows.Forms.Timer(this.components);
             this.nodeList = new System.Windows.Forms.ComboBox();
             this.listViewDataRev = new System.Windows.Forms.ListView();
+            this.columnNodeid = new System.Windows.Forms.ColumnHeader();
+            this.columnContent = new System.Windows.Forms.ColumnHeader();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.listViewRouteInfo = new System.Windows.Forms.ListView();
             this.srcnodeid = new System.Windows.Forms.ColumnHeader();
+            this.dstnodeid = new System.Windows.Forms.ColumnHeader();
             this.route = new System.Windows.Forms.ColumnHeader();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.sendCmd = new System.Windows.Forms.Button();
@@ -47,26 +48,10 @@ namespace WorldView
             this.label2 = new System.Windows.Forms.Label();
             this.cmdList = new System.Windows.Forms.ComboBox();
             this.stopRev = new System.Windows.Forms.Button();
-            this.columnNodeid = new System.Windows.Forms.ColumnHeader();
-            this.columnContent = new System.Windows.Forms.ColumnHeader();
-            this.dstnodeid = new System.Windows.Forms.ColumnHeader();
-            this.statusStrip1.SuspendLayout();
+            this.datatype = new System.Windows.Forms.ColumnHeader();
+            this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // statusStrip1
-            // 
-            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.sinknode});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 439);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(500, 22);
-            this.statusStrip1.TabIndex = 0;
-            // 
-            // sinknode
-            // 
-            this.sinknode.Name = "sinknode";
-            this.sinknode.Size = new System.Drawing.Size(0, 17);
             // 
             // queryTimer
             // 
@@ -76,6 +61,7 @@ namespace WorldView
             // checkRouteTimer
             // 
             this.checkRouteTimer.Interval = 5000;
+            this.checkRouteTimer.Tick += new System.EventHandler(this.checkRouteTimer_Tick);
             // 
             // nodeList
             // 
@@ -89,10 +75,11 @@ namespace WorldView
             // 
             this.listViewDataRev.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnNodeid,
+            this.datatype,
             this.columnContent});
             this.listViewDataRev.FullRowSelect = true;
             this.listViewDataRev.GridLines = true;
-            this.listViewDataRev.Location = new System.Drawing.Point(42, 41);
+            this.listViewDataRev.Location = new System.Drawing.Point(0, 16);
             this.listViewDataRev.Name = "listViewDataRev";
             this.listViewDataRev.Size = new System.Drawing.Size(439, 146);
             this.listViewDataRev.Sorting = System.Windows.Forms.SortOrder.Ascending;
@@ -100,8 +87,19 @@ namespace WorldView
             this.listViewDataRev.UseCompatibleStateImageBehavior = false;
             this.listViewDataRev.View = System.Windows.Forms.View.Details;
             // 
+            // columnNodeid
+            // 
+            this.columnNodeid.Text = "节点号";
+            this.columnNodeid.Width = 92;
+            // 
+            // columnContent
+            // 
+            this.columnContent.Text = "内容";
+            this.columnContent.Width = 333;
+            // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.listViewDataRev);
             this.groupBox1.Location = new System.Drawing.Point(42, 25);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(439, 162);
@@ -129,6 +127,11 @@ namespace WorldView
             // 
             this.srcnodeid.Text = "源节点号";
             this.srcnodeid.Width = 66;
+            // 
+            // dstnodeid
+            // 
+            this.dstnodeid.Text = "目标节点号";
+            this.dstnodeid.Width = 82;
             // 
             // route
             // 
@@ -216,20 +219,10 @@ namespace WorldView
             this.stopRev.UseVisualStyleBackColor = true;
             this.stopRev.Click += new System.EventHandler(this.stopRev_Click);
             // 
-            // columnNodeid
+            // datatype
             // 
-            this.columnNodeid.Text = "节点号";
-            this.columnNodeid.Width = 92;
-            // 
-            // columnContent
-            // 
-            this.columnContent.Text = "内容";
-            this.columnContent.Width = 333;
-            // 
-            // dstnodeid
-            // 
-            this.dstnodeid.Text = "目标节点号";
-            this.dstnodeid.Width = 82;
+            this.datatype.Text = "数据类型";
+            this.datatype.Width = 74;
             // 
             // vibrationMain
             // 
@@ -244,14 +237,11 @@ namespace WorldView
             this.Controls.Add(this.sendCmd);
             this.Controls.Add(this.dispData);
             this.Controls.Add(this.nodeList);
-            this.Controls.Add(this.listViewDataRev);
-            this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.groupBox2);
             this.Name = "vibrationMain";
             this.Text = "vibrationMain";
-            this.statusStrip1.ResumeLayout(false);
-            this.statusStrip1.PerformLayout();
+            this.groupBox1.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -275,11 +265,10 @@ namespace WorldView
         private System.Windows.Forms.ComboBox cmdList;
         public System.Windows.Forms.ColumnHeader srcnodeid;
         public System.Windows.Forms.ColumnHeader route;
-        private System.Windows.Forms.ToolStripStatusLabel sinknode;
         private System.Windows.Forms.Button stopRev;
-        public System.Windows.Forms.StatusStrip statusStrip1;
         public System.Windows.Forms.ColumnHeader columnNodeid;
         public System.Windows.Forms.ColumnHeader columnContent;
         private System.Windows.Forms.ColumnHeader dstnodeid;
+        public System.Windows.Forms.ColumnHeader datatype;
     }
 }
