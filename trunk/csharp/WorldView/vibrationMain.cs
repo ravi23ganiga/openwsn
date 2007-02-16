@@ -56,23 +56,23 @@ namespace WorldView
         {
                    
            //ListView view = new ListView();
-           ListViewItem nodeid = listViewDataRev.Items.Add("nodeid", 0);
-           ListViewItem datatype = listViewDataRev.Items.Add("datatype", 1);
-           ListViewItem contents = listViewDataRev.Items.Add("contents", 2);
+           //ListViewItem nodeid = listViewDataRev.Items.Add("nodeid", 0);
+           //ListViewItem datatype = listViewDataRev.Items.Add("datatype", 1);
+           //ListViewItem contents = listViewDataRev.Items.Add("contents", 2);
            byte [] tempdata = new byte[128];
            int len = 0;
            dataRevItem dataitem = new dataRevItem();
-           
+           dataRevItemCnt = revDataCache.getcount();
            for (byte index = 0; index < dataRevItemCnt; index++)
            {
               dataitem = revDataCache.getDataItem(index);               
               len = dataitem.Read(ref tempdata,128,0);
               if (len > 0)
               {
-                  nodeid.SubItems.Add(dataitem.nodeid.ToString());
-                  datatype.SubItems.Add(dataitem.datatype.ToString());
+                  ListViewItem item = listViewDataRev.Items.Add(dataitem.nodeid.ToString(), 0);               
+                  item.SubItems.Add(dataitem.datatype.ToString());
                   string text = Encoding.UTF8.GetString(tempdata,0,len);
-                  contents.SubItems.Add(text);
+                  item.SubItems.Add(text);
               }
            }
         }
@@ -126,13 +126,23 @@ namespace WorldView
                     cmdtype = DataType.DATA_TYPE_ROUTE_REQUEST;
                     break;
                 case "震动查询":
-                    cmdtype = DataType.DATA_TYPE_VIBSENSOR_QUERY_REQUEST;
+                    cmdtype = DataType.DATA_TYPE_LIGHTSENSOR_QUERY_REQUEST;
+                    ushort node =  Convert.ToUInt16(nodeList.Text.Trim());
+                    for (byte i = 0; i < pathCache.itemCount(); i++)
+                    {
+                        pathitem = pathCache.getPathItem(i);
+                        if (pathitem.getSrcNode() == node)
+                        {
+                            break;
+                        }
+                    }
                     break;
                 case "发送数据":
                     cmdtype = DataType.DataStream;
                     break;
             }
             byte [] packet = new byte[60];
+            
             
             byte len =  service.generatePacketFrame(ref packet,service.payload,pathitem,cmdtype,0);
             service.Write(packet,len,0);
@@ -143,12 +153,18 @@ namespace WorldView
         private void listViewRouteInfo_SelectedIndexChanged(object sender, EventArgs e)
         {
             //LocalService.routpath = listViewRouteInfo.Items[listViewRouteInfo.Items.IndexOf(this.)];
-            listViewRouteInfo.Items[0].GetSubItemAt(300,500);
+            int index =  listViewRouteInfo.Columns.IndexOf(srcnodeid);
+         
         }
 
         private void stopRev_Click(object sender, EventArgs e)
         {
             if (queryTimer.Enabled) queryTimer.Enabled = false;
+        }
+
+        private void checkRouteTimer_Tick(object sender, EventArgs e)
+        {
+            this.sendCmd.Click += new System.EventHandler(this.sendCmd_Click);
         }
     }
 }

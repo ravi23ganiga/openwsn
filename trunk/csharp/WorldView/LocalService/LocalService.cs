@@ -79,15 +79,15 @@ namespace WorldView
          }
      }
      */
-    public enum DataType
+    public enum DataType :byte
     {
-        DATA_TYPE_GET_NODE_ID_REQUEST = 0x00,
-        DATA_TYPE_ROUTE_REQUEST,
-        DATA_TYPE_TEMPSENSOR_QUERY_REQUEST ,
-        DATA_TYPE_VIBSENSOR_QUERY_REQUEST,
-        DATA_TYPE_STRAINSENSOR_QUERY_REQUEST,
-        DATA_TYPE_LIGHTSENSOR_QUERY_REQUEST,
-        DATA_TYPE_GET_NODE_ID_ACK = 0x08,
+        DATA_TYPE_GET_NODE_ID_REQUEST = 0,
+        DATA_TYPE_ROUTE_REQUEST =1,
+        DATA_TYPE_TEMPSENSOR_QUERY_REQUEST =2,
+        DATA_TYPE_VIBSENSOR_QUERY_REQUEST =3,
+        DATA_TYPE_STRAINSENSOR_QUERY_REQUEST =4,
+        DATA_TYPE_LIGHTSENSOR_QUERY_REQUEST =5,
+        DATA_TYPE_GET_NODE_ID_ACK = 8,
         DATA_TYPE_ROUTE_ACK,        
         DATA_TYPE_TEMPSENSOR_QUERY_ACK,        
         DATA_TYPE_VIBSENSOR_QUERY_ACK,        
@@ -413,12 +413,20 @@ namespace WorldView
                     datalen = (byte) (datalen - 1 - 4 - RouteleapNumber*2);
                     dataRevItem item = new dataRevItem();
                     item.construct(srcNode, 128);
-                    byte[] temp = new byte[datalen];
-
+                    item.datatype = DataType.DATA_TYPE_LIGHTSENSOR_QUERY_ACK;
+                    byte[] temp = new byte[datalen +1];
+                    
                     if ((tempdata[1] & 0x8000) > 0)
                     { //系统命令；
-                        tempdata.CopyTo(temp, (7 + RouteleapNumber * 2));
+                        //tempdata.CopyTo(temp, (7 + RouteleapNumber * 2));
+                        for (int index = 0;index<datalen;index++)
+                            temp[index] = tempdata[8 + RouteleapNumber * 2 + index];
                     }
+                    else {
+                        for (int index = 0; index < datalen; index++)
+                            temp[index] = tempdata[7 + RouteleapNumber * 2 + index];                        
+                    }
+                    
                     
                     item.Write(temp, (ushort)datalen, 0);
                     revCache.appendataItem(item);
@@ -452,7 +460,7 @@ namespace WorldView
 
             if (datatype != DataType.DATA_TYPE_GET_NODE_ID_REQUEST && datatype != DataType.DATA_TYPE_ROUTE_REQUEST)
             {
-                PacketControl &= (byte)(routePath.getleaptotal() << ROUTE_ADDRLIST_BM);
+                PacketControl |= (byte)(routePath.getleaptotal() << ROUTE_ADDRLIST_BM);
             }
             packet[i++] = PacketControl;
 
@@ -474,18 +482,37 @@ namespace WorldView
             {
                 //有路由表信息或者信息不是发给sink节点的；
                 ushort nodeid = routePath.getSrcNode();
-                packet[i++] = (byte)nodeid;
-                packet[i++] = (byte)(nodeid >> 8);
 
-                nodeid = routePath.getDestNode();               
-                packet[i++] = (byte)nodeid;
-                packet[i++] = (byte)(nodeid >> 8);
-
-                for (index = 0; index < routePath.getleaptotal(); index++)
+                if (nodeid == sinknode)
                 {
-                    nextleap = routePath.getLeapStep(index);
-                    packet[i++] = (byte)nextleap;
-                    packet[i++] = (byte)(nextleap >> 8);
+                    packet[i++] = (byte)nodeid;
+                    packet[i++] = (byte)(nodeid >> 8);
+
+                    nodeid = routePath.getDestNode();
+                    packet[i++] = (byte)nodeid;
+                    packet[i++] = (byte)(nodeid >> 8);
+
+                    for (index = 0; index < routePath.getleaptotal(); index++)
+                    {
+                        nextleap = routePath.getLeapStep(index);
+                        packet[i++] = (byte)nextleap;
+                        packet[i++] = (byte)(nextleap >> 8);
+                    }
+                }
+                else {
+
+                    packet[i++] = (byte)sinknode;
+                    packet[i++] = (byte)(sinknode >> 8);                    
+                    
+                    packet[i++] = (byte)nodeid;
+                    packet[i++] = (byte)(nodeid >> 8);
+
+                    for (index = routePath.getleaptotal() -1; index >=0 ; index--)
+                    {
+                        nextleap = routePath.getLeapStep(index);
+                        packet[i++] = (byte)nextleap;
+                        packet[i++] = (byte)(nextleap >> 8);
+                    }
                 }
                 
             }                 

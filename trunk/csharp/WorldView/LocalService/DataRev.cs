@@ -168,11 +168,15 @@ namespace WorldView
             if (cur_count >= max_count) return false;
             count = item.Read(ref tempdata, 128, 0);
             byte index = getindex(item);
+            
             if (index < cur_count)
             {
                 dataRevItem[index].Write(tempdata, (ushort)count, 0);
             }
             else {
+                dataRevItem[cur_count] = new dataRevItem();
+                dataRevItem[cur_count].datatype = item.datatype;
+                dataRevItem[cur_count].construct(item.nodeid,100);
                 dataRevItem[cur_count++].Write(tempdata, (ushort)count, 0);
             }
             return true;
