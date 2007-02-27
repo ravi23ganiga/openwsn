@@ -1,6 +1,3 @@
-#ifndef _OPENNET_H_4729_
-#define _OPENNET_H_4729_
-
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
@@ -30,6 +27,9 @@
  * this file might be covered by the GNU General Public License.
  * 
  ****************************************************************************/ 
+
+#ifndef _OPENNET_H_4729_
+#define _OPENNET_H_4729_
 
 /******************************************************************************
  * @author zhangwei on 2006-12-20
