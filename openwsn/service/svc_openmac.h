@@ -53,7 +53,7 @@
 #define CONFIG_OPENMAC_SIMPLE
 
 #define CONFIG_OPENMAC_FULL
-#undef CONFIG_OPENMAC_FULL
+#undef CONFIG_OPENMAC_FULL 
 
 
 /* The following macros are used as the network PHY layers interface.
@@ -164,5 +164,19 @@ uint8 mac_setlocaladdress( TOpenMAC * mac, TOpenAddress * addr );
 uint8 mac_getrmtaddress( TOpenMAC * mac, TOpenAddress * addr );
 uint8 mac_getlocaladdress( TOpenMAC * mac, TOpenAddress * addr );
 uint8 mac_installnotify( TOpenMAC * mac, TEventHandler * callback, void * owner );
+
+/*
+ * mac_probe()
+mac_updatestatistic()
+
+mac_getcachedneighbors()
+mac_getneighbors()
+mac_getcachedlinkquality()
+mac_getlinkquality()
+mac_getcachedsignalstrength()
+mac_getsignalstrength()
+mac_getlasterror()
+ * 
+ */
 
 #endif

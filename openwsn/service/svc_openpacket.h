@@ -44,7 +44,6 @@
  * than service member functions.
  */
 
-
 /******************************************************************************
  * IEEE 802.15.4 PPDU format
  * [4B Preamble][1B SFD][7b Framelength, 1b Reserved][nB PSDU/Payload]
@@ -73,8 +72,9 @@
 
 /* system used data types */
 #define ODA_TYPE_DEBUG 0x00
-#define ODA_TYPE_ADV 0x01
+#define ODA_TYPE_REQUEST 0x07
 #define ODA_TYPE_DATA 0x02
+#define ODA_TYPE_ADV 0x01
 #define ODA_TYPE_TIMESYNC 0x03
 #define ODA_TYPE_LOCATION_REQUEST 0x06
 #define ODA_TYPE_LOCATION 0x04
