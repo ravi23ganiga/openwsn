@@ -118,12 +118,6 @@
     <Compile Include="LocalService\DataRev.cs" />
     <Compile Include="LocalService\DllService.cs" />
     <Compile Include="LocalService\RoutePath.cs" />
-    <Compile Include="Network.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Network.Designer.cs">
-      <DependentUpon>Network.cs</DependentUpon>
-    </Compile>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -245,10 +239,6 @@
     <EmbeddedResource Include="AboutDialog.resx">
       <DependentUpon>AboutDialog.cs</DependentUpon>
       <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Network.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>Network.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <SubType>Designer</SubType>
