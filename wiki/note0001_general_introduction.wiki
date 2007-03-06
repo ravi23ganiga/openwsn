@@ -1,0 +1,45 @@
+#summary One-sentence summary of this page.
+
+= Introduction =
+
+Add your content here.
+
+
+= Details =
+version 1.0.0
+author zw
+last modified by zw on 20070302
+
+
+= General Introduction =
+
+Q: introduction of the "note"
+R:
+when i have some ideas, i write them down as "note". you can try to catch the idea of openwsn through these "notes". 
+
+the notes can be divided into three categeories:
+
+- developing note: for the developer of openwsn system
+- application note: for the user of openwsn system
+- specification
+
+most of "note" are draft only. this means they are only some proposal. some "note" will upgrade to "specification" after developing and testing and discussions. then all the members in openwsn community should follow the "specification".
+
+
+
+Q: the format of note
+
+version 1.0.0
+author xxx
+last modified by xxx on <date>
+
+title
+=====
+
+Q: ....................
+A: ....................
+
+since most of the members are not well-trained to be a good document writer, we adopt QA format as our note format. you can simple propose your Q(uestion) and then A(swer) it. 
+
+ 
+
