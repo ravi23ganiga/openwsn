@@ -1,8 +1,6 @@
-#summary One-sentence summary of this page.
-
+#homepage of openwsn project wiki
 = Introduction =
 
-fdshgf
 Add your content here.
 
 
