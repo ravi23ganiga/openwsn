@@ -1,0 +1,31 @@
+#summary One-sentence summary of this page.
+
+= Introduction =
+
+Add your content here.
+
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
+
+version 1.0.0
+author zw
+
+= tinyos =
+
+Q: what's the relationship between openwsn and tinyos?
+R: 
+they two have a lot of similarities, but not the same. 
+openwsn emphasis the inter-communication of different products of wsn. so openwsn pay more attention on the specification of hardware modules and low level softwares (such as HAL and services). on the other hand, tinyos is a full-functional system from low level software to high level applications. 
+
+openwsn focus more on low level software and hardwares. currently, you can consider openwsn as a collection of developing APIs rather than a sensor OS like tinyos.
+
+so we can port tinyos to openwsn HAL layer. thus tinyos can run wherever openwsn can run. you can consider tinyos as a "nesC" service based on openwsn.
+
+i will be very glad if someone can port tinyos onto openwsn.
+
+ 
