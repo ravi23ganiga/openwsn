@@ -69,5 +69,12 @@ Provide a paper list on Location Problem in WSN.
 [http://bl0329.spaces.live.com/Blog/cns!25781EB46177A924!522.entry]
 
 
+animo
+[http://code.google.com/p/animo/]
+Device, Service and User Interface Management for Embedded Systems
+Animo is a Java-based framework that enables the creation of applications that are built by combining loosely coupled and interoperable services.
+
+
+
 
 
