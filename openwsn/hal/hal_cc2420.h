@@ -465,8 +465,6 @@ void cc2420_receive_on(TCc2420Driver * cc);
 void cc2420_receive_off(TCc2420Driver * cc);
 
 
-void cc2420_waitfor_crystal_oscillator(TSpiDriver * spi);
-
 //void cc2420_interrupt_init( void );
 //void cc2420_event_handler(void);
 
