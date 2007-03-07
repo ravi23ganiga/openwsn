@@ -17,6 +17,7 @@
 #include "hal_global.h"
 
 static void cc2420_interrupt_init( void );
+static void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi);
 static BOOL _cc2420_sendframe(TCc2420Driver * cc);
 static TCc2420Frame * _cc2420_recvframe( TCc2420Driver * cc,TCc2420Frame *pRRI);
 static void __irq cc2420_interrupt_handler( void );
@@ -237,7 +238,7 @@ void cc2420_init(TCc2420Driver * cc)
     //FAST2420_UPD_STATUS(cc->spi, (uint8*)(&rereg) );
     //uart_putchar(g_uart,(char)rereg);
 	// Wait for the crystal oscillator to become stable
-    cc2420_waitfor_crystal_oscillator(cc->spi);
+    _cc2420_waitfor_crystal_oscillator(cc->spi);
 	// Write the short address and the PAN ID to the CC2420 RAM (requires that the XOSC is on and stable)
     led_twinkle(LED_GREEN,5);
   
@@ -701,7 +702,7 @@ void cc2420_receive_off(TCc2420Driver * cc)
 /* this function will Poll the SPI status byte until the crystal oscillator is stable    
  * your must wait until it is stable before doing further read() or write() 
  */
-void cc2420_waitfor_crystal_oscillator(TSpiDriver * spi) 
+void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi) 
 {
 	static BYTE spiStatusByte;
 
@@ -835,7 +836,7 @@ BOOL _cc2420_sendframe(TCc2420Driver * cc) {
     cc->rfSettings.seqid++;
     return success;
 
-} // halRfSendPacket
+}
 
 
 

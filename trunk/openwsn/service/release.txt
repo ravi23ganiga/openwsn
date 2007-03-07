@@ -1,3 +1,6 @@
+21:31 2007-03-04
+add new module: svc_opensec. 
+
 2006-12-26
 add new module on sensing service: svc_sensor
 
