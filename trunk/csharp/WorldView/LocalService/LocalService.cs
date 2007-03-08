@@ -378,7 +378,6 @@ namespace WorldView
             datalen = tempdata[i++];
             /*ªÒ»°–Ú¡–∫≈*/
             seqNum = tempdata[i++];
-
             srcNode = tempdata[i++];
             srcNode += (ushort)(tempdata[i++] << 8);
 
@@ -426,8 +425,7 @@ namespace WorldView
                         for (int index = 0; index < datalen; index++)
                             temp[index] = tempdata[7 + RouteleapNumber * 2 + index];                        
                     }
-                    
-                    
+                                        
                     item.Write(temp, (ushort)datalen, 0);
                     revCache.appendataItem(item);
                     break;

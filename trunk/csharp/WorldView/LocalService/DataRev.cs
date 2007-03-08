@@ -13,6 +13,7 @@ namespace WorldView
             private ushort tail;
             private ushort len;
             private ushort MAX_CNT;
+           
             //public  functions;
            
             public void construct(ushort node, ushort lenth)
