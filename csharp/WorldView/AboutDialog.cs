@@ -69,7 +69,7 @@ namespace WorldView
             // buttonOK
             // 
             this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonOK.Location = new System.Drawing.Point(224, 133);
+            this.buttonOK.Location = new System.Drawing.Point(211, 133);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(75, 23);
             this.buttonOK.TabIndex = 0;
@@ -88,7 +88,7 @@ namespace WorldView
             // 
             this.label2.Location = new System.Drawing.Point(17, 98);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(321, 32);
+            this.label2.Size = new System.Drawing.Size(304, 32);
             this.label2.TabIndex = 2;
             this.label2.Text = "Copyright 2006 - 2007, OpenWSN Group(TJU)";
             // 
