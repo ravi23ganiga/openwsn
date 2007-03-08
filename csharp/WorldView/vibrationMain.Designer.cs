@@ -34,6 +34,7 @@ namespace WorldView
             this.nodeList = new System.Windows.Forms.ComboBox();
             this.listViewDataRev = new System.Windows.Forms.ListView();
             this.columnNodeid = new System.Windows.Forms.ColumnHeader();
+            this.datatype = new System.Windows.Forms.ColumnHeader();
             this.columnContent = new System.Windows.Forms.ColumnHeader();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.listViewRouteInfo = new System.Windows.Forms.ListView();
@@ -48,7 +49,6 @@ namespace WorldView
             this.label2 = new System.Windows.Forms.Label();
             this.cmdList = new System.Windows.Forms.ComboBox();
             this.stopRev = new System.Windows.Forms.Button();
-            this.datatype = new System.Windows.Forms.ColumnHeader();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -91,6 +91,11 @@ namespace WorldView
             // 
             this.columnNodeid.Text = "节点号";
             this.columnNodeid.Width = 92;
+            // 
+            // datatype
+            // 
+            this.datatype.Text = "数据类型";
+            this.datatype.Width = 74;
             // 
             // columnContent
             // 
@@ -218,11 +223,6 @@ namespace WorldView
             this.stopRev.Text = " 停止接收";
             this.stopRev.UseVisualStyleBackColor = true;
             this.stopRev.Click += new System.EventHandler(this.stopRev_Click);
-            // 
-            // datatype
-            // 
-            this.datatype.Text = "数据类型";
-            this.datatype.Width = 74;
             // 
             // vibrationMain
             // 
