@@ -45,35 +45,69 @@ namespace WorldView
                node = item.getSrcNode();
                if (!nodeList.Items.Contains(node.ToString())) nodeList.Items.Add(node.ToString());
            }    
-              
-           
-           //ushort nodeid = service.getSink();
-           //statusStrip1.Items.Add(nodeid.ToString());
-           
         }
 
         private void dispData_Click(object sender, EventArgs e)
         {
-                   
-           //ListView view = new ListView();
-           //ListViewItem nodeid = listViewDataRev.Items.Add("nodeid", 0);
-           //ListViewItem datatype = listViewDataRev.Items.Add("datatype", 1);
-           //ListViewItem contents = listViewDataRev.Items.Add("contents", 2);
            byte [] tempdata = new byte[128];
            int len = 0;
+           string text = "";
+           ushort result = 0;
+           int temp = 0;           
            dataRevItem dataitem = new dataRevItem();
            dataRevItemCnt = revDataCache.getcount();
            for (byte index = 0; index < dataRevItemCnt; index++)
            {
               dataitem = revDataCache.getDataItem(index);               
-              len = dataitem.Read(ref tempdata,128,0);
+              //len = dataitem.Read(ref tempdata,128,0);
+              len = dataitem.Read(ref tempdata, 128, 1);
               if (len > 0)
               {
-                  ListViewItem item = listViewDataRev.Items.Add(dataitem.nodeid.ToString(), 0);               
-                  item.SubItems.Add(dataitem.datatype.ToString());
-                  string text = Encoding.UTF8.GetString(tempdata,0,len);
-                  item.SubItems.Add(text);
-              }
+                  ListViewItem item = new ListViewItem();
+
+                  if (listViewDataRev.Items.Count > 0)
+                  {
+                      item = listViewDataRev.FindItemWithText(dataitem.nodeid.ToString(), false, temp, true);
+                      
+                      if (item != null && item.Text != "")
+                      {
+                          if (item.Text != dataitem.nodeid.ToString())
+                          {
+                              item = listViewDataRev.Items.Add(dataitem.nodeid.ToString(), 0);
+                          }                         
+                      }
+                      else
+                      {
+                         item = listViewDataRev.Items.Add(dataitem.nodeid.ToString(), 0);                          
+                      }
+                  }else {
+                   
+                      item = listViewDataRev.Items.Add(dataitem.nodeid.ToString(), 0);                                      
+                  }                 
+
+                  item.SubItems.Clear();
+                  item.Text = dataitem.nodeid.ToString();
+                  switch (dataitem.datatype)
+                  {
+                      case DataType.DATA_TYPE_LIGHTSENSOR_QUERY_ACK:
+                          item.SubItems.Add("震动数据");
+                          //text = "震动数据";
+                          break;
+                      case DataType.DATA_TYPE_STRAINSENSOR_QUERY_ACK:
+                          break;
+                  }
+
+             
+                  for (byte i = 0; i < len; i++)
+                  {
+                      result = tempdata[i];
+                      result += tempdata[i++];
+                      //text += Encoding.UTF8.GetString(tempdata, i, 2) + ",";
+                      text += result.ToString() +",";
+                  }
+
+                 item.SubItems.Add(text);                
+             }
            }
         }
 
