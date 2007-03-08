@@ -62,8 +62,6 @@ namespace WorldView
             leapStep[leaptotal++] = leap;
         }
 
-  
-
         public void reverse()
         {
             ushort nexthop = 0;
@@ -89,10 +87,8 @@ namespace WorldView
         private byte cur_count;
         private byte max_count;
 
-
         //private functions:
   
-
         private bool camparePathItem(TRoutePathItem item1, TRoutePathItem item2)
         {
             bool result = true;
