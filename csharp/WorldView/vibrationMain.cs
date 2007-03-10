@@ -200,5 +200,57 @@ namespace WorldView
         {
             this.sendCmd.Click += new System.EventHandler(this.sendCmd_Click);
         }
+
+        private void bt_trace_Click(object sender, EventArgs e)
+        {
+            if (bt_trace.Text == "跟踪")
+            {
+                bt_trace.Text = "停止跟踪";
+                if (!timer_trace.Enabled) timer_trace.Enabled = true;                
+            }
+            else {
+                if (timer_trace.Enabled) timer_trace.Enabled = false;
+                bt_trace.Text = "跟踪";
+            }   
+        }
+
+        private void timer_trace_Tick(object sender, EventArgs e)
+        {
+
+            DataType cmdtype = new DataType();
+            switch (cmdList.Text.Trim())
+            {
+                case "获取Sink节点":
+                    cmdtype = DataType.DATA_TYPE_GET_NODE_ID_REQUEST;
+                    break;
+                case "路由请求":
+                    cmdtype = DataType.DATA_TYPE_ROUTE_REQUEST;
+                    break;
+                case "震动查询":
+                    cmdtype = DataType.DATA_TYPE_LIGHTSENSOR_QUERY_REQUEST;
+                    ushort node = Convert.ToUInt16(nodeList.Text.Trim());
+                    for (byte i = 0; i < pathCache.itemCount(); i++)
+                    {
+                        pathitem = pathCache.getPathItem(i);
+                        if (pathitem.getSrcNode() == node)
+                        {
+                            break;
+                        }
+                    }
+                    break;
+                case "发送数据":
+                    cmdtype = DataType.DataStream;
+                    break;
+            }
+            byte[] packet = new byte[60];
+
+
+            byte len = service.generatePacketFrame(ref packet, service.payload, pathitem, cmdtype, 0);
+            service.Write(packet, len, 0);
+
+            if (!queryTimer.Enabled) queryTimer.Enabled = true;
+
+          
+        }
     }
 }

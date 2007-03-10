@@ -49,6 +49,8 @@ namespace WorldView
             this.label2 = new System.Windows.Forms.Label();
             this.cmdList = new System.Windows.Forms.ComboBox();
             this.stopRev = new System.Windows.Forms.Button();
+            this.timer_trace = new System.Windows.Forms.Timer(this.components);
+            this.bt_trace = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -224,11 +226,27 @@ namespace WorldView
             this.stopRev.UseVisualStyleBackColor = true;
             this.stopRev.Click += new System.EventHandler(this.stopRev_Click);
             // 
+            // timer_trace
+            // 
+            this.timer_trace.Interval = 2000;
+            this.timer_trace.Tick += new System.EventHandler(this.timer_trace_Tick);
+            // 
+            // bt_trace
+            // 
+            this.bt_trace.Location = new System.Drawing.Point(375, 403);
+            this.bt_trace.Name = "bt_trace";
+            this.bt_trace.Size = new System.Drawing.Size(75, 23);
+            this.bt_trace.TabIndex = 15;
+            this.bt_trace.Text = "¸ú×Ù";
+            this.bt_trace.UseVisualStyleBackColor = true;
+            this.bt_trace.Click += new System.EventHandler(this.bt_trace_Click);
+            // 
             // vibrationMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(500, 461);
+            this.Controls.Add(this.bt_trace);
             this.Controls.Add(this.stopRev);
             this.Controls.Add(this.cmdList);
             this.Controls.Add(this.label2);
@@ -270,5 +288,7 @@ namespace WorldView
         public System.Windows.Forms.ColumnHeader columnContent;
         private System.Windows.Forms.ColumnHeader dstnodeid;
         public System.Windows.Forms.ColumnHeader datatype;
+        private System.Windows.Forms.Timer timer_trace;
+        private System.Windows.Forms.Button bt_trace;
     }
 }
