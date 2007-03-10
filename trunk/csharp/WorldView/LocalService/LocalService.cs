@@ -460,6 +460,9 @@ namespace WorldView
             {
                 PacketControl |= (byte)(routePath.getleaptotal() << ROUTE_ADDRLIST_BM);
             }
+            else {
+                PacketControl |= (byte)(0<< ROUTE_ADDRLIST_BM);
+            }
             packet[i++] = PacketControl;
 
             if (opt == 1)
