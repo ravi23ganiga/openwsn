@@ -227,10 +227,10 @@ namespace WorldView
         private const byte DATA_TYPE_MASK = 0x0F;
         private const byte DATA_TYPE_BM = 0x0;
 
-        private const byte ROUTE_ADDRLIST_MASK = 0x0F;
+        private const byte ROUTE_ADDRLIST_MASK = 0xF0;
         private const byte ROUTE_ADDRLIST_BM = 0x04;
 
-        private const byte ADDRLIST_BM = 0xF0;
+        //private const byte ADDRLIST_BM = 0xF0;
 
         private const byte MAX_LEAP_NUMBER = 0x0a;
         private const byte MAX_ROUTE_LIST_NUMBER = 0x04;
@@ -370,72 +370,83 @@ namespace WorldView
             int RouteleapNumber = 0;
             int i = 0;
             if (totalen < 1) return;
-            //check the datatype.        
-            DataType datatype = (DataType)(tempdata[0] & DATA_TYPE_MASK >> DATA_TYPE_BM);
-            RouteleapNumber = tempdata[0] & ROUTE_ADDRLIST_MASK >> ROUTE_ADDRLIST_BM;           
-            
-            i = tempdata[1] > 128 ? 2 : 1;
-            datalen = tempdata[i++];
-            /*获取序列号*/
-            seqNum = tempdata[i++];
-            srcNode = tempdata[i++];
-            srcNode += (ushort)(tempdata[i++] << 8);
-
-            //更新节点序列，需要检查一下是否已经存在，避免重复
-            nodelist.addNode(srcNode);
-            
-            switch (datatype)
+            //check the datatype.     
+            while (i < totalen)
             {
-                case DataType.DATA_TYPE_GET_NODE_ID_ACK:
-                    sinknode = srcNode;
-                    break;
-                case DataType.DATA_TYPE_ROUTE_ACK://路由反馈包
-                    dstNode = tempdata[i++];
-                    dstNode += (ushort)(tempdata[i++] << 8);
+                DataType datatype = (DataType)((tempdata[i] & DATA_TYPE_MASK) >> DATA_TYPE_BM);
+                RouteleapNumber = (tempdata[i] & ROUTE_ADDRLIST_MASK) >> ROUTE_ADDRLIST_BM;
+                i = tempdata[i + 1] > 128 ? (i+ 2) : (i +1);
+                datalen = tempdata[i++];
+               
+                if (datatype == DataType.DATA_TYPE_ROUTE_ACK)
+                {
+                    RouteleapNumber = (datalen - 5) >> 1;
+                }
+                /*获取序列号*/
+                seqNum = tempdata[i++];
+                srcNode = tempdata[i++];
+                srcNode += (ushort)(((ushort)tempdata[i++]) << 8);
 
-                    //TRoutePathItem pathitem = new TRoutePathItem(); 
-                    routepath = new TRoutePathItem();
-                    routepath.construct(srcNode, dstNode, RouteleapNumber, false);
-                    for (byte index = 0; index < RouteleapNumber; index++)
-                    {
-                       // nextleap = pframe.leapStep[i];
-                        nextleap =  tempdata[i++];
-                        nextleap += (ushort)(tempdata[i++] << 8);
+                //更新节点序列，需要检查一下是否已经存在，避免重复
+                nodelist.addNode(srcNode);
+                dstNode = tempdata[i++];
+                dstNode += (ushort)(((ushort)tempdata[i++]) << 8);
+
+                switch (datatype)
+                {
+                    case DataType.DATA_TYPE_GET_NODE_ID_ACK:
+                        sinknode = srcNode;
+                        break;
+                    case DataType.DATA_TYPE_ROUTE_ACK://路由反馈包
                         
-                        routepath.addleap(nextleap);
-                    }
-                    pathCache.appendRoutePath(routepath);                    
-                    return;
+                        //TRoutePathItem pathitem = new TRoutePathItem(); 
+                        routepath = new TRoutePathItem();
+                        routepath.construct(srcNode, dstNode, RouteleapNumber, false);
+                        for (byte index = 0; index < RouteleapNumber; index++)
+                        {
+                            // nextleap = pframe.leapStep[i];
+                            nextleap = tempdata[i++];
+                            nextleap += (ushort)(((ushort)tempdata[i++]) << 8);
 
-                case DataType.DATA_TYPE_LIGHTSENSOR_QUERY_ACK:
-                    //pframe.pData.CopyTo(packet, 0);
-                    datalen = (byte) (datalen - 1 - 4 - RouteleapNumber*2);
-                    dataRevItem item = new dataRevItem();
-                    item.construct(srcNode, 128);
-                    item.datatype = DataType.DATA_TYPE_LIGHTSENSOR_QUERY_ACK;
-                    byte[] temp = new byte[datalen +1];
-                    
-                    if ((tempdata[1] & 0x8000) > 0)
-                    { //系统命令；
-                        //tempdata.CopyTo(temp, (7 + RouteleapNumber * 2));
-                        for (int index = 0;index<datalen;index++)
-                            temp[index] = tempdata[8 + RouteleapNumber * 2 + index];
-                    }
-                    else {
-                        for (int index = 0; index < datalen; index++)
-                            temp[index] = tempdata[7 + RouteleapNumber * 2 + index];                        
-                    }
-                                        
-                    item.Write(temp, (ushort)datalen, 0);
-                    revCache.appendataItem(item);
-                    break;
+                            routepath.addleap(nextleap);
+                        }
+                        pathCache.appendRoutePath(routepath);
+                        break;
 
-                case DataType.DataStream:
-                    break;
-                /*
-                   case DataType.QueryFeekback:
-                       break;
-                */
+                    case DataType.DATA_TYPE_LIGHTSENSOR_QUERY_ACK:
+                        datalen = (byte)(datalen - 1 - 4 - RouteleapNumber * 2);
+                        dataRevItem item = new dataRevItem();
+                        item.construct(srcNode, 128);
+                        item.datatype = DataType.DATA_TYPE_LIGHTSENSOR_QUERY_ACK;
+                        byte[] temp = new byte[datalen + 1];
+
+                        if ((tempdata[1] & 0x8000) > 0)
+                        { //系统命令；
+                            for (int index = 0; index < datalen; index++)
+                            {
+                                temp[index] = tempdata[i + RouteleapNumber * 2 + index];                             
+                            }
+                        }
+                        else
+                        {
+                            for (int index = 0; index < datalen; index++)
+                            {
+                                temp[index] = tempdata[i + RouteleapNumber * 2 + index];                                
+                            }
+                        }
+
+                        i += datalen;
+                        item.Write(temp, (ushort)datalen, 0);
+                        revCache.appendataItem(item);
+                        break;
+
+                    case DataType.DataStream:
+                        break;
+                    /*
+                       case DataType.QueryFeekback:
+                           break;
+                    */
+                }
             }
     
            return;
