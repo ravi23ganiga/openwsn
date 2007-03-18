@@ -16,6 +16,7 @@ version 1.0
 author zhangwei on 200703
 
 Q: Programming Pattern for OpenWSN?
+
 R: 
 
 openwsn adopt full Object Oriented design(OOD) and Component based implementation. an application based on openwsn can be regarded as a collection of the instances of expected components. for example, a simple data collection node contains TCc2420, TOpenMAC, TUart, TSioComm components. maybe the system need two instances of TSioComm. one for general data and one for debugging using. 
@@ -26,7 +27,7 @@ according to this idea, the API of a component usually adopts the following way:
 
 
 TType * xxx_construct( char * buf, uint16 len )
-...............................................
+
 
 construct a instance on the specified buffer in the memory.
 here xxx means the abbreviation of the component name. "construct" function will initialize an instance in the memory. it should always successful. you should NOT place hardware manipulation source code into this function because they maybe failed.
@@ -41,34 +42,34 @@ uart_write( g_uart, buf, len, 0x00 );
 
 
 void xxx_destroy( TType * inst )
-................................
+
 destroy the instance. it's the vice versa of construct(...) function.
 
 
 int8 xxx_configure( TType * inst, parameter list ... )
-......................................................
+
 configure the instance. you should do hardware operations inside this function. 
 return >= 0 means success. < 0 means failure. further, the value returned indicate the reason why it failed. this is a feature implemented by the function itself. but most of the source code adopts such a regulation: >=0 means success.
 
 
 void xxx_relation( TType * inst, TOtherObject * obj1, * obj2, ... )
-...................................................................
+
 establish relationship with other objects. what the configure done in nesC language is replaced by the programmer's manual call to xxx_relation(...). i think its enough for application developers because the designer and programmer should has the freedom on how to maintain the relationships between different instances. i think our design is more suitable for industry application developers.
 
 
 int8 xxx_read( TType * inst, char * buf, int8 size, uint8 opt );
-................................................................
+
 read data out from the component. buf is a pointer to the memory receiving the data. size is the maximum length of the memory block. opt is used to control the read behavior. the default value should be 0x00. the positive value returned indicate the byte count of data received. 0 is also a successful call of read() function. return 0 means no received in the buf. negative value of read() indicate the failure reason of it.
 
 
 int8 xxx_write( TType * inst, char * buf, int8 len, uint8 opt );
-................................................................
+
 write data to the component. the data has already placed into buf. data length is inputed to the component by parameter len. opt is used to control the write behavior. opt default to 0x00. 
 return value: >= 0 means write executed successfully. the value indicate how many bytes write successfully. < 0 means failed. the value indicate the failure reason.
 
 
 int8 xxx_evolve( TType * inst )
-...............................
+
 state transition function. if the component has an inside state machine and you should call it inside a infinite loop, you can develope an evolve() function and let the upper layer call evolve() repeatedly. if you want to use a "thread" inside a component, you can also replace the thread functionality with evolve(). however, the owner of the current component has the responsbility to call evolve() repeatedly. attention evolve() should not has other parameters except a pointer to current instance. 
 
 
@@ -79,5 +80,4 @@ attention:
 there're still a lot of source code don't accord with this name specification, but in the future, we may do revision on this problem.
 
  
-
 
