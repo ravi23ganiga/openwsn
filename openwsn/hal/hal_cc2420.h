@@ -104,6 +104,19 @@
  * 
  * 删除read_stream和write_stream
  * 可以不支持cc2420_read()和cc2420_write()
+ * 
+ * @modified by zhangwei on 20070324
+ * make some revisions today. two main modifications today:
+ * - change the old member variable "txbuffer" and "rxbuffer" to their new name
+ * "txframe" and "rxframe". furthremore, change txframe[] to txframe, and rxframe[]
+ * to rxframe. it's unnecessary to keep so many buffers in HAL layer. if you want
+ * to allocate queuing buffer, you should do it in higher layer such as MAC, NET 
+ * or even APP layer.
+ * - eliminate the rfsettings member variable.  
+ * 但是在消除rfsettings变量的过程中，合并了cc2420结构和rfsettings结构中的panid, seqid
+ * 和rssi三个变量，应该没关系吧？
+ * 
+ * @TODO: i think pRxInfo is also obsolete.
  *
  ******************************************************************************/
 
@@ -134,7 +147,7 @@
  ******************************************************************************/
 
 
-#define CC2420_BUF_CAPACITY 1 
+//#define CC2420_BUF_CAPACITY 1 
 
 #ifdef TARGET_OPENNODE_10
 #define FIFO            8  // P0.8  - Input: FIFO from CC2420
@@ -218,30 +231,10 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
 #define CC2420_POWER_7  0x07       //-15dBm    8.9mA
 #define CC2420_POWER_8  0x08       //-25dBm    8.5mA
 
-
-/*
-typedef struct {
-    WORD destPanId;
-	WORD destAddr;
-	INT8 length;
-    BYTE *pPayload;
-	BOOL ackRequest;
-} TCc2420TXFrame;
-
-typedef struct {
-    BYTE seqNumber;
-	WORD srcAddr;
-	WORD srcPanId;
-	INT8 length;
-    BYTE *pPayload;
-	BOOL ackRequest;
-	INT8 rssi;
-} TCc2420RXFrame;
-*/
-
-//Packet includes : frame control field(2B), sequence number(1B), PAN ID(2B), destination and source(4B),payload(nB),footer(2B)
-//This is an integrated MAC Frame Format
-/*
+/* Packet includes : frame control field(2B), sequence number(1B), PAN ID(2B), destination and source(4B),payload(nB),footer(2B)
+ * This is an integrated MAC Frame Format
+ */
+/* 
 typedef struct {
     WORD   frame_control;
     BYTE   seqNumber;
@@ -254,7 +247,10 @@ typedef struct {
 */
 #define TCc2420Frame TOpenFrame
 
-
+/* @attention
+ *	if a variable will be accessed by both the master program and interrupt routine, 
+ * then it should be endorsed by keyword "volatile".
+ */ 
 typedef struct {
     TCc2420Frame pRxInfo;
     uint8 payload_length;
@@ -270,24 +266,37 @@ typedef struct{
   uint8 state;
   uint8 nextstate;
   TSpiDriver * spi; 
-  uint16 panid;
+  //uint16 panid;
   uint16 address;
   uint8 channel; // frequency, channel varies from 11 to 26 . f = 2405 + 5*(channel - 11) MHz;
   uint8 txlen;
   uint8 rxlen;
-  TCc2420Frame txbuffer[CC2420_BUF_CAPACITY];
-  TCc2420Frame rxbuffer[CC2420_BUF_CAPACITY];
-  char txbuf[CC2420_BUF_CAPACITY];
-  char rxbuf[CC2420_BUF_CAPACITY];
-  volatile BASIC_RF_SETTINGS rfSettings;
+  TCc2420Frame txframe;
+  volatile TCc2420Frame rxframe;
+  //char * txbuf;
+  //char * rxbuf;
+  //volatile BASIC_RF_SETTINGS rfSettings;
   uint8 sleeprequest;
   uint8 power;
   uint8 ackrequest;             
-  uint8 rssi;                   //最近一次接收到的信息的信号强度
+  //uint8 rssi;                   //最近一次接收到的信息的信号强度
   uint8 receivepacket_len;      //最近一次接收到的包的总长度
   uint8 receivepayload_len;     //最近一次接收到的包的payload的长度
   uint8 sendpayload_len;        //最近一次发送的包的payload长度
   uint8 if_read;                //接收缓冲被读后，变为1， 接收到新信息后，变为0
+  
+  // @TODO 200703 for huanghuan
+  // the following is a map of volatile BASIC_RF_SETTINGS rfSettings
+  // this structure should be replaced by cc2420 structure itself
+  // rfsettings will be eliminated from the source code now
+  volatile TCc2420Frame pRxInfo;
+  volatile uint8 payload_length;
+  volatile UINT8 seqid;
+  volatile BOOL ackReceived;
+  WORD panid;
+  volatile WORD myAddr;
+  volatile BOOL receiveOn;
+  volatile uint8 rssi; 		//最近一次接收到的信息的信号强度
 }TCc2420Driver;
 
 

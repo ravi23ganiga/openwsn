@@ -257,8 +257,11 @@ void CC2420_SPI_ENABLE( void )
         IO1CLR = BM(CSN);
         #endif
               
-        while(i < 500) i++;    //the delay is to construct enough setup time of csn
-                               //by huanghuan 2006.11.16
+        // @modified by huanghuan 2006.11.16
+        // the delay is to construct enough setup time of csn 
+        while(i < 500) 
+        	i++;    
+                               
   }
       
 void CC2420_SPI_DISABLE( void ) 	

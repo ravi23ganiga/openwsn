@@ -100,6 +100,12 @@ void FAST2420_WRITE_RAM(TSpiDriver * spi,uint16 *p,uint16 a,uint8 c);
 void FAST2420_READ_RAM(TSpiDriver * spi,uint8 *p, uint16 a, uint8 c); 
 void FAST2420_RESET_CC2420( TSpiDriver * spi ); 
 
+// @TODO 200703 for huanghuan
+// 如何在两个SPI之间实现代码的Port，请在代码中给与说明
+// 以下函数应增加一个参数 TSpiDriver * spi 或者是 uint8 id
+// 尽管以下函数中没有用到spi, 但是可以用spi->id
+// 不要用macro区分，用spi->id或者id区分
+// 
 void CC2420_SPI_ENABLE( void );
 void CC2420_SPI_DISABLE( void );
 void SET_RESET_INACTIVE( void ); // // The CC2420 reset pin
