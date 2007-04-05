@@ -27,8 +27,9 @@
 * this file might be covered by the GNU General Public License.
 * 
 ****************************************************************************/ 
-#ifndef _TK_FOUNDATION_H_
-#define _TK_FOUNDATION_H_
+#ifndef _RTL_FOUNDATION_H_
+#define _RTL_FOUNDATION_H_
+
 /*******************************************************************
   @copyright(c)		2004-2010, XXX Tech. Co. Ltd
   @filename			sysdefn.h
@@ -53,6 +54,9 @@
 	  to "released"
 *******************************************************************/
 
+#include "..\foundation.h"
+
+/*
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
 #include <stdio.h>
@@ -63,23 +67,12 @@
 
 #include "vos/vos.h"
 #include "tk_configall.h"
+*/
 
 /*******************************************************************
 */
 
-#define TK_MAX_ID8      0x7F
-#define TK_MAX_UID8     0xFF
-#define TK_MAX_ID16     0x7FFF
-#define TK_MAX_UID16    0xFFFF
-#define TK_MAX_ID32     0x7FFFFFFF
-#define TK_MAX_UID32    0xFFFFFFFF
 
-typedef int8    id8;
-typedef uint8   uid8;
-typedef int16   id16;
-typedef uint16  uid16;
-typedef int32   id32;
-typedef uint32  uid32;
 
 #define STEP_CHECK(cond,retvar,retvalue) \
 	if ((retvar >= 0) && (cond)) retvar = retvalue;
@@ -114,10 +107,10 @@ typedef uint32  uid32;
   They can be used anywhere in the whole application.
 */
 
-void* MemAlloc( size_t vsize );
-void  MemFree( void * vpMem );
-uint8 MemCompare( const byte * s1, const byte * s2, uint32 nLen );
-void  MemFillRandom( void * vpMem, const uint32 vLen );
+//void* MemAlloc( size_t vsize );
+//void  MemFree( void * vpMem );
+//uint8 MemCompare( const byte * s1, const byte * s2, uint32 nLen );
+//void  MemFillRandom( void * vpMem, const uint32 vLen );
 
 //void  SetLastError( int16 vErrorNo );
 //int16 GetLastError();
@@ -184,9 +177,9 @@ void DumpRam( uint8 * vpMem, uint32 vCount );
 #endif
 
 
-uint16 GetRandBetween( uint16 vMin, uint16 vMax );
-uint16 GetRandNum( uint16 vSeed );
-void DivideEx( uint32 v1, uint32 v2, uint32 * vpResult, uint32 * vpLeft );
+//uint16 GetRandBetween( uint16 vMin, uint16 vMax );
+//uint16 GetRandNum( uint16 vSeed );
+//void DivideEx( uint32 v1, uint32 v2, uint32 * vpResult, uint32 * vpLeft );
 
 #define InRange(start1,len1,start2,len2) (((start2<=start1) && (start1+len1<start2+len2))?TRUE:FALSE)
 
@@ -200,19 +193,19 @@ typedef struct{
   uint8  ver_minor;
 } TVersion;
 
-#define min(a, b)  (((a) < (b)) ? (a) : (b))
-#define max(a, b)  (((a) > (b)) ? (a) : (b))
+//#define min(a, b)  (((a) < (b)) ? (a) : (b))
+//#define max(a, b)  (((a) > (b)) ? (a) : (b))
 
 #define bit_set(token,index) (token |= (1<<index))
 #define bit_get(token,index) ((token >> index) & 1)
 #define bit_check(token,index) ((token >> index) & 1)
 #define bit_clear(token,index) (token &= (~(1<<index)))
 
-typedef uint32 version_t;
-#define MAKE_VERSION(major,minor,micro) (((major&0x0FF)<<16) | ((minor&0xFF)<<8) | (micro&0xFF))
-#define MAJOR_VERSION(ver) ((ver>>16) & 0xFF)
-#define MINOR_VERSION(ver) ((ver>>8) & 0xFF)
-#define MICRO_VERSION(ver) (ver&0xFF)
+//typedef uint32 version_t;
+//#define MAKE_VERSION(major,minor,micro) (((major&0x0FF)<<16) | ((minor&0xFF)<<8) | (micro&0xFF))
+//#define MAJOR_VERSION(ver) ((ver>>16) & 0xFF)
+//#define MINOR_VERSION(ver) ((ver>>8) & 0xFF)
+//#define MICRO_VERSION(ver) (ver&0xFF)
 
 
 /******************************************************************/

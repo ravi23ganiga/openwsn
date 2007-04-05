@@ -1,3 +1,6 @@
+20070405
+add module: rtl_binaryxml(not test)
+
 09:01 2006-10-31
 first version released.
 
