@@ -27,8 +27,9 @@
 * this file might be covered by the GNU General Public License.
 * 
 ****************************************************************************/ 
-#ifndef _TK_CONFIGALL_H_
-#define _TK_CONFIGALL_H_
+#ifndef _RTL_CONFIGALL_H_
+#define _RTL_CONFIGALL_H_
+
 /*******************************************************************
   @copyright(c)		2004-2010, XXX Tech. Co. Ltd
   @filename			sysconfigall.h
@@ -67,7 +68,7 @@
   version, you should comment this macro.
 */
 
-#define TOOLKIT_DEBUG
+#define RTL_DEBUG
 #define USER_DEBUG
 
 /* If you want to build a Dynamic Link Library(DLL). please define
