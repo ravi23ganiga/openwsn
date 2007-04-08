@@ -103,7 +103,7 @@ TUartDriver * uart_construct( uint8 id, char * buf, uint16 size )
 	else 
 		uart = (TUartDriver *)buf;
 	
-	//led_twinkle(LED_RED,3);	
+		
 	if (uart != NULL)
 	{
 		memset( (char*)uart, 0x00, sizeof(TUartDriver) );
@@ -272,9 +272,11 @@ uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt )
 	    //把后面的数据向前提，保证寄存器中的数据是从rxbuffer[0]开始的；
 	    memmove( &(uart->rxbuf[0]), (char*)(uart->rxbuf[0])+copied, uart->rxlen - copied );
 		uart->rxlen -= copied;
+	      led_twinkle(LED_YELLOW,3);
 	}
-	hal_leave_critical();
 	
+	hal_leave_critical();
+	//led_twinkle(LED_YELLOW,3);
 	return copied;
 }
 #endif
@@ -379,8 +381,8 @@ void __irq uart_interrupt( void )
 {
 	char c;	
 	
-	//if (g_uart->id == 0)
-	if (1)
+	if (g_uart->id == 0)
+	//if (1)
 	{
 		while ((U0IIR & 0x01)==0)
 		{
@@ -389,11 +391,12 @@ void __irq uart_interrupt( void )
 				if (g_uart0->rxlen < UART_RXBUFFER_SIZE)
 				{
 					c = U0RBR;			
-					g_uart0->rxbuf[g_uart0->rxlen++] = c;			
+					g_uart0->rxbuf[g_uart0->rxlen++] = c;	
+					led_twinkle(LED_RED,3);		
 				}
 			}
 		}	
-
+              
 	}
 	else{
 		while ((U1IIR & 0x01)==0)
