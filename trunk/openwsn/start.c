@@ -22,7 +22,7 @@
 #undef  TESTCASE_SIOECHO
 
 #define TESTCASE_UARTECHO
-#undef  TESTCASE_UARTECHO
+//#undef  TESTCASE_UARTECHO
 
 #define TESTCASE_UARTANDDEBUG
 #undef  TESTCASE_UARTANDDEBUG
@@ -42,6 +42,12 @@
 #define TESTCASE_ANALYZER
 #undef  TESTCASE_ANALYZER
 
+#define TESTCASE_TIMERLEDINQUIRE
+#undef  TESTCASE_TIMERLEDINQUIRE
+
+#define TESTCASE_TIMERLEDINTERUPT
+#undef  TESTCASE_TIMERLEDINTERUPT
+
 #define TESTCASE_TIMER
 #undef  TESTCASE_TIMER
 
@@ -51,23 +57,17 @@
 #define TESTCASE_CC2420DEV
 #undef  TESTCASE_CC2420DEV
 
-#define TESTCASE_MAC
-#undef  TESTCASE_MAC
-
 #define TESTCASE_LOCATION
 #undef  TESTCASE_LOCATION
 
-#define TESTCASE_uniqueid
-#undef  TESTCASE_uniqueid
+#define TESTCASE_UNIQUEID
+#undef  TESTCASE_UNIQUEID
 
 #define TESTCASE_SENSOR
 #undef  TESTCASE_SENSOR
 
 #define TESTCASE_WLSMODEM
 #undef  TESTCASE_WLSMODEM
-
-#define TESTCASE_FULL_NODE
-//#undef  TESTCASE_FULL_NODE
 
 #ifdef TESTCASE_NULL
   #undef TESTCASE_DEBUGUART
@@ -136,6 +136,14 @@ void app_start()
 	timer_test();
 	#endif
 	
+	#ifdef TESTCASE_TIMERLEDINQUIRE
+	timer_test();
+	#endif
+	
+	#ifdef TESTCASE_TIMERLEDINTERUPT
+	timer_test();
+	#endif
+	
 	#ifdef TESTCASE_ACTSCHE
 	// @TODO: you should test each case separately.
 	// each case represent a independent programming pattern of ActionScheduler.
@@ -148,19 +156,11 @@ void app_start()
 	cc2420dev_test();
 	#endif
 	
-	#ifdef TESTCASE_MAC
-	openmac_run();
-	#endif
-	
-	#ifdef TESTCASE_FULL_NODE
-	fullnode_test();
-	#endif
-	
 	#ifdef TESTCASE_LOCATION
 	location_test();
 	#endif
 	
-	#ifdef TESTCASE_uniqueid
+	#ifdef TESTCASE_UNIQUEID
 	uniqueid_run();
 	#endif
 	

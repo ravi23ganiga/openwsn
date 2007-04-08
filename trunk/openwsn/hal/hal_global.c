@@ -103,6 +103,7 @@ int8 hal_global_construct( void )
 	//g_ad      = ad_construct( 0, (char*)(&m_ad),  sizeof(TAdConversion) );
         //g_vibration 	= vib_construct(0,(char*)(&m_vibration), sizeof(TVibrationSensor), g_mcp6s26, g_ad  );
 
+	//uart_write( g_uart, "1.xx", 3, 0 );
 	
 	g_timer0 	= timer_construct( (char*)(&m_timer0), sizeof(TTimer) );
 	g_timer1 	= timer_construct((char*)(&m_timer1), sizeof(TTimer) );
@@ -131,6 +132,7 @@ int8 hal_global_construct( void )
 		uart_configure( g_uart1, 9600, 8, 1, 0, 0x00 );
 	}
         */
+	//uart_write( g_uart, "2.xx", 3, 0 );
 	return (g_hal_init == TRUE) ? 0 : -1;
 }
 

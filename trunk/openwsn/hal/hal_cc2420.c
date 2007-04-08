@@ -46,7 +46,7 @@ TCc2420Driver * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 {
 	               
 	TCc2420Driver *cc;
-	char* out_string = "cc2420 consturct succesful!\n";
+	char* out_string = "cc2420 construct succesful!\n";
 	
 	//led_on(LED_GREEN);
 	
@@ -68,7 +68,7 @@ TCc2420Driver * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 		cc->address = 1; //ADDR;
 		cc->channel = 1; //Channel;
 		cc->txlen = 0;
-		cc->rxlen = 0;
+		cc->rxlen = 0; 
 		cc->power = 1;
 		cc->sleeprequest = FALSE;
 		uart_write(g_uart, out_string,28, 0);

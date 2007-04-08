@@ -25,10 +25,8 @@
 #include ".\test\location_test.h"
 #include ".\test\uniqueid_test.h"
 #include ".\test\sensor_test.h"
-#include ".\test\openmac_test.h"
-#include ".\test\openmac_whitehole.h"
-#include ".\test\openmac_blackhole.h"
-#include ".\test\fullnode.h"
+#include ".\test\time_led_inquire.h"
+#include ".\test\time_led_interupt.h"
 
 void app_start( void );
 
