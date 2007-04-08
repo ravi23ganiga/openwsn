@@ -48,9 +48,12 @@
 
 #include "rtl_foundation.h"
 
+#define BXML_PROPERTY_TOTAL_LENGTH 0
+#define BXML_PROPERTY_
+
 typedef struct{
   char * buf;
-  uint8 size;
+  uint8 capacity;
   uint8 length;
   uint8 current;
 }TBinaryXml;
@@ -62,8 +65,8 @@ void  xml_destroy( TBinaryXml * xml );
 void  xml_attach( TBinaryXml * xml, char * xmldata, uint8 len ); 
 uint8 xml_newnode( TBinaryXml * xml, uint8 request_size );
 uint8 xml_append( TBinaryXml * xml, uint8 parid, uint8 property, char * data, uint8 datalen );
-uint8 xml_write( TBinaryXml * xml, uint8 id, uint8 property, char * data, uint8 datalen );
-uint8 xml_read( TBinaryXml * xml, uint8 id, uint8 * property, char * data, uint8 size );
+uint8 xml_write( TBinaryXml * xml, uint8 id, uint8 parid, uint8 property, char * data, uint8 datalen );
+uint8 xml_read( TBinaryXml * xml, uint8 id, uint8 * parid, uint8 * property, char * data, uint8 size );
 void  xml_remove( TBinaryXml * xml, uint8 id );
 uint8 xml_findparent( TBinaryXml * xml, uint8 id );
 uint8 xml_findchild( TBinaryXml * xml, uint8 id );
