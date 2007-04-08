@@ -28,17 +28,17 @@
  * 
  ****************************************************************************/ 
 
-#ifndef _RSSITEST_H_3128_
-#define _RSSITEST_H_3128_
+#ifndef _GNODE_H_3128_
+#define _GNODE_H_3128_
 
 /*****************************************************************************
  * @author zhangwei on 20070402
- * the demo was first developed by huanghuan. re-organized by zhangwei on 20061013,
- * and on 20070405
+ * this is the full function node of OpenWSN. this version module contains all 
+ * the necessary component for the wsn node, including timer, mac, net, sensing,
+ * and remote management/upgrade. (remote management and upgrate has not developed 
+ * yet)
  * 
- * this is a simple point-to-point RSSI testing tool.
- * the RX node will send the RSSI value of received signal to host computer
- * through uart.  
+ * "gnode" means general node
  * 
  * @state
  * 	not test
@@ -49,7 +49,6 @@
 
 #include ".\foundation.h"
 
-void rssi_test( void );
+void gnode_test( void );
 
 #endif
-

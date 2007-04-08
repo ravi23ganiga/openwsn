@@ -1,4 +1,58 @@
+/*****************************************************************************
+ * @name BinaryXML
+ * @author zhangwei on 20070331
+ * 
+ * this module implements a BinaryXML for embedded systems.
+ * since we need to read/write different type data in the packets, we hope to
+ * design a flexible packet payload data structure. so we design the BinaryXML.
+ * it will take the old TOpenSections instead.  
+ * 
+ * 
+ * @history
+ * @modified by xxx on 200704
+ * 
+ ****************************************************************************/ 
+
+#include <string.h>
 #include "rtl_binaryxml.h"
+
+/******************************************************************************
+ * Q: key idea of BinaryXML
+ * R: 
+ * first let's take a glance at a simplified XML. it's a tree structure. each node in the tree is as the following:
+ * 
+ *   {node_id, node_size,  node_parent, property_id, property_value_type, value_length, value_data }
+ *
+ *  node_id  1B
+ *  node_parent 1B
+ *  property_id < 1B
+ *    property_value_type = byte, word, dword, etc.
+ *    however, i think the property value type can be decided from the property_id
+ *    there're some pre-defined property id in the system such 1 for time, 2 for location, etc
+ *  value_length > 1 means the value_data is a array
+ * 
+ * we can simplify this standard tree structure as the following
+ * 
+ * - the node and property are same. there's no difference between node and property.
+ * - node_id is unncessary. because we can use the buffer index as the id.
+ * - property_value_type can be eliminated because we can duduce it from property_id
+ * - value_length is unecessary because it can be deduced from node_size
+ * 
+ * thus we can get the final version of BinaryXML
+ * 
+ * - it should has a root node. even the root node keeps the size of the buffer only
+ * - node format: 
+ * 
+ *  {node_size, node_parent, property_id, value_data}
+ * 
+ * - the order of each child node is not important. generally assume all the child nodes are a sequence.
+ * - the root node is always 0
+ * 
+ * for example
+ * 
+ *  4, 0, TOTALSIZE, 58, 6, 0, VIBSENSOR, 43,43,32, ..............
+ * 
+ *****************************************************************************/
 
 /* construct a TBinaryXml object on the specified buffer
  * attention the construct() function will automatically create the root 
@@ -14,13 +68,13 @@
 TBinaryXml * xml_construct( TBinaryXml * xml, char * xmldata, uint8 size )
 {
 	xml->buf = xmldata;
-	xml->size = size;
+	xml->capacity = size;
+	xml->length = 4;
+	xml->current = 4;
 	xml->buf[0] = 4;
 	xml->buf[1] = 0;
-	xml->buf[2] = 0;//TOTAL_SIZE;
-	xml->buf[3] = size;
-	xml->length = 0;
-	xml->current = 4;
+	xml->buf[2] = BXML_PROPERTY_TOTAL_LENGTH;
+	xml->buf[3] = 4;
 	
 	return xml;
 }
@@ -35,7 +89,9 @@ void xml_destroy( TBinaryXml * xml )
 void  xml_attach( TBinaryXml * xml, char * xmldata, uint8 len )
 {
 	xml->buf = xmldata;
-	xml->length = 0;	
+	xml->capacity = len;
+	xml->length = len;
+	xml->current = 0;	
 }
 
 /* allocate a new node in the memory buffer.
@@ -48,7 +104,18 @@ void  xml_attach( TBinaryXml * xml, char * xmldata, uint8 len )
  */
 uint8 xml_newnode( TBinaryXml * xml, uint8 request_size )
 {
-	return 0;
+	uint8 id;
+	
+	if (xml->capacity - xml->length >= request_size)
+	{
+		id = xml->length; 
+		xml->length += request_size;
+		xml->buf[id] = request_size;
+	}
+	else
+		id = 0;
+
+	return id;
 } 
 
 /* append a node in the buffer 
@@ -58,12 +125,11 @@ uint8 xml_append( TBinaryXml * xml, uint8 parid, uint8 property, char * data, ui
 	uint8 id = xml_newnode( xml, datalen );
 	if (id > 0)
 	{
-		xml_write( xml, id, property, data, datalen );
+		xml_write( xml, id, parid, property, data, datalen );
 	}
 	
 	return id;
 }
-
 
 /* update a node. the node should be already allocated by xml_newnode() or xml_append()
  * the size of the node will keep unchanged. 
@@ -71,16 +137,23 @@ uint8 xml_append( TBinaryXml * xml, uint8 parid, uint8 property, char * data, ui
  * @return
  * the bytes successfully wroten
  */
-uint8 xml_write( TBinaryXml * xml, uint8 id, uint8 property, char * data, uint8 datalen )
+uint8 xml_write( TBinaryXml * xml, uint8 id, uint8 parid, uint8 property, char * data, uint8 datalen )
 {
+	xml->buf[id] = datalen;
+	xml->buf[id+1] = parid;
+	xml->buf[id+2] = property;
+	memmove( &(xml->buf[id+3]), data, datalen );   
 	return 0;
 }
 
 /* @return
  * the bytes successfully read
  */
-uint8 xml_read( TBinaryXml * xml, uint8 id, uint8 * property, char * data, uint8 size )
+uint8 xml_read( TBinaryXml * xml, uint8 id, uint8 * parid, uint8 * property, char * data, uint8 size )
 {
+	*parid = xml->buf[id+1];
+	*property = xml->buf[id+2];
+	memmove( data, &(xml->buf[id+3]), min(size,xml->buf[id]) ); 
 	return 0;
 }
 
@@ -91,30 +164,79 @@ uint8 xml_read( TBinaryXml * xml, uint8 id, uint8 * property, char * data, uint8
  */
 void xml_remove( TBinaryXml * xml, uint8 id )
 {
+	NULL;
 	return;
 }
 
 /* find the id of parent node */
 uint8 xml_findparent( TBinaryXml * xml, uint8 id )
 {
-	return 0;
+	return xml->buf[id+1];
 }
 
-/* find the id of the first child */
+/* find the id of the first child
+ * assume the child node must occur after its parent node 
+ */
 uint8 xml_findchild( TBinaryXml * xml, uint8 id )
 {
-	return 0;
+	uint8 child = id + xml->buf[id];
+
+	if (child < xml->length)
+	{
+		if (xml->buf[child+1] != id)
+			child = 0;
+	}
+	else
+		child = 0;
+		
+	return child;
 }
 
-/* find the id of previous brother node */
+/* find the id of previous brother node
+ * xml_findprev() is not so efficient as xml_findnext(). so you'd better avoid
+ * to use it.
+ */
 uint8 xml_findprev( TBinaryXml * xml, uint8 id )
 {
-	return 0;
+	bool found = false;
+	uint8 lastid = 0, curid = 0;
+	while (!found)
+	{
+		lastid = curid;
+		curid += xml->buf[curid];
+		if (curid == id)
+		{
+			if (xml->buf[lastid+1] == xml->buf[id+1])
+			{
+				found = true;
+			}
+			break;
+		}
+	}
+	
+	return found ? lastid : 0;
 }
+
 
 /* find the id of the next brother node */
 uint8 xml_findnext( TBinaryXml * xml, uint8 id )
 {
-	return 0;
+	uint8 parid = xml->buf[id+1];
+	uint8 lastid, curid = id;
+	bool found = false;
+	while (!found)
+	{
+		lastid = curid;
+		curid += xml->buf[id];
+		if (curid >= xml->length)
+			break;
+			
+		if (xml->buf[curid+1] == parid)
+		{
+			found = true;
+			break;
+		}
+	}
+	
+	return found ? curid : 0;
 }
-
