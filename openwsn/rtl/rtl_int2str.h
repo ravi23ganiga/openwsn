@@ -1,8 +1,7 @@
-
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
- * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
+ * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
  * 
  * OpenWSN is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free
@@ -29,21 +28,19 @@
  * 
  ****************************************************************************/ 
 
-//----------------------------------------------------------------------------
-// @author zhangwei on 2006-07-25
-// 本程序测试cc2420, wireless，siocomm, UART几部分，但只测试一条数据回路
-// 它会把cc2420收到的每一个数据包通过UART送给计算机
-//
-//----------------------------------------------------------------------------
+#ifndef _RTL_INT2STR_H_4236_
+#define _RTL_INT2STR_H_4236_
 
-#ifndef _SNIFFER_H_
-#define _SNIFFER_H_
-//----------------------------------------------------------------------------
-
-#include "..\foundation.h"
-#include "..\global.h"
-
-void sniffer_run( void );
-
-//----------------------------------------------------------------------------
-#endif
+/*****************************************************************************
+ * @name int2str
+ * @author zhangwei on 20070410
+ * 
+ * conversion between integer value and string value
+ * 
+ * @history
+ * @modified by xxx on 200704
+ * 
+ ****************************************************************************/ 
+ 
+ 
+#endif 

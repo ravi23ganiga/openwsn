@@ -1,8 +1,7 @@
-
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
- * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
+ * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
  * 
  * OpenWSN is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free
@@ -29,21 +28,48 @@
  * 
  ****************************************************************************/ 
 
-//----------------------------------------------------------------------------
-// @author zhangwei on 2006-07-25
-// 本程序测试cc2420, wireless，siocomm, UART几部分，但只测试一条数据回路
-// 它会把cc2420收到的每一个数据包通过UART送给计算机
-//
-//----------------------------------------------------------------------------
+#include "rtl_int2str.h"
 
-#ifndef _SNIFFER_H_
-#define _SNIFFER_H_
-//----------------------------------------------------------------------------
+static int _strlen( char * str );
 
-#include "..\foundation.h"
-#include "..\global.h"
+inline bool _isnumber(char ch)
+{
+   	return ch>='0' && ch<='9';
+}
 
-void sniffer_run( void );
+int str2int(char * str)
+{
+   	int result =0;
+   	for(int i=0; _isnumber(str[i]); i++)
+   	{
+    	result = result*10;
+       	result += str[i] - '0';
+   	}
+   	return result;
+}
 
-//----------------------------------------------------------------------------
-#endif
+/* @warning
+ *	the buffer should large enough to hold the string or else unstable error occured!
+ */
+void int2str(int n, char str[])
+{
+ 	int high=n/10;
+   	if (high!=0)
+       	int2str(high,str);
+   	else
+       	str[0]='\0';
+   int low=n%10;
+   int len=strlen(str);
+   str[len] = '0' + low;
+   str[len+1] = '\0';
+}
+
+int _strlen( char * str )
+{
+	for(i=1; str[i]!='\0'; i++)
+   	{
+		;
+	}
+	return i;
+}
+
