@@ -137,11 +137,11 @@ void app_start()
 	#endif
 	
 	#ifdef TESTCASE_TIMERLEDINQUIRE
-	timer_test();
+	timerled_test();
 	#endif
 	
 	#ifdef TESTCASE_TIMERLEDINTERUPT
-	timer_test();
+	timerupt_test();
 	#endif
 	
 	#ifdef TESTCASE_ACTSCHE

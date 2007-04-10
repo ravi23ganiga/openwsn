@@ -1,8 +1,8 @@
 
 #include "..\foundation.h"
+#include "..\hal\hal.h"
 #include "..\global.h"
 #include "uartecho.h"
-#include "..\hal\hal.h"
 
 #define UART_BUF_SIZE 256
 
@@ -33,10 +33,10 @@ void uartecho_run( void )
 		count = uart_write( g_uart, buf1, rxlen1, 0 );
 	        if (count > 0)
 		{
-			//rxlen1 -= count;
+			rxlen1 -= count;
 			memmove( buf1, buf1 + count, rxlen1 );
 			led_twinkle(LED_GREEN,3);
-			rxlen1 -= count;
+			//rxlen1 -= count;
 		}
 			
 		/*count = uart_write( g_debuguart, buf2, rxlen2, 0 );
@@ -50,6 +50,7 @@ void uartecho_run( void )
 		
 		count = uart_read( g_uart, (char*)buf1 + rxlen1, UART_BUF_SIZE - rxlen1, 0 );
 	        rxlen1 += count;
+	     
 	        
 	        IRQEnable();
 	        

@@ -270,7 +270,7 @@ uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt )
 	{
 		memmove( buf, &(uart->rxbuf[0]), copied );
 	    //把后面的数据向前提，保证寄存器中的数据是从rxbuffer[0]开始的；
-	    memmove( &(uart->rxbuf[0]), (char*)(uart->rxbuf[0])+copied, uart->rxlen - copied );
+	    memmove( &(uart->rxbuf[0]), (char*)(&(uart->rxbuf[0]))+copied, uart->rxlen - copied );
 		uart->rxlen -= copied;
 	      led_twinkle(LED_YELLOW,3);
 	}

@@ -42,8 +42,8 @@
 #include "start.h"
 
 
-#define TX
-//#define RX
+//#define TX
+#define RX
 
 
 #define PACKET
@@ -84,7 +84,7 @@ int cc2420dev_test (void)
 
     
     #ifdef RX	
-    tx_test.destAddr = 0x1234;
+    tx_test.nodeto = 0x1234;
     tx_test.nodefrom = 0x5678;
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
     #endif	

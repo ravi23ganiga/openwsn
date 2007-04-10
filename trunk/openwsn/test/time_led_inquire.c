@@ -2,6 +2,7 @@
 #include "..\hal\hal.h"
 #include "..\global.h"
 
+
 void timerled_test( void )
 {
 	target_init();
@@ -11,8 +12,8 @@ void timerled_test( void )
 
 
 
-	timer_configure( g_timer0, (TEventHandler)timer_callback, NULL, 0 ); 
-	timer_configure( g_timer2, (TEventHandler)timer1_callback,NULL, 1 );
+	timer_configure( g_timer0,NULL, NULL, 0 ); 
+	timer_configure( g_timer2,NULL,NULL, 1 );
     
 
          led_twinkle(LED_YELLOW,3);
@@ -40,4 +41,5 @@ void timerled_test( void )
 
 	global_destroy();
 }
+
 
