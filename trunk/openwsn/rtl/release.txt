@@ -1,3 +1,7 @@
+20070410
+add module: rtl_int2str
+conversion between integer and string values
+
 20070405
 add module: rtl_binaryxml(not test), rtl_version.h, rtl_bits.h
 

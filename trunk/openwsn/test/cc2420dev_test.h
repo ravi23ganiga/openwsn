@@ -1,8 +1,15 @@
 #ifndef _CC2420DEVTEST_H_
 #define _CC2420DEVTEST_H_
 
-/* 黄欢写的cc2420driver测试主程序，张伟整理 20061013
- */
+/********************************************************************** 
+ * this is a test program for TCc2420 (developed by Huanghuan)
+ * revised by zhang wei on 20061013
+ * 
+ * @attention
+ *   this module is OBSOLETE now!
+ * please use cc2420tx.* and cc2420rx.* instead !!!
+ * 
+ *********************************************************************/
 
 int cc2420dev_test( void );
 

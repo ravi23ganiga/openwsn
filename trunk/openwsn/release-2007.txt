@@ -5,6 +5,15 @@ Flash object read and write (hal_flash)
 svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
+
+20070410
+add module: rtl\rtl_int2str.*
+add module: test\cc2420tx.*, cc2420rx.*. 
+these two modules will replace the old cc2420dev_test.*
+revision: test\analyzer.*
+
+
+
 20070206
 今天增加和修改了如下模块。最重要的更新是在test\fullnode.*中增加了一个完整功能的结点代码。今后，对完整功能结点的测试将主要在该模块上进行。这个模块也就是我们OpenWSN node的主程序。
 
