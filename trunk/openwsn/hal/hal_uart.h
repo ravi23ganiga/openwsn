@@ -1,36 +1,37 @@
-/*****************************************************************************
-* This file is part of OpenWSN, the Open Wireless Sensor Network System.
-*
-* Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
-* 
-* OpenWSN is free software; you can redistribute it and/or modify it under
-* the terms of the GNU General Public License as published by the Free
-* Software Foundation; either version 2 or (at your option) any later version.
-* 
-* OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-* for more details.
-* 
-* You should have received a copy of the GNU General Public License along
-* with eCos; if not, write to the Free Software Foundation, Inc.,
-* 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-* 
-* As a special exception, if other files instantiate templates or use macros
-* or inline functions from this file, or you compile this file and link it
-* with other works to produce a work based on this file, this file does not
-* by itself cause the resulting work to be covered by the GNU General Public
-* License. However the source code for this file must still be made available
-* in accordance with section (3) of the GNU General Public License.
-* 
-* This exception does not invalidate any other reasons why a work based on
-* this file might be covered by the GNU General Public License.
-* 
-****************************************************************************/ 
+/******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+ *
+ * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
+ * 
+ * OpenWSN is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 or (at your option) any later version.
+ * 
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with eCos; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ * 
+ * As a special exception, if other files instantiate templates or use macros
+ * or inline functions from this file, or you compile this file and link it
+ * with other works to produce a work based on this file, this file does not
+ * by itself cause the resulting work to be covered by the GNU General Public
+ * License. However the source code for this file must still be made available
+ * in accordance with section (3) of the GNU General Public License.
+ * 
+ * This exception does not invalidate any other reasons why a work based on
+ * this file might be covered by the GNU General Public License.
+ * 
+ *****************************************************************************/ 
+
 #ifndef _UART_H_2130_
 #define _UART_H_2130_
 
-/***************************************************************************** 
+/****************************************************************************** 
  * @author zhangwei on 2006-07-20
  * TUartDriver object
  * Essentially, this is the software mapping of the UART hardware 
@@ -44,16 +45,22 @@
  * the configure macro CONFIG_UART_RS232 and CONFIG_UART_RS485 should be defined
  * in "configall.h" in the application.
  * 
- ****************************************************************************/
+ * @modified by zhangwei on 20070410
+ * revision. format the source file 
+ * eliminate led_twinkle() in interrupt disable state. because it may cause data
+ * loss in fast communication.
+ *****************************************************************************/
  
 #include "hal_foundation.h"
 
 #define UART_TXBUFFER_SIZE 0x7F
 #define UART_RXBUFFER_SIZE UART_TXBUFFER_SIZE
 
+/* @TODO: txbuf can be eliminated in the future 20061010
+ */
 typedef struct{
   uint8 id;
-  char txbuf[UART_TXBUFFER_SIZE]; // @TODO: txbuf can be eliminated in the future 20061010
+  char txbuf[UART_TXBUFFER_SIZE]; 
   char rxbuf[UART_RXBUFFER_SIZE];
   uint8 txlen;
   uint8 rxlen;
@@ -65,11 +72,12 @@ typedef struct{
 
 TUartDriver * uart_construct( uint8 id, char * buf, uint16 size );
 void uart_destroy( TUartDriver * uart );
-int16 uart_configure (TUartDriver * uart,uint32 baudrate, uint8 databits, uint8 stopbits, uint8 parity, uint8 optflag );
+int16 uart_configure (TUartDriver * uart,uint32 baudrate, uint8 databits, uint8 stopbits, 
+	uint8 parity, uint8 optflag );
 void uart_reset( TUartDriver * uart );
 
-#ifdef UART_READ_ENABLE
-/* read data from UART driver. you can consider the UART's input as an continuous 
+/******************************************************************************
+ * read data from UART driver. you can consider the UART's input as an continuous 
  * stream. This function will read the fist of this stream and place the data 
  * into the "buf". the maximum data count is constraint by the buffer's "size". 
  * If the data exceed the buffer's size, then you should call uart_read() for 
@@ -83,35 +91,37 @@ void uart_reset( TUartDriver * uart );
  * 
  * @return
  * 	the data length actually returned in the buffer.
- */
+ *****************************************************************************/ 
+#ifdef UART_READ_ENABLE
 uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt );
 #endif
 
-
-#ifdef UART_WRITE_ENABLE
-/* write the data in the buffer to UART. 
+/******************************************************************************
+ * write the data in the buffer to UART. 
  * 
  * @attention
  * 	you should NOT assume this function can write "len" characters to UART.
  * due to the UART's ability, this function may write less than "len" characters
  * to the UART.
- */
+ *****************************************************************************/ 
+#ifdef UART_WRITE_ENABLE
 uint16 uart_write( TUartDriver * uart, char * buf, uint16 len, uint16 opt ); 
 #endif
 
-
-/* get one character from the UART input stream. 
+/******************************************************************************
+ * get one character from the UART input stream. 
  * @return 
  * 	0		success, and "*pc" is the character received.
  * 	-1		failed
- */
+ *****************************************************************************/ 
 int16 uart_getchar( TUartDriver * uart, char * pc );
 
-/* put one character to the UART output stream
+/******************************************************************************
+ * put one character to the UART output stream
  * @return
  * 	0		success
  * 	-1		failed.
- */
+ *****************************************************************************/ 
 int16 uart_putchar( TUartDriver * uart, char ch );
 
 #endif

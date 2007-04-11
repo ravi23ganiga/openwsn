@@ -1,33 +1,41 @@
-/*****************************************************************************
-* This file is part of OpenWSN, the Open Wireless Sensor Network System.
-*
-* Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
-* 
-* OpenWSN is free software; you can redistribute it and/or modify it under
-* the terms of the GNU General Public License as published by the Free
-* Software Foundation; either version 2 or (at your option) any later version.
-* 
-* OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-* for more details.
-* 
-* You should have received a copy of the GNU General Public License along
-* with eCos; if not, write to the Free Software Foundation, Inc.,
-* 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-* 
-* As a special exception, if other files instantiate templates or use macros
-* or inline functions from this file, or you compile this file and link it
-* with other works to produce a work based on this file, this file does not
-* by itself cause the resulting work to be covered by the GNU General Public
-* License. However the source code for this file must still be made available
-* in accordance with section (3) of the GNU General Public License.
-* 
-* This exception does not invalidate any other reasons why a work based on
-* this file might be covered by the GNU General Public License.
-* 
-****************************************************************************/ 
-/***************************************************************************** 
+/******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+ *
+ * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
+ * 
+ * OpenWSN is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 or (at your option) any later version.
+ * 
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with eCos; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ * 
+ * As a special exception, if other files instantiate templates or use macros
+ * or inline functions from this file, or you compile this file and link it
+ * with other works to produce a work based on this file, this file does not
+ * by itself cause the resulting work to be covered by the GNU General Public
+ * License. However the source code for this file must still be made available
+ * in accordance with section (3) of the GNU General Public License.
+ * 
+ * This exception does not invalidate any other reasons why a work based on
+ * this file might be covered by the GNU General Public License.
+ * 
+ *****************************************************************************/ 
+
+#include "hal_foundation.h"
+#include "hal_cpu.h"
+#include "hal_lpc213x.h"
+#include "hal_uart.h"
+#include "hal_global.h"
+#include "hal_led.h"
+
+/****************************************************************************** 
  * @author zhangwei on 2006-07-20
  * TUartDriver object
  * Essentially, this is the software mapping of the UART hardware 
@@ -46,14 +54,12 @@
  * because the value of baudrate may be "115200". it exceeds the maximum value 
  * of uint16 65536.
  * 
- ****************************************************************************/
-
-#include "hal_foundation.h"
-#include "hal_cpu.h"
-#include "hal_lpc213x.h"
-#include "hal_uart.h"
-#include "hal_global.h"
-#include "hal_led.h"
+ * @modified by zhangwei on 20070410
+ * revision. format the source file 
+ * eliminate led_twinkle() in interrupt disable state. because it may cause data
+ * loss in fast communication.
+ * 
+ *****************************************************************************/
 
 #ifdef CONFIG_UART_RS232
 #define UART232
@@ -79,7 +85,8 @@ extern TUartDriver * g_uart1;
 static void __irq uart_interrupt( void );
 static void uart_interrupt_init( TUartDriver * uart );
 
-/* initialze the UART hardware and object
+/****************************************************************************** 
+ * initialze the UART hardware and object
  * @param
  * 	id		0	UART0
  * 			1 or other values	UART1
@@ -89,10 +96,9 @@ static void uart_interrupt_init( TUartDriver * uart );
  * 
  * @modified by zhangwei on 20061010
  * @TODO
- * zhangwei kept the old declaration of the function in order to keep other modules running. 
- * this is different to Huanghuan's. Huanghuan's source code should call uart_configure() after
- * uart_construct()  and remove the configure call from construct.
- */
+ * zhangwei kept the old declaration of the function in order to keep other modules 
+ * running. you should call uart_configure() after uart_construct()
+ *****************************************************************************/
 TUartDriver * uart_construct( uint8 id, char * buf, uint16 size )
 {
 	TUartDriver * uart;
@@ -157,10 +163,12 @@ void uart_destroy( TUartDriver * uart )
 }
 
 
-// @TODO 20061013
-// you should enable the interrupt in configure function
-//
-int16 uart_configure (TUartDriver * uart,uint32 baudrate, uint8 databits, uint8 stopbits, uint8 parity, uint8 optflag )
+/****************************************************************************** 
+ * @TODO 20061013
+ * you should enable the interrupt in configure function
+ *****************************************************************************/
+int16 uart_configure (TUartDriver * uart,uint32 baudrate, uint8 databits, uint8 stopbits, 
+	uint8 parity, uint8 optflag )
 {
 	uint32 bak;
 	uart->baudrate = baudrate;
@@ -234,8 +242,9 @@ int16 uart_configure (TUartDriver * uart,uint32 baudrate, uint8 databits, uint8 
 	return (0);
 }
 
-/* clear the TUartDriver internal buffer
- */
+/****************************************************************************** 
+ * clear the TUartDriver internal buffer
+ *****************************************************************************/
 void uart_reset( TUartDriver * uart )
 {
 	hal_enter_critical();
@@ -250,15 +259,21 @@ void uart_interrupt_init( TUartDriver * uart )
 {
 }
 
-/* read data out from the TUartDriver's internal buffer. 
+/****************************************************************************** 
+ * read data out from the TUartDriver's internal buffer. 
  * this is a non-block operation. it will return 0 if no data received.
+ * 
+ * @attention
+ * @modified by zhangwei on 20070411
+ * you should call led_twinkle() before hal_leave_critical(), so i eliminate it.
+ * 
  * @param
  * 	buf		the memory buffer to received the data
  * 	size	the capacity of the buffer
  * @return
  * 	the character count wroten to the buf
  * 	return 0 means there's no data in the TUartDriver buffer. i.e. no data received.
- */
+ *****************************************************************************/
 #ifdef UART_READ_ENABLE
 uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt )
 {
@@ -272,7 +287,6 @@ uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt )
 	    //把后面的数据向前提，保证寄存器中的数据是从rxbuffer[0]开始的；
 	    memmove( &(uart->rxbuf[0]), (char*)(&(uart->rxbuf[0]))+copied, uart->rxlen - copied );
 		uart->rxlen -= copied;
-	      led_twinkle(LED_YELLOW,3);
 	}
 	
 	hal_leave_critical();
@@ -281,15 +295,15 @@ uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt )
 }
 #endif
 
-
-/* write the data in the buffer to UART to sent out
+/****************************************************************************** 
+ * write the data in the buffer to UART to sent out
  * this is a non-block operation. 
  * @param
  * 	buf		where's the data
  * 	len		length of the data in the buffer
  * @return
  * 	the count of characters actually sent
- */
+ *****************************************************************************/
 #ifdef UART_WRITE_ENABLE
 uint16 uart_write( TUartDriver * uart, char * buf, uint16 len, uint16 opt )
 {
@@ -305,14 +319,14 @@ uint16 uart_write( TUartDriver * uart, char * buf, uint16 len, uint16 opt )
 }
 #endif
 
-
-/* this function is hardware related
+/****************************************************************************** 
+ * this function is hardware related
  * you should change the register in this function
  * 
  * @return
  * 	0		success, *ch is char just read from UART
  *  -1		failed
- */
+ *****************************************************************************/
 int16 uart_getchar( TUartDriver * uart, char * pc )
 {
 	int16 ret;
@@ -377,6 +391,13 @@ void __irq uart_interrupt0( void )
 // 错误
 // 这里应该读register判断是UART0还是UART1中断，判g_uart->id是无效的，因为g_uart未知
 //
+
+/****************************************************************************** 
+ * @attention
+ * @modified by zhangwei on 20070411
+ * you should call led_twinkle() before hal_leave_critical(), so i eliminate it.
+ *****************************************************************************/
+
 void __irq uart_interrupt( void )
 {
 	char c;	
@@ -392,7 +413,6 @@ void __irq uart_interrupt( void )
 				{
 					c = U0RBR;			
 					g_uart0->rxbuf[g_uart0->rxlen++] = c;	
-					led_twinkle(LED_RED,3);		
 				}
 			}
 		}	
