@@ -30,17 +30,14 @@
 
 #include "rtl_int2str.h"
 
-static int _strlen( char * str );
+//#define _isnumber(ch) ((ch)>='0' && (ch)<='9')
 
-inline bool _isnumber(char ch)
-{
-   	return ch>='0' && ch<='9';
-}
+//static int _strlen( char * str );
 
 int str2int(char * str)
 {
-   	int result =0;
-   	for(int i=0; _isnumber(str[i]); i++)
+   	int result = 0;
+   	for (int i=0; _isnumber(str[i]); i++)
    	{
     	result = result*10;
        	result += str[i] - '0';

@@ -1,7 +1,3 @@
-
-#ifndef _HAL_OPENFRAME_H_4335_
-#define _HAL_OPENFRAME_H_4335_
-
 /******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
@@ -30,7 +26,12 @@
  * This exception does not invalidate any other reasons why a work based on
  * this file might be covered by the GNU General Public License.
  * 
- ****************************************************************************** 
+ *****************************************************************************/ 
+
+#ifndef _HAL_OPENFRAME_H_4335_
+#define _HAL_OPENFRAME_H_4335_
+
+/******************************************************************************
  * @author zhangwei on 20070130
  * this module implements the openframe interface
  * the structure of openframe is the same as 802.15.4 frame format. thus it can 
