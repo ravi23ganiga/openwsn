@@ -63,7 +63,7 @@ typedef struct{
   char txbuf[UART_TXBUFFER_SIZE]; 
   char rxbuf[UART_RXBUFFER_SIZE];
   uint8 txlen;
-  uint8 rxlen;
+ volatile uint8 rxlen;
   uint8 databits;
   uint8 stopbits;
   uint8 parity;

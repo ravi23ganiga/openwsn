@@ -92,6 +92,7 @@ void NO_OS_ENTER_CRITICAL(void)
 
 void NO_OS_EXIT_CRITICAL(void)
 {
-  if(IRQ_FLAG_STORE) IRQDisable();	
-  else               IRQEnable();		
+  //if(IRQ_FLAG_STORE) IRQDisable();	
+  //else               IRQEnable();		
+   IRQEnable();	
 }

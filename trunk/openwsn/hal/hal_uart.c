@@ -409,10 +409,10 @@ void __irq uart_interrupt( void )
 		{
 			if ((U0IIR & 0x0F) == 0x04)
 			{		
+				c = U0RBR;			
 				if (g_uart0->rxlen < UART_RXBUFFER_SIZE)
 				{
-					c = U0RBR;			
-					g_uart0->rxbuf[g_uart0->rxlen++] = c;	
+				   g_uart0->rxbuf[g_uart0->rxlen++] = c;	
 				}
 			}
 		}	
@@ -423,10 +423,10 @@ void __irq uart_interrupt( void )
 		{
 			if ((U1IIR & 0x0F) == 0x04)
 			{		
+				c = U1RBR;
 				if (g_uart1->rxlen < UART_RXBUFFER_SIZE)
 				{
-					c = U1RBR;
-					g_uart1->rxbuf[g_uart1->rxlen++] = c;	
+					   g_uart1->rxbuf[g_uart1->rxlen++] = c;	
 				}
 			}
 		}	
