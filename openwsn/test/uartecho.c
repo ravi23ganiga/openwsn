@@ -18,10 +18,10 @@ void uartecho_run( void )
 	global_construct();
         IRQEnable();
 	
-	uart_write( g_uart, "before", 10, 0 );
+	uart_write( g_uart, "before", 6, 0 );
 	uart_configure( g_uart, 115200, 0, 0, 0, 0 );
 	
-	uart_write( g_uart, "after", 10, 0 );
+	uart_write( g_uart, "after", 5, 0 );
 	
 	memset( buf1, 0x61, UART_BUF_SIZE ); 
 	memset( buf2, 0x00, UART_BUF_SIZE ); 
@@ -35,7 +35,7 @@ void uartecho_run( void )
 		{
 			rxlen1 -= count;
 			memmove( buf1, buf1 + count, rxlen1 );
-			led_twinkle(LED_GREEN,3);
+			//led_twinkle(LED_GREEN,3);
 			//rxlen1 -= count;
 		}
 			
@@ -50,7 +50,12 @@ void uartecho_run( void )
 		
 		count = uart_read( g_uart, (char*)buf1 + rxlen1, UART_BUF_SIZE - rxlen1, 0 );
 	        rxlen1 += count;
-	     
+	       /* if (count>0) 
+	        {   
+	            uart_write( g_uart, "xxxxxx", 6, 0 );
+	            uart_putchar( g_uart, count);
+	            
+	          	}*/
 	        
 	        IRQEnable();
 	        
