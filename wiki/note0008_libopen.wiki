@@ -1,6 +1,9 @@
 *LibOpen: The Interface/API To Sensor Networks*
+
 *author zhangwei on 20070412
+
 *modified by xxx on 200704
+
 
 =Q: what's LibOpen/libopen(libsink)=
 R: 
