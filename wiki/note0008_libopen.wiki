@@ -1,4 +1,6 @@
-#LibOpen: The Interface/API To Sensor Networks
+*LibOpen: The Interface/API To Sensor Networks*
+*author zhangwei on 20070412
+*modified by xxx on 200704
 
 =Q: what's LibOpen/libopen(libsink)=
 R: 
@@ -36,8 +38,10 @@ the Internet-Sensor Networks Gateway is a socket server running on the same devi
 
 some one may want a web interface for wsn. the web interface should be based on the gateway server. 
 
-=Q: interface design(maybe changed in the future. pls refer to the source code for updated)=
+=Q: interface design=
 R:
+(maybe changed in the future. pls refer to the source code for updated)
+
 high level data service based on binaryxml. 
 this interface enable the upper level application to query the sensor data of any time at any location and any time.
 {{{
