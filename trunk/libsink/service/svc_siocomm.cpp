@@ -80,6 +80,11 @@ void sio_configure( TSioComm * sio, /*TTimer * timer,*/ uint8 opt, uint8 sof )
 	sio->sof = sof;
 }
 
+void sio_relation( TSioComm * sio, void * haldriver )
+{
+	NULL;
+}
+
 #ifdef SIO_CONFIG_VERSION_10
 /* Direct through version for testing only.
  * 
