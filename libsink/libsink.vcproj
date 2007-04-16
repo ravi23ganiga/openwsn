@@ -286,6 +286,42 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="rtl"
+			>
+			<File
+				RelativePath=".\rtl\rtl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\rtl\rtl_binaryxml.c"
+				>
+			</File>
+			<File
+				RelativePath=".\rtl\rtl_binaryxml.h"
+				>
+			</File>
+			<File
+				RelativePath=".\rtl\rtl_bits.h"
+				>
+			</File>
+			<File
+				RelativePath=".\rtl\rtl_crc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\rtl\rtl_crc.h"
+				>
+			</File>
+			<File
+				RelativePath=".\rtl\rtl_foundation.h"
+				>
+			</File>
+			<File
+				RelativePath=".\rtl\rtl_version.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\configall.h"
 			>
