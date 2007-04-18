@@ -54,6 +54,12 @@
 #define TESTCASE_ACTSCHE
 #undef  TESTCASE_ACTSCHE
 
+#define TESTCASE_CC2420TX
+#undef  TESTCASE_CC2420DTX
+
+#define TESTCASE_CC2420RX
+#undef  TESTCASE_CC2420RX
+
 #define TESTCASE_CC2420DEV
 #undef  TESTCASE_CC2420DEV
 
@@ -150,6 +156,14 @@ void app_start()
 	actsche_test(0);
 	actsche_test(1);
 	actsche_test(2);
+	#endif
+	
+	#ifdef TESTCASE_CC2420TX
+	cc2420tx_test();
+	#endif
+	
+	#ifdef TESTCASE_CC2420RX
+	cc2420rx_test();
 	#endif
 	
 	#ifdef TESTCASE_CC2420DEV
