@@ -270,7 +270,7 @@ void CC2420_SPI_DISABLE( void )
         
         while(i < 1500) i++;   //the delay is to construct enough holdup time of csn 
                                //by huanghuan 2006.11.16
-        #if  CSN_PORT == 0
+        #if CSN_PORT == 0
         IO0SET  = BM(CSN);
         #endif      
         #if CSN_PORT == 1

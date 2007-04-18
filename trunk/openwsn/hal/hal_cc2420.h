@@ -186,12 +186,12 @@
 #endif
 
 #ifdef TARGET_WLSMODEM_11
-#define FIFO           16  // P0.16  - Input: FIFO from CC2420
-#define FIFOP          15  // P0.15  - Input: FIFOP from CC2420
-#define CCA            12  // p0.12 - Input:  CCA from CC2420
+#define FIFO           16  // P0.16 - Input: FIFO from CC2420
+#define FIFOP          15  // P0.15 - Input: FIFOP from CC2420
+#define CCA            12  // p0.12 - Input: CCA from CC2420
 #define RESET_N        23  // P1.23 - Output: RESET_N to CC2420
 #define VREG_EN        10  // P0.10 - Output: VREG_EN to CC2420
-#define SFD            11  // P0.11 - Input:  SFD from CC2420
+#define SFD            11  // P0.11 - Input: SFD from CC2420
 #define CSN            17  // P0.17 - Output: SPI Chip Select (CS_N)  
 
 #define SFD_PORT       0
@@ -260,15 +260,16 @@ typedef struct {
     WORD myAddr;
     BOOL receiveOn;
     uint8 rssi;
-} BASIC_RF_SETTINGS;
+}BASIC_RF_SETTINGS;
 
+// 要重点清查receivepayload_len和payload_length是否一致，是否应归并
 typedef struct{
   uint8 state;
   uint8 nextstate;
   TSpiDriver * spi; 
   //uint16 panid;
   uint16 address;
-  uint8 channel; // frequency, channel varies from 11 to 26 . f = 2405 + 5*(channel - 11) MHz;
+  uint8 channel; // frequency, channel varies from 11 to 26. f = 2405 + 5*(channel - 11) MHz;
   uint8 txlen;
   uint8 rxlen;
   TCc2420Frame txframe;
@@ -279,9 +280,9 @@ typedef struct{
   uint8 sleeprequest;
   uint8 power;
   uint8 ackrequest;             
-  //uint8 rssi;                   //最近一次接收到的信息的信号强度
-  uint8 receivepacket_len;      //最近一次接收到的包的总长度
-  uint8 receivepayload_len;     //最近一次接收到的包的payload的长度
+  //uint8 rssi;                 //最近一次接收到的信息的信号强度
+  volatile uint8 receivepacket_len;      //最近一次接收到的包的总长度
+  volatile uint8 receivepayload_len;     //最近一次接收到的包的payload的长度
   uint8 sendpayload_len;        //最近一次发送的包的payload长度
   uint8 if_read;                //接收缓冲被读后，变为1， 接收到新信息后，变为0
   
@@ -298,8 +299,6 @@ typedef struct{
   volatile BOOL receiveOn;
   volatile uint8 rssi; 		//最近一次接收到的信息的信号强度
 }TCc2420Driver;
-
-
 
 /* The following variable is declared usually in "global.c". However, it is used
  * in the interrupt service routine of this module. Be sure the variable name 

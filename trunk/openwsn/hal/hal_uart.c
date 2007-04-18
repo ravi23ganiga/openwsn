@@ -59,6 +59,10 @@
  * eliminate led_twinkle() in interrupt disable state. because it may cause data
  * loss in fast communication.
  * 
+ * @modified by makun on 20070412
+ * correct the error of data loss
+ * modified interrupt service routine
+ * 
  *****************************************************************************/
 
 #ifdef CONFIG_UART_RS232
@@ -359,31 +363,6 @@ int16 uart_putchar( TUartDriver * uart, char ch )
 	}
 	return 0;
 }
-
-// 老代码，可能是唐文提供的吧 20061010
-/*
-void __irq uart_interrupt0( void )
-{
-	char c;	
-	
-	if (g_init == 1)
-	{
-		while ((U0IIR & 0x01)==0)
-		{
-			if ((U0IIR & 0x0F) == 0x04)
-			{		
-				if (g_uart->rxlen < UART_RXBUFFER_SIZE)
-				{
-					c = U0RBR;			
-					g_uart->rxbuf[g_uart->rxlen++] = c;			
-				}
-			}
-		}
-	}	
-
-	VICVectAddr = 0x00;	
-}
-*/
 
 // 黄欢提供的新代码 20061010
 // @modified by zhangwei on 20061013
