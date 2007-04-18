@@ -12,7 +12,6 @@ void siocomm_test( void )
 	uint8 rxlen, count;
 
 	global_construct();
-	
 	memset( buf, 0x00, SIO_BUF_SIZE ); 
 	rxlen = 0;
 	
@@ -28,6 +27,7 @@ void siocomm_test( void )
 			memmove( buf, buf + count, rxlen );
 		}
 	}	
+	global_destroy();
 }
 
 

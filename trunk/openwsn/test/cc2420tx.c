@@ -28,10 +28,21 @@
  * 
  *****************************************************************************/
  
+#include "..\foundation.h"
 #include <stdlib.h>
-#include "config.h"
 #include "..\hal\hal.h"
-#include "start.h"
+#include "..\global.h"
+//#include "config.h"
+//#include "start.h"
+
+/*****************************************************************************
+ * @author MaKun on 2007-04-18
+ * test sending/TX function of cc2420 driver
+ *
+ * @modified by zhangwei on 20070418
+ * just modify the format of the source file and including files
+ *   
+ ****************************************************************************/ 
 
 #define PACKET
 //#define CHAR_STREAM
@@ -42,11 +53,10 @@ uint8 rx_frame[128];            //using CHAR_STREAM
 TCc2420Frame tx_test;
 TCc2420Frame rx_test;           //using PACKET
 
-
 int cc2420tx_test (void)
 {
     ///*     Fof RF test	
-    UINT8 n;
+    uint8 n;
     int8 length;
     uint16 temp;
     uint8 ledPeriod;
@@ -82,40 +92,45 @@ int cc2420tx_test (void)
     cc2420_receive_on(g_cc2420);  
     IRQEnable(); 
     
-    while (TRUE) 
+	while (TRUE) 
 	{    
+		// transmit using TOpenFrame based interface
+        #ifdef PACKET
+        tx_test.payload[0]++;
+        if (tx_test.payload[0] == 5)
+        { 
+        	tx_test.payload[0] = 1;
+        } 
+        
+        led_twinkle(LED_GREEN,1);
+        length = cc2420_write(g_cc2420,tx_test,10 + 11,0);
           
-          //transmit using packet
-          #ifdef PACKET
-          tx_test.payload[0]++;
-          if(tx_test.payload[0] == 5) tx_test.payload[0] = 1;
-          
-          led_twinkle(LED_GREEN,1);
-          
-          length = cc2420_write(g_cc2420,tx_test,10 + 11,0);
-          
-          /*
-          if(length == -1) {led_twinkle(LED_RED,5);uart_putchar(g_uart,(char)0x00);}
-          else {led_twinkle(LED_RED,1);uart_putchar(g_uart,(char)0x11);}
-          */ 
-	  halWait(2000);
-	  #endif
-	  /////////////////////////////////////////
+        /*
+        if(length == -1) {led_twinkle(LED_RED,5);uart_putchar(g_uart,(char)0x00);}
+        else {led_twinkle(LED_RED,1);uart_putchar(g_uart,(char)0x11);}
+        */ 
+		halWait(2000);
+		#endif
 	  
-	  
-	  
-	  //transmit using char streams
-	  #ifdef CHAR_STREAM         
-          tx_frame[10]++;
-          if(tx_frame[10] = 5) tx_frame[10] = 1;
-          cc2420_rawwrite( g_cc2420, (char *)tx_frame, 10 + 11,0);
-          
-          led_twinkle(LED_GREEN,1);
-       	  //cc2420_sendframe(g_cc2420);
-	  halWait(3000);	  
-	  #endif
-	  ///////////////////////////////////////
+		// transmit using char buffer based interface
+		// @modified by zhangwei on 20070418
+		// huanghuan seems test the following section. i cannot guartantee whether 
+		// the next char buffer based interface can work properly.
+		#ifdef CHAR_STREAM         
+        tx_frame[10]++;
+        if (tx_frame[10] = 5) 
+        {
+        	tx_frame[10] = 1;
         }
-        global_destroy();
+        cc2420_rawwrite( g_cc2420, (char *)tx_frame, 10 + 11,0);
+          
+        led_twinkle(LED_GREEN,1);
+       	//cc2420_sendframe(g_cc2420);
+	  	halWait(3000);	  
+	  	#endif
+
+	}
+	
+	global_destroy();
 	return 0;															
 }

@@ -50,13 +50,14 @@ void analyzer_run( void )
 	//sio_relation( g_uart0 );
 	//cc2420_configure
 	//cc2420_relation( g_spi0 );
+	//cc2420_init()
 	
 	memset( (char*)(&txbuf[0]), 0x00, MAX_BUFFER_SIZE ); 
 	memset( (char*)(&rxbuf[0]), 0x00, MAX_BUFFER_SIZE ); 
 	txlen = 0;
 	rxlen = 0;
 	
-	// assume you have construct g_cc2420, g_sio, g_uart successfully
+	// assume you have construct g_cc2420, g_sio, g_uart successfully now
 	//
 	while (TRUE)
 	{
@@ -66,7 +67,7 @@ void analyzer_run( void )
 		txlen += count;
 		
 		buf = (char*)(txbuf[0]);
-		count = cc2420_write( g_cc2420, buf, txlen, 0 );
+		count = cc2420_rawwrite( g_cc2420, buf, txlen, 0 );
 		if (count > 0)
 		{
 			//txlen -= count;
