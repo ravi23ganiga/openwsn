@@ -44,18 +44,15 @@ static void cc2420_event_handler( void );
  ******************************************************************************/
 TCc2420Driver * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 {
-	               
 	TCc2420Driver *cc;
 	char* out_string = "cc2420 construct succesful!\n";
 	
 	//led_on(LED_GREEN);
 	
-	
 	if (sizeof(TCc2420Driver) > size)
 		cc = NULL;
 	else
 		cc = (TCc2420Driver *)buf;
-		
 	
 	if (cc != NULL)
 	{	
@@ -209,8 +206,6 @@ void cc2420_init(TCc2420Driver * cc)
     cc2420_setchannel(cc);
     
     led_twinkle(LED_RED,1);
- 
-    
 
     //while(1){
     FAST2420_GETREG(cc->spi,CC2420_MDMCTRL0, &rereg);   
@@ -636,7 +631,7 @@ void cc2420_event_handler()
         g_cc2420->pRxInfo.control = frameControlField;
 
         ack = !!(frameControlField & BASIC_RF_FCF_ACK_BM);
-    	FAST2420_READ_FIFO_BYTE(g_cc2420->spi,(BYTE*)&g_cc2420->pRxInfo.seqid);
+    	FAST2420_READ_FIFO_BYTE(g_cc2420->spi,(BYTE*)&(g_cc2420->pRxInfo.seqid));
 		// Is this an acknowledgment packet?
     	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (frameControlField == BASIC_RF_ACK_FCF) && (g_cc2420->pRxInfo.seqid == g_cc2420->seqid)) {
 
@@ -657,16 +652,16 @@ void cc2420_event_handler()
 			//FAST2420_READ_FIFO_GARBAGE(g_cc2420->spi,4);
 			
 			//Read the PanID
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->pRxInfo.panid, 2);
+			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &(g_cc2420->pRxInfo.panid), 2);
 			
 			//Read the destination address(local address)
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->pRxInfo.nodeto, 2);
+			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &(g_cc2420->pRxInfo.nodeto), 2);
 
 			// Read the source address
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->pRxInfo.nodefrom, 2);
+			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &(g_cc2420->pRxInfo.nodefrom), 2);
 
 			// Read the packet payload
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) g_cc2420->pRxInfo.payload, g_cc2420->payload_length);
+			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*)(g_cc2420->pRxInfo.payload), g_cc2420->payload_length);
 
 			// Read the footer to get the RSSI value
 			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) pFooter, 2);

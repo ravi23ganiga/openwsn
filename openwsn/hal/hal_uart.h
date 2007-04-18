@@ -49,6 +49,11 @@
  * revision. format the source file 
  * eliminate led_twinkle() in interrupt disable state. because it may cause data
  * loss in fast communication.
+ * 
+ * @modified by makun on 20070412
+ * correct the error of data loss
+ * modified interrupt service routine
+ * 
  *****************************************************************************/
  
 #include "hal_foundation.h"
@@ -63,7 +68,7 @@ typedef struct{
   char txbuf[UART_TXBUFFER_SIZE]; 
   char rxbuf[UART_RXBUFFER_SIZE];
   uint8 txlen;
- volatile uint8 rxlen;
+  volatile uint8 rxlen;
   uint8 databits;
   uint8 stopbits;
   uint8 parity;
