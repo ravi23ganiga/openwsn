@@ -65,7 +65,7 @@ TCc2420Driver * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 		cc->address = 1; //ADDR;
 		cc->channel = 1; //Channel;
 		cc->txlen = 0;
-		cc->rxlen = 0; 
+		cc->rxlen = 0;
 		cc->power = 1;
 		cc->sleeprequest = FALSE;
 		uart_write(g_uart, out_string,28, 0);
@@ -229,7 +229,7 @@ void cc2420_init(TCc2420Driver * cc)
     //cc->rfSettings.receiveOn = FALSE;
     //cc->rfSettings.ackReceived = FALSE;
     //cc->rfSettings.payload_length = 0;
-    //cc->panid = cc->panid;
+    cc->panid = cc->panid;
     cc->myAddr = cc->address;
     cc->seqid = 0;
     cc->receiveOn = FALSE;
@@ -576,6 +576,8 @@ void __irq cc2420_interrupt_handler( void )
 	#endif
 	
 	VICVectAddr   = 0;	// 向量中断结束
+	led_toggle(LED_YELLOW);
+	
 }
 
 
@@ -605,11 +607,12 @@ void cc2420_event_handler()
         led_toggle(LED_RED);
         
     // Clean up and exit in case of FIFO overflow, which is indicated by FIFOP = 1 and FIFO = 0
-	if((VALUE_OF_FIFOP()) && (!(VALUE_OF_FIFO()))) {	   
+	if((VALUE_OF_FIFOP()) && (!(VALUE_OF_FIFO())))
+	  {	   
 	    FAST2420_STROBE(g_cc2420->spi,CC2420_SFLUSHRX);
 	    FAST2420_STROBE(g_cc2420->spi,CC2420_SFLUSHRX);
 	    return;
-	}
+	  }
 
 	// Payload length
 	FAST2420_READ_FIFO_BYTE(g_cc2420->spi,&length);
@@ -618,11 +621,14 @@ void cc2420_event_handler()
 	length &= BASIC_RF_LENGTH_MASK; // Ignore MSB
 
     // Ignore the packet if the length is too short
-    if (length < BASIC_RF_ACK_PACKET_SIZE) {
+    if (length < BASIC_RF_ACK_PACKET_SIZE) 
+      {
     	FAST2420_READ_FIFO_GARBAGE(g_cc2420->spi,length);
         
     // Otherwise, if the length is valid, then proceed with the rest of the packet
-    } else {
+       }
+     else 
+       {
         // Register the payload length
         g_cc2420->payload_length = length - BASIC_RF_PACKET_OVERHEAD_SIZE;
         
@@ -633,20 +639,28 @@ void cc2420_event_handler()
         ack = !!(frameControlField & BASIC_RF_FCF_ACK_BM);
     	FAST2420_READ_FIFO_BYTE(g_cc2420->spi,(BYTE*)&(g_cc2420->pRxInfo.seqid));
 		// Is this an acknowledgment packet?
-    	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (frameControlField == BASIC_RF_ACK_FCF) && (g_cc2420->pRxInfo.seqid == g_cc2420->seqid)) {
+    	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (frameControlField == BASIC_RF_ACK_FCF) && (g_cc2420->pRxInfo.seqid == g_cc2420->seqid))
+      	 {
 
  	       	// Read the footer and check for CRC OK
 			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) pFooter, 2);
 
 			// Indicate the successful ack reception (this flag is polled by the transmission routine)
-			if (pFooter[1] & BASIC_RF_CRC_OK_BM) g_cc2420->ackReceived = TRUE;
+			if (pFooter[1] & BASIC_RF_CRC_OK_BM)
+			 { g_cc2420->ackReceived = TRUE;
+		         //led_toggle(LED_YELLOW);
+		     }
 		// Too small to be a valid packet?
-		} else if (length < BASIC_RF_PACKET_OVERHEAD_SIZE) {
+		  } 
+	    else if (length < BASIC_RF_PACKET_OVERHEAD_SIZE) 
+		 {
 			FAST2420_READ_FIFO_GARBAGE(g_cc2420->spi,length - 3);
 			return;
 
 		// Receive the rest of the packet
-	} else {
+	      }
+	    else 
+	     {
 		    
 			// Skip the destination PAN and address (that's taken care of by harware address recognition!)
 			//FAST2420_READ_FIFO_GARBAGE(g_cc2420->spi,4);
@@ -671,12 +685,13 @@ void cc2420_event_handler()
 			
 			
 			// Notify the application about the received _data_ packet if the CRC is OK
-			if (((frameControlField & (BASIC_RF_FCF_BM)) == BASIC_RF_FCF_NOACK) && (pFooter[1] & BASIC_RF_CRC_OK_BM)) {
+			if (((frameControlField & (BASIC_RF_FCF_BM)) == BASIC_RF_FCF_NOACK) && (pFooter[1] & BASIC_RF_CRC_OK_BM))
+			 {
 				 g_cc2420->pRxInfo = *(_internal_recvframe(g_cc2420,(TCc2420Frame *)(&g_cc2420->pRxInfo)));
-			}
+		         }
 			
-		}
-    }
+		    }
+     }
 }
 
 

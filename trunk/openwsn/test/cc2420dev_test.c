@@ -42,18 +42,18 @@
 #include "start.h"
 
 
-//#define TX
-#define RX
+#define TX
+//#define RX
 
 
 #define PACKET
 //#define CHAR_STREAM
 
-uint8 tx_frame[128];
-uint8 rx_frame[128];            //using CHAR_STREAM
+static uint8 tx_frame[128];
+static uint8 rx_frame[128];            //using CHAR_STREAM
 
-TCc2420Frame tx_test;
-TCc2420Frame rx_test;           //using PACKET
+static TCc2420Frame tx_test;
+static TCc2420Frame rx_test;           //using PACKET
 
 
 int cc2420dev_test (void)
@@ -113,6 +113,7 @@ int cc2420dev_test (void)
           
           //transmit using packet
           #ifdef PACKET
+       
           tx_test.payload[0]++;
           if(tx_test.payload[0] == 5) tx_test.payload[0] = 1;
           
