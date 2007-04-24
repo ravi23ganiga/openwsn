@@ -1,7 +1,7 @@
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
- * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
+ * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
  * 
  * OpenWSN is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free
@@ -26,23 +26,30 @@
  * This exception does not invalidate any other reasons why a work based on
  * this file might be covered by the GNU General Public License.
  * 
- ****************************************************************************/ 
+ *****************************************************************************/ 
 
-//----------------------------------------------------------------------------
-// @author zhangwei on 2006-07-25
-// 本程序测试cc2420, wireless，siocomm, UART几部分，但只测试一条数据回路
-// 它会把cc2420收到的每一个数据包通过UART送给计算机
-//
-//----------------------------------------------------------------------------
+#ifndef _LEDSYNC_H_4287_
+#define _LEDSYNC_H_4287_
 
-#ifndef _SNIFFER_H_
-#define _SNIFFER_H_
-//----------------------------------------------------------------------------
+/*****************************************************************************
+ * @author zhangwei on 20070421
+ * @note
+ * 	ledsync
+ * 	this test will synchronize the LED flash frequvency across serveral LEDs.
+ * so it can be used to test whether the wireless communication and main processing
+ * service is working right or not. 
+ * 
+ * @status
+ * 	un-tested yet
+ * 
+ * @history
+ * @modified by xxx on 20070421
+ *  
+ *****************************************************************************/ 
 
-#include "..\foundation.h"
-#include "..\global.h"
+void ledsync_test();
 
-void sniffer_run( void );
-
-//----------------------------------------------------------------------------
 #endif
+
+
+ 
