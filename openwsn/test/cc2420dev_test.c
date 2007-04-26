@@ -26,14 +26,6 @@
  * This exception does not invalidate any other reasons why a work based on
  * this file might be covered by the GNU General Public License.
  * 
- ***************************************************************************** 
- *
- * @modified by zhangwei on 20061013 
- * 黄欢写的cc2420driver测试主程序，张伟整理 20061013
- * 
- * @modified by zhangwei on 20061019
- * revised today. mainly introduce the global variables.
- *
  *****************************************************************************/ 
 
 #include <stdlib.h>
@@ -41,6 +33,14 @@
 #include "..\hal\hal.h"
 #include "start.h"
 
+/*****************************************************************************
+ * @modified by zhangwei on 20061013 
+ * 黄欢写的cc2420driver测试主程序，张伟整理 20061013
+ * 
+ * @modified by zhangwei on 20061019
+ * revised today. mainly introduce the global variables.
+ *
+ *****************************************************************************/ 
 
 #define TX
 //#define RX
