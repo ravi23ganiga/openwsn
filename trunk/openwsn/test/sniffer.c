@@ -29,12 +29,21 @@
  ****************************************************************************/ 
 
 #include "..\foundation.h"
+#include "..\hal\hal_cc2420.h"
+#include "..\service\svc_debugio.h"
 #include "..\global.h"
 #include "sniffer.h"
 
-#define MAX_BUFFER_SIZE 128
+/*****************************************************************************
+ * @author zhangwei on 20070423
+ * revision today.
+ * 
+ * the "cc2420" chip has address identification mechanism built. if you want to 
+ * use it as a sniffer frontier, you must turn off it. 
+ * 
+ ****************************************************************************/ 
 
-// 站在PLC角度区分TX还是RX
+#define MAX_BUFFER_SIZE 0xFF
 
 void sniffer_run( void )
 {
@@ -43,12 +52,27 @@ void sniffer_run( void )
 	uint8 rxlen, count;
 
 	global_construct();
+	//sio_configure()
+	//sio_relation( g_uart0 );
+	//cc2420_configure
+	// 设置2420可以接受任何的数据包
+	// hardware address recognition can be enabled or disabled using 
+	// MDMCTRL0.ADR_DECODE bit (p.39, cc2420 datasheet) 
+	//
+	//cc2420_relation( g_spi0 );
+	//cc2420_init()
 	
 	memset( (char*)(&rxbuf[0]), 0x00, MAX_BUFFER_SIZE ); 
 	rxlen = 0;
 	
-	while (1)
+	// assume you have construct g_cc2420, g_sio, g_uart successfully now
+	//
+	while (TRUE)
 	{
+		buf = (char*)(rxbuf[0]) + rxlen;
+		count = cc2420_rawread( g_cc2420, buf, rxlen, 0 );
+		rxlen += count;
+		
 		buf = (char*)(rxbuf[0]);
 		count = sio_write( g_sio, buf, rxlen, 0 );
 		if (count > 0)
@@ -56,17 +80,9 @@ void sniffer_run( void )
 			rxlen -= count;
 			memmove( buf, buf + count, rxlen );
 		}
-
-		buf = (char*)(rxbuf[0]) + rxlen;
-		count = wls_read( g_wls, buf, MAX_BUFFER_SIZE - rxlen, 0 );
-		rxlen += count;
-		
-		// send debug data if exists.
-		debug_evolve( g_debugio );
 	}
 		
 	global_destroy();	
 	
 	return;
 }
-

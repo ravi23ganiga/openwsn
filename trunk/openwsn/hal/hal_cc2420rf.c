@@ -259,6 +259,7 @@ void CC2420_SPI_ENABLE( void )
               
         // @modified by huanghuan 2006.11.16
         // the delay is to construct enough setup time of csn 
+		#pragma optimize=none
         while(i < 500) 
         	i++;    
                                

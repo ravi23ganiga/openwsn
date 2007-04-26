@@ -1,6 +1,3 @@
-#ifndef _SVC_OPENPACKET_H_3812_
-#define _SVC_OPENPACKET_H_3812_
-
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
@@ -31,10 +28,14 @@
  * 
  ****************************************************************************/ 
 
+#ifndef _SVC_OPENPACKET_H_3812_
+#define _SVC_OPENPACKET_H_3812_
+
 #include "svc_foundation.h"
 #include "..\hal\hal_openframe.h"
 
-/* @author zhangwei on 20070131
+/*****************************************************************************
+ * @author zhangwei on 20070131
  * this file defines the format of a Network Layer Packet. the packet is the 
  * payload of a TOpenFrame.
  * 
@@ -42,7 +43,7 @@
  * NOT add member variables to them! they are BYTE-TO-BYTE mapping to the packets
  * transmitted. the other functions should be considered as util function rather
  * than service member functions.
- */
+ ****************************************************************************/ 
 
 /******************************************************************************
  * IEEE 802.15.4 PPDU format

@@ -1,6 +1,3 @@
-#ifndef _DEBUGIO_H_
-#define _DEBUGIO_H_
-
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
@@ -31,19 +28,33 @@
  * 
  ****************************************************************************/ 
 
+#ifndef _DEBUGIO_H_
+#define _DEBUGIO_H_
+
 #include "svc_foundation.h"
 #include "..\hal\hal_uart.h"
 
-#define DEBUGIO_BUF_CAPACITY 128
+/*****************************************************************************
+ * @todo
+ * - this implementation require you have a correct implementation of hal_enter_critical()
+ *  and hal_leave_critical(). however, they two in current release are not correct yet!
+ *  so you should be very careful when using TDebugIo object in your program, 
+ *  especially when you dealing with interrupt service routines.
+ *  
+ ****************************************************************************/ 
+
+#define CONFIG_DEBUGIO_BUFFER_CAPACITY 128
 
 typedef struct{
   TUartDriver * uart;
   uint8 datalen;
-  char buf[DEBUGIO_BUF_CAPACITY];
+  char buf[CONFIG_DEBUGIO_BUFFER_CAPACITY];
 }TDebugIo;
 
-TDebugIo * debug_construct( char * buf, uint16 size, TUartDriver * uart );
+TDebugIo * debug_construct( char * buf, uint16 size );
 void debug_destroy( TDebugIo * db );
+TDebugIo * debug_open( TDebugIo * db, TUartDriver * uart );
+void debug_close( TDebugIo * db );
 
 /* this function should be called frequvently to send data to UART
  * or else all your debug operations only place data in the internal buffer

@@ -37,6 +37,10 @@
  * @history
  * @modified by zhangwei on 20060906
  * update compiling macros of hal_delay()
+ *
+ * @modified by zhangwei on 20070410
+ * modified NO_OS_EXIT_CRITICAL. changed it to always irq_enable() though this is 
+ * not a right solution.
  ******************************************************************************/
 
 static uint8 IRQ_FLAG_STORE;

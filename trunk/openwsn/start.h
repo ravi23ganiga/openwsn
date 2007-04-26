@@ -1,4 +1,4 @@
-	//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // @author zhangwei on 2006-07-25
 // this module functions as the main application entry. 
 // for uCOS-II, you should call app_start() in a separate task
@@ -12,7 +12,7 @@
 #include "global.h"
 #include ".\test\simplerouter.h"
 #include ".\test\uartecho.h"
-#include ".\test\debuguart.h"
+#include ".\test\debugio.h"
 #include ".\test\sioecho.h"
 #include ".\test\sniffer.h"
 #include ".\test\wlsecho.h"
