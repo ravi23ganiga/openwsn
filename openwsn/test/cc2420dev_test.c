@@ -1,46 +1,40 @@
-/*****************************************************************************
- * This file is part of OpenWSN, the Open Wireless Sensor Network System.
- *
- * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
+/****************************************Copyright (c)**************************************************
+**                               Guangzou ZLG-MCU Development Co.,LTD.
+**                                      graduate school
+**                                 http://www.zlgmcu.com
+**
+**--------------File Info-------------------------------------------------------------------------------
+** File name:			main.c
+** Last modified Date:  2004-09-16
+** Last Version:		1.0
+** Descriptions:		The main() function example template
+**
+**------------------------------------------------------------------------------------------------------
+** Created by:			Chenmingji
+** Created date:		2004-09-16
+** Version:				1.0
+** Descriptions:		The original version
+**
+**------------------------------------------------------------------------------------------------------
+** Modified by:
+** Modified date:
+** Version:
+** Descriptions:
+
+ * @modified by zhangwei on 20061013 
+ * 黄欢写的cc2420driver测试主程序，张伟整理 20061013
  * 
- * OpenWSN is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 or (at your option) any later version.
- * 
- * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * for more details.
- * 
- * You should have received a copy of the GNU General Public License along
- * with eCos; if not, write to the Free Software Foundation, Inc.,
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
- * 
- * As a special exception, if other files instantiate templates or use macros
- * or inline functions from this file, or you compile this file and link it
- * with other works to produce a work based on this file, this file does not
- * by itself cause the resulting work to be covered by the GNU General Public
- * License. However the source code for this file must still be made available
- * in accordance with section (3) of the GNU General Public License.
- * 
- * This exception does not invalidate any other reasons why a work based on
- * this file might be covered by the GNU General Public License.
- * 
- *****************************************************************************/ 
+ * @modified by zhangwei on 20061019
+ * revised today. mainly introduce the global variables.
+
+**
+********************************************************************************************************/
 
 #include <stdlib.h>
 #include "config.h"
 #include "..\hal\hal.h"
 #include "start.h"
 
-/*****************************************************************************
- * @modified by zhangwei on 20061013 
- * 黄欢写的cc2420driver测试主程序，张伟整理 20061013
- * 
- * @modified by zhangwei on 20061019
- * revised today. mainly introduce the global variables.
- *
- *****************************************************************************/ 
 
 #define TX
 //#define RX
@@ -49,11 +43,11 @@
 #define PACKET
 //#define CHAR_STREAM
 
-static uint8 tx_frame[128];
-static uint8 rx_frame[128];            //using CHAR_STREAM
+uint8 tx_frame[128];
+uint8 rx_frame[128];            //using CHAR_STREAM
 
-static TCc2420Frame tx_test;
-static TCc2420Frame rx_test;           //using PACKET
+TCc2420Frame tx_test;
+TCc2420Frame rx_test;           //using PACKET
 
 
 int cc2420dev_test (void)
@@ -93,14 +87,14 @@ int cc2420dev_test (void)
     //to write the payload
     for (n = 0; n < 10; n++) {
         tx_test.payload[n] = 2;
-        tx_frame[10 + n] = 2;
+        tx_frame[9 + n] = 2;
     }
     tx_test.payload[2] = 1;  
 
-    tx_frame[1] = tx_frame[2] = tx_frame[3] = 0;
-    tx_frame[4] = 0x20; tx_frame[5] = 0x24;
-    tx_frame[6] = 0x78; tx_frame[7] = 0x56;
-    tx_frame[8] = 0x34; tx_frame[9] = 0x12; 
+    tx_frame[0] = tx_frame[1] = tx_frame[2] = 0;
+    tx_frame[3] = 0x20; tx_frame[4] = 0x24;
+    tx_frame[5] = 0x78; tx_frame[6] = 0x56;
+    tx_frame[7] = 0x34; tx_frame[8] = 0x12; 
     
     
     cc2420_receive_on(g_cc2420);  
@@ -113,7 +107,6 @@ int cc2420dev_test (void)
           
           //transmit using packet
           #ifdef PACKET
-       
           tx_test.payload[0]++;
           if(tx_test.payload[0] == 5) tx_test.payload[0] = 1;
           
@@ -133,8 +126,8 @@ int cc2420dev_test (void)
 	  
 	  //transmit using char streams
 	  #ifdef CHAR_STREAM         
-          tx_frame[10]++;
-          if(tx_frame[10] = 5) tx_frame[10] = 1;
+          tx_frame[9]++;
+          if(tx_frame[9] = 5) tx_frame[9] = 1;
           cc2420_rawwrite( g_cc2420, (char *)tx_frame, 10 + 11,0);
           
           led_twinkle(LED_GREEN,1);
@@ -182,7 +175,7 @@ int cc2420dev_test (void)
 	  length = cc2420_rawread( g_cc2420,(char *)rx_frame, 0,0 );
 	  
 	  if(length > 11) {
-	  ledPeriod = rx_frame[10];
+	  ledPeriod = rx_frame[9];
 	  uart_write( g_uart, (char *)rx_frame, length ,0  );
 	  }
 	  #endif
