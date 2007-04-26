@@ -5,6 +5,9 @@ Flash object read and write (hal_flash)
 svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
+20070423
+update service\svc_debugio.*
+update test\debugio.*
 
 20070410
 add module: rtl\rtl_int2str.*

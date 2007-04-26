@@ -28,21 +28,25 @@
  * 
  ****************************************************************************/ 
 
-//----------------------------------------------------------------------------
-// @author zhangwei on 2006-07-25
-// 本程序测试cc2420, wireless，siocomm, UART几部分，但只测试一条数据回路
-// 它会把cc2420收到的每一个数据包通过UART送给计算机
-//
-//----------------------------------------------------------------------------
+#ifndef _SNIFFER_H_4329_
+#define _SNIFFER_H_4329_
 
-#ifndef _SNIFFER_H_
-#define _SNIFFER_H_
-//----------------------------------------------------------------------------
+/*****************************************************************************
+ * @author zhangwei on 2006-07-25
+ * Sniffer Program
+ * this program can worked with the host program. the sniffer will try to receive
+ * every packet in the air, and send the frames to the host computer. 
+ * 
+ * it uses the following objects
+ * - cc2420, siocomm, uart
+ * 
+ * @modified by zhangwei on 20070423
+ * make revision today.   
+ ****************************************************************************/ 
 
 #include "..\foundation.h"
 #include "..\global.h"
 
 void sniffer_run( void );
 
-//----------------------------------------------------------------------------
 #endif

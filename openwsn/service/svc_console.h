@@ -28,6 +28,9 @@
  * 
  ****************************************************************************/ 
 
+#ifndef _CONSOLE_H_2898_
+#define _CONSOLE_H_2898_
+
 //----------------------------------------------------------------------------
 // @author zhangwei on 2006-07-28
 //	console module
@@ -37,9 +40,6 @@
 //	usually, console is a loadable service of the OS or Kernel. 
 //	console service is based on 
 //----------------------------------------------------------------------------
-
-#ifndef _CONSOLE_H_2898_
-#define _CONSOLE_H_2898_
 
 #include "svc_foundation.h"
 #include "..\hal\hal_uart.h"
