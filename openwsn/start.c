@@ -90,10 +90,10 @@
 #undef  TESTCASE_CC2420TX
 
 #define TESTCASE_CC2420RX
-#undef  TESTCASE_CC2420RX
+//#undef  TESTCASE_CC2420RX
 
 #define TESTCASE_CC2420DEV
-//#undef  TESTCASE_CC2420DEV
+#undef  TESTCASE_CC2420DEV
 
 #define TESTCASE_OPENMAC
 #undef  TESTCASE_OPENMAC
@@ -196,6 +196,10 @@ void app_start()
 	
 	#ifdef TESTCASE_CC2420TX
 	cc2420tx_test();
+	#endif
+	
+	#ifdef TESTCASE_CC2420RX
+	cc2420rx_test();
 	#endif
 	
 	#ifdef TESTCASE_OPENMAC
