@@ -38,31 +38,31 @@ namespace WorldView
     {
         // @TODO for zhousongli
         // in the future, the LocalService class will inheritate from DllService
-        // DllService encapsulate the C language libsink.dll, and LocalService is intended to 
+        // DllService encapsulate the C language libopen.dll, and LocalService is intended to 
         // provide rich API for GUI uses.
         
-        //[DllImport("libsink", EntryPoint = "svc_read", CharSet = CharSet.Auto)]
+        //[DllImport("libopen", EntryPoint = "svc_read", CharSet = CharSet.Auto)]
         //public unsafe static extern byte svc_read(void* svc, [In, Out]/* out*/ byte* buf, byte capacity, ushort opt);
 
-        //[DllImport("libsink", EntryPoint = "svc_write")]
+        //[DllImport("libopen", EntryPoint = "svc_write")]
         //public unsafe static extern byte svc_write(void* svc, byte[] buf, byte len, ushort opt);
 
-        //[DllImport("libsink", EntryPoint = "svc_create")]
+        //[DllImport("libopen", EntryPoint = "svc_create")]
         //public unsafe static extern void* svc_create(ushort id, ushort opt);
 
-        //[DllImport("libsink", EntryPoint = "svc_start")]
+        //[DllImport("libopen", EntryPoint = "svc_start")]
         //public unsafe static extern void* svc_start(void* svc);
 
-        //[DllImport("libsink", EntryPoint = "svc_stop")]
+        //[DllImport("libopen", EntryPoint = "svc_stop")]
         //public unsafe static extern void* svc_stop(void* svc);
 
-        //[DllImport("libsink", EntryPoint = "svc_uart_open")]
+        //[DllImport("libopen", EntryPoint = "svc_uart_open")]
         //public unsafe static extern sbyte svc_uart_open(void* svc, byte[] name);
 
-        //[DllImport("libsink", EntryPoint = "svc_uart_close")]
+        //[DllImport("libopen", EntryPoint = "svc_uart_close")]
         //public unsafe static extern sbyte svc_uart_close(void* svc);
 
-        //[DllImport("libsink", EntryPoint = "svc_uart_configure")]
+        //[DllImport("libopen", EntryPoint = "svc_uart_configure")]
         //public unsafe static extern sbyte svc_uart_configure(void* svc, uint baudrate, byte databits, byte stopbits, byte parity, byte optflag);
         
     }

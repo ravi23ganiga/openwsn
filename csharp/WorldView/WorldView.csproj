@@ -25,9 +25,22 @@
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <IsWebBootstrapper>true</IsWebBootstrapper>
+    <PublishUrl>http://localhost/worldview/</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Web</InstallFrom>
+    <UpdateEnabled>true</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\</OutputPath>
+    <OutputPath>..\..\..\bin\</OutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
@@ -108,7 +121,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AboutDialog.cs">
+    <Compile Include="View\AboutDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="AssemblyInfo.cs">
@@ -118,10 +131,10 @@
     <Compile Include="LocalService\DataRev.cs" />
     <Compile Include="LocalService\DllService.cs" />
     <Compile Include="LocalService\RoutePath.cs" />
-    <Compile Include="Network.cs">
+    <Compile Include="View\Network.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Network.Designer.cs">
+    <Compile Include="View\Network.Designer.cs">
       <DependentUpon>Network.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\Resources.Designer.cs">
@@ -134,13 +147,13 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="vibrationMain.cs">
+    <Compile Include="View\vibrationMain.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="vibrationMain.Designer.cs">
+    <Compile Include="View\vibrationMain.Designer.cs">
       <DependentUpon>vibrationMain.cs</DependentUpon>
     </Compile>
-    <Compile Include="ViewFireField.cs">
+    <Compile Include="View\ViewFireField.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="View\DummyDoc.cs">
@@ -247,11 +260,11 @@
     <Compile Include="View\ViewVibration.cs">
       <SubType>Form</SubType>
     </Compile>
-    <EmbeddedResource Include="AboutDialog.resx">
+    <EmbeddedResource Include="View\AboutDialog.resx">
       <DependentUpon>AboutDialog.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="Network.resx">
+    <EmbeddedResource Include="View\Network.resx">
       <DependentUpon>Network.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
@@ -261,11 +274,11 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\DockPanel.xml" />
-    <EmbeddedResource Include="vibrationMain.resx">
+    <EmbeddedResource Include="View\vibrationMain.resx">
       <DependentUpon>vibrationMain.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="ViewFireField.resx">
+    <EmbeddedResource Include="View\ViewFireField.resx">
       <DependentUpon>ViewFireField.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
@@ -372,6 +385,13 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
