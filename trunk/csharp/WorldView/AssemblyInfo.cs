@@ -7,11 +7,11 @@ using System.Runtime.CompilerServices;
 // associated with an assembly.
 //
 [assembly: AssemblyTitle("WorldView")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("OpenWSN WorldView")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("Copyright 2003, Weifen Luo\nAll rights reserved.")]
+[assembly: AssemblyCopyright("Copyright 2005-2007, OpenWSN\n All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]		
 
@@ -26,7 +26,7 @@ using System.Runtime.CompilerServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("1.4.0.0")]
+[assembly: AssemblyVersion("0.5.1.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
