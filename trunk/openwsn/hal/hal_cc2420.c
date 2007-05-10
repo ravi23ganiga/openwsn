@@ -135,6 +135,10 @@ void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 s
 	case CC2420_SET_ACKREQUEST:
 	        cc->ackrequest = (uint8 )value;
 	        break;
+	        
+	case CC2420_CONFIG_SNIFFER_MODE:
+	        FAST2420_SETREG(spi,CC2420_MDMCTRL0,0x02E2) ;
+	        break;
 	
 	// @modified by zhangwei on 20061027
 	// though huanghuan regards APPLY is unnecessary, zhangwei still insists a APPLY here. 
