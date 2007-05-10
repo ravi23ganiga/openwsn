@@ -137,6 +137,8 @@ void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 s
 	        break;
 	        
 	case CC2420_CONFIG_SNIFFER_MODE:
+			// disable address recognition
+			// disable ACK 
 	        FAST2420_SETREG(spi,CC2420_MDMCTRL0,0x02E2) ;
 	        break;
 	

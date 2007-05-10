@@ -52,11 +52,15 @@ void sniffer_run( void )
 	uint8 rxlen, count;
 
 	global_construct();
-	//sio_configure()
-	uart_configure( g_uart, 115200, 0, 0, 0, 0 );
-	//sio_relation( g_uart0 );
-	cc2420_init(g_cc2420);
+    spi_configure( g_spi );
+    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+    cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
+    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, 0x2420, 0);
+	//cc2420_init(g_cc2420);
 	cc2420_configure( g_cc2420, CC2420_CONFIG_SNIFFER_MODE, 0, 0);
+	
+	//sio_configure()
+	//sio_relation( g_uart0 );
 	// 设置2420可以接受任何的数据包
 	// hardware address recognition can be enabled or disabled using 
 	// MDMCTRL0.ADR_DECODE bit (p.39, cc2420 datasheet) 
