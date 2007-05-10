@@ -206,6 +206,7 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
 #define CC2420_XTAL_SWITCH              0x06
 #define CC2420_CONFIG_APPLY				0x07
 #define CC2420_SET_ACKREQUEST           0x08
+#define CC2420_CONFIG_SNIFFER_MODE          0x09
 
 
 /*power level*/
