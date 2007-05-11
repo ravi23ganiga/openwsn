@@ -32,8 +32,8 @@
 #include "..\hal\hal.h"
 #include "start.h"
 
-#define PACKET
-//#define CHAR_STREAM
+//#define PACKET
+#define CHAR_STREAM
 
 static uint8 tx_frame[128];
 static uint8 rx_frame[128];            //using CHAR_STREAM
