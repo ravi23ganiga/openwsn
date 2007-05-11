@@ -15,14 +15,17 @@
  * @modified by zhangwei on 20061015
  * add macro CONFIG_MAX_FRAME_LENGTH
  * 
- * @modified by zhangwei on 20061-26
+ * @modified by zhangwei on 200601-26
  * add macros to support different hardware platforms
+ * 
+ * @modified by zhangwei on 20060510
+ * replace TARGET_XXX with CONFIG_TARGET_XXX
+ * 
  ******************************************************************************/
- 
 
 /*******************************************************************************
  * @attention
- *                        IMPORTANT ISSUE ON HOW TO USE THIS FILE
+ *                  IMPORTANT ISSUE ON HOW TO USE THIS FILE
  *
  * if you want to cancel some macro, pls use #undef macro. you can just place
  * the #undef after the previous macro. if you want it to take effective, you 
@@ -30,6 +33,10 @@
  * 
  * NOT to use "//" to comment these macros. because future developes may think 
  * they are really comments and deleted them! 
+ ******************************************************************************/
+
+/*******************************************************************************
+ * User Changable Configurations
  ******************************************************************************/
  
 #define FOR_2420_TEST 
@@ -40,8 +47,7 @@
 /* a macro to enable the debug source code 
  * for release version, you should undef this macro
  */
-#undef GDEBUG
-#define GDEBUG
+#define CONFIG_DEBUG
 
 /* Hardware Platform Choosing Configuration
  * now we have four hardware platforms:
@@ -50,22 +56,23 @@
  * - WlsModem version 1.1
  * - GAINS
  */
-#define TARGET_OPENNODE_10
-#undef TARGET_OPENNODE_10
+#undef CONFIG_TARGET_OPENNODE_10
+#define CONFIG_TARGET_OPENNODE_20
+#undef CONFIG_TARGET_WLSMODEM_11
+#undef CONFIG_TARGET_GAINS
 
+//#define TARGET_OPENNODE_10
+//#undef TARGET_OPENNODE_10
 
-#define TARGET_OPENNODE_20
+//#ifdef CONFIG_TARGET_OPENNODE_20
+//#define TARGET_OPENNODE_20
+//#endif
 //#undef TARGET_OPENNODE_20
 
-
-#define TARGET_WLSMODEM_11
-#undef TARGET_WLSMODEM_11
-
-#define TARGET_GAINS 
-#undef TARGET_GAINS 
+//#define TARGET_WLSMODEM_11
+//#undef TARGET_WLSMODEM_11
 
 
- 
 
 /* FlashStore的开始地址和大小
  * FlashStore用于系统掉电期间存储各种设置参数,它是MCU芯片E2PROM或者Flash地址空间中的一片
@@ -114,5 +121,15 @@
 /* UART frame identification byte */
 #define CONFIG_DEFAULT_ESCAPE_CHAR 27
 #define CONFIG_DEFAULT_FRAME_PREFIX CONFIG_DEFAULT_ESCAPE_CHAR
+
+/*******************************************************************************
+ * User Un-Changable Configurations
+ * these macros may induced from above macros, so you shouldn't modify them.
+ ******************************************************************************/
+
+#ifdef CONFIG_DEBUG
+#define GDEBUG
+#endif
+
 
 #endif

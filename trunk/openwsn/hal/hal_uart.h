@@ -97,7 +97,7 @@ void uart_reset( TUartDriver * uart );
  * @return
  * 	the data length actually returned in the buffer.
  *****************************************************************************/ 
-#ifdef UART_READ_ENABLE
+#ifdef CONFIG_UART_READ_ENABLE
 uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt );
 #endif
 
@@ -109,7 +109,7 @@ uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt );
  * due to the UART's ability, this function may write less than "len" characters
  * to the UART.
  *****************************************************************************/ 
-#ifdef UART_WRITE_ENABLE
+#ifdef CONFIG_UART_WRITE_ENABLE
 uint16 uart_write( TUartDriver * uart, char * buf, uint16 len, uint16 opt ); 
 #endif
 

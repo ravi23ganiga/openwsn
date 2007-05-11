@@ -57,15 +57,15 @@
 /* these 4 definitions should be moved from HAL to service or application layer 
  */
   
-#ifdef TARGET_OPENNODE_10  
+#ifdef CONFIG_TARGET_OPENNODE_10  
 #define g_spi g_spi0
 #endif
 
-#ifdef TARGET_OPENNODE_20  
+#ifdef CONFIG_TARGET_OPENNODE_20  
 #define g_spi g_spi0
 #endif
 
-#ifdef TARGET_WLSMODEM_11
+#ifdef CONFIG_TARGET_WLSMODEM_11
 #define g_spi g_spi0
 #endif
 

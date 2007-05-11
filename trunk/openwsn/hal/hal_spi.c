@@ -41,6 +41,21 @@
  * 
  ****************************************************************************/
 
+// P1.21 - Output: SPI Chip Select (CS_N)
+#ifdef CONFIG_TARGET_OPENNODE_10 
+#define CSN            21  
+#endif
+
+// P1.21 - Output: SPI Chip Select (CS_N)
+#ifdef CONFIG_TARGET_OPENNODE_20 
+#define CSN            21  
+#endif
+
+// P1.17 - Output: SPI Chip Select (CS_N)
+#ifdef CONFIG_TARGET_WLSMODEM_11
+#define CSN            17  
+#endif
+
 TSpiDriver * spi_construct( uint8 id, char * buf, uint8 size )
 {
 	TSpiDriver * spi;
@@ -72,51 +87,98 @@ void spi_destroy( TSpiDriver * spi )
  */
 void spi_configure( TSpiDriver * spi )
 {
-        if (spi->id == 0)
-        {
-          PINSEL0 = (PINSEL0 & 0xffff00ff) | 0x00005500;
-          SPI_SPCCR = 0x52;		               // 设置SPI时钟分频
- 	  SPI_SPCR  = (0 << 3) |		       // CPHA = 0, 数据在SCK 的第一个时钟沿采样
+	if (spi->id == 0)
+    {
+    	PINSEL0 = (PINSEL0 & 0xffff00ff) | 0x00005500;
+        SPI_SPCCR = 0x52;		               // 设置SPI时钟分频
+ 	  	SPI_SPCR  = (0 << 3) |		       // CPHA = 0, 数据在SCK 的第一个时钟沿采样
  			        (0 << 4) |	       // CPOL = 0, SCK 为高有效
  			        (1 << 5) |	       // MSTR = 1, SPI 处于主模式
  			        (0 << 6) |	       // LSBF = 0, SPI 数据传输MSB (位7)在先
  			        (0 << 7);	       // SPIE = 0, SPI 中断被禁止
-        }
-        
-        
-        
-        else if (spi->id == 1)
-        {
-        
-          PINSEL1 = (PINSEL1 & (~(0xFF << 2))) | (0xAA << 2);
-        
-          SSPCR0 = (0x01 << 8) |              // SCR  设置SPI时钟分频
-             (0x00 << 7) |              // CPHA 时钟输出相位,仅SPI模式有效 
-             (0x00 << 6) |              // CPOL 时钟输出极性,仅SPI模式有效
-             (0x00 << 4) |              // FRF  帧格式 00=SPI,01=SSI,10=Microwire,11=保留
-             (0x07 << 0);               // DSS  数据长度,0000-0010=保留,0011=4位,0111=8位,1111=16位
+	}
 
-          SSPCR1 = (0x00 << 3) |              // SOD  从机输出禁能,1=禁止,0=允许
-             (0x00 << 2) |              // MS   主从选择,0=主机,1=从机
-             (0x01 << 1) |              // SSE  SSP使能,1=允许SSP与其它设备通信
-             (0x00 << 0);               // LBM  回写模式
+	else if (spi->id == 1)
+    {
+		PINSEL1 = (PINSEL1 & (~(0xFF << 2))) | (0xAA << 2);
+        
+        SSPCR0 = (0x01 << 8) |              // SCR  设置SPI时钟分频
+        	(0x00 << 7) |              // CPHA 时钟输出相位,仅SPI模式有效 
+            (0x00 << 6) |              // CPOL 时钟输出极性,仅SPI模式有效
+            (0x00 << 4) |              // FRF  帧格式 00=SPI,01=SSI,10=Microwire,11=保留
+            (0x07 << 0);               // DSS  数据长度,0000-0010=保留,0011=4位,0111=8位,1111=16位
+
+		SSPCR1 = (0x00 << 3) |              // SOD  从机输出禁能,1=禁止,0=允许
+        	(0x00 << 2) |              // MS   主从选择,0=主机,1=从机
+            (0x01 << 1) |              // SSE  SSP使能,1=允许SSP与其它设备通信
+            (0x00 << 0);               // LBM  回写模式
              
-          SSPCPSR = 0x52;                     // PCLK分频值
-          //SSPIMSC = 0x07;                     // 中断屏蔽寄存器
-          SSPICR  = 0x03;                     // 中断清除寄存器 
-        }
-	
+		SSPCPSR = 0x52;                     // PCLK分频值
+        //SSPIMSC = 0x07;                     // 中断屏蔽寄存器
+        SSPICR  = 0x03;                     // 中断清除寄存器 
+	}
 }
 
-/*
-void spi_open( TSpiDriver * spi )
+/* open() and close() essentially control the SPI's CS pin.
+ * there're the followin conditions you should use open() before you transmit 
+ * a byte through SPI:
+ * - you want to select a specific device connect to SPI. you can choose the 
+ * 	device through parameter "devid" in spi_open()
+ * - you want to adjust the detail timling when you try to sent multi-byte streams.
+ *  open() will prepare the SPI for transmitting multi-byte stream.
+ * 
+ * @attention
+ * you should call spi_configure() before spi_open() and spi_read/write()
+ * 
+ * @obsolete
+ * spi_open() and spi_close() originally known as spi_enable() and spi_disable()
+ * in module "cc2420rf"
+ */
+void spi_open( TSpiDriver * spi, uint8 devid )
 {
+    uint16 i = 0;
+      
+    #ifdef CONFIG_TARGET_OPENNODE_10
+    IO1CLR = BM(CSN);
+    #endif
+        
+    #ifdef CONFIG_TARGET_OPENNODE_20
+    IO1CLR = BM(CSN);
+    #endif
+        
+    #ifdef CONFIG_TARGET_WLSMODEM_11
+    IO0CLR  = BM(CSN);
+    #endif
+              
+    // the delay is to construct enough setup time of csn
+    // attention the delay time not to be optimized to 0 
+	#pragma optimize=none
+    while(i < 500) 
+    	i++;    
 }
 
 void spi_close( TSpiDriver * spi )
 {
+	uint16 i = 0;
+        
+    // the delay is to provide enough holdup time of csn
+    // attention the delay time not to be optimized to 0 
+    while(i < 1500) 
+    	i++;
+        	
+	#ifdef CONFIG_TARGET_OPENNODE_10
+    IO1SET = BM(CSN);
+    #endif
+        
+    #ifdef CONFIG_TARGET_OPENNODE_20
+    IO1SET = BM(CSN);
+    #endif
+        
+    #ifdef CONFIG_TARGET_WLSMODEM_11
+    IO0SET  = BM(CSN);
+	#endif
 }
-*/
+
 uint8 spi_read(TSpiDriver * spi, char * buf, uint8 capacity, uint8 opt )
 {
         UINT8 spiCnt = 0;

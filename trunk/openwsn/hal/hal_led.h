@@ -38,7 +38,7 @@
 #define LED_YELLOW 	1
 #define LED_RED		2
 
-#ifdef TARGET_OPENNODE_10
+#ifdef CONFIG_TARGET_OPENNODE_10
 #define LED_GREEN_PIN 	25  
 #define LED_YELLOW_PIN 	21 
 #define LED_RED_PIN	21  
@@ -48,7 +48,7 @@
 #define LED_RED_PORT	0
 #endif
 
-#ifdef TARGET_OPENNODE_20
+#ifdef CONFIG_TARGET_OPENNODE_20
 #define LED_GREEN_PIN 	25  
 #define LED_YELLOW_PIN 	18  
 #define LED_RED_PIN	16  
@@ -58,7 +58,7 @@
 #define LED_RED_PORT	1
 #endif
 
-#ifdef TARGET_WLSMODEM_11
+#ifdef CONFIG_TARGET_WLSMODEM_11
 #define LED_GREEN_PIN 	19  
 #define LED_YELLOW_PIN 	19  
 #define LED_RED_PIN	18  

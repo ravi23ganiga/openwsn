@@ -278,7 +278,7 @@ void uart_interrupt_init( TUartDriver * uart )
  * 	the character count wroten to the buf
  * 	return 0 means there's no data in the TUartDriver buffer. i.e. no data received.
  *****************************************************************************/
-#ifdef UART_READ_ENABLE
+#ifdef CONFIG_UART_READ_ENABLE
 uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt )
 {
 	uint16 copied;
@@ -308,7 +308,7 @@ uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt )
  * @return
  * 	the count of characters actually sent
  *****************************************************************************/
-#ifdef UART_WRITE_ENABLE
+#ifdef CONFIG_UART_WRITE_ENABLE
 uint16 uart_write( TUartDriver * uart, char * buf, uint16 len, uint16 opt )
 {
 	int16 count = 0;
