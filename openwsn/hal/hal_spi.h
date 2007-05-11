@@ -39,6 +39,14 @@
  * based on Huanghuan's mature code. 
  * support multiple SPI channel.
  * 
+ * @modified by zhangwei on 20070509
+ * add two function spi_open() and spi_close()
+ * these two functions can be used to adjust detail timing when transmitting 
+ * multi-byte streams. when you want to transmit multi-byte stream, you must 
+ * call open() and close(). for single byte transmission, also recommend call
+ * to open() and close(). 
+ * 
+ * when you call open() a spi, the code will also select the device.
  ****************************************************************************/
 
 #include "hal_foundation.h"
@@ -56,8 +64,8 @@ TSpiDriver * spi_construct( uint8 id, char * buf, uint8 size );
 void  spi_destroy( TSpiDriver * spi );
 void  spi_configure( TSpiDriver * spi );
 
-//void  spi_open( TSpiDriver * spi );
-//void  spi_close( TSpiDriver * spi );
+void  spi_open( TSpiDriver * spi, uint8 devid );
+void  spi_close( TSpiDriver * spi );
 uint8 spi_read( TSpiDriver * spi, char * buf, uint8 capacity, uint8 opt );
 uint8 spi_write( TSpiDriver * spi, char * buf, uint8 len, uint8 opt );
 void  spi_put( TSpiDriver * spi, char ch );

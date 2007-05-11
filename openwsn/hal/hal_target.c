@@ -42,11 +42,11 @@ void target_init( void )
 {
     uint16 Fdiv;
     
-    #ifdef TARGET_OPENNODE_10
+    #ifdef CONFIG_TARGET_OPENNODE_10
     PINSEL0 = PINSEL0 | 0x000c0000;                   //FIFOP is EXTIN3	
     #endif
     
-    #ifdef TARGET_OPENNODE_20
+    #ifdef CONFIG_TARGET_OPENNODE_20
     PINSEL0 = PINSEL0 | 0x80000000;                   //FIFOP is EXTIN2	
     PINSEL0 = PINSEL0 & 0xbfffffff;
     
@@ -70,7 +70,7 @@ void target_init( void )
     #endif  
     #endif
     
-    #ifdef TARGET_WLSMODEM_11
+    #ifdef CONFIG_TARGET_WLSMODEM_11
     PINSEL0 = PINSEL0| 0x80000000;                   //FIFOP are EXTIN2	
     PINSEL0 = PINSEL0& 0xbfffffff;
     #endif

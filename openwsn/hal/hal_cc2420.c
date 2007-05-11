@@ -77,7 +77,7 @@ void cc2420_destroy( TCc2420Driver * cc )
 {
 	if (cc != NULL)
 	{
-        cc2420_shutdown( cc );
+        cc2420_close( cc );
 		cc->txlen = 0;
 		cc->rxlen = 0;
 	}
@@ -139,7 +139,7 @@ void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 s
 	case CC2420_CONFIG_SNIFFER_MODE:
 			// disable address recognition
 			// disable ACK 
-	        FAST2420_SETREG(spi,CC2420_MDMCTRL0,0x02E2) ;
+	        FAST2420_SETREG(cc->spi,CC2420_MDMCTRL0,0x02E2) ;
 	        break;
 	
 	// @modified by zhangwei on 20061027
@@ -253,6 +253,14 @@ void cc2420_init(TCc2420Driver * cc)
     //FAST2420_READ_RAM_LE(cc,reram,CC2420RAM_SHORTADDR,2);
     //reram[0]++;
     //reram[1]++; 
+}
+
+void cc2420_open( TCc2420Driver * cc )
+{
+}
+
+void cc2420_close( TCc2420Driver * cc ) 
+{
 }
 
 uint8 cc2420_state( TCc2420Driver * cc )
@@ -480,7 +488,7 @@ int8 cc2420_evolve( TCc2420Driver * cc )
 	return 0;
 }
  
-
+/*
 void cc2420_startup( TCc2420Driver * cc )
 {
 	// @TODO
@@ -495,6 +503,7 @@ void cc2420_shutdown( TCc2420Driver * cc )
 	//spi_write
 	cc->state = CC_STATE_POWERDOWN;
 }
+*/
 
 void cc2420_sleep( TCc2420Driver * cc )
 {
@@ -524,7 +533,7 @@ void cc2420_setchannel( TCc2420Driver * cc)
 
 void cc2420_interrupt_init()
 {              		
-	#ifdef TARGET_OPENNODE_10
+	#ifdef CONFIG_TARGET_OPENNODE_10
 	EXTMODE        = 0x08;              
 	EXTPOLAR       = 0x08;                                  //EINT3中断为上升沿触发  
 	VICIntEnClr    = ~(1 << 17);                            // 使能IRQ中断	          	
@@ -535,7 +544,7 @@ void cc2420_interrupt_init()
 	EXTINT         = 0x08;			                // 清除EINT3中断标志 
 	#endif
 	
-	#ifdef TARGET_OPENNODE_20
+	#ifdef CONFIG_TARGET_OPENNODE_20
 	EXTMODE        = 0x04;              
 	EXTPOLAR       = 0x04;                                  //EINT2中断为上升沿触发     
 	VICIntEnClr    = ~(1 << 16);                            // 使能IRQ中断	       	
@@ -546,7 +555,7 @@ void cc2420_interrupt_init()
 	EXTINT         = 0x04;			                // 清除EINT2中断标志 
 	#endif	
 	
-	#ifdef TARGET_WLSMODEM_11
+	#ifdef CONFIG_TARGET_WLSMODEM_11
 	EXTMODE        = 0x04;              
 	EXTPOLAR       = 0x04;                                  //EINT2中断为上升沿触发     
 	VICIntEnClr    = ~(1 << 16);                            // 使能IRQ中断	       	
@@ -569,15 +578,15 @@ void __irq cc2420_interrupt_handler( void )
 {
 	cc2420_event_handler();
 
-        #ifdef TARGET_OPENNODE_10
+        #ifdef CONFIG_TARGET_OPENNODE_10
 	EXTINT = 0x08;		
 	#endif
 	
-	#ifdef TARGET_OPENNODE_20
+	#ifdef CONFIG_TARGET_OPENNODE_20
 	EXTINT = 0x04;	
 	#endif
 	
-	#ifdef TARGET_WLSMODEM_11
+	#ifdef CONFIG_TARGET_WLSMODEM_11
 	EXTINT = 0x04;
 	#endif
 	

@@ -50,13 +50,13 @@
  * @TODO
  * 	try to implement standard PHY functions based on this module in the future.
  * 
- * @modified by huanghuan on 2008-08-10
+ * @modified by huanghuan on 2006-08-10
  * - modified the interface function. 
  * - changes a lot data type from uint16 to uint8, because cc2420 support maximum
  * 	frame length of 256.
  * - add interface function: cc2420_configure, cc2420_sleep, cc2420_wakeup
  * 
- * @modified by huanghuan on 2008-08-01
+ * @modified by huanghuan on 2006-08-01
  * porting the old source code successfully
  * testing passed. 
  * 
@@ -106,6 +106,15 @@
  * 删除read_stream和write_stream
  * 可以不支持cc2420_read()和cc2420_write()
  *
+ * @modified by zhangwei on 20070510
+ * add function cc2420_open() and cc2420_close(). 
+ * 
+ * cc2420_init() is deprecated. you needn't call it in your source code. it will
+ * called automatically in cc2420_configure(). 
+ * 
+ * @modified by makun on 20070511
+ * add support to disable address recognition for sniffer applications.
+ * 
  ******************************************************************************/
 
 #include "hal_foundation.h"
@@ -134,10 +143,10 @@
  * 
  ******************************************************************************/
 
-
+#define TCc2420 TCc2420Driver
 #define CC2420_BUF_CAPACITY 1 
 
-#ifdef TARGET_OPENNODE_10
+#ifdef CONFIG_TARGET_OPENNODE_10
 #define FIFO            8  // P0.8  - Input: FIFO from CC2420
 #define FIFOP           9  // P0.9  - Input: FIFOP from CC2420
 #define CCA            10  // p0.10 - Input:  CCA from CC2420
@@ -155,7 +164,7 @@
 #define CSN_PORT       1  
 #endif
 
-#ifdef TARGET_OPENNODE_20
+#ifdef CONFIG_TARGET_OPENNODE_20
 #define FIFO           22  
 #define FIFOP          15  
 #define CCA            13  
@@ -173,7 +182,7 @@
 #define CSN_PORT       1  
 #endif
 
-#ifdef TARGET_WLSMODEM_11
+#ifdef CONFIG_TARGET_WLSMODEM_11
 #define FIFO           16  // P0.16  - Input: FIFO from CC2420
 #define FIFOP          15  // P0.15  - Input: FIFOP from CC2420
 #define CCA            12  // p0.12 - Input:  CCA from CC2420
@@ -348,6 +357,9 @@ void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 s
  ******************************************************************************/
 void cc2420_init(TCc2420Driver * cc);
 
+void cc2420_open( TCc2420Driver * cc );
+void cc2420_close( TCc2420Driver * cc ); 
+
 /* return the cc2420 driver state.
  * attention that state is used for other modules. it is not the same as "mode".
  */
@@ -443,10 +455,10 @@ void cc2420_startup( TCc2420Driver * cc );
  * 从正常接收发送数据状态进入Power off/Power down状态
  * 注意同时需要更改driver内部的状态标志
  */
-void cc2420_shutdown( TCc2420Driver * cc );
+//void cc2420_shutdown( TCc2420Driver * cc );
 
 /* 休眠 */
-void cc2420_sleep( TCc2420Driver * cc );
+//void cc2420_sleep( TCc2420Driver * cc );
 
 /* 从休眠中唤醒 */
 void cc2420_wakeup( TCc2420Driver * cc );
