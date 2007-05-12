@@ -488,7 +488,7 @@ int8 cc2420_evolve( TCc2420Driver * cc )
 	return 0;
 }
  
-/*
+
 void cc2420_startup( TCc2420Driver * cc )
 {
 	// @TODO
@@ -503,7 +503,7 @@ void cc2420_shutdown( TCc2420Driver * cc )
 	//spi_write
 	cc->state = CC_STATE_POWERDOWN;
 }
-*/
+
 
 void cc2420_sleep( TCc2420Driver * cc )
 {

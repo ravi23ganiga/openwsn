@@ -57,10 +57,10 @@ void sniffer_run( void )
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, 0x2420, 0);
-<<<<<<< .mine
+
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, 0x5678, 0);
 	//cc2420_init(g_cc2420);
-=======
+
     
     // this configure will disable the address recognition mechanism so that 
     // the transceiver "cc2420" can receive all the frames in transmission, even
@@ -68,23 +68,21 @@ void sniffer_run( void )
     //
 	// hardware address recognition can be enabled or disabled using 
 	// MDMCTRL0.ADR_DECODE bit in register CC2420_MDMCTRL0 (p.39, cc2420 datasheet) 
-	// FAST2420_SETREG(spi,CC2420_MDMCTRL0,0x02E2) ;
-	//
->>>>>>> .r225
+	//FAST2420_SETREG(spi,CC2420_MDMCTRL0,0x02E2) ;
+
+
 	//cc2420_configure( g_cc2420, CC2420_CONFIG_SNIFFER_MODE, 0, 0);
 	
-	sio_construct( (char*)&sio, sizeof(TSioComm), g_uart, 0x00 );
-	sio_configure( &sio, NULL, 0x00, 27 );
+	//sio_construct( (char*)&sio, sizeof(TSioComm), g_uart, 0x00 );
+	//sio_configure( &sio, NULL, 0x00, 27 );
 	
-<<<<<<< .mine
-	//FAST2420_SETREG(spi,CC2420_MDMCTRL0,0x02E2) ;
+
 	//cc2420_relation( g_spi0 );
 	   
         cc2420_receive_on(g_cc2420);  
         IRQEnable();
 	
-=======
->>>>>>> .r225
+
 	memset( (char*)(&rxbuf[0]), 0x00, MAX_BUFFER_SIZE ); 
 	rxlen = 0;
 	
