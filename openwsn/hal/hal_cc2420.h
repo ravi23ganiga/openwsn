@@ -1,4 +1,4 @@
-/*****************************************************************************
+/******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
  * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
@@ -26,12 +26,12 @@
  * This exception does not invalidate any other reasons why a work based on
  * this file might be covered by the GNU General Public License.
  * 
- ****************************************************************************/ 
+ *****************************************************************************/ 
 
 #ifndef _HAL_CC2420_H_1278_
 #define _HAL_CC2420_H_1278_
 
-/*******************************************************************************
+/******************************************************************************
  * @author zhangwei on 2006-07-20
  * TCc2420
  * This is an software abstraction of the cc2420 transceiver hardware. you can 
@@ -115,7 +115,7 @@
  * @modified by makun on 20070511
  * add support to disable address recognition for sniffer applications.
  * 
- ******************************************************************************/
+ *****************************************************************************/
 
 #include "hal_foundation.h"
 #include "hal_configall.h"
@@ -215,7 +215,7 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
 #define CC2420_XTAL_SWITCH              0x06
 #define CC2420_CONFIG_APPLY				0x07
 #define CC2420_SET_ACKREQUEST           0x08
-#define CC2420_CONFIG_SNIFFER_MODE          0x09
+#define CC2420_CONFIG_SNIFFER_MODE      0x09
 
 
 /*power level*/
@@ -277,13 +277,15 @@ typedef struct {
     uint8 rssi;
 } BASIC_RF_SETTINGS;
 
+// channel: represents the frequency, channel varies from 11 to 26 . 
+//			f = 2405 + 5*(channel - 11) MHz; 
 typedef struct{
   uint8 state;
   uint8 nextstate;
   TSpiDriver * spi; 
   uint16 panid;
   uint16 address;
-  uint8 channel; // frequency, channel varies from 11 to 26 . f = 2405 + 5*(channel - 11) MHz;
+  uint8 channel; 
   uint8 txlen;
   uint8 rxlen;
   TCc2420Frame txbuffer[CC2420_BUF_CAPACITY];
@@ -311,6 +313,8 @@ extern TCc2420Driver * g_cc2420;
  
 /*******************************************************************************
  * construct a TCc2420 driver object in the memory.
+ * this function doesn't interact with the hardware. so it will always be successful.
+ * 
  * @param
  * 	buf			memory started address
  * 	size		memory size allocated for this object. this size must be large
@@ -366,14 +370,6 @@ void cc2420_close( TCc2420Driver * cc );
 uint8 cc2420_state( TCc2420Driver * cc );
 
 void cc2420_set_power(TCc2420Driver * cc,uint8 power);
-
-/* return the last I/O operation's result.
- * result & 0x01		still has data sending
- * result & 0x02		still has data in the internal buffer and to be read
- * 
- * Though this function gives you the ability to check the state of this module, 
- * we hope you do not use this function. 
- */
 uint8 cc2420_ioresult( TCc2420Driver * cc );
 
 /*******************************************************************************
@@ -393,7 +389,7 @@ uint8 cc2420_ioresult( TCc2420Driver * cc );
  * @return
  * 	the character count copied successfully to the buffer
  ******************************************************************************/ 
-//uint8 cc2420_read( TCc2420Driver * cc, char * buf, uint8 size, uint8 opt );
+uint8 cc2420_read( TCc2420Driver * cc,TCc2420Frame * frame,uint8 size,uint8 opt);
 
 /*******************************************************************************
  * return the received frame entirely to the frame buffer. 
@@ -413,27 +409,12 @@ uint8 cc2420_ioresult( TCc2420Driver * cc );
  * you'll encounter problems when there's still some data left in the buffer 
  * when you call cc2420_rawread(). you'd better identify the frame start position
  * using another member variable to improve reliability in the future.
- * 
- * @TODO: not finished yet!
  ******************************************************************************/ 
 uint8 cc2420_rawread( TCc2420Driver * cc, char * frame, uint8 size, uint8 opt );
-
-
-
-
-/*******************************************************************************
- * @attention
- * 	you must guarantee the internal buffer size is larger than frame length
- * or you may encounter unexpected errors.
- * 
- * @TODO NOT finished Yet!
- ******************************************************************************/ 
 #define cc2420_broadcast(cc,frame,len,opt) cc_2420_rawwrite(cc,frame,len,opt|0x01)
-//uint8 cc2420_rawwrite( TCc2420Driver * cc, char * frame, uint8 length, uint8 opt );
-int8 cc2420_rawwrite( TCc2420Driver * cc, char * frame, int8 length,uint8 opt );
+int8 cc2420_write( TCc2420Driver * cc, TCc2420Frame frame, int8 length, uint8 opt);
+int8 cc2420_rawwrite( TCc2420Driver * cc, char * frame, int8 length, uint8 opt );
 
-//int8 cc2420_sendframe( TCc2420Driver * cc, TCc2420Frame * frame );
-//int8 cc2420_recvframe( TCc2420Driver * cc, TCc2420Frame * frame );
 /*******************************************************************************
  * this function is used mainly by the driver itself.
  * it will check whether there are some data to be sent. if there's data in the 
@@ -469,16 +450,8 @@ void cc2420_wakeup( TCc2420Driver * cc );
 // not this one:
 void cc2420_setchannel( TCc2420Driver * cc);
 
-int8 cc2420_write( TCc2420Driver * cc,TCc2420Frame frame, int8 length,uint8 opt);
-uint8 cc2420_read( TCc2420Driver * cc,TCc2420Frame * frame,uint8 len,uint8 opt);
-
 void cc2420_receive_on(TCc2420Driver * cc);
-
-
-
 void cc2420_receive_off(TCc2420Driver * cc);
-
-
 void cc2420_waitfor_crystal_oscillator(TSpiDriver * spi);
 
 //void cc2420_interrupt_init( void );
