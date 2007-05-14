@@ -1,32 +1,43 @@
-/*****************************************************************************
-* This file is part of OpenWSN, the Open Wireless Sensor Network System.
-*
-* Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
-* 
-* OpenWSN is free software; you can redistribute it and/or modify it under
-* the terms of the GNU General Public License as published by the Free
-* Software Foundation; either version 2 or (at your option) any later version.
-* 
-* OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-* for more details.
-* 
-* You should have received a copy of the GNU General Public License along
-* with eCos; if not, write to the Free Software Foundation, Inc.,
-* 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-* 
-* As a special exception, if other files instantiate templates or use macros
-* or inline functions from this file, or you compile this file and link it
-* with other works to produce a work based on this file, this file does not
-* by itself cause the resulting work to be covered by the GNU General Public
-* License. However the source code for this file must still be made available
-* in accordance with section (3) of the GNU General Public License.
-* 
-* This exception does not invalidate any other reasons why a work based on
-* this file might be covered by the GNU General Public License.
-* 
-****************************************************************************/ 
+/******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+ *
+ * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
+ * 
+ * OpenWSN is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 or (at your option) any later version.
+ * 
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with eCos; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ * 
+ * As a special exception, if other files instantiate templates or use macros
+ * or inline functions from this file, or you compile this file and link it
+ * with other works to produce a work based on this file, this file does not
+ * by itself cause the resulting work to be covered by the GNU General Public
+ * License. However the source code for this file must still be made available
+ * in accordance with section (3) of the GNU General Public License.
+ * 
+ * This exception does not invalidate any other reasons why a work based on
+ * this file might be covered by the GNU General Public License.
+ * 
+ *****************************************************************************/ 
+
+#include "hal_foundation.h"
+#include "hal_spi.h"
+#include "hal_cc2420chip.h"
+#include "hal_cc2420.h"
+#include "hal_cc2420rf.h"
+
+#ifdef GDEBUG
+#include "hal_led.h"
+#endif
+
 /*****************************************************************************
  * @author zhangwei on 2006-07-20
  * TCc2420Driver
@@ -41,21 +52,16 @@
  * 
  ****************************************************************************/
 
-#include "hal_foundation.h"
-#include "hal_spi.h"
-#include "hal_cc2420chip.h"
-#include "hal_cc2420.h"
-#include "hal_cc2420rf.h"
-
-#ifdef GDEBUG
-#include "hal_led.h"
-#endif
-
 
 /*******************************************************************************
  * some utility functions
  ******************************************************************************/
  
+#define FAST2420_RX_GARBAGE(spi,pc) spi_get((spi), (pc))
+#define FAST2420_TX_ADDR(spi,a) spi_put((spi),(a)) 
+#define FAST2420_RX_ADDR(spi,a) spi_put((spi),(a)|0x40) 
+ 
+/*
 void FAST2420_RX_GARBAGE(TSpiDriver * spi,char *pc) 
 { 
 	spi_get(spi, pc );
@@ -72,6 +78,7 @@ void FAST2420_RX_ADDR(TSpiDriver * spi,uint8 a)
 { 
 	spi_put(spi, (a) | 0x40 ); 
 } 
+*/
 
 /*******************************************************************************
  * FAST SPI: Register access
@@ -127,7 +134,7 @@ void FAST2420_WRITE_FIFO(TSpiDriver * spi,uint8 *p,uint8 c)
         FAST2420_TX_ADDR(spi,CC2420_TXFIFO);
         for (spiCnt = 0; spiCnt < (c); spiCnt++) { 
             spi_put(spi,((BYTE*)(p))[spiCnt]); 
-        } 
+        }
         CC2420_SPI_DISABLE(); 
     }
 
@@ -243,8 +250,6 @@ void FAST2420_RESET_CC2420( TSpiDriver * spi )
         FAST2420_SETREG( spi, CC2420_MAIN, 0x0000); 
         FAST2420_SETREG( spi, CC2420_MAIN, 0xF800); 
     }
-    
-    
     
 void CC2420_SPI_ENABLE( void )    
   {        

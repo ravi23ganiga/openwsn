@@ -99,4 +99,6 @@ void hal_reboot( void );
 // should be replaced by hal_delay()
 void halWait(uint32  dly);
 
+//#define NOP
+
 #endif
