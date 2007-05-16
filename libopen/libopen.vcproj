@@ -354,6 +354,26 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="simu"
+			>
+			<File
+				RelativePath=".\simu\svc_netdata.c"
+				>
+			</File>
+			<File
+				RelativePath=".\simu\svc_netdata.h"
+				>
+			</File>
+			<File
+				RelativePath=".\simu\svc_netsimu.c"
+				>
+			</File>
+			<File
+				RelativePath=".\simu\svc_netsimu.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\configall.h"
 			>
