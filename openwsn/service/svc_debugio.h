@@ -43,11 +43,11 @@
  *  
  ****************************************************************************/ 
 
-#define CONFIG_DEBUGIO_BUFFER_CAPACITY 128
+#define CONFIG_DEBUGIO_BUFFER_CAPACITY 127
 
 typedef struct{
   TUartDriver * uart;
-  uint8 datalen;
+  uint16 datalen;
   char buf[CONFIG_DEBUGIO_BUFFER_CAPACITY];
 }TDebugIo;
 
