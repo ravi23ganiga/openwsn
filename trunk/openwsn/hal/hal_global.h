@@ -69,9 +69,9 @@
 #define g_spi g_spi0
 #endif
 
-#define g_uart g_uart0
-#define g_debuguart g_uart1
-#define g_timer g_timer1 
+#define g_uart (g_uart0)
+#define g_debuguart (g_uart1)
+#define g_timer (g_timer1)
 
 extern TUartDriver *		g_uart0;
 extern TUartDriver *		g_uart1;

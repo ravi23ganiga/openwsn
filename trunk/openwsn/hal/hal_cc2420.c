@@ -53,10 +53,7 @@
 #define GDEBUG
 #endif
 
-// the default settings when the cc2420 transceiver first started
-#define CC2420_DEFAULT_PANID 1
-#define CC2420_DEFAULT_ADDRESS 1
-#define CC2420_DEFAULT_CHANNEL 1
+
 
 
 static void cc2420_interrupt_init( void );

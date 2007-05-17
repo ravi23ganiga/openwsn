@@ -30,7 +30,8 @@
 
 #include "svc_foundation.h"
 #include <string.h>
-#include ".\hal\hal_cpu.h"
+#include "..\hal\hal_cpu.h"
+#include "..\hal\hal_global.h"
 #include "svc_debugio.h"
 
 /*****************************************************************************
@@ -65,6 +66,7 @@ TDebugIo * debug_open( TDebugIo * db, TUartDriver * uart )
 {
 	if (db != NULL)
 	{
+		db->datalen = 0;
 		db->uart = uart;
 	}
 	return db;
@@ -86,24 +88,40 @@ void debug_evolve( TDebugIo * db )
 	if (db->datalen > 0)
 	{
 		hal_enter_critical();
-		count = uart_write( db->uart, db->buf, db->datalen, 0 );	
+		count = uart_write( db->uart, &(db->buf[0]), db->datalen, 0 );	
 		db->datalen -= count;
 		buf = (char *)(&(db->buf[0]));
 		memmove( buf, buf + count, db->datalen );
 		hal_leave_critical();
 	}
+	//else 
+	//	db->datalen = 0;
 }
 
 uint16 debug_write( TDebugIo * db, char * buf, uint16 size )
-{
+{   
 	uint16 copied;
+	uint16 i;
 	
-	hal_enter_critical();
-	copied = min( db->datalen, size );
+    hal_enter_critical();
+	
+	i = CONFIG_DEBUGIO_BUFFER_CAPACITY - db->datalen;
+	copied = min(i, size);
+
+	if (copied > CONFIG_DEBUGIO_BUFFER_CAPACITY)	
+	{
+	    // assert( false );
+	    // uart_write( g_uart, "ffffffffff", 10, 0 );
+	}
 	if (copied > 0)
 	{
-		memmove( db->buf + db->datalen, buf, copied );
+		//memmove( &(db->buf[0] )+ db->datalen, buf, copied );
+		for (i=0; i<copied; i++)
+		{
+		   db->buf[i+db->datalen] = buf[i];
+		}
 		db->datalen += copied;
+		uart_write(g_uart, "uartecho run22.", 15, 0 );
 	}
 	hal_leave_critical();
 	
