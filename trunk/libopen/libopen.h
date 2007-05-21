@@ -5,6 +5,9 @@
 #ifndef _LIBOPEN_H_
 #define _LIBOPEN_H_
 //----------------------------------------------------------------------------
+// @author zhousongli
+// @state developing
+//----------------------------------------------------------------------------
 
 #include "foundation.h"
 #include "hal\hal_uart.h"

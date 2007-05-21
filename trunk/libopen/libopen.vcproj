@@ -18,7 +18,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="..\..\temp\libopen"
 			ConfigurationType="2"
 			CharacterSet="1"
 			>
@@ -230,6 +230,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\service\svc_netdata.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_netdata.h"
+				>
+			</File>
+			<File
 				RelativePath=".\service\svc_openpacket.cpp"
 				>
 			</File>
@@ -350,6 +358,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\rtl\rtl_random.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\rtl\rtl_random.h"
+				>
+			</File>
+			<File
 				RelativePath=".\rtl\rtl_version.h"
 				>
 			</File>
@@ -358,15 +374,15 @@
 			Name="simu"
 			>
 			<File
-				RelativePath=".\simu\svc_netdata.c"
+				RelativePath=".\simu\svc_netnode.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\simu\svc_netdata.h"
+				RelativePath=".\simu\svc_netnode.h"
 				>
 			</File>
 			<File
-				RelativePath=".\simu\svc_netsimu.c"
+				RelativePath=".\simu\svc_netsimu.cpp"
 				>
 			</File>
 			<File
@@ -384,6 +400,10 @@
 		</File>
 		<File
 			RelativePath=".\dllmain.h"
+			>
+		</File>
+		<File
+			RelativePath=".\ext_libopen.h"
 			>
 		</File>
 		<File

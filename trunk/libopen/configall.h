@@ -213,7 +213,31 @@
 #define CONFIG_DEFAULT_ESCAPE_CHAR 27
 #define CONFIG_DEFAULT_FRAME_PREFIX CONFIG_DEFAULT_ESCAPE_CHAR
 
+/*****************************************************************************
+ * Type define for all the modules
+ ****************************************************************************/
+
+#ifndef NULL
+  #define NULL 0
+#endif
+
+#ifndef __cplusplus
+  #define true  1
+  #define false 0
+#endif  
 
 
+#define int8 signed char		
+#define int16 signed short        
+#define int32 signed long         
+#define int64 signed long long    
+
+#define uint8 unsigned char       
+#define uint16 unsigned short      
+#define uint32 unsigned long       
+#define uint64 unsigned long long  
+
+#define fp32 float      
+#define fp64 double     
 
 #endif
