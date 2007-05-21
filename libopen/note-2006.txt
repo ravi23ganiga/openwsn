@@ -1,11 +1,18 @@
+
+20070515
+libopen includes the following objects:
+- rs232 communication and configure
+- service management (svc_ functions)
+- network operations (net_ functions)
+- simulation layers (net_ functions)
+
+
 20070205
 move four queue operation functions to service\svc_dataqueue.*
 add two configuration macros: CONFIG_PALTFORM_ARM and CONFIG_PLATFORM_ATMEL
 	in configall.h
 add module: hal/hal_openframe.*
 add module: service/svc_openpacket.*
-
-
 
 
 2007-01-07

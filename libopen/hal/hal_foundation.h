@@ -20,7 +20,7 @@
 
 //typedef unsigned char		BOOL;
 
-
+/*
 typedef signed char 	int8;
 typedef signed short 	int16;
 typedef signed int 		int32;
@@ -30,19 +30,10 @@ typedef unsigned short 	uint16;
 typedef unsigned long 	uint32;
 typedef unsigned long long uint64;
 typedef unsigned char 	boolean;
-typedef float          	fp32;             /* single precision floating point variable (32bits) 单精度浮点数（32位长度） */
-typedef double         	fp64;             /* double precision floating point variable (64bits) 双精度浮点数（64位长度） */
+typedef float          	fp32;             // single precision floating point variable (32bits) 单精度浮点数（32位长度）
+typedef double         	fp64;             // double precision floating point variable (64bits) 双精度浮点数（64位长度）
+*/
 
-
-#ifndef FALSE
-	#define FALSE 0
-#endif
-#ifndef TRUE
-	#define TRUE 1
-#endif
-#ifndef NULL
-	#define NULL 0
-#endif
 
 // Useful stuff
 #define BM(n) (1 << (n))
