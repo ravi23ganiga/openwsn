@@ -1,3 +1,16 @@
+//----------------------------------------------------------------------------
+// copyright
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+// @author zhangwei on 20070521
+// @modified by zhangwei on 20070522
+//	correct the error in netnode_write
+//	and netnode_write() implementation also uses txbuf, so you can read the data
+// that you have just wrotte. this may be appropriate for simulation.
+//
+//----------------------------------------------------------------------------
+
 
 #include "svc_netnode.h"
 #include <stdlib.h>
@@ -43,12 +56,15 @@ DLLAPI int _stdcall netnode_write( TOpenNode * node, char * buf, uint8 len, uint
 {
 	int copied = 0;
 	
-	if (node->rxlen == 0)
+	if (node->txlen == 0)
 	{
 		copied = min( len, NODE_RXBUFFER_CAPACITY );
-		memmove( node->rxbuf, buf, copied );
-		node->rxlen = copied;
+		memmove( node->txbuf, buf, copied );
+		node->txlen = copied;
 	}
+	else 
+		copied = 0;
+
 	return copied;
 }
 
