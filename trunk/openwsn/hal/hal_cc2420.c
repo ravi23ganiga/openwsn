@@ -102,7 +102,7 @@ TCc2420Driver * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 		cc->spi = spi;
 		cc->panid = CC2420_DEFAULT_PANID;
 		cc->address = CC2420_DEFAULT_ADDRESS;
-		cc->channel = CC2420_DEFAULT_CHANNEL;
+		cc->channel = 1;//CC2420_DEFAULT_CHANNEL
 		cc->txlen = 0;
 		cc->rxlen = 0;
 		cc->power = 1;

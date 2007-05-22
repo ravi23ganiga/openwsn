@@ -87,7 +87,7 @@ int8 global_construct( void )
 	TConfigStore * data;
 	g_init = TRUE;
 	
-	hal_global_construct();
+	  hal_global_construct();
 	//if (hal_global_construct())
 	//	return -1;
 
@@ -96,7 +96,7 @@ int8 global_construct( void )
 	//g_config 	= config_construct( (char*)(&m_configure), sizeof(TConfigure), g_console );
 	//g_actsche 	= acts_construct( (char*)(&m_actsche), sizeof(TActionScheduler) );
 	//g_wls 		= wls_construct( (char*)(&m_wireless), sizeof(TWirelessComm), g_cc2420, g_actsche );
-	g_debugio 	= debug_construct( (char*)(&m_debugio), sizeof(TDebugIo));
+	 //g_debugio 	= debug_construct( (char*)(&m_debugio), sizeof(TDebugIo));
 	
 	
 	//net_init( g_net, g_mac, NULL );

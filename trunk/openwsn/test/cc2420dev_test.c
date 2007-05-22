@@ -36,8 +36,8 @@
 #include "start.h"
 
 
-#define TX
-//#define RX
+//#define TX
+#define RX
 
 
 #define PACKET
