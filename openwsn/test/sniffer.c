@@ -51,14 +51,17 @@ void sniffer_run( void )
 	char * buf;
 	uint8 rxlen, count;
 	TSioComm sio;
-
-	global_construct();
+	uint8 length;
+	
+    target_init();
+    global_construct();
     spi_configure( g_spi );
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, 0x2420, 0);
 
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, 0x5678, 0);
+    //uart_write( g_uart, "program run1..", 15, 0 );
 	//cc2420_init(g_cc2420);
 
     
@@ -78,30 +81,30 @@ void sniffer_run( void )
 	
 
 	//cc2420_relation( g_spi0 );
-	   
+	memset( (char*)(&rxbuf[0]), 0x00, MAX_BUFFER_SIZE ); 
+	rxlen = 0;   
         cc2420_receive_on(g_cc2420);  
         IRQEnable();
-	
-
-	memset( (char*)(&rxbuf[0]), 0x00, MAX_BUFFER_SIZE ); 
-	rxlen = 0;
-	
+		
 	// assume you have construct g_cc2420, g_sio, g_uart successfully now
 	//
 	while (TRUE)
-	{
-		buf = (char*)(rxbuf[0]) + rxlen;
+	{   
+	    
+		//buf = (char*)(rxbuf[0]) + rxlen;
 		count = cc2420_rawread( g_cc2420, buf, rxlen, 0 );
-		rxlen += count;
+		//rxlen += count;
 		
-		buf = (char*)(rxbuf[0]);
+		//buf = (char*)(rxbuf[0]);
 		//count = sio_write( g_sio, buf, rxlen, 0 );
-		count = uart_write( g_uart, buf, rxlen, 0 );
-		if (count > 0)
-		{
+		//count = uart_write( g_uart, buf, rxlen, 0 );
+		uart_write( g_uart, buf, count, 0 );
+		/*if (count > 0)
+		{       //uart_write( g_uart, "program run2..", 15, 0 );
 			rxlen -= count;
 			memmove( buf, buf + count, rxlen );
-		}
+		}*/
+	 
 	}
 		
 	global_destroy();	

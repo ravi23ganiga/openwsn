@@ -58,7 +58,7 @@ int cc2420rx_test (void)
     spi_configure( g_spi );
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
-    
+
     tx_test.panid = 0x2420;
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
     
@@ -111,7 +111,6 @@ int cc2420rx_test (void)
 	  //receive using char streams
           #ifdef CHAR_STREAM
 	  led_twinkle(LED_GREEN,ledPeriod);
-	  
 
 	  length = cc2420_rawread( g_cc2420,(char *)rx_frame, 0,0 );
 	  
