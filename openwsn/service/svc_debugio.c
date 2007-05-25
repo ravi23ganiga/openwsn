@@ -87,12 +87,12 @@ void debug_evolve( TDebugIo * db )
 	char * buf;
 	if (db->datalen > 0)
 	{
-		hal_enter_critical();
+		//hal_enter_critical();
 		count = uart_write( db->uart, &(db->buf[0]), db->datalen, 0 );	
 		db->datalen -= count;
 		buf = (char *)(&(db->buf[0]));
 		memmove( buf, buf + count, db->datalen );
-		hal_leave_critical();
+		//hal_leave_critical();
 	}
 	//else 
 	//	db->datalen = 0;
@@ -103,7 +103,7 @@ uint16 debug_write( TDebugIo * db, char * buf, uint16 size )
 	uint16 copied;
 	uint16 i;
 	
-    hal_enter_critical();
+    //hal_enter_critical();
 	
 	i = CONFIG_DEBUGIO_BUFFER_CAPACITY - db->datalen;
 	copied = min(i, size);
@@ -121,9 +121,9 @@ uint16 debug_write( TDebugIo * db, char * buf, uint16 size )
 		   db->buf[i+db->datalen] = buf[i];
 		}
 		db->datalen += copied;
-		uart_write(g_uart, "uartecho run22.", 15, 0 );
+		///uart_write(g_uart, "uartecho run22.", 15, 0 );
 	}
-	hal_leave_critical();
+	//hal_leave_critical();
 	
 	return copied;
 }
