@@ -31,9 +31,11 @@
 #include "config.h"
 #include "..\hal\hal.h"
 #include "start.h"
+#include "..\service\svc_debugio.h"
+#include "debugio.h"
 
-//#define PACKET
-#define CHAR_STREAM
+#define PACKET
+//#define CHAR_STREAM
 
 static uint8 tx_frame[128];
 static uint8 rx_frame[128];            //using CHAR_STREAM
@@ -57,6 +59,8 @@ int cc2420rx_test (void)
     global_construct();
     spi_configure( g_spi );
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+
+    
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
 
     tx_test.panid = 0x2420;
@@ -80,16 +84,20 @@ int cc2420rx_test (void)
     
     cc2420_receive_on(g_cc2420);  
     IRQEnable(); 
+    //debug_open( g_debugio, g_uart );
     
     ledPeriod = 1;
         while (TRUE) 
 	{ 
 	  
+	  // debug_write( g_debugio, out_string, strlen(out_string));
+	   //debug_write( g_debugio, out_string, strlen(out_string) );
+	   //debug_evolve( g_debugio );
 	  //receive using packet
           #ifdef PACKET
 	  led_twinkle(LED_GREEN,ledPeriod);
 	  
-	  length = cc2420_read( g_cc2420,&rx_test,0,0);
+      length = cc2420_read( g_cc2420,&rx_test,0,0);
 	  
 	  if(length > 11) {
 	  ledPeriod = rx_test.payload[0];
@@ -112,7 +120,7 @@ int cc2420rx_test (void)
           #ifdef CHAR_STREAM
 	  led_twinkle(LED_GREEN,ledPeriod);
 
-	  length = cc2420_rawread( g_cc2420,(char *)rx_frame, 0,0 );
+	  //length = cc2420_rawread( g_cc2420,(char *)rx_frame, 0,0 );
 	  
 	  if(length > 11) {
 	  ledPeriod = rx_frame[10];

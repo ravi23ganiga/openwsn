@@ -526,7 +526,7 @@ BOOL _cc2420_sendframe(TCc2420Driver * cc) {
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].panid, 2);          // Dest. PAN ID
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodeto, 2);            // Dest. address
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodefrom, 2);         // Source address
-	FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].payload, cc->sendpayload_len);  // Payload
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].payload, cc->sendpayload_len);  // Payload
 
 	// Wait for the transmission to begin before exiting (makes sure that this function cannot be called
 	// a second time, and thereby cancelling the first transmission (observe the FIFOP + SFD test above).

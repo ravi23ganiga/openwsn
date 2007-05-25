@@ -73,7 +73,8 @@ int cc2420tx_test (void)
     tx_test.panid = 0x2420;
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
     
-    tx_test.nodeto = 0x5678;
+    //tx_test.nodeto = 0x5678;
+    tx_test.nodeto = 0x3456;
     tx_test.nodefrom = 0x1234;
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
     

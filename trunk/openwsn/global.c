@@ -50,10 +50,10 @@
 #include "global.h"
 
 static TSioComm 			m_sio;
-static TWirelessComm 		m_wireless;
-static TConsole *			m_console;
-static TConfigure 			m_configure;
-static TActionScheduler  	m_actsche;
+//static TWirelessComm 		m_wireless;
+static TConsole 			m_console;
+//static TConfigure 			m_configure;
+//static TActionScheduler  	m_actsche;
 static TDebugIo 			m_debugio;
 
 
