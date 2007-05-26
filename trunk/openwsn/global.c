@@ -52,7 +52,7 @@
 static TSioComm 			m_sio;
 //static TWirelessComm 		m_wireless;
 static TConsole 			m_console;
-//static TConfigure 			m_configure;
+//static TConfigure 		m_configure;
 //static TActionScheduler  	m_actsche;
 static TDebugIo 			m_debugio;
 
@@ -87,7 +87,7 @@ int8 global_construct( void )
 	TConfigStore * data;
 	g_init = TRUE;
 	
-	  hal_global_construct();
+	hal_global_construct();
 	//if (hal_global_construct())
 	//	return -1;
 
