@@ -32,8 +32,6 @@
 #include <stdlib.h>
 #include "..\hal\hal.h"
 #include "..\global.h"
-//#include "config.h"
-//#include "start.h"
 
 /*****************************************************************************
  * @author MaKun on 2007-04-18
@@ -44,14 +42,14 @@
  *   
  ****************************************************************************/ 
 
-#define PACKET
-//#define CHAR_STREAM
+#define CONFIG_PACKET_API
+#undef  CONFIG_FRAME_API
 
 static uint8 tx_frame[128];
-static uint8 rx_frame[128];            //using CHAR_STREAM
+//static uint8 rx_frame[128];            //using CONFIG_FRAME_API
 
 static TCc2420Frame tx_test;
-static TCc2420Frame rx_test;           //using PACKET
+//static TCc2420Frame rx_test;           //using CONFIG_PACKET_API
 
 int cc2420tx_test (void)
 {
@@ -60,25 +58,25 @@ int cc2420tx_test (void)
     int8 length;
     uint16 temp;
     uint8 ledPeriod;
-    char * out_string = "the rssi value is : ";
-    char * enter      = "\n";
+    //char * out_string = "the rssi value is : ";
+    //char * enter      = "\n";
   
     target_init();
-    
     global_construct();
     spi_configure( g_spi );
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     
     tx_test.panid = 0x2420;
-    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
-    
     //tx_test.nodeto = 0x5678;
     tx_test.nodeto = 0x3456;
     tx_test.nodefrom = 0x1234;
+
+    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
     
-    for (n = 0; n < 10; n++) {
+    for (n = 0; n < 10; n++) 
+    {
         tx_test.payload[n] = 2;
         tx_frame[10 + n] = 2;
     }
@@ -89,26 +87,32 @@ int cc2420tx_test (void)
     tx_frame[6] = 0x78; tx_frame[7] = 0x56;
     tx_frame[8] = 0x34; tx_frame[9] = 0x12; 
     
-    
     cc2420_receive_on(g_cc2420);  
     IRQEnable(); 
     
 	while (TRUE) 
 	{    
-		// transmit using TOpenFrame based interface
-        #ifdef PACKET
+		// transmit using TOpenFrame based interface: cc_write
+        #ifdef CONFIG_PACKET_API
         tx_test.payload[0]++;
         if (tx_test.payload[0] == 5)
         { 
         	tx_test.payload[0] = 1;
         } 
         
-        led_twinkle(LED_GREEN,1);
-        length = cc2420_write(g_cc2420,tx_test,10 + 11,0);
+        led_twinkle( LED_GREEN, 1 );
+        length = cc2420_write( g_cc2420, tx_test, 10+11, 0 );
           
         /*
-        if(length == -1) {led_twinkle(LED_RED,5);uart_putchar(g_uart,(char)0x00);}
-        else {led_twinkle(LED_RED,1);uart_putchar(g_uart,(char)0x11);}
+        if (length == -1) 
+        {
+        	led_twinkle(LED_RED,5);
+        	uart_putchar(g_uart,(char)0x00);
+        }
+        else{
+        	led_twinkle(LED_RED,1);
+        	uart_putchar(g_uart,(char)0x11);
+        }
         */ 
 		halWait(2000);
 		#endif
@@ -117,7 +121,7 @@ int cc2420tx_test (void)
 		// @modified by zhangwei on 20070418
 		// huanghuan seems test the following section. i cannot guartantee whether 
 		// the next char buffer based interface can work properly.
-		#ifdef CHAR_STREAM         
+		#ifdef CONFIG_FRAME_API         
         tx_frame[10]++;
         if (tx_frame[10] = 5) 
         {
@@ -126,10 +130,8 @@ int cc2420tx_test (void)
         cc2420_rawwrite( g_cc2420, (char *)tx_frame, 10 + 11,0);
           
         led_twinkle(LED_GREEN,1);
-       	//cc2420_sendframe(g_cc2420);
 	  	halWait(3000);	  
 	  	#endif
-
 	}
 	
 	global_destroy();

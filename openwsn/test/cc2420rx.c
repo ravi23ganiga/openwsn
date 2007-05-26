@@ -34,14 +34,14 @@
 #include "..\service\svc_debugio.h"
 #include "debugio.h"
 
-#define PACKET
-//#define CHAR_STREAM
+//#define CONFIG_PACKET_API
+#define CONFIG_FRAME_API
 
 static uint8 tx_frame[128];
-static uint8 rx_frame[128];            //using CHAR_STREAM
+//static uint8 rx_frame[128];            //using CONFIG_FRAME_API
 
 static TCc2420Frame tx_test;
-static TCc2420Frame rx_test;           //using PACKET
+//static TCc2420Frame rx_test;           //using CONFIG_PACKET_API
 
 
 int cc2420rx_test (void)
@@ -51,11 +51,15 @@ int cc2420rx_test (void)
     int8 length;
     uint16 temp;
     uint8 ledPeriod;
-    char * out_string = "the rssi value is : ";
-    char * enter      = "\n";
+    //char * out_string = "the rssi value is : ";
+    //char * enter      = "\n";
   
     target_init();
     
+    tx_test.panid = 0x2420;
+    tx_test.nodeto = 0x1234;
+    tx_test.nodefrom = 0x5678;
+
     global_construct();
     spi_configure( g_spi );
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
@@ -65,12 +69,10 @@ int cc2420rx_test (void)
 
     tx_test.panid = 0x2420;
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
-    
-    tx_test.nodeto = 0x1234;
-    tx_test.nodefrom = 0x5678;
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
     
-    for (n = 0; n < 10; n++) {
+    for (n = 0; n < 10; n++) 
+    {
         tx_test.payload[n] = 2;
         tx_frame[10 + n] = 2;
     }
@@ -94,7 +96,7 @@ int cc2420rx_test (void)
 	   //debug_write( g_debugio, out_string, strlen(out_string) );
 	   //debug_evolve( g_debugio );
 	  //receive using packet
-          #ifdef PACKET
+      #ifdef CONFIG_PACKET_API
 	  led_twinkle(LED_GREEN,ledPeriod);
 	  
       length = cc2420_read( g_cc2420,&rx_test,0,0);
@@ -117,7 +119,7 @@ int cc2420rx_test (void)
 	  
 	  
 	  //receive using char streams
-          #ifdef CHAR_STREAM
+      #ifdef CONFIG_FRAME_API
 	  led_twinkle(LED_GREEN,ledPeriod);
 
 	  //length = cc2420_rawread( g_cc2420,(char *)rx_frame, 0,0 );
