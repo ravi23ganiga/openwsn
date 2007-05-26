@@ -1,7 +1,18 @@
 //----------------------------------------------------------------------------
-// libopen.cpp
+// @author zhou songli on 200612
+// @note libopen
+//	this is the middle ware between host application and hardware sensor networks.
+//
+// @history
+// @modified by zhousongli on 200702
+//	add support to GAINZ platform
+//	test passed.
+// @modified by zhangwei on 20070524
+//  add new interface to manipuate the wsn network.  
+//
 //----------------------------------------------------------------------------
 
+#include "configall.h"
 #include "foundation.h"
 //#include <windows.h>
 //#include <stdio.h>
@@ -10,6 +21,173 @@
 #include "service\svc_dataqueue.h"
 #include "libopen.h"
 #include "global.h"
+
+//----------------------------------------------------------------------------
+// TOpenNetwork
+//----------------------------------------------------------------------------
+
+DLLAPI TOpenNetwork * _stdcall net_create()
+{
+	return simunet_create();
+}
+
+DLLAPI void _stdcall net_free( TOpenNetwork * net )
+{
+	return simunet_free( net );
+}
+
+DLLAPI int _stdcall  net_open( TOpenNetwork * net )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_open( net );
+	else
+		return simunet_open( net );
+}
+
+DLLAPI void _stdcall net_close( TOpenNetwork * net )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_close( net );
+	else
+		return simunet_close( net );
+}
+
+DLLAPI int _stdcall  net_write( TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_write( net, datapacket, opt );
+	else
+		return simunet_write( net, datapacket, opt );
+}
+
+DLLAPI int _stdcall  net_read(  TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_read( net, datapacket, opt );
+	else
+		return simunet_read( net, datapacket, opt );
+}
+
+DLLAPI int _stdcall  net_rawwrite( TOpenNetwork * net, char * buf, uint8 len, uint8 opt )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_rawwrite( net, buf, len, opt );
+	else
+		return simunet_rawwrite( net, buf, len, opt );
+}
+
+DLLAPI int _stdcall  net_rawread( TOpenNetwork * net, char * buf, uint8 capacity, uint8 opt )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_rawread( net, buf, capacity, opt );
+	else
+		return simunet_rawread( net, buf, capacity, opt );
+}
+
+DLLAPI void _stdcall net_evolve( TOpenNetwork * net )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_evolve( net );
+	else
+		return simunet_evolve( net );
+}
+
+DLLAPI void _stdcall net_probe( TOpenNetwork * net )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_probe( net );
+	else
+		return simunet_probe( net );
+}
+
+DLLAPI void _stdcall net_probe_node( TOpenNetwork * net, uint16 nodeid )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_probe_node( net, nodeid );
+	else
+		return simunet_probe_node( net, nodeid );
+}
+
+DLLAPI uint16 _stdcall net_get_node_count( TOpenNetwork * net )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_get_node_count( net );
+	else
+		return simunet_get_node_count( net );
+}
+
+DLLAPI TOpenNode * _stdcall net_node( TOpenNetwork * net, uint16 idx )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_node( net, idx );
+	else
+		return simunet_node( net, idx );
+}
+
+DLLAPI int _stdcall  net_get_neighbor_nodes( TOpenNetwork * net, uint16 id, uint32 radius, uint16 * buf, uint16 capacity )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_get_neighbor_nodes( net, id, radius, buf, capacity );
+	else
+		return simunet_get_neighbor_nodes( net, id, radius, buf, capacity );
+}
+
+DLLAPI uint32 _stdcall net_distance_between( TOpenNetwork * net, uint16 id1, uint16 id2 )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_distance_between( net, id1, id2 );
+	else
+		return simunet_distance_between( net, id1, id2 );
+}
+
+DLLAPI int _stdcall  net_generate( TOpenNetwork * net )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_generate( net );
+	else
+		return simunet_generate( net );
+}
+
+DLLAPI int _stdcall  net_load( TOpenNetwork * net, char * filename )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_load( net, filename );
+	else
+		return simunet_load( net, filename );
+}
+
+DLLAPI int _stdcall  net_save( TOpenNetwork * net, char * filename )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_save( net, filename );
+	else
+		return simunet_save( net, filename );
+}
+
+DLLAPI int _stdcall  net_sleep( TOpenNetwork * net )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_sleep( net );
+	else
+		return simunet_sleep( net );
+}
+
+DLLAPI int _stdcall  net_wakeup( TOpenNetwork * net )
+{
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		return opennet_wakeup( net );
+	else
+		return simunet_wakeup( net );
+}
+
+
+//----------------------------------------------------------------------------
+// Old Version Source Code
+//----------------------------------------------------------------------------
+
+
+//----------------------------------------------------------------------------
+#ifdef CONFIG_VERSION_10
 
 //extern CWinThread *pThread; 
 //extern TSioComm  *g_pTSioComm;
@@ -300,3 +478,6 @@ DLLAPI int8 svc_uart_configure (void *svc,uint32 baudrate, uint8 databits, uint8
   TUartDriver * uart = pSvcPacket->pSioComm->uart;
   return uart_configure(uart,baudrate,databits,stopbits,parity,optflag);
 }
+
+#endif /* CONFIG_VERSION_10 */
+//----------------------------------------------------------------------------

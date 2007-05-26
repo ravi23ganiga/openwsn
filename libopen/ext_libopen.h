@@ -55,6 +55,7 @@ DLLAPI int _stdcall netnode_read( TOpenNode * net, char * buf, uint8 capacity, u
 // Ä£ÄâÒ»¸öÍøÂç
 //
 typedef struct{
+  uint8  mode;
   uint16 root;
   uint32 sensing_radius;
   uint32 comm_radius;
