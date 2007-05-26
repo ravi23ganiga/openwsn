@@ -1,4 +1,3 @@
-
 #ifndef _SVC_NETSIMU_H_7388_
 #define _SVC_NETSIMU_H_7388_
 
@@ -13,54 +12,40 @@
 //	first created
 //----------------------------------------------------------------------------
 
-#include "..\configall.h"
-#include "..\foundation.h"
-#include "svc_netnode.h"
-
-#define CONFIG_NETSIMU_MAX_NODE 100
-#define CONFIG_DATAPACKET_DATASIZE 100
+#include "../service/svc_configall.h"
+#include "../service/svc_netnode.h"
+#include "../service/svc_network.h"
+#include "svc_nodesimu.h"
 
 //----------------------------------------------------------------------------
-// TOpenNetwork
+// TSimuNetwork
 //----------------------------------------------------------------------------
 
-// Ä£ÄâÒ»¸öÍøÂç
-//
-typedef struct{
-  uint16 root;
-  uint32 sensing_radius;
-  uint32 comm_radius;
-  TOpenNode nodes[CONFIG_NETSIMU_MAX_NODE];
-  uint16 random_sequence[CONFIG_NETSIMU_MAX_NODE];
-  uint16 read_cursor;
-  uint32 last_probetime;
-}TOpenNetwork;
+// this simulation network has the same interface with TOpenNode and TSimuNetwork 
+// define in svc_netnode.h / svc_network.h
 
-typedef struct{
-  uint16 id;
-  char data[CONFIG_DATAPACKET_DATASIZE];
-}TOpenDataPacket;
+#define TSimuNetwork TOpenNetwork 
 
-DLLAPI TOpenNetwork * _stdcall net_create();
-DLLAPI void _stdcall net_free( TOpenNetwork * net );
-DLLAPI int _stdcall net_open( TOpenNetwork * net );
-DLLAPI void _stdcall net_close( TOpenNetwork * net );
-DLLAPI int _stdcall net_write( TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
-DLLAPI int _stdcall net_read(  TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
-DLLAPI int _stdcall net_rawwrite( TOpenNetwork * net, char * buf, uint8 len, uint8 opt );
-DLLAPI int _stdcall net_rawread( TOpenNetwork * net, char * buf, uint8 capacity, uint8 opt );
-DLLAPI void _stdcall net_evolve( TOpenNetwork * net );
-DLLAPI void _stdcall net_probe( TOpenNetwork * net );
-DLLAPI void _stdcall net_probe_node( TOpenNetwork * net, uint16 nodeid );
-DLLAPI uint16 _stdcall net_get_node_count( TOpenNetwork * net );
-DLLAPI TOpenNode * _stdcall net_node( TOpenNetwork * net, uint16 idx );
-DLLAPI int _stdcall net_get_neighbor_nodes( TOpenNetwork * net, uint16 id, uint32 radius, uint16 * buf, uint16 capacity );
-DLLAPI uint32 _stdcall net_distance_between( TOpenNetwork * net, uint16 id1, uint16 id2 );
-DLLAPI int _stdcall net_generate( TOpenNetwork * net );
-DLLAPI int _stdcall net_load( TOpenNetwork * net, char * filename );
-DLLAPI int _stdcall net_save( TOpenNetwork * net, char * filename );
-DLLAPI int _stdcall net_sleep( TOpenNetwork * net );
-DLLAPI int _stdcall net_wakeup( TOpenNetwork * net );
+DLLAPI TSimuNetwork * _stdcall simunet_create();
+DLLAPI void _stdcall simunet_free( TSimuNetwork * net );
+DLLAPI int _stdcall simunet_open( TSimuNetwork * net );
+DLLAPI void _stdcall simunet_close( TSimuNetwork * net );
+DLLAPI int _stdcall simunet_write( TSimuNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
+DLLAPI int _stdcall simunet_read(  TSimuNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
+DLLAPI int _stdcall simunet_rawwrite( TSimuNetwork * net, char * buf, uint8 len, uint8 opt );
+DLLAPI int _stdcall simunet_rawread( TSimuNetwork * net, char * buf, uint8 capacity, uint8 opt );
+DLLAPI void _stdcall simunet_evolve( TSimuNetwork * net );
+DLLAPI void _stdcall simunet_probe( TSimuNetwork * net );
+DLLAPI void _stdcall simunet_probe_node( TSimuNetwork * net, uint16 nodeid );
+DLLAPI uint16 _stdcall simunet_get_node_count( TSimuNetwork * net );
+DLLAPI TOpenNode * _stdcall simunet_node( TSimuNetwork * net, uint16 idx );
+DLLAPI int _stdcall simunet_get_neighbor_nodes( TSimuNetwork * net, uint16 id, uint32 radius, uint16 * buf, uint16 capacity );
+DLLAPI uint32 _stdcall simunet_distance_between( TSimuNetwork * net, uint16 id1, uint16 id2 );
+DLLAPI int _stdcall simunet_generate( TSimuNetwork * net );
+DLLAPI int _stdcall simunet_load( TSimuNetwork * net, char * filename );
+DLLAPI int _stdcall simunet_save( TSimuNetwork * net, char * filename );
+DLLAPI int _stdcall simunet_sleep( TSimuNetwork * net );
+DLLAPI int _stdcall simunet_wakeup( TSimuNetwork * net );
 
 //----------------------------------------------------------------------------
 #endif

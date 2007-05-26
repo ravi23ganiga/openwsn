@@ -1,3 +1,11 @@
+// @author zhousongli on 2006
+//
+// @@modified by zhangwei on 20070524
+// maybe obsolete in the near future.
+// will be revision soon
+
+//----------------------------------------------------------------------------
+#ifdef CONFIG_VERSION_10
 
 #define MAX_DATAITEM_NUMBER 100
 
@@ -17,3 +25,7 @@ uint8  svc_write_rxDataQueue(TDataQueue * rxDataQueue, char *buf, uint8 len, uin
 uint8  svc_read_txDataQueue(TDataQueue *txDataQueue, char *buf, uint8 capacity, uint16 opt);
 uint8  svc_write_txDataQueue(TDataQueue * rxDataQueue, char *buf, uint8 len, uint16 opt);
 uint8  svc_read_rxDataQueue(TDataQueue *txDataQueue, char *buf, uint8 capacity, uint16 opt);
+
+
+#endif // #ifdef CONFIG_VERSION_10 
+//----------------------------------------------------------------------------

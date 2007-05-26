@@ -4,17 +4,101 @@
 
 #ifndef _LIBOPEN_H_
 #define _LIBOPEN_H_
+
 //----------------------------------------------------------------------------
 // @author zhousongli
 // @state developing
+//
+// @modified by zhangwei on 20070524
+// the architecture of libopen
+//
+//           TQueryEngine................................
+//                 |                              load from Database or File
+//            TOpenNetwork..............TSimuNetwork-----
+//                 |                                    |
+//                 |THostDrivenRouting.......Log to Database or File
+//          ---------------
+//          |             |
+//      TSioComm      TSioComm
+//        TUart        TUsb
+// 
+// there're some key objects in libopen:
+// o TUart
+//	exposed to application developer
+//  the user can use this object to configure the Rs232 parameter or Usb device
+//  parameter. generally, the user will not do this because we have already 
+//  set their default configurations.
+// o TUsb (not developed now)
+//	similar to TUsb
+// o TSioComm
+//	on top of TUart
+//	provide frame assemble and disassemble. 
+//  the payload in each frame can be mapped to an TQueryDataItem object.
+//
+// o TOpenRouter
+//	an libopen/host driven routing protocol. query based. 
+//  this protocol enable you can communicate with remote nodes in the network 
+//  by multi-hop forwarding.
+//
+// o TOpenNetwork
+//  exposed to application developer.
+//  provide an interface for the upper level developer to interact with the 
+//  sensor network. it's an abstraction of the whole network.
+//
+// o TQueryEngine
+//  exposed to application developer.
+//  on top of TOpenNetwork interface
+//  user query command interpretation and execution
+//
+// o TSimuNetwork
+//  exposed to application developer.
+//  has almost the same interface of TOpenNetwork
+//  used for simulation only
+//
+// there're also some utility object
+// o TBinaryXml 
+//  ease the manipulation of payload data.
+// o TQueryDataItem 
+//  represents a data item. data item : packet = 1 : 1
+// o TQueryDataSet
+//	is an list of the TQueryDataItem
+//
 //----------------------------------------------------------------------------
 
 #include "foundation.h"
 #include "hal\hal_uart.h"
 #include "hal\hal_usb.h"
 #include "service\svc_siocomm.h"
+#include "service\svc_network.h"
+#include "service\svc_dataset.h"
+#include "service\svc_queryengine.h"
+#include "simu\svc_netsimu.h"
+
+
+DLLAPI TOpenNetwork * _stdcall net_create();
+DLLAPI void _stdcall net_free( TOpenNetwork * net );
+DLLAPI int _stdcall  net_open( TOpenNetwork * net );
+DLLAPI void _stdcall net_close( TOpenNetwork * net );
+DLLAPI int _stdcall  net_write( TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
+DLLAPI int _stdcall  net_read(  TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
+DLLAPI int _stdcall  net_rawwrite( TOpenNetwork * net, char * buf, uint8 len, uint8 opt );
+DLLAPI int _stdcall  net_rawread( TOpenNetwork * net, char * buf, uint8 capacity, uint8 opt );
+DLLAPI void _stdcall net_evolve( TOpenNetwork * net );
+DLLAPI void _stdcall net_probe( TOpenNetwork * net );
+DLLAPI void _stdcall net_probe_node( TOpenNetwork * net, uint16 nodeid );
+DLLAPI uint16 _stdcall net_get_node_count( TOpenNetwork * net );
+DLLAPI TOpenNode * _stdcall net_node( TOpenNetwork * net, uint16 idx );
+DLLAPI int _stdcall  net_get_neighbor_nodes( TOpenNetwork * net, uint16 id, uint32 radius, uint16 * buf, uint16 capacity );
+DLLAPI uint32 _stdcall net_distance_between( TOpenNetwork * net, uint16 id1, uint16 id2 );
+DLLAPI int _stdcall  net_generate( TOpenNetwork * net );
+DLLAPI int _stdcall  net_load( TOpenNetwork * net, char * filename );
+DLLAPI int _stdcall  net_save( TOpenNetwork * net, char * filename );
+DLLAPI int _stdcall  net_sleep( TOpenNetwork * net );
+DLLAPI int _stdcall  net_wakeup( TOpenNetwork * net );
+
 
 //----------------------------------------------------------------------------
+#ifdef CONFIG_VERSION_10
 #define MAX_DATAITEM_NUMBER 100
 /*
 typedef struct{
@@ -30,6 +114,7 @@ uint8 totalCnt;
 }TDataQueue;
 */
 
+// obsolete
 typedef struct{
 //TSinkService sinkServRoute;
 TDataQueue rxDataQueue;
@@ -99,61 +184,30 @@ DLLAPI int8 svc_dbgen    // generate a random data logging database file
 DLLAPI int8 svc_query( void * svc, TQueryCondition * cond, TRangeData * data )
 DLLAPI int8 svc_querynode( void * svc, uint16 nodeid, uint8 sentype, uint8 * value, uint8 capacity );
 DLLAPI int8 svc_querylocation( void * svc, Tlocation * loc, uint8 sentype, uint8 * value, uint8 capacity, uint8 * probability );
-
-
-
-high level data service such as binaryxml analyzing
-  svc_binaryxml_getfirst
-  svc_binaryxml_getnext
-  svc_binaryxml_getprev
-  svc_binaryxml_getlast
-
-
-    svc_relation
-  svd_dm_create
-  svd_dm_free
-  svd_dm_read
-  svd_dm_rawread
-  svd_dm_write
-  svd_dm_rawwrite
-  
-  
-  xxx_create
-  xxx_free
-  xxx_read
-  xxx_write
- xxxÎªdriverËõÐ´£¬°üÀ¨rs232, usb, socket, webserv
-
-rs232_create
-rs232_free
-rs232_read
-rs232_write
-
-usb_create
-usb_free
-usb_read
-usb_write
-
-socket_create
-socket_free
-socket_read
-socket_write
-
-webserv_create
-webserv_free
-webserv_read
-webserv_write
 */
+#endif /* CONFIG_VERSION_10 */
 
-DLLAPI void * libopen_create( uint16 id, uint16 opt );
-DLLAPI void libopen_free( void * svc );
-DLLAPI void libopen_configure( void * svc );
-DLLAPI void libopen_relation( void * svc, void * driver );
-DLLAPI uint8 libopen_write( void * svc, char * buf, uint8 len, uint16 opt );
-DLLAPI uint8 libopen_read( void * svc, char * buf, uint8 capacity, uint16 opt );
-DLLAPI uint8 libopen_rawwrite( void * svc, char * buf, uint8 len, uint16 opt );
-DLLAPI uint8 libopen_rawread( void * svc, char * buf, uint8 capacity, uint16 opt );
-DLLAPI void * libopen_getdriver( void * svc );
+DLLAPI TOpenNetwork * _stdcall net_create();
+DLLAPI void _stdcall net_free( TOpenNetwork * net );
+DLLAPI int _stdcall net_open( TOpenNetwork * net );
+DLLAPI void _stdcall net_close( TOpenNetwork * net );
+DLLAPI int _stdcall net_write( TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
+DLLAPI int _stdcall net_read(  TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
+DLLAPI int _stdcall net_rawwrite( TOpenNetwork * net, char * buf, uint8 len, uint8 opt );
+DLLAPI int _stdcall net_rawread( TOpenNetwork * net, char * buf, uint8 capacity, uint8 opt );
+DLLAPI void _stdcall net_evolve( TOpenNetwork * net );
+DLLAPI void _stdcall net_probe( TOpenNetwork * net );
+DLLAPI void _stdcall net_probe_node( TOpenNetwork * net, uint16 nodeid );
+DLLAPI uint16 _stdcall net_get_node_count( TOpenNetwork * net );
+DLLAPI TOpenNode * _stdcall net_node( TOpenNetwork * net, uint16 idx );
+DLLAPI int _stdcall net_get_neighbor_nodes( TOpenNetwork * net, uint16 id, uint32 radius, uint16 * buf, uint16 capacity );
+DLLAPI uint32 _stdcall net_distance_between( TOpenNetwork * net, uint16 id1, uint16 id2 );
+DLLAPI int _stdcall net_generate( TOpenNetwork * net );
+DLLAPI int _stdcall net_load( TOpenNetwork * net, char * filename );
+DLLAPI int _stdcall net_save( TOpenNetwork * net, char * filename );
+DLLAPI int _stdcall net_sleep( TOpenNetwork * net );
+DLLAPI int _stdcall net_wakeup( TOpenNetwork * net );
+
 
 //----------------------------------------------------------------------------
 #endif

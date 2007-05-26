@@ -7,7 +7,6 @@
 // @note
 //	规定了网络数据包的数据格式
 //  提供了在结构类型数据和buf类型数据之间转换的工具函数
-//  本模块仅仅用于仿真
 //
 // @modified by zhangwei on 20070515
 //	first created
@@ -36,7 +35,7 @@ typedef struct{
   //unsigned int sen_temprature;
   //unsigned int sen_strain;
   unsigned char reserved[4];
-}TNetAppData;
+}TNetAppData;  
 
 
 // 在TNetAppData结构和read/write所要求的{buf,capacity}缓冲区之间进行格式转换

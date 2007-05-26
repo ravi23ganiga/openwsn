@@ -190,14 +190,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\service\svc_console.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\service\svc_console.h"
-				>
-			</File>
-			<File
 				RelativePath=".\service\svc_dataqueue.cpp"
 				>
 			</File>
@@ -206,19 +198,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\service\svc_dataset.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_dataset.h"
+				>
+			</File>
+			<File
 				RelativePath=".\service\svc_foundation.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\service\svc_foundation.h"
-				>
-			</File>
-			<File
-				RelativePath=".\service\svc_location.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\service\svc_location.h"
 				>
 			</File>
 			<File
@@ -238,6 +230,22 @@
 				>
 			</File>
 			<File
+				RelativePath=".\service\svc_netnode.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_netnode.h"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_network.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_network.h"
+				>
+			</File>
+			<File
 				RelativePath=".\service\svc_openpacket.cpp"
 				>
 			</File>
@@ -246,11 +254,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\service\svc_simulate.cpp"
+				RelativePath=".\service\svc_queryengine.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\service\svc_simulate.h"
+				RelativePath=".\service\svc_queryengine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_router.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\service\svc_router.h"
 				>
 			</File>
 			<File
@@ -259,14 +275,6 @@
 			</File>
 			<File
 				RelativePath=".\service\svc_siocomm.h"
-				>
-			</File>
-			<File
-				RelativePath=".\service\svc_switch.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\service\svc_switch.h"
 				>
 			</File>
 		</Filter>
@@ -374,19 +382,19 @@
 			Name="simu"
 			>
 			<File
-				RelativePath=".\simu\svc_netnode.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\simu\svc_netnode.h"
-				>
-			</File>
-			<File
 				RelativePath=".\simu\svc_netsimu.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\simu\svc_netsimu.h"
+				>
+			</File>
+			<File
+				RelativePath=".\simu\svc_nodesimu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\simu\svc_nodesimu.h"
 				>
 			</File>
 		</Filter>

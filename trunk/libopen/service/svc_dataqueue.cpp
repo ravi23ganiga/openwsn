@@ -3,6 +3,9 @@
 #include "svc_foundation.h"
 #include "svc_dataqueue.h"
 
+//----------------------------------------------------------------------------
+#ifdef CONFIG_VERSION_10
+
 uint8  svc_write_rxDataQueue(TDataQueue * rxDataQueue, char *buf, uint8 len, uint16 opt)
 {
     uint8 ptr;	
@@ -119,3 +122,6 @@ uint8  svc_write_txDataQueue(TDataQueue * txDataQueue, char *buf, uint8 len, uin
     //LeaveCriticalSection(&Section);
 	return len;
 }
+
+#endif // #ifdef CONFIG_VERSION_10 
+//----------------------------------------------------------------------------

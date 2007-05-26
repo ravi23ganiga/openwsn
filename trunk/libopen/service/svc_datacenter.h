@@ -28,10 +28,24 @@
  * 
  ****************************************************************************/ 
 
-#ifndef _SVC_SWITCH_5684_
-#define _SVC_SWITCH_5684_
+#ifndef _SVC_DATACENTER_5684_H_
+#define _SVC_DATACENTER_5684_H_
+//----------------------------------------------------------------------------
+// TKernel
+// this object holds the interface of serveral channel object. each channel object
+// connect to one "port" of the kernel. the channel object can subscribe other channel's
+// msg. and the kernel object will help the channel to get these messages.
 //----------------------------------------------------------------------------
 
+
+/*
+switch_create
+switch_free
+switch_configure
+switch_attach
+switch_evolve
+switch_wait //
+*/
 
 //----------------------------------------------------------------------------
 #endif
