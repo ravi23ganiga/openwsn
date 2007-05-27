@@ -55,6 +55,9 @@ libopen includes the following objects:
 - network operations (net_ functions)
 - simulation layers (net_ functions)
 
+the old version that can be worked with ZhouSongli's C# worldview and GAINZ
+platform is around version 235.
+
 
 20070205
 move four queue operation functions to service/svc_dataqueue.*
