@@ -18,6 +18,8 @@ libopen is essentially composed by four separate parts:
       a utility help you assemble/disassemble data in payload buffer.
       
 you should review the following modules first:
+  global.*
+  libopen.*
   svc_netnode, svc_network
   svc_queryengine, svc_dataset      
   svc_netsimu
@@ -32,9 +34,17 @@ most of your OOP design in C language, i believe.
 history
 ==============================================================================
 
-20070524
+20070526
 make great revision today.
-re-designed and re-organized the interfaces
+re-designed and re-organized the interfaces. the libopen now has four key objects:
+  1. TOpenNetwork(contains TOpenNode, TOpenRouter)
+  2. TQueryEngine( contains TDataSet, TDataItem)
+  3. TSimuNetwork( conains TSimuNode)
+  4. TBinaryXml
+
+you'll understand the architecture of libopen well if you know these objects and 
+their relationships well.
+
 
 20070515
 libopen includes the following objects:
