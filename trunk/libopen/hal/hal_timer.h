@@ -23,5 +23,8 @@ typedef struct{
   uint8 id;
 }TTimer;
 
+TTimer * timer_construct( TTimer * timer, uint8 size );
+void timer_destroy( TTimer * timer );
+
 #endif /* _TIMER_H_6828_ */
 

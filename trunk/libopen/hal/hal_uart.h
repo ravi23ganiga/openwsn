@@ -14,6 +14,8 @@
 //#include <mmsystem.h>
 #include <assert.h>
 
+#define TUart TUartDriver
+
 #define UART_WRITE_ENABLE 1
 #define UART_READ_ENABLE 1
 

@@ -14,9 +14,9 @@
  *                            and other applications
  ******************************************************************************/
 
-#include "svc_foundation.h"
-#include "..\hal\hal_uart.h"
-#include "..\hal\hal_timer.h"
+#include "svc_configall.h"
+#include "../hal/hal_uart.h"
+#include "../hal/hal_timer.h"
 
 /*******************************************************************************
  * UART PDU format

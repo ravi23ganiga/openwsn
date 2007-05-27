@@ -22,6 +22,7 @@
 
 #include "svc_configall.h"
 #include "svc_dataset.h"
+#include "svc_network.h"
 
 // TQueryDataItem 
 // this object denotes a data packet payload received from the sensor network.
@@ -92,13 +93,14 @@ DLLAPI void query_cond_clear( TQueryCondition * cond );
 //
 typedef struct{
   uint8 state;
+  TOpenNetwork * net;
   TQueryCondition * cond;
   TQueryDataSet * dataset;
   TQueryDataSet * cache;
   char * filename;
 }TQueryEngine;
 
-DLLAPI TQueryEngine * query_engine_create();
+DLLAPI TQueryEngine * query_engine_create( TOpenNetwork * net );
 DLLAPI void query_engine_free( TQueryEngine * qe );
 DLLAPI void query_engine_clear( TQueryEngine * qe );
 DLLAPI int  query_engine_execute( TQueryEngine * qe, TQueryCondition * cond, TQueryDataSet ** dataset );

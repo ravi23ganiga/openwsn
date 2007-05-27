@@ -2,7 +2,7 @@
  * @author zhangwei, tangwen on 2006-08-02
  * Timer hardware encapsulation
  * 
- * you can reference "test\timer.*" to see how to use the TTimer object.
+ * you can reference "test/timer.*" to see how to use the TTimer object.
  * 
  * @history
  * @modified by zhangwei on 20060802
@@ -18,6 +18,16 @@
 #include "hal_timer.h"
 //#include <windows.h>
 //#include <mmsystem.h>
+
+TTimer * timer_construct( TTimer * timer, uint8 size )
+{
+	// @TODO
+	return NULL;
+}
+
+void timer_destroy( TTimer * timer )
+{
+}
 
 
 /*

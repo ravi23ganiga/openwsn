@@ -26,4 +26,11 @@ static int query_engine_test()
 {
 }
 
+DLLAPI TQueryEngine * query_engine_create( TOpenNetwork * net )
+{
+	return NULL;
+}
 
+DLLAPI void query_engine_free( TQueryEngine * qe )
+{
+}

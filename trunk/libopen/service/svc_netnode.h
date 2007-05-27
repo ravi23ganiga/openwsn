@@ -2,9 +2,8 @@
 #define _SVC_NETNODE_H_7388_
 //----------------------------------------------------------------------------
 
-#include "..\configall.h"
+#include "svc_configall.h"
 #include <assert.h>
-#include "..\foundation.h"
 
 //----------------------------------------------------------------------------
 // TOpenNode

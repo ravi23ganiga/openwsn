@@ -4,8 +4,14 @@
 
 #include "../service/svc_configall.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <memory.h>
 #include "../service/svc_netnode.h"
 #include "svc_nodesimu.h"
+
+#define min(n,m) (((n) < (m)) ? (n) : (m)) 
+#define max(n,m) (((n) < (m)) ? (m) : (n))
 
 //----------------------------------------------------------------------------
 // @author zhangwei on 20070521

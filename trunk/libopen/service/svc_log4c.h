@@ -2,7 +2,7 @@
 #ifndef _SVC_LOGGER_H_4672_
 #define _SVC_LOGGER_H_4672_
 
-#include "svc_foundation.h"
+#include "svc_configall.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <tchar.h>

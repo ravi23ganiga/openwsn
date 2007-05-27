@@ -7,7 +7,7 @@
 #include <memory.h>
 #include <time.h>
 #include <math.h>
-#include "..\rtl\rtl_random.h"
+#include "../rtl/rtl_random.h"
 #include "svc_netnode.h"
 #include "svc_network.h"
  
@@ -23,7 +23,7 @@ static void opennet_test()
 // this is still the simulation version. you should read data from TSioComm/TUart
 
 // 创建一个TOpenNetwork对象并执行必须的初始化
-DLLAPI TOpenNetwork * _stdcall opennet_create()
+DLLAPI TOpenNetwork * _stdcall opennet_create( TSioComm * sio, TTimer * timer )
 {
 	TOpenNetwork * net = (TOpenNetwork *)malloc(sizeof(TOpenNetwork));
 	if (net)
@@ -31,6 +31,9 @@ DLLAPI TOpenNetwork * _stdcall opennet_create()
 		memset( net, 0x00, sizeof(TOpenNetwork) );
 		net->mode = OPENNET_MODE_SIMULATION;
 		net->root = 0xFFFF;
+		net->sio = sio;
+		net->timer = timer;
+		net->router = router_create( sio, timer );
 		net->sensing_radius = 5;
 		net->comm_radius = 100;
 	}
@@ -42,6 +45,7 @@ DLLAPI void _stdcall opennet_free( TOpenNetwork * net )
 {
 	if (net)
 	{
+		router_free( net->router );
 		free( net );
 	}
 }
@@ -63,74 +67,28 @@ DLLAPI void _stdcall opennet_close( TOpenNetwork * net )
 // 返回值表示该数据包的长度。网络对象不管数据包的格式和解释。你需要自己解释。
 DLLAPI int _stdcall opennet_read(  TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt )
 {
-	TOpenNode * node;
-	bool found;
-	int ret = 0;
-
-	found = false;
-	while (!found)
-	{
-		if (net->read_cursor >= CONFIG_NETSIMU_MAX_NODE)
-			net->read_cursor = 0;
-		else
-			net->read_cursor ++;
-
-		node = opennet_node( net, net->read_cursor );
-		if (node->state != NODE_STATE_FREE) 
-		{
-			datapacket->id = net->read_cursor;
-			ret = netnode_read( node, &(datapacket->data[0]), CONFIG_DATAPACKET_DATASIZE, opt );
-		}
-	}
-
-	return ret;
+	return 0;
 }
- 
+
+ //--------------------------------------------------------------------------- 
+ // opennet_rawread() will retrieve the data from lower level and passed to upper level without 
+ // any change. this feature will enable the upper layer got all of the data without modification. 
+ // this is powerful some cases.
+ //--------------------------------------------------------------------------- 
 DLLAPI int _stdcall opennet_rawread( TOpenNetwork * net, char * buf, uint8 capacity, uint8 opt )
 {
-	TOpenNode * node;
-	bool found;
-	int ret = 0;
-
-	found = false;
-	while (!found)
-	{
-		if (net->read_cursor >= CONFIG_NETSIMU_MAX_NODE)
-			net->read_cursor = 0;
-		else
-			net->read_cursor ++;
-
-		node = opennet_node( net, net->read_cursor );
-		if (node->state != NODE_STATE_FREE) 
-		{
-			buf[0] = net->read_cursor & 0x00FF;
-			buf[1] = (net->read_cursor & 0xFF00) >> 8;
-			ret = netnode_read( node, buf+2, CONFIG_DATAPACKET_DATASIZE, opt );
-		}
-	}
-
-	return ret;
+	return router_rawread( net->router, buf, capacity, opt );
 }
  
 // 写一个数据包给网络，也就是发送数据包出去
 DLLAPI int _stdcall opennet_write( TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt )
 {
-	TOpenNode * node;
-
-	assert( datapacket->id < CONFIG_NETSIMU_MAX_NODE );
-	node = opennet_node( net, datapacket->id );
-	return netnode_write( node, datapacket->data, CONFIG_DATAPACKET_DATASIZE, opt );
+	return 0;
 }
 
 DLLAPI int _stdcall opennet_rawwrite( TOpenNetwork * net, char * buf, uint8 len, uint8 opt )
 {
-	TOpenNode * node;
-	uint16 id;
-
-	id = buf[0] | (buf[1]<<8);
-	assert( id < CONFIG_NETSIMU_MAX_NODE );
-	node = opennet_node( net, id );
-	return netnode_write( node, buf, CONFIG_DATAPACKET_DATASIZE, opt );
+	return router_rawwrite( net->router, buf, len, opt );
 }
 
 // not used now.

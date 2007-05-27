@@ -7,6 +7,7 @@
 
 #include "svc_configall.h"
 #include "svc_netnode.h"
+#include "svc_router.h"
 
 #define CONFIG_NETSIMU_MAX_NODE 100
 #define CONFIG_DATAPACKET_DATASIZE 100
@@ -36,6 +37,9 @@
 typedef struct{
   uint8             mode;
   uint16            root;
+  TSioComm *        sio;
+  TTimer *          timer;
+  TOpenRouter *     router;
   uint32            sensing_radius;
   uint32            comm_radius;
   TOpenNode	        nodes[CONFIG_NETSIMU_MAX_NODE];
@@ -57,7 +61,7 @@ typedef struct{
   char data[CONFIG_DATAPACKET_DATASIZE];
 }TOpenDataPacket;
 
-DLLAPI TOpenNetwork * _stdcall opennet_create();
+DLLAPI TOpenNetwork * _stdcall opennet_create( TSioComm * sio, TTimer * timer );
 DLLAPI void _stdcall opennet_free( TOpenNetwork * net );
 DLLAPI int _stdcall  opennet_open( TOpenNetwork * net );
 DLLAPI void _stdcall opennet_close( TOpenNetwork * net );

@@ -22,8 +22,8 @@
 
 #include "svc_foundation.h"
 #include <stdio.h>
-#include "..\hal\hal_foundation.h"
-#include "..\hal\hal_uart.h"
+#include "../hal/hal_foundation.h"
+#include "../hal/hal_uart.h"
 #include "svc_siocomm.h"
  
 #define SIO_STATE_GENERAL 0

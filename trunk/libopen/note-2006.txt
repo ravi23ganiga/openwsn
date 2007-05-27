@@ -1,3 +1,40 @@
+author openwsn on 20061024
+
+
+For new developers for libopen
+==============================================================================
+If you are new to "libopen" developing, you should aware that: 
+
+libopen is essentially composed by four separate parts:
+  - TOpenNetwork ( related to TOpenRouter, TSioComm, TUart..)
+      it's the core of libopen
+  - TQueryEngine
+      query parser and execution
+      it's based on TOpenNetwork interface.
+  - TSimuNetwork
+      share the same interface with TOpenNetwork
+      you can configure the network object to "SIMULATION" mode.
+  - TBinaryXml
+      a utility help you assemble/disassemble data in payload buffer.
+      
+you should review the following modules first:
+  svc_netnode, svc_network
+  svc_queryengine, svc_dataset      
+  svc_netsimu
+  rtl_binaryxml
+  
+since we may port "libopen" to embedded device in the future, please use ANSI C/C++
+in the developing. considering a lot of embedded devices do NOT support C++ 
+developing, i suggest you use C language grammar in this project. you can express
+most of your OOP design in C language, i believe.
+  
+  
+history
+==============================================================================
+
+20070524
+make great revision today.
+re-designed and re-organized the interfaces
 
 20070515
 libopen includes the following objects:
@@ -8,7 +45,7 @@ libopen includes the following objects:
 
 
 20070205
-move four queue operation functions to service\svc_dataqueue.*
+move four queue operation functions to service/svc_dataqueue.*
 add two configuration macros: CONFIG_PALTFORM_ARM and CONFIG_PLATFORM_ATMEL
 	in configall.h
 add module: hal/hal_openframe.*
@@ -18,10 +55,8 @@ add module: service/svc_openpacket.*
 2007-01-07
 merged with zhousongli's modification. compile passed. 
 
-12:36 2006-12-22
+2006-12-22
 modified svc_foundation.h. 
 add a lot of definitions, including the macro DLLAPI
 
 modified svcapi.h to export these functions as DLLAPI
-
-todo: function interface revision
