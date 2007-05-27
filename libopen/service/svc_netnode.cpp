@@ -5,6 +5,7 @@
 #include "svc_configall.h"
 #include "svc_netnode.h"
 #include <stdlib.h>
+#include <memory.h>
 
 //----------------------------------------------------------------------------
 // @author zhangwei on 20070521

@@ -4,6 +4,6 @@
 // This is the config file of HAL. It should be as simple as possible. 
 // Only the configuration macros should be defined here.
 
-#include "..\configall.h"
+#include "../configall.h"
 
 #endif

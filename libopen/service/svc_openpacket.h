@@ -1,8 +1,8 @@
 #ifndef _SVC_OPENPACKET_H_3812_
 #define _SVC_OPENPACKET_H_3812_
 
-#include "svc_foundation.h"
-#include "..\hal\hal_openframe.h"
+#include "svc_configall.h"
+#include "../hal/hal_openframe.h"
 
 /* @author zhangwei on 20070131
  * this file defines the format of a Network Layer Packet. the packet is the 

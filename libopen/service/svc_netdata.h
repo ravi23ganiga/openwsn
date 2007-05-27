@@ -12,7 +12,6 @@
 //	first created
 //----------------------------------------------------------------------------
 #include "svc_configall.h"
-#include "svc_foundation.h"
 
 #ifndef DLLAPI
 #error "please define macro DLLAPI first"

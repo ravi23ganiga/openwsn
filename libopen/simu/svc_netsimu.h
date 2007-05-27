@@ -26,7 +26,7 @@
 
 #define TSimuNetwork TOpenNetwork 
 
-DLLAPI TSimuNetwork * _stdcall simunet_create();
+DLLAPI TSimuNetwork * _stdcall simunet_create( TSioComm * sio, TTimer * timer );
 DLLAPI void _stdcall simunet_free( TSimuNetwork * net );
 DLLAPI int _stdcall simunet_open( TSimuNetwork * net );
 DLLAPI void _stdcall simunet_close( TSimuNetwork * net );

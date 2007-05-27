@@ -4,8 +4,8 @@
 #include <memory.h>
 #include <time.h>
 #include <math.h>
-#include "..\rtl\rtl_random.h"
-#include "..\service\svc_network.h"
+#include "../rtl/rtl_random.h"
+#include "../service/svc_network.h"
 #include "svc_netsimu.h"
  
 //----------------------------------------------------------------------------
@@ -13,7 +13,7 @@
 //----------------------------------------------------------------------------
 
 // 创建一个TSimuNetwork对象并执行必须的初始化
-DLLAPI TSimuNetwork * _stdcall simunet_create()
+DLLAPI TSimuNetwork * _stdcall simunet_create( TSioComm * sio, TTimer * timer )
 {
 	TSimuNetwork * net = (TSimuNetwork *)malloc(sizeof(TSimuNetwork));
 	if (net)

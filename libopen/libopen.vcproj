@@ -354,6 +354,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\rtl\rtl_configall.h"
+				>
+			</File>
+			<File
 				RelativePath=".\rtl\rtl_crc.c"
 				>
 			</File>
@@ -411,10 +415,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\ext_libopen.h"
-			>
-		</File>
-		<File
 			RelativePath=".\foundation.h"
 			>
 		</File>
@@ -439,7 +439,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\readMe.txt"
+			RelativePath=".\readme.txt"
 			>
 		</File>
 		<File

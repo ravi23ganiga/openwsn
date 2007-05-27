@@ -11,7 +11,7 @@
 #define _SVC_DATASET_H_7887_
 
 #include "svc_configall.h"
-#include "..\rtl\rtl_binaryxml.h"
+#include "../rtl/rtl_binaryxml.h"
 
 // TDataItem 
 // this object denotes a data packet payload received from the sensor network.
