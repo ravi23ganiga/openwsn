@@ -86,15 +86,12 @@ int cc2420rx_test (void)
     
     cc2420_receive_on(g_cc2420);  
     IRQEnable(); 
-    //debug_open( g_debugio, g_uart );
-    
+   
     ledPeriod = 1;
         while (TRUE) 
 	{ 
 	  
-	  // debug_write( g_debugio, out_string, strlen(out_string));
-	   //debug_write( g_debugio, out_string, strlen(out_string) );
-	   //debug_evolve( g_debugio );
+	  //uart_write(g_uart, "uartecho run22.", 15, 0 );
 	  //receive using packet
       #ifdef CONFIG_PACKET_API
 	  led_twinkle(LED_GREEN,ledPeriod);
