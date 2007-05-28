@@ -68,8 +68,8 @@ int cc2420tx_test (void)
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     
     tx_test.panid = 0x2420;
-    //tx_test.nodeto = 0x5678;
-    tx_test.nodeto = 0x3456;
+    tx_test.nodeto = 0x5678;
+    //tx_test.nodeto = 0x3456;//for test the sniffer
     tx_test.nodefrom = 0x1234;
 
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
