@@ -34,14 +34,14 @@
 #include "..\service\svc_debugio.h"
 #include "debugio.h"
 
-//#define CONFIG_PACKET_API
-#define CONFIG_FRAME_API
+#define CONFIG_PACKET_API
+//#define CONFIG_FRAME_API
 
 static uint8 tx_frame[128];
 //static uint8 rx_frame[128];            //using CONFIG_FRAME_API
 
 static TCc2420Frame tx_test;
-//static TCc2420Frame rx_test;           //using CONFIG_PACKET_API
+static TCc2420Frame rx_test;           //using CONFIG_PACKET_API
 
 
 int cc2420rx_test (void)
@@ -51,8 +51,8 @@ int cc2420rx_test (void)
     int8 length;
     uint16 temp;
     uint8 ledPeriod;
-    //char * out_string = "the rssi value is : ";
-    //char * enter      = "\n";
+    char * out_string = "the rssi value is : ";
+    char * enter      = "\n";
   
     target_init();
     
@@ -66,8 +66,6 @@ int cc2420rx_test (void)
 
     
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
-
-    tx_test.panid = 0x2420;
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
     
