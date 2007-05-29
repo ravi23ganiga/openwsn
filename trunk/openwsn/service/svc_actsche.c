@@ -12,7 +12,9 @@
  
 #include "..\foundation.h"
 #include "..\hal\hal_cpu.h"
+#include "..\hal\hal_assert.h"
 #include "svc_actsche.h"
+
 
 static uint8 _acts_allocateitem( TActionScheduler * sche );
 static void  _acts_disposeitem( TActionScheduler * sche, uint8 id );

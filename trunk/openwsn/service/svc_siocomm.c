@@ -51,6 +51,7 @@
 
 #include "..\hal\hal_foundation.h"
 #include "..\hal\hal_uart.h"
+#include "..\hal\hal_assert.h"
 #include "svc_foundation.h"
 #include "svc_siocomm.h"
  

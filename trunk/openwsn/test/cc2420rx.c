@@ -27,12 +27,12 @@
  * this file might be covered by the GNU General Public License.
  * 
  *****************************************************************************/ 
+#include "..\configall.h"
 #include <stdlib.h>
 #include "config.h"
 #include "..\hal\hal.h"
-#include "start.h"
 #include "..\service\svc_debugio.h"
-#include "debugio.h"
+
 
 #define CONFIG_PACKET_API
 //#define CONFIG_FRAME_API
@@ -42,7 +42,6 @@ static uint8 tx_frame[128];
 
 static TCc2420Frame tx_test;
 static TCc2420Frame rx_test;           //using CONFIG_PACKET_API
-
 
 int cc2420rx_test (void)
 {
@@ -63,8 +62,7 @@ int cc2420rx_test (void)
     global_construct();
     spi_configure( g_spi );
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
-
-    
+   
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
@@ -81,7 +79,7 @@ int cc2420rx_test (void)
     tx_frame[6] = 0x78; tx_frame[7] = 0x56;
     tx_frame[8] = 0x34; tx_frame[9] = 0x12; 
     
-    
+    //uart_write(g_uart, "uartecho run22.", 15, 0 );
     cc2420_receive_on(g_cc2420);  
     IRQEnable(); 
    
@@ -89,7 +87,7 @@ int cc2420rx_test (void)
         while (TRUE) 
 	{ 
 	  
-	  //uart_write(g_uart, "uartecho run22.", 15, 0 );
+	  
 	  //receive using packet
       #ifdef CONFIG_PACKET_API
 	  led_twinkle(LED_GREEN,ledPeriod);

@@ -44,7 +44,6 @@
  ****************************************************************************/ 
 
 #define MAX_BUFFER_SIZE 0xFF
-TDebugIo debugio;
 
 void sniffer_run( void )
 {
@@ -61,26 +60,22 @@ void sniffer_run( void )
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, 0x2420, 0);
-    debug_construct( (char*)(&debugio), sizeof(TDebugIo));
+   
 
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, 0x5678, 0);
     //uart_write( g_uart, "program run1..", 15, 0 );
-	//cc2420_init(g_cc2420);
-
-    
     // this configure will disable the address recognition mechanism so that 
     // the transceiver "cc2420" can receive all the frames in transmission, even
     // the destination address isn't the current node. 
-    //
 	// hardware address recognition can be enabled or disabled using 
 	// MDMCTRL0.ADR_DECODE bit in register CC2420_MDMCTRL0 (p.39, cc2420 datasheet) 
 	//FAST2420_SETREG(spi,CC2420_MDMCTRL0,0x02E2) ;
 
 
-     cc2420_configure( g_cc2420, CC2420_CONFIG_SNIFFER_MODE, 0, 0);
+      cc2420_configure( g_cc2420, CC2420_CONFIG_SNIFFER_MODE, 0, 0);
 	
-	//sio_construct( (char*)&sio, sizeof(TSioComm), g_uart, 0x00 );
-	//sio_configure( &sio, NULL, 0x00, 27 );
+	 sio_construct( (char*)&sio, sizeof(TSioComm), g_uart, 0x00 );
+	 sio_configure( &sio, NULL, 0x00, 27 );
 	
 
 	//cc2420_relation( g_spi0 );
@@ -91,13 +86,12 @@ void sniffer_run( void )
 		
 	// assume you have construct g_cc2420, g_sio, g_uart successfully now
 	
-	 // debug_open( &debugio, g_uart );
 	 
-	  //debug_write( &debugio, out_string, strlen(out_string) );
-	 // debug_evolve( &debugio );
 	while (TRUE)
 	{   
 	  
+		
+	   // uart_write(g_uart, "uartecho run22.", 15, 0 );
 		//buf = (char*)(rxbuf[0]) + rxlen;
 		count = cc2420_rawread( g_cc2420, buf, rxlen, 0 );
 		//rxlen += count;
@@ -105,7 +99,8 @@ void sniffer_run( void )
 		//buf = (char*)(rxbuf[0]);
 		//count = sio_write( g_sio, buf, rxlen, 0 );
 		//count = uart_write( g_uart, buf, rxlen, 0 );
-		uart_write( g_uart, buf, count, 0 );
+		//uart_write( g_uart, buf, count, 0 );
+		sio_write(&sio, buf, count, 0 );
 		/*if (count > 0)
 		{   uart_write( g_uart, "program run2..", 15, 0 );
 			rxlen -= count;
