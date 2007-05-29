@@ -5,10 +5,10 @@
 
 #ifdef CONFIG_DEBUG
   #define assert(v) hal_assert(v)
-else
+#else
   #define assert(v) NULL
 #endif
 
-void hal_assert(v);
+void hal_assert(int v);
 
 #endif

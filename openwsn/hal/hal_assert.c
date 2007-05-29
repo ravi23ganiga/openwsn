@@ -2,7 +2,7 @@
 #include "hal_assert.h"
 #include "hal_led.h"
 
-void hal_assert( bool v )
+void hal_assert( int v )
 {
 	if (!v)
 	{

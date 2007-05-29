@@ -231,39 +231,17 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
 #define CC2420_POWER_7  0x07       //-15dBm    8.9mA
 #define CC2420_POWER_8  0x08       //-25dBm    8.5mA
 
-
-/*
-typedef struct {
-    WORD destPanId;
-	WORD destAddr;
-	INT8 length;
-    BYTE *pPayload;
-	BOOL ackRequest;
-} TCc2420TXFrame;
-
-typedef struct {
-    BYTE seqNumber;
-	WORD srcAddr;
-	WORD srcPanId;
-	INT8 length;
-    BYTE *pPayload;
-	BOOL ackRequest;
-	INT8 rssi;
-} TCc2420RXFrame;
-*/
-
-//Packet includes : frame control field(2B), sequence number(1B), PAN ID(2B), destination and source(4B),payload(nB),footer(2B)
-//This is an integrated MAC Frame Format
-/*
-typedef struct {
-    WORD   frame_control;
-    BYTE   seqNumber;
-    WORD   PanId;
-    WORD   destAddr;
-    WORD   srcAddr;
-    BYTE   Payload[120];
-    WORD   footer;
-} TCc2420Frame;
+/* TCc2420Frame/TOpenFrame is define is hal_openframe.h. 
+typedef struct{
+    uint8 	length;
+	uint16 	control;
+	uint8  	seqid;
+	uint16 	panid;
+	uint16  nodeto;
+	uint16 	nodefrom;
+	uint8  	payload[OPF_PAYLOAD_SIZE];
+	uint16  footer;
+}TOpenFrame;
 */
 #define TCc2420Frame TOpenFrame
 
@@ -302,7 +280,7 @@ typedef struct{
   uint8 receivepacket_len;      //最近一次接收到的包的总长度
   uint8 receivepayload_len;     //最近一次接收到的包的payload的长度
   uint8 sendpayload_len;        //最近一次发送的包的payload长度
-  uint8 if_read;                //接收缓冲被读后，变为1， 接收到新信息后，变为0
+  //uint8 if_read;                //接收缓冲被读后，变为1， 接收到新信息后，变为0
 }TCc2420Driver;
 
 

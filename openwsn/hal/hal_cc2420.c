@@ -47,6 +47,7 @@
 #include "hal_cc2420.h"
 #include "hal_led.h"
 #include "hal_uart.h"
+#include "hal_assert.h"
 #include "hal_global.h"
 
 #ifdef CONFIG_DEBUG
@@ -138,7 +139,7 @@ void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 s
 		cc->power = 1;
 		cc->ackrequest = 0;
 		cc->sleeprequest = FALSE;
-		cc->if_read = 1;
+		//cc->if_read = 1;
 	    cc2420_init(cc); 
 	    cc2420_interrupt_init();
 	    break;
@@ -428,7 +429,29 @@ int8 cc2420_write( TCc2420Driver * cc,TCc2420Frame frame, int8 length,uint8 opt)
  */
 uint8 cc2420_rawread( TCc2420Driver * cc, char * frame, uint8 size, uint8 opt )
 {
+	uint8 count;
+	
+	if (cc->rxlen > 0)
+	{
+		IRQDisable();
+		frame[0] = cc->receivepayload_len + 11;	
+		memmove( frame+1, &cc->rxbuffer[0].control,2 );
+		memmove( frame+3, &cc->rxbuffer[0].seqid,1 );	
+		memmove( frame+4, &cc->rxbuffer[0].panid,2 );
+		memmove( frame+6, &cc->rxbuffer[0].nodeto,2 );	
+		memmove( frame+8, &cc->rxbuffer[0].nodefrom,2 );
+		memmove( frame+10, cc->rxbuffer[0].payload,cc->receivepayload_len);
+		//memmove( frame+9 + cc->receivepayload_len, &cc->rxbuffer[0].footer,2 );
+		cc->rxlen = 0;
+		count = min(frame[0], size);
+		IRQEnable();			
+	}
+	else
+		count = 0;
 		
+	return count;
+	
+	/*	
 	if(cc->if_read) return 0;
         
 	IRQDisable();
@@ -446,12 +469,28 @@ uint8 cc2420_rawread( TCc2420Driver * cc, char * frame, uint8 size, uint8 opt )
 	//cc->nextstate = CC_STATE_IDLE;
 	//cc2420_evolve( cc );
 	
-	return cc->receivepayload_len + 11;	
+	return cc->receivepayload_len + 11;
+	*/	
 }
 
-uint8 cc2420_read( TCc2420Driver * cc,TCc2420Frame * frame,uint8 len, uint8 opt)
+uint8 cc2420_read( TCc2420Driver * cc,TCc2420Frame * frame, uint8 capacity, uint8 opt)
 {
+	uint8 count;
 	
+	if (cc->rxlen > 0)
+	{
+		IRQDisable();
+	    count = min( sizeof(TCc2420Frame), capacity ); 
+	    memmove( frame, &(cc->rxbuffer[0]), count );
+	    count = cc->receivepayload_len + 11;
+		cc->rxlen = 0;
+		IRQEnable();			
+	}
+	else
+		count = 0;
+		
+	return count;
+/*	
 	if(cc->if_read) return 0;
         
 	IRQDisable();
@@ -462,7 +501,7 @@ uint8 cc2420_read( TCc2420Driver * cc,TCc2420Frame * frame,uint8 len, uint8 opt)
 	cc->nextstate = CC_STATE_IDLE;
 	//cc2420_evolve( cc );
 	
-	return cc->receivepayload_len + 11;	
+	return cc->receivepayload_len + 11; */	
 }
 
 //应该是bool型的，当ackrequest要求时， 1代表发送成功， 0 代表没受到ack，发送不成功。
@@ -592,8 +631,6 @@ BOOL _cc2420_sendframe(TCc2420Driver * cc) {
 
 } // halRfSendPacket
 
-
-
 /* try to recv a frame from cc2420 driver
  * @return 
  * 	>0 		how many bytes received in the buffer(= should frame length)
@@ -604,13 +641,14 @@ BOOL _cc2420_sendframe(TCc2420Driver * cc) {
 //此函数无需返回接收到的长度，而应该返回一个包。长度存在于cc->receive_len中，cc->receive_len在接收中断中赋值
 TCc2420Frame* _cc2420_recvframe(TCc2420Driver * cc,TCc2420Frame *pRRI) 
 {
-   g_cc2420->if_read = 0;      //clear the if_read flag;
-   
-   cc->rxbuffer[0] = *pRRI;
-   cc->if_read = 0;
-   cc->rssi        = cc->rfSettings.rssi;
-   cc->receivepayload_len = cc->rfSettings.payload_length;
-   cc->receivepacket_len = cc->rfSettings.payload_length + 11;
+   //g_cc2420->if_read = 0;      //clear the if_read flag;
+    // 
+    cc->rxbuffer[0] = *pRRI;
+    //cc->if_read = 0;
+    cc->rssi        = cc->rfSettings.rssi;
+    cc->receivepayload_len = cc->rfSettings.payload_length;
+    cc->receivepacket_len = cc->rfSettings.payload_length + 11;
+    cc->rxlen = cc->receivepayload_len + 11; // @TODO
    
     // Continue using the (one and only) reception structure
     return pRRI;
