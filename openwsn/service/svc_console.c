@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "..\hal\hal_assert.h"
 #include "svc_foundation.h"
 #include "svc_console.h"
 
