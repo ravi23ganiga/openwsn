@@ -96,8 +96,4 @@ typedef void (*VFPTR)(void);
 typedef void (* TInterruptHandler)( void ); 
 typedef int8 (* TEventHandler)( void * data ); 
 
-#ifndef assert
-#define assert(v)  while (v) {NULL;}
-#endif
-
 #endif
