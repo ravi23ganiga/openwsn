@@ -43,7 +43,7 @@
  ****************************************************************************/ 
 
 #define CONFIG_PACKET_API
-#undef  CONFIG_FRAME_API
+//#define CONFIG_FRAME_API
 
 static uint8 tx_frame[128];
 //static uint8 rx_frame[128];            //using CONFIG_FRAME_API
