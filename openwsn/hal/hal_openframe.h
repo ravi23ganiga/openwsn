@@ -103,38 +103,16 @@ void   mac_setshortid( TOpenAddress * addr, uint16 id );
 #define OPF_FRAME_SIZE 0x7E
 #define OPF_PAYLOAD_SIZE (OPF_FRAME_SIZE-8)
 
-
 /* @attention
  * due to the __packed keyword, the source code can only be compiled with 
  * ARM compiler (provided in ADS)
  *
- * _packed is a ARMCC keyword. it indicates the compile arrange the member variables
+ * _packed is a ARMCC keyword. it indicates the compiler arrange the member variables
  * in the following structure byte by byte. you should attention this if you 
  * want to port OpenMAC to other platform and compiles.
  */
- /*
-typedef __packed struct{
-	uint8 	length;
-	uint16 	control;
-	uint8  	seqid;
-	uint16 	panid;
-	uint16 	nodeid;
-	uint8  	payload[OPF_PAYLOAD_SIZE];
-}TOpenFrame;
-*/
-/*
-typedef  struct{
-WORD   frame_control;
-    BYTE   seqNumber;
-    WORD   PanId;
-    WORD   destAddr;
-    WORD   srcAddr;
-    BYTE   Payload[120];
-    WORD   footer;
-}TOpenFrame;
-*/
-typedef  struct{
-        uint8 	length;
+typedef struct{
+    uint8 	length;
 	uint16 	control;
 	uint8  	seqid;
 	uint16 	panid;
@@ -143,7 +121,6 @@ typedef  struct{
 	uint8  	payload[OPF_PAYLOAD_SIZE];
 	uint16  footer;
 }TOpenFrame;
-
 
 TOpenFrame * opf_init( char * buf, uint8 size );
 uint8  opf_type( char * buf );
