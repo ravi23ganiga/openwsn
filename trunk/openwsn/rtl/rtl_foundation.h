@@ -42,7 +42,8 @@
  * 
  ****************************************************************************/ 
 
-#include "..\foundation.h"
+#include "rtl_configall.h"
+//#include "../foundation.h"
 
 /*
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
@@ -150,20 +151,6 @@ void DumpRam( uint8 * vpMem, uint32 vCount );
 //#define Equal(x,y) ((x)==(y))
 */
 
-/*
- * define the BOOL data type. 
- * C language doesn't support bool data type, while the C++ does. The following
- * sections will define the bool data type if the current language is not C++.
- */
-#ifndef __cplusplus
-  #define BOOL int32 
-  #define TRUE 1
-  #define FALSE 0
-  #define bool int8
-  #define true 1
-  #define false 0
-#endif
-
 
 //uint16 GetRandBetween( uint16 vMin, uint16 vMax );
 //uint16 GetRandNum( uint16 vSeed );
@@ -177,8 +164,8 @@ void DumpRam( uint8 * vpMem, uint32 vCount );
 
 
 
-//#define min(a, b)  (((a) < (b)) ? (a) : (b))
-//#define max(a, b)  (((a) > (b)) ? (a) : (b))
+#define min(a, b)  (((a) < (b)) ? (a) : (b))
+#define max(a, b)  (((a) > (b)) ? (a) : (b))
 
 #define bit_set(token,index) (token |= (1<<index))
 #define bit_get(token,index) ((token >> index) & 1)

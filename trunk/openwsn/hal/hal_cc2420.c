@@ -35,43 +35,53 @@
  * fully manipulate the cc2420 hardware through this object.
  * 
  * @modified by zhangwei on 2007-05-14
- * no important modifications. just revision of the source code. 
+ * no important modifications. just revision of the source code.
+ * 
+ * @modified by zhangwei on 20070529
+ * revision on this module. simplified the processing of read and write().
+ * eliminate some un-necessary variables.
+ *  
  *****************************************************************************/
 
+#include "hal_configall.h"
 #include "hal_foundation.h"
 #include "hal_configall.h"
 #include "hal_cpu.h"
+#include "hal_led.h"
+#include "hal_assert.h"
 #include "hal_spi.h"
 #include "hal_cc2420chip.h"
 #include "hal_cc2420rf.h"
 #include "hal_cc2420.h"
-#include "hal_led.h"
 #include "hal_uart.h"
-#include "hal_assert.h"
 #include "hal_global.h"
 
 #ifdef CONFIG_DEBUG
 #define GDEBUG
 #endif
 
-
-
-
 static void cc2420_interrupt_init( void );
-static BOOL _cc2420_sendframe(TCc2420Driver * cc);
-static TCc2420Frame * _cc2420_recvframe( TCc2420Driver * cc,TCc2420Frame *pRRI);
-static void __irq cc2420_interrupt_handler( void );
-//static void cc2420_event_handler( TCc2420Driver * cc );
-static void cc2420_event_handler( void );
+static bool _hardware_sendframe(TCc2420 * cc, bool ackrequest);
+static TCc2420Frame * _hardware_recvframe( TCc2420 * cc,TCc2420Frame *pRRI);
+static void __irq cc2420_interrupt_service( void );
+static void cc2420_interrupt_handler( TCc2420 * cc );
 
 
 /******************************************************************************
- * construct a TCc2420Driver object
+ * construct a TCc2420 object
  * usually, you should always call configure() after construct the object in the 
  * memory.
  * 
+ * this function doesn't interact with the hardware. so it will always be successful.
+ * 
+ * @param
+ * 	buf			memory started address
+ * 	size		memory size allocated for this object. this size must be large
+ * 				or equal to the object size. 
+ * 	spi			TSpiDriver object. the MCU uses this driver to communicate with 
+ * 				"cc2420" hardware chip.
  * example: 
- * 	TCc2420Driver *cc, buf;
+ * 	TCc2420 *cc, buf;
  * 	cc = cc2420_construct( buf, ...);
  * 	cc2420_configure( cc, CC2420_CONFIG_PANID, (void*)&panid );
  * 	cc2420_configure( cc, CC2420_CONFIG_NODEADDRESS, (void*)&nodeaddress );
@@ -80,24 +90,21 @@ static void cc2420_event_handler( void );
  *  cc2420_configure( cc, CC2420_CONFIG_APPLY, NULL );
  * 
  *****************************************************************************/
-TCc2420Driver * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
+TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 {
 	               
-	TCc2420Driver *cc;
+	TCc2420 *cc;
 	char* out_string = "cc2420 construct succesful!\n";
 	
-	//led_on(LED_GREEN);
-	
-	
-	if (sizeof(TCc2420Driver) > size)
+	if (sizeof(TCc2420) > size)
 		cc = NULL;
 	else
-		cc = (TCc2420Driver *)buf;
+		cc = (TCc2420 *)buf;
 	
 	if (cc != NULL)
 	{	
 		
-		memset( (char*)cc, 0x00, sizeof(TCc2420Driver) );
+		memset( (char*)cc, 0x00, sizeof(TCc2420) );
 		cc->state = CC_STATE_POWERDOWN;
 		cc->nextstate = CC_STATE_POWERDOWN;
 		cc->spi = spi;
@@ -114,7 +121,11 @@ TCc2420Driver * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 	return cc;
 }
 
-void cc2420_destroy( TCc2420Driver * cc )
+/******************************************************************************
+ * destroy a TCc2420 object 
+ * release all necessary resouces.
+ *****************************************************************************/ 
+void cc2420_destroy( TCc2420 * cc )
 {
 	if (cc != NULL)
 	{
@@ -124,7 +135,7 @@ void cc2420_destroy( TCc2420Driver * cc )
 	}
 }
 
-void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 size )
+void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 {
 	switch (ctrlcode)
 	{
@@ -161,8 +172,8 @@ void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 s
 		break;
 		
 	case CC2420_CONFIG_CHANNEL:
-	        cc->channel = (uint8)value; 
-		cc2420_setchannel( cc );
+	    cc->channel = (uint8)value; 
+		cc2420_setchannel( cc, value );
 		break;
 		
 	case CC2420_XTAL_SWITCH:
@@ -203,14 +214,19 @@ void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 s
 	}	
 }
 
+/******************************************************************************
+ * cc2420 chip must be initialized successfully before it can be used for sending
+ * or receive
+ * 
+ * Initializes CC2420 for radio communication via the basic RF library functions. 
+ * Turns on the voltage regulator, resets the CC2420, turns on the crystal oscillator, 
+ * writes all necessary registers and protocol addresses (for automatic address 
+ * recognition). Note that the crystal oscillator will remain on (forever).
+ *  
+ *****************************************************************************/
+
 //----------------------------------------------------------------------------
 //  void basicRfInit(BASIC_RF_RX_INFO *pRRI, UINT8 channel, WORD panId, WORD myAddr)
-//
-//  DESCRIPTION:
-//      Initializes CC2420 for radio communication via the basic RF library functions. Turns on the
-//		voltage regulator, resets the CC2420, turns on the crystal oscillator, writes all necessary
-//		registers and protocol addresses (for automatic address recognition). Note that the crystal
-//		oscillator will remain on (forever).
 //
 //  ARGUMENTS:
 //      BASIC_RF_RX_INFO *pRRI
@@ -225,7 +241,7 @@ void cc2420_configure( TCc2420Driver * cc, uint8 ctrlcode, uint16 value, uint8 s
 //			unique 32-bit identifier to avoid addressing conflicts. Normally, in a //802.15.4 network, the
 //			short address will be given to associated nodes by the PAN coordinator.
 //----------------------------------------------------------------------------
-void cc2420_init(TCc2420Driver * cc) 
+void cc2420_init(TCc2420 * cc) 
 {
     uint16 rereg;
 
@@ -248,7 +264,7 @@ void cc2420_init(TCc2420Driver * cc)
     FAST2420_SETREG(cc->spi,CC2420_SECCTRL0, 0x01C4); // Turn off "Security enable"
     
     // Set the RF channel
-    cc2420_setchannel(cc);
+    cc2420_setchannel(cc, cc->channel);
     
     led_twinkle(LED_RED,1);
  
@@ -277,7 +293,7 @@ void cc2420_init(TCc2420Driver * cc)
     cc->rfSettings.myAddr = cc->address;
     cc->rfSettings.seqid = 0;
     cc->rfSettings.receiveOn = FALSE;
-    cc->rfSettings.ackReceived = FALSE;
+    cc->received_ack = FALSE;
     cc->rfSettings.payload_length = 0;
     
     //led_twinkle(LED_GREEN,1);
@@ -302,7 +318,7 @@ void cc2420_init(TCc2420Driver * cc)
  * the open process will also configure the cc2420 transceiver according to 
  * last configurations. the confiugration values are kept in the TCc2420 object.  
  *****************************************************************************/
-void cc2420_open( TCc2420Driver * cc )
+void cc2420_open( TCc2420 * cc )
 {
 }
 
@@ -311,11 +327,11 @@ void cc2420_open( TCc2420Driver * cc )
  * this function will cause the driver and transceiver work in POWERDOWN mode. 
  * you must call open() again to enable read/write()
  *****************************************************************************/
-void cc2420_close( TCc2420Driver * cc ) 
+void cc2420_close( TCc2420 * cc ) 
 {
 }
 
-uint8 cc2420_state( TCc2420Driver * cc )
+uint8 cc2420_state( TCc2420 * cc )
 {
 	return cc->state;
 }
@@ -327,7 +343,7 @@ uint8 cc2420_state( TCc2420Driver * cc )
  * Though this function gives you the ability to check the state of this module, 
  * we hope you do not use this function. 
  */
-uint8 cc2420_ioresult( TCc2420Driver * cc )
+uint8 cc2420_ioresult( TCc2420 * cc )
 {
 	uint8 ioresult = 0x00;
 	
@@ -339,81 +355,90 @@ uint8 cc2420_ioresult( TCc2420Driver * cc )
 	return ioresult;	
 }
 
-
-/*******************************************************************************
+/******************************************************************************
+ * send a frame out. the frame should be arranged well by the master function
+ * 
+ * for data frame
+ * frame = [2B Frame Control] [1B Sequence Number][4 or 20 Address][n Data Payload][2 FCS]
+ * 
+ * generally
+ * address = [2B PAN Id] [2B Destination] [2B Source]
+ *
+ * frame control, sequence num, checksum are feeded by the hardware. so you 
+ * needn't arrange them. 
+ *   
  * @attention
  * 	you must guarantee the internal buffer size is larger than frame length
  * or you may encounter unexpected errors.
- ******************************************************************************/ 
-
-//frame = (2 + 1 + 2 + 2 + 2) + n + (2)
-//framecontrol = 0;无需填写，硬件自动填完；
-//txsequence   = 0;无需填写；
-//PAN ID(2B), destination and source(4B)
-//n payload
-//footer = 0;无需填写；
-
-int8 cc2420_rawwrite( TCc2420Driver * cc, char * frame, int8 length, uint8 opt )
+ *****************************************************************************/ 
+int8 cc2420_rawwrite( TCc2420 * cc, char * frame, int8 len, uint8 opt )
 {
-	BOOL ack;
-	int  len;
+	bool ack;
+	int8 count;
 	
-	len = length;
-	
-	memmove(&cc->txbuffer[0].panid, frame + 4,2 );
-	memmove(&cc->txbuffer[0].nodeto, frame + 6,2 );
-	memmove(&cc->txbuffer[0].nodefrom, frame + 8,2 );
-	memmove(&cc->txbuffer[0].payload, frame + 10, length - 11 );     
-	
-	if((opt & 0x01))  
-		cc->ackrequest = 0;            
-        
-    cc->sendpayload_len = length - 11;
-    if(cc->ackrequest ==1) 
+	if (cc->txlen == 0)
 	{
-	    ack = _cc2420_sendframe(cc);
-	    if(!ack) 
-	       len = -1;
-    }
-    else{
-      	_cc2420_sendframe(cc);
-	}
-
-	cc->nextstate = CC_STATE_IDLE;
-	//cc2420_evolve( cc );
+		count = min( len, 127 );  
+		//memmove( (char*)(cc->txbuffer[0]), frame, count ); 
+		memmove(&cc->txbuffer[0].panid, frame + 4,2 );
+		memmove(&cc->txbuffer[0].nodeto, frame + 6,2 );
+		memmove(&cc->txbuffer[0].nodefrom, frame + 8,2 );
+		memmove(&cc->txbuffer[0].payload, frame + 10, count - 11 );     
 	
-	return len;
+		if((opt & 0x01))  
+			cc->ackrequest = 0;            
+        
+    	cc->sendpayload_len = count - 11;
+    	if(cc->ackrequest ==1) 
+		{
+	    	ack = _hardware_sendframe(cc, true);
+	    	if(!ack) 
+	       		count = -1;
+    	}
+    	else{
+      		_hardware_sendframe(cc, false);
+		}
+		cc->nextstate = CC_STATE_IDLE;
+	}
+	else
+		count = 0;
+
+	//cc2420_evolve( cc );
+	return count;
 }
 
-
-int8 cc2420_write( TCc2420Driver * cc,TCc2420Frame frame, int8 length,uint8 opt)
+int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, int8 len, uint8 opt)
 {
-	BOOL ack;
-	int8 len;
+	bool ack;
+	int8 count;
 	
-	len = length;
-	
-	cc->txbuffer[0] = frame;
-	
-	cc->sendpayload_len = length - 11;
-	
-	if(cc->ackrequest == 1) 
+	if (cc->txlen == 0)
 	{
-	    ack = _cc2420_sendframe(cc);
-	    if(!ack) len = -1;
-   	}
-    else 
-        {
-            _cc2420_sendframe(cc);
+		count = min( len, 127 );  
+		memmove( (char*)(&cc->txbuffer), frame, count ); 
+		cc->sendpayload_len = count - 11;
+		if(cc->ackrequest == 1) 
+		{
+	    	ack = _hardware_sendframe(cc, true);
+	    	if (!ack) 
+	    		count = -1;
+   		}
+    	else{
+            _hardware_sendframe(cc, false);
         }
         
-	cc->nextstate = CC_STATE_IDLE;
+		cc->nextstate = CC_STATE_IDLE;
+	}
+	else
+		count = 0;
+		
 	//cc2420_evolve( cc );
 	
-	return len;	
+	return count;	
 }
 
-/* return the received frame entirely to the frame buffer. 
+/******************************************************************************
+ * return the received frame entirely to the frame buffer. 
  * read data from the driver's internal buffer. the interrupt service routine 
  * is responsible to place the received data into the internal buffer.
  * you can always call this function to check whether there has data in the internal 
@@ -426,8 +451,8 @@ int8 cc2420_write( TCc2420Driver * cc,TCc2420Frame frame, int8 length,uint8 opt)
  * the master program must guarteen the buffer has enough space to hold the whole 
  * frame or else some data may lost!!! the buffer capacity is indicated by 
  * parameter "size".
- */
-uint8 cc2420_rawread( TCc2420Driver * cc, char * frame, uint8 size, uint8 opt )
+ *****************************************************************************/ 
+uint8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 size, uint8 opt )
 {
 	uint8 count;
 	
@@ -473,7 +498,7 @@ uint8 cc2420_rawread( TCc2420Driver * cc, char * frame, uint8 size, uint8 opt )
 	*/	
 }
 
-uint8 cc2420_read( TCc2420Driver * cc,TCc2420Frame * frame, uint8 capacity, uint8 opt)
+uint8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 capacity, uint8 opt)
 {
 	uint8 count;
 	
@@ -517,119 +542,125 @@ uint8 cc2420_read( TCc2420Driver * cc,TCc2420Frame * frame, uint8 capacity, uint
  *	-1		failed sending. for example, not got ACK when ACK required.
  *			generally speaking, this function rarely return -1.
  */
-
-BOOL _cc2420_sendframe(TCc2420Driver * cc) {
-    WORD frameControlField;
+bool _hardware_sendframe( TCc2420 * cc, bool ackrequest ) 
+{
+    WORD framecontrol;
     UINT8 packetLength;
-    BOOL success;
+    bool success;
     BYTE spiStatusByte;
     
-    
-    //uint8 a[4];
-    
-    //a[0] = 0x17;a[1] = 0x50;a[2] = 0x89;
-    
-    //while(1) FAST2420_WRITE_FIFO(cc->spi,a, 3);      
-    
-    
+    // measure the timing using following source code.
+    // for test only. recommend keeping in the source code.
+    // uint8 a[4];
+    // a[0] = 0x17;a[1] = 0x50;a[2] = 0x89;
+    // while(1) FAST2420_WRITE_FIFO(cc->spi,a, 3);      
      
-    // Wait until the transceiver is idle
+    // wait until the transceiver is idle
     while (VALUE_OF_FIFOP() || VALUE_OF_SFD());
 
-    // Flush the TX FIFO just in case...
-    FAST2420_STROBE(cc->spi,CC2420_SFLUSHTX);
+    // flush the TX FIFO just in case...
+    // @TODO: shall we send two SFFLUSHTX or just one here?
+    FAST2420_STROBE( cc->spi, CC2420_SFLUSHTX );
 
-    // Turn on RX if necessary
-    if (!cc->rfSettings.receiveOn) FAST2420_STROBE(cc->spi,CC2420_SRXON);
-
-    // Wait for the RSSI value to become valid
-    do {
-        FAST2420_UPD_STATUS(cc->spi,&spiStatusByte);
-    } while (!(spiStatusByte & BM(CC2420_RSSI_VALID)));
-/*
+    // turn on RX if necessary
+    if (!cc->rfSettings.receiveOn) 
+    {
+    	FAST2420_STROBE( cc->spi,CC2420_SRXON );
+    }
+    
+    // wait for the RSSI value to become valid
+    do{
+        FAST2420_UPD_STATUS( cc->spi,&spiStatusByte );
+    }while (!(spiStatusByte & BM(CC2420_RSSI_VALID)));
+    
+    // @TODO: why comment the following? is halwait(1) enough?
     // TX begins after the CCA check has passed
-    do {
-		FASTSPI_STROBE(CC2420_STXONCCA);
-		FASTSPI_UPD_STATUS(spiStatusByte);
-		halWait(1);
-    } while (!(spiStatusByte & BM(CC2420_TX_ACTIVE)));
-*/   
-    // Write the packet to the TX FIFO (the FCS is appended automatically when AUTOCRC is enabled)
+    // do{
+	//	FASTSPI_STROBE( CC2420_STXONCCA );
+	//	FASTSPI_UPD_STATUS( spiStatusByte );
+	//	halWait(1);
+    // }while (!(spiStatusByte & BM(CC2420_TX_ACTIVE)));
+
+    // write the packet to the TX FIFO (the FCS is appended automatically 
+    // when AUTOCRC is enabled)
   
     //packetLength = pRTI->length + BASIC_RF_PACKET_OVERHEAD_SIZE;
     packetLength = cc->sendpayload_len + BASIC_RF_PACKET_OVERHEAD_SIZE;
-    frameControlField = cc->ackrequest ? BASIC_RF_FCF_ACK : BASIC_RF_FCF_NOACK;
+    framecontrol = ackrequest ? BASIC_RF_FCF_ACK : BASIC_RF_FCF_NOACK;
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&packetLength, 1);               // Packet length
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&frameControlField, 2);         // Frame control field
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&framecontrol, 2);         // Frame control field
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->rfSettings.seqid, 1);    // Sequence number
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].panid, 2);          // Dest. PAN ID
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodeto, 2);            // Dest. address
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodefrom, 2);         // Source address
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].payload, cc->sendpayload_len);  // Payload
 
-	// Wait for the transmission to begin before exiting (makes sure that this function cannot be called
-	// a second time, and thereby cancelling the first transmission (observe the FIFOP + SFD test above).
+	// wait for the transmission to begin before exiting (makes sure that this 
+	// function cannot be called a second time, and thereby cancelling the first 
+	// transmission (observe the FIFOP + SFD test above).
 
- 
-  
-   /*
-   //for test
-   FASTSPI_READ_RAM_LE(returnram,CC2420RAM_TXFIFO,20); 
-   returnram[0] ++;
-   returnram[1] ++;
-   returnram[2] ++;
-   returnram[3] ++;                            //读出ram值，看是否写入
+	// the following code are for testing only. it read out the data just wroten
+	// to the TX FIFO. you can check whether we write FIFO successfully in this
+	// way.
+   	// FASTSPI_READ_RAM_LE( returnram,CC2420RAM_TXFIFO,20 ); 
+   	// returnram[0] ++;
+   	// returnram[1] ++;
+   	// returnram[2] ++;
+   	// returnram[3] ++;                          
    
-   FASTSPI_STROBE(CC2420_SFLUSHTX);
-   halWait(1000);
-   FASTSPI_STROBE(CC2420_SFLUSHTX);
-   halWait(1000);
-   FASTSPI_READ_RAM_LE(returnram,CC2420RAM_TXFIFO,20); 
-   returnram[0] ++;
-   returnram[1] ++;
-   returnram[2] ++;
-   returnram[3] ++;                            //测试flush后ram的值变为多少
+   	// FASTSPI_STROBE(CC2420_SFLUSHTX);
+   	// halWait(1000);
+   	// FASTSPI_STROBE(CC2420_SFLUSHTX);
+   	// halWait(1000);
+   	// FASTSPI_READ_RAM_LE(returnram,CC2420RAM_TXFIFO,20); 
+   	// returnram[0] ++;
+   	// returnram[1] ++;
+   	// returnram[2] ++;
+   	// returnram[3] ++;  //测试flush后ram的值变为多少
    
-   FASTSPI_WRITE_FIFO(returnram,200);
-   FASTSPI_UPD_STATUS(&spiStatusByte);         //测试是否溢出
-   //for test  
-   */
-   
+	// FASTSPI_WRITE_FIFO(returnram,200);
+   	// FASTSPI_UPD_STATUS(&spiStatusByte); //测试是否溢出
      
+    // start sending by sending a STXON command
 	FAST2420_STROBE(cc->spi,CC2420_STXON);
         
-        led_on(LED_YELLOW);
+	led_on(LED_YELLOW);
 	while (!VALUE_OF_SFD());
-	led_on(LED_GREEN);  
+		led_on(LED_GREEN);  
 	
-	
-	
-    // Wait for the acknowledge to be received, if any
-    if (cc->ackrequest) {
-		cc->rfSettings.ackReceived = FALSE;
+	// wait for acknowledgement(ACK) if necessary
+	// @TODO: you'd better judge this by checking control byte in the frame
+    if (ackrequest) 
+    {
+		cc->received_ack = FALSE;
 
-		// Wait for the SFD to go low again
-		while (VALUE_OF_SFD());
+		// wait for the SFD to go low again
+		while (VALUE_OF_SFD()) NULL;
 
-        // We'll enter RX automatically, so just wait until we can be sure that the ack reception should have finished
-        // The timeout consists of a 12-symbol turnaround time, the ack packet duration, and a small margin
+        // we'll enter RX automatically, so just wait until we can be sure that 
+        // the ack reception should have finished. The timeout consists of a 
+        // 12-symbol turnaround time, the ack packet duration, and a small margin
         halWait((12 * BASIC_RF_SYMBOL_DURATION) + (BASIC_RF_ACK_DURATION) + (2 * BASIC_RF_SYMBOL_DURATION) + 100);
 
-		// If an acknowledgment has been received (by the FIFOP interrupt), the ackReceived flag should be set
-		success = cc->rfSettings.ackReceived;
-    } else {
-        success= TRUE;
+		// if an acknowledgment has been received (indicated by the FIFOP 
+		// interrupt), the ackReceived flag should be set. attention that the 
+		// interrupt handler will update this flag. it must be "volatile".
+		success = cc->received_ack;
+    } 
+    else{
+        success = TRUE;
     }
 
-	// Turn off the receiver if it should not continue to be enabled
-   
-	if (!cc->rfSettings.receiveOn) FAST2420_STROBE(cc->spi,CC2420_SRFOFF);
+	// turn off the receiver if it should not continue to be enabled
+	if (!cc->rfSettings.receiveOn)
+	{ 
+		FAST2420_STROBE(cc->spi,CC2420_SRFOFF);
+	}
 
-    // Increment the sequence number, and return the result
+	// no matter success or failed, you should increase the sequence id counter
     cc->rfSettings.seqid++;
     return success;
-
-} // halRfSendPacket
+}
 
 /* try to recv a frame from cc2420 driver
  * @return 
@@ -639,22 +670,19 @@ BOOL _cc2420_sendframe(TCc2420Driver * cc) {
  *			generally speaking, this function rarely return -1.
  */
 //此函数无需返回接收到的长度，而应该返回一个包。长度存在于cc->receive_len中，cc->receive_len在接收中断中赋值
-TCc2420Frame* _cc2420_recvframe(TCc2420Driver * cc,TCc2420Frame *pRRI) 
+TCc2420Frame* _hardware_recvframe(TCc2420 * cc,TCc2420Frame *pRRI) 
 {
-   //g_cc2420->if_read = 0;      //clear the if_read flag;
-    // 
     cc->rxbuffer[0] = *pRRI;
-    //cc->if_read = 0;
     cc->rssi        = cc->rfSettings.rssi;
     cc->receivepayload_len = cc->rfSettings.payload_length;
     cc->receivepacket_len = cc->rfSettings.payload_length + 11;
     cc->rxlen = cc->receivepayload_len + 11; // @TODO
    
-    // Continue using the (one and only) reception structure
+    // continue using the (one and only) reception structure
     return pRRI;
 } 
 
-/* evolve the state machine of "TCc2420Driver".
+/* evolve the state machine of "TCc2420".
  * This evoluation function will be called when the you try to switch the current 
  * state to a new one and when you stay in some long time states. There are four
  * state in the CC driver now:
@@ -675,7 +703,7 @@ TCc2420Frame* _cc2420_recvframe(TCc2420Driver * cc,TCc2420Frame *pRRI)
  * often require low transmission latency and you'd better turn on the transceiver
  * all the time! 
  */
-int8 cc2420_evolve( TCc2420Driver * cc )
+int8 cc2420_evolve( TCc2420 * cc )
 {
 	/* @modified by zhangwei on 20061013
 	 * @TODO
@@ -729,7 +757,7 @@ int8 cc2420_evolve( TCc2420Driver * cc )
 }
  
 
-void cc2420_startup( TCc2420Driver * cc )
+void cc2420_startup( TCc2420 * cc )
 {
 	// @TODO
 	//spi_write
@@ -737,7 +765,7 @@ void cc2420_startup( TCc2420Driver * cc )
 	cc->state = CC_STATE_IDLE;
 }
 
-void cc2420_shutdown( TCc2420Driver * cc )
+void cc2420_shutdown( TCc2420 * cc )
 {
 	// @TODO
 	//spi_write
@@ -745,7 +773,7 @@ void cc2420_shutdown( TCc2420Driver * cc )
 }
 
 
-void cc2420_sleep( TCc2420Driver * cc )
+void cc2420_sleep( TCc2420 * cc )
 {
 	// @TODO
 	//spi_write
@@ -753,19 +781,26 @@ void cc2420_sleep( TCc2420Driver * cc )
 }
 
 // assume the current state is SLEEP state
-void cc2420_wakeup( TCc2420Driver * cc )
+void cc2420_wakeup( TCc2420 * cc )
 {
 	// @TODO
 	//spi_write
 	cc->state = CC_STATE_IDLE;
 }
 
-void cc2420_setchannel( TCc2420Driver * cc)
+/* @attention: 
+ * the valid channel value varies from 11 to 26.
+ * while, the frequvency f = 2405 + 5*(channel - 11) MHz
+ */
+void cc2420_setchannel( TCc2420 * cc, uint8 channel )
 {
 	uint16 f;
-	// Derive frequency programming from the given channel number
-	f = (uint16) (cc->channel - 11); // Subtract the base channel 
-	f = f + (f << 2);    		 // Multiply with 5, which is the channel spacing
+	cc->channel = channel;
+	assert((channel >= 11) && (channel <=26));
+
+	// derive frequency to be programmed from the given channel number
+	f = (uint16) (channel - 11); // subtract the base channel 
+	f = f + (f << 2);    		 // multiply with 5, which is the channel spacing
 	f = f + 357 + 0x4000;		 // 357 is 2405-2048, 0x4000 is LOCK_THR = 1
 	
 	FAST2420_SETREG(cc->spi,CC2420_FSCTRL, f);
@@ -775,33 +810,33 @@ void cc2420_interrupt_init()
 {              		
 	#ifdef CONFIG_TARGET_OPENNODE_10
 	EXTMODE        = 0x08;              
-	EXTPOLAR       = 0x08;                                  //EINT3中断为上升沿触发  
-	VICIntEnClr    = ~(1 << 17);                            // 使能IRQ中断	          	
-	VICIntSelect   = 0x00000000;		                // 设置所有中断分配为IRQ中断
+	EXTPOLAR       = 0x08;                          //EINT3中断为上升沿触发  
+	VICIntEnClr    = ~(1 << 17);                    // 使能IRQ中断	          	
+	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
 	VICVectCntl0   = 0x20 | 17;		                // 分配外部中断3到向量中断0
-	VICVectAddr0   = (uint32)cc2420_interrupt_handler;	// 设置中断服务程序地址
+	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
 	VICIntEnable   = 1 << 17;		                // 使能EINT3中断
 	EXTINT         = 0x08;			                // 清除EINT3中断标志 
 	#endif
 	
 	#ifdef CONFIG_TARGET_OPENNODE_20
 	EXTMODE        = 0x04;              
-	EXTPOLAR       = 0x04;                                  //EINT2中断为上升沿触发     
-	VICIntEnClr    = ~(1 << 16);                            // 使能IRQ中断	       	
-	VICIntSelect   = 0x00000000;		                // 设置所有中断分配为IRQ中断
+	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
+	VICIntEnClr    = ~(1 << 16);                    // 使能IRQ中断	       	
+	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
 	VICVectCntl0   = 0x20 | 16;		                // 分配外部中断2到向量中断0
-	VICVectAddr0   = (uint32)cc2420_interrupt_handler;	// 设置中断服务程序地址
+	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
 	VICIntEnable   = 1 << 16;		                // 使能EINT2中断
 	EXTINT         = 0x04;			                // 清除EINT2中断标志 
 	#endif	
 	
 	#ifdef CONFIG_TARGET_WLSMODEM_11
 	EXTMODE        = 0x04;              
-	EXTPOLAR       = 0x04;                                  //EINT2中断为上升沿触发     
-	VICIntEnClr    = ~(1 << 16);                            // 使能IRQ中断	       	
-	VICIntSelect   = 0x00000000;		                // 设置所有中断分配为IRQ中断
+	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
+	VICIntEnClr    = ~(1 << 16);                    // 使能IRQ中断	       	
+	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
 	VICVectCntl0   = 0x20 | 16;		                // 分配外部中断2到向量中断0
-	VICVectAddr0   = (uint32)cc2420_interrupt_handler;	// 设置中断服务程序地址
+	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
 	VICIntEnable   = 1 << 16;		                // 使能EINT2中断
 	EXTINT         = 0x04;			                // 清除EINT2中断标志 
 	#endif
@@ -814,9 +849,9 @@ void cc2420_interrupt_init()
  * the handler also responses for changing the state of the driver.
  */
 
-void __irq cc2420_interrupt_handler( void )
+void __irq cc2420_interrupt_service( void )
 {
-	cc2420_event_handler();
+	cc2420_interrupt_handler( g_cc2420 );
 
 	#ifdef CONFIG_TARGET_OPENNODE_10
 	EXTINT = 0x08;		
@@ -834,40 +869,33 @@ void __irq cc2420_interrupt_handler( void )
 }
 
 /* this function is called when cc2420 raised an interrupt request 
- * you can change this function according to your wish. 
  * 
  * @parameter
- * 	cc			indicate which "TCc2420Driver" should respond to the interrupt.
+ * 	cc			indicate which "TCc2420" should respond to the interrupt.
+ * 				so that this handler function can be shared by serveral TCc2420
+ * 				object.
  */
- 
-// @modified by zhangwei on 20061109
-// 我还是要求如下函数原型
-// void cc2420_event_handler( TCc2420Driver * cc ) 
-//
-// 应最大限度减少对全局变量维护。难道这有问题吗？
-// 也不会降低性能的。
-
-void cc2420_event_handler()
+void cc2420_interrupt_handler( TCc2420 * cc )
 {
-	WORD frameControlField;
+	WORD framecontrol;
 	UINT8 length;
-	BYTE pFooter[2];
+	BYTE footer[2];
 	uint8 ack;
 	
 	led_toggle(LED_RED);
         
-    // Clean up and exit in case of FIFO overflow, which is indicated by FIFOP = 1 
+    // clean up and exit in case of FIFO overflow, which is indicated by FIFOP = 1 
     // and FIFO = 0
 	if ((VALUE_OF_FIFOP()) && (!(VALUE_OF_FIFO()))) 
 	{	   
-	    FAST2420_STROBE(g_cc2420->spi,CC2420_SFLUSHRX);
-	    FAST2420_STROBE(g_cc2420->spi,CC2420_SFLUSHRX);
+	    FAST2420_STROBE(cc->spi,CC2420_SFLUSHRX);
+	    FAST2420_STROBE(cc->spi,CC2420_SFLUSHRX);
 	    return;
 	}
 
-	// get the length from cc2420
-	FAST2420_READ_FIFO_BYTE(g_cc2420->spi,&length);
-	g_cc2420->receivepacket_len = length;
+	// get the length(the first byte) from cc2420
+	FAST2420_READ_FIFO_BYTE(cc->spi,&length);
+	cc->receivepacket_len = length;
 	
 	// ignore MSB
 	length &= BASIC_RF_LENGTH_MASK; 
@@ -876,74 +904,80 @@ void cc2420_event_handler()
     // otherwise, if the length is valid, then proceed with the rest of the packet
     if (length < BASIC_RF_ACK_PACKET_SIZE) 
     {
-    	FAST2420_READ_FIFO_GARBAGE(g_cc2420->spi,length);
+    	FAST2420_READ_FIFO_GARBAGE(cc->spi,length);
     } 
     else{
-        // Register the payload length
-        g_cc2420->rfSettings.payload_length = length - BASIC_RF_PACKET_OVERHEAD_SIZE;
+        // register the payload length
+        cc->rfSettings.payload_length = length - BASIC_RF_PACKET_OVERHEAD_SIZE;
         
-        // Read the frame control field and the data sequence number
-        FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &frameControlField, 2);
-        g_cc2420->rfSettings.pRxInfo.control = frameControlField;
-        ack = !!(frameControlField & BASIC_RF_FCF_ACK_BM);
-    	FAST2420_READ_FIFO_BYTE(g_cc2420->spi,(BYTE*)&g_cc2420->rfSettings.pRxInfo.seqid);
-		// Is this an acknowledgment packet?
-    	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (frameControlField == BASIC_RF_ACK_FCF) 
-    		&& (g_cc2420->rfSettings.pRxInfo.seqid == g_cc2420->rfSettings.seqid)) 
+        // read the frame control field
+        FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &framecontrol, 2);
+        cc->rfSettings.pRxInfo.control = framecontrol;
+        ack = !!(framecontrol & BASIC_RF_FCF_ACK_BM); // @TODO is it right? double !!?
+        
+        // read the sequence num in the frame received
+        // @TODO: why not FAST2420_READ_FIFO_NO_WAIT? what's the difference?
+    	FAST2420_READ_FIFO_BYTE(cc->spi,(BYTE*)&cc->rfSettings.pRxInfo.seqid);
+    	
+		// if this is an acknowledgment packet, compare the sequence id received 
+		// and saved after last sending
+    	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (framecontrol == BASIC_RF_ACK_FCF) 
+    		&& (cc->rfSettings.pRxInfo.seqid == cc->rfSettings.seqid)) 
     	{
- 	       	// Read the footer and check for CRC OK
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) pFooter, 2);
-			// Indicate the successful ack reception (this flag is polled by the transmission routine)
-			if (pFooter[1] & BASIC_RF_CRC_OK_BM) 
-				g_cc2420->rfSettings.ackReceived = TRUE;
-		// Too small to be a valid packet?
+ 	       	// read the footer and check for CRC OK
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) footer, 2);
+			// indicate the successful ack reception (this flag is polled by the transmission routine)
+			if (footer[1] & BASIC_RF_CRC_OK_BM) 
+				cc->received_ack = TRUE;
 		} 
+		// if the frame is too small to be a valid packet, the simply discard it
 		else if (length < BASIC_RF_PACKET_OVERHEAD_SIZE) 
 		{
-			FAST2420_READ_FIFO_GARBAGE(g_cc2420->spi,length - 3);
+			FAST2420_READ_FIFO_GARBAGE(cc->spi,length - 3);
 			return;
-		// Receive the rest of the packet
 		}
+		// generally, a valid data frame now
 		else{
-			// Skip the destination PAN and address (that's taken care of by harware address recognition!)
-			//FAST2420_READ_FIFO_GARBAGE(g_cc2420->spi,4);
+			// skip the destination PAN and address (that's taken care of by harware address recognition!)
+			// FAST2420_READ_FIFO_GARBAGE(cc->spi,4);
 			
-			//Read the PanID
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->rfSettings.pRxInfo.panid, 2);
+			// read the PanID
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->rfSettings.pRxInfo.panid, 2);
 			
-			//Read the destination address(local address)
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->rfSettings.pRxInfo.nodeto, 2);
+			// read the destination address(local address)
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->rfSettings.pRxInfo.nodeto, 2);
 
-			// Read the source address
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) &g_cc2420->rfSettings.pRxInfo.nodefrom, 2);
+			// read the source address
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->rfSettings.pRxInfo.nodefrom, 2);
 
-			// Read the packet payload
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) g_cc2420->rfSettings.pRxInfo.payload, g_cc2420->rfSettings.payload_length);
+			// read the packet payload
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) cc->rfSettings.pRxInfo.payload, cc->rfSettings.payload_length);
 
-			// Read the footer to get the RSSI value
-			FAST2420_READ_FIFO_NO_WAIT(g_cc2420->spi,(BYTE*) pFooter, 2);
-			g_cc2420->rfSettings.pRxInfo.footer = (pFooter[1] << 8) + pFooter[0];
-			g_cc2420->rfSettings.rssi = pFooter[0];
+			// read the footer to get the RSSI value
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) footer, 2);
+			cc->rfSettings.pRxInfo.footer = (footer[1] << 8) + footer[0];
+			cc->rfSettings.rssi = footer[0];
 
-			// Notify the application about the received _data_ packet if the CRC is OK
-			if (((frameControlField & (BASIC_RF_FCF_BM)) == BASIC_RF_FCF_NOACK) 
-				&& (pFooter[1] & BASIC_RF_CRC_OK_BM)) 
+			// notify the application about the received _data_ packet if the CRC is OK
+			if (((framecontrol & (BASIC_RF_FCF_BM)) == BASIC_RF_FCF_NOACK) 
+				&& (footer[1] & BASIC_RF_CRC_OK_BM)) 
 			{
-				 g_cc2420->rfSettings.pRxInfo = *(_cc2420_recvframe(g_cc2420,(TCc2420Frame *)(&g_cc2420->rfSettings.pRxInfo)));
+				 _hardware_recvframe(cc,(TCc2420Frame *)(&cc->rfSettings.pRxInfo));
+				 //cc->rfSettings.pRxInfo = *(_hardware_recvframe(cc,(TCc2420Frame *)(&cc->rfSettings.pRxInfo)));
 			}
 		}
     }
 }
 
 
-void cc2420_receive_on(TCc2420Driver * cc) 
+void cc2420_receive_on(TCc2420 * cc) 
 {
 	cc->rfSettings.receiveOn = TRUE;
 	FAST2420_STROBE(cc->spi,CC2420_SRXON);
 	FAST2420_STROBE(cc->spi,CC2420_SFLUSHRX);
 } 
 
-void cc2420_receive_off(TCc2420Driver * cc) 
+void cc2420_receive_off(TCc2420 * cc) 
 {
 	cc->rfSettings.receiveOn = FALSE;
 	FAST2420_STROBE(cc->spi,CC2420_SRFOFF);
@@ -954,15 +988,14 @@ void cc2420_receive_off(TCc2420Driver * cc)
  */
 void cc2420_waitfor_crystal_oscillator(TSpiDriver * spi) 
 {
-	static BYTE spiStatusByte;
+	static BYTE status;
 
-	do {	   
-		FAST2420_UPD_STATUS(spi, (uint8*)(&spiStatusByte) );
-	} while (!(spiStatusByte & BM(CC2420_XOSC16M_STABLE)));
+	do{	   
+		FAST2420_UPD_STATUS(spi, (uint8*)(&status) );
+	}while (!(status & BM(CC2420_XOSC16M_STABLE)));
 }
 
-
-void cc2420_set_power(TCc2420Driver * cc,uint8 power)
+void cc2420_set_power(TCc2420 * cc,uint8 power)
 {
     uint16 power_register;
     
@@ -979,5 +1012,6 @@ void cc2420_set_power(TCc2420Driver * cc,uint8 power)
         default :             power_register = 0xa0ff; break;
     }
     
-    FAST2420_SETREG(cc->spi,CC2420_TXCTRL, power_register);     //cc2420 datasheet page 52 value-dbm table
+    //refer to cc2420 datasheet page 52 value-dbm table
+    FAST2420_SETREG(cc->spi,CC2420_TXCTRL, power_register);     
 }

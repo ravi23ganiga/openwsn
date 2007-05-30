@@ -207,7 +207,7 @@ int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * c
     	    {
     	        led_twinkle(LED_RED,1);
     	        led_toggle(LED_GREEN);
-    	        length = cc2420_write( cc,location_tx_packet,2+11,0);
+    	        length = cc2420_write( cc, &(location_tx_packet),2+11,0);
     	        if(length != -1) break;
     	    }
     	    
@@ -262,7 +262,7 @@ int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * c
     	    while(1)
     	    {
     	        led_twinkle(LED_RED,2);
-    	        length = cc2420_write( cc,location_tx_packet,2+11,0);
+    	        length = cc2420_write( cc, &(location_tx_packet), 2+11,0);
     	        if(length != -1) break;
     	    }
     	    
@@ -316,7 +316,7 @@ int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * c
     	    while(1)
     	    {
     	    	led_twinkle(LED_RED,3);
-    	        length = cc2420_write( cc,location_tx_packet,2+11,0);
+    	        length = cc2420_write( cc, &(location_tx_packet), 2+11,0);
     	        if(length != -1) break;
     	    }
     	    while(1) 
@@ -402,7 +402,7 @@ int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * c
     	        {
     	            
     	            led_twinkle(LED_YELLOW,1);	
-    	            length = cc2420_write( cc,location_tx_packet,2+11,0);
+    	            length = cc2420_write( cc, &(location_tx_packet), 2+11,0);
     	            if(length != -1) break;
     	        }
     	   } 	

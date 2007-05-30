@@ -46,10 +46,11 @@
  * 
  ****************************************************************************/ 
 
+#include "rtl_configall.h" 
 #include "rtl_foundation.h"
 
 #define BXML_PROPERTY_TOTAL_LENGTH 0
-#define BXML_PROPERTY_
+#define BXML_PROPERTY_XXXX
 
 typedef struct{
   char * buf;
