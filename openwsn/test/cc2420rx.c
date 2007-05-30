@@ -32,7 +32,7 @@
 #include "config.h"
 #include "..\hal\hal.h"
 #include "..\service\svc_debugio.h"
-
+#include "..\global.h"
 
 #define CONFIG_PACKET_API
 //#define CONFIG_FRAME_API
@@ -45,7 +45,6 @@ static TCc2420Frame rx_test;           //using CONFIG_PACKET_API
 
 int cc2420rx_test (void)
 {
-    ///*     Fof RF test	
     UINT8 n;
     int8 length;
     uint16 temp;
@@ -84,47 +83,48 @@ int cc2420rx_test (void)
     IRQEnable(); 
    
     ledPeriod = 1;
-        while (TRUE) 
+    while (TRUE) 
 	{ 
+	    // test section one
+	    // try receive frame using the frame-based API cc_read  
+        #ifdef CONFIG_PACKET_API
+        led_twinkle(LED_GREEN,ledPeriod);
+	  
+        length = cc2420_read( g_cc2420,&rx_test,0,0);
+	  
+	    if(length > 11) 
+	    {
+	        ledPeriod = rx_test.payload[0];
+            temp = g_cc2420-> rssi;
+	  
+			uart_write( g_uart, out_string, 20,0  );
+	  		if ((temp / 100) > 0) 
+	  			uart_putchar(g_uart,(char)(temp / 100 + 48));
+	  		
+	  		temp = temp % 100;
+	  		if ((temp / 10) > 0) 
+	  			uart_putchar(g_uart,(char)(temp / 10 + 48));
+	  		temp = temp % 10;
+	  		
+	  		uart_putchar(g_uart,(char)(temp + 48));
+	  		uart_putchar(g_uart,*enter);
+	  	}
+	  	#endif
 	  
 	  
-	  //receive using packet
-      #ifdef CONFIG_PACKET_API
-	  led_twinkle(LED_GREEN,ledPeriod);
-	  
-      length = cc2420_read( g_cc2420,&rx_test,0,0);
-	  
-	  if(length > 11) {
-	  ledPeriod = rx_test.payload[0];
-	  
-	  temp = g_cc2420-> rssi;
-	  
-	  uart_write( g_uart, out_string, 20,0  );
-	  if((temp / 100) > 0) uart_putchar(g_uart,(char)(temp / 100 + 48));
-	  temp = temp % 100;
-	  if((temp / 10) > 0) uart_putchar(g_uart,(char)(temp / 10 + 48));
-	  temp = temp % 10;
-	  uart_putchar(g_uart,(char)(temp + 48));
-	  uart_putchar(g_uart,*enter);
-	  }
-	  #endif
-	  //////////////////////////////////////////////////////////////
-	  
-	  
-	  //receive using char streams
-      #ifdef CONFIG_FRAME_API
-	  led_twinkle(LED_GREEN,ledPeriod);
-
-	  //length = cc2420_rawread( g_cc2420,(char *)rx_frame, 0,0 );
-	  
-	  if(length > 11) {
-	  ledPeriod = rx_frame[10];
-	  uart_write( g_uart, (char *)rx_frame, length ,0  );
-	  }
-	 #endif
-	  //////////////////////////////////////////////////////////////
-        }
-       global_destroy();
+	  	// test section two
+	  	// try receive using stream based API cc_rawread
+		#ifdef CONFIG_FRAME_API
+	  	led_twinkle(LED_GREEN,ledPeriod);
+    	length = cc2420_rawread( g_cc2420,(char *)rx_frame, sizeof(rx_frame),0 );
+	  	if (length > 11) 
+	  	{
+	  		ledPeriod = rx_frame[10];
+	  		uart_write( g_uart, (char *)rx_frame, length ,0  );
+	  	}
+	 	#endif
+	}
+    global_destroy();
 
 	return 0;															
 }

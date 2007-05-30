@@ -27,6 +27,7 @@
 * this file might be covered by the GNU General Public License.
 * 
 ****************************************************************************/ 
+
 /*******************************************************************************
  * @author zhangwei on 20060813
  * TSioComm
@@ -49,7 +50,9 @@
  * problem: shall i keep the length byte of the frame in the buffer?
  ******************************************************************************/
 
+#include "svc_configall.h"
 #include "..\hal\hal_foundation.h"
+#include <../hal/hal_assert.h>
 #include "..\hal\hal_uart.h"
 #include "..\hal\hal_assert.h"
 #include "svc_foundation.h"

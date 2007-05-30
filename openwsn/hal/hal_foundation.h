@@ -44,13 +44,9 @@
  * 		pointer types. they are often used when setting callback functions.
  ******************************************************************************/
 
-#include <string.h>
-#include "..\foundation.h" 
 #include "hal_configall.h"
-
-typedef unsigned char		BOOL;
-
-//#define BOOL unsigned char;
+#include <string.h>
+//#include "..\foundation.h" 
 
 #define BYTE uint8
 #define WORD uint16
@@ -67,15 +63,6 @@ typedef unsigned char		BOOL;
 #define INT32 int32
 #define INT64 int64
 
-#ifndef FALSE
-	#define FALSE 0
-#endif
-#ifndef TRUE
-	#define TRUE 1
-#endif
-#ifndef NULL
-	#define NULL 0
-#endif
 
 // Useful stuff
 #define BM(n) (1 << (n))

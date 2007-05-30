@@ -118,7 +118,7 @@ int rssi_test (void)
           
           led_twinkle(LED_GREEN,1);
           
-          length = cc2420_write(g_cc2420,tx_test,10 + 11,0);
+          length = cc2420_write(g_cc2420, &(tx_test),10 + 11,0);
           
           /*
           if(length == -1) {led_twinkle(LED_RED,5);uart_putchar(g_uart,(char)0x00);}

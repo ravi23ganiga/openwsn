@@ -1,7 +1,7 @@
 #ifndef _CONFIGALL_H_4237_
 #define _CONFIGALL_H_4237_
 
-/*******************************************************************************
+/******************************************************************************
  * @author zhangwei on 2006-07-20
  * this is the configure file of the whole project
  * you can #define or #undef the macros in this file to enable/disable some 
@@ -21,9 +21,9 @@
  * @modified by zhangwei on 20060510
  * replace TARGET_XXX with CONFIG_TARGET_XXX
  * 
- ******************************************************************************/
+ *****************************************************************************/
 
-/*******************************************************************************
+/******************************************************************************
  * @attention
  *                  IMPORTANT ISSUE ON HOW TO USE THIS FILE
  *
@@ -33,11 +33,11 @@
  * 
  * NOT to use "//" to comment these macros. because future developes may think 
  * they are really comments and deleted them! 
- ******************************************************************************/
+ *****************************************************************************/
 
-/*******************************************************************************
+/******************************************************************************
  * User Changable Configurations
- ******************************************************************************/
+ *****************************************************************************/
  
 #define FOR_2420_TEST 
  
@@ -130,6 +130,36 @@
 #ifdef CONFIG_DEBUG
 #define GDEBUG
 #endif
+
+
+#ifndef NULL
+  #define NULL 0
+#endif
+
+#ifndef __cplusplus
+  #define bool char
+  #define true  1
+  #define false 0
+  #define BOOL bool
+  #define TRUE 1
+  #define FALSE 0
+#else
+  #define BOOL char
+  #define TRUE 1
+  #define FALSE 0
+#endif  
+
+typedef signed char 	int8;
+typedef signed short 	int16;
+typedef signed int 		int32;
+typedef long long 		int64;
+typedef unsigned char 	uint8;
+typedef unsigned short 	uint16;
+typedef unsigned long 	uint32;
+typedef unsigned long long uint64;
+typedef unsigned char 	boolean;
+typedef float          	fp32;             /* single precision floating point variable (32bits) 单精度浮点数（32位长度） */
+typedef double         	fp64;             /* double precision floating point variable (64bits) 双精度浮点数（64位长度） */
 
 
 #endif

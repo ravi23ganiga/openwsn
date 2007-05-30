@@ -1,11 +1,11 @@
 
+#include "svc_configall.h"
 #include <string.h>
-#include "..\foundation.h"
-#include <..\hal\hal_foundation.h>
-#include <..\hal\hal_cpu.h>
-#include <..\hal\hal_flash.h>
-#include <..\hal\hal_uart.h>
-#include "..\hal\hal_assert.h"
+#include <../hal/hal_foundation.h>
+#include <../hal/hal_cpu.h>
+#include <../hal/hal_flash.h>
+#include <../hal/hal_uart.h>
+#include <../hal/hal_assert.h>
 #include "svc_foundation.h"
 #include "svc_configure.h"
 

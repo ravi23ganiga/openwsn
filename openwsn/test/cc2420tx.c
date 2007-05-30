@@ -34,6 +34,8 @@
 #include "..\global.h"
 
 /*****************************************************************************
+ * this test demostrate how to send a frame using TCc2420 object 
+ *
  * @author MaKun on 2007-04-18
  * test sending/TX function of cc2420 driver
  *
@@ -45,19 +47,13 @@
 #define CONFIG_PACKET_API
 //#define CONFIG_FRAME_API
 
-static uint8 tx_frame[128];
-//static uint8 rx_frame[128];            //using CONFIG_FRAME_API
-
-static TCc2420Frame tx_test;
-//static TCc2420Frame rx_test;           //using CONFIG_PACKET_API
+static uint8 tx_frame[128];				//using CONFIG_FRAME_API
+static TCc2420Frame tx_test;			//using CONFIG_PACKET_API
 
 int cc2420tx_test (void)
 {
-    ///*     Fof RF test	
     uint8 n;
     int8 length;
-    uint16 temp;
-    uint8 ledPeriod;
     //char * out_string = "the rssi value is : ";
     //char * enter      = "\n";
   
@@ -92,7 +88,9 @@ int cc2420tx_test (void)
     
 	while (TRUE) 
 	{    
+	    // test section one: 
 		// transmit using TOpenFrame based interface: cc_write
+		//
         #ifdef CONFIG_PACKET_API
         tx_test.payload[0]++;
         if (tx_test.payload[0] == 5)
@@ -101,7 +99,7 @@ int cc2420tx_test (void)
         } 
         
         led_twinkle( LED_GREEN, 1 );
-        length = cc2420_write( g_cc2420, tx_test, 10+11, 0 );
+        length = cc2420_write( g_cc2420, &(tx_test), 10+11, 0 );
           
         /*
         if (length == -1) 
@@ -117,10 +115,12 @@ int cc2420tx_test (void)
 		halWait(2000);
 		#endif
 	  
+	    // test section two: 
 		// transmit using char buffer based interface
 		// @modified by zhangwei on 20070418
 		// huanghuan seems test the following section. i cannot guartantee whether 
 		// the next char buffer based interface can work properly.
+		//
 		#ifdef CONFIG_FRAME_API         
         tx_frame[10]++;
         if (tx_frame[10] = 5) 

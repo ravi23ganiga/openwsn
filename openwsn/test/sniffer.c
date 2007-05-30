@@ -53,7 +53,6 @@ void sniffer_run( void )
 	TSioComm sio;
 	char * out_string = "the rssi value is : ";
 	
-	
     target_init();
     global_construct();
     spi_configure( g_spi );

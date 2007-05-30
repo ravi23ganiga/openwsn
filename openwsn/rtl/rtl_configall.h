@@ -42,6 +42,8 @@
  * 
  ****************************************************************************/ 
 
+#include "../configall.h"
+
 #define RTL_DEBUG
 #define USER_DEBUG
 

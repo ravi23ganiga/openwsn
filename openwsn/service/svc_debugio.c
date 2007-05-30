@@ -28,10 +28,12 @@
  * 
  ****************************************************************************/ 
 
-#include "svc_foundation.h"
+#include "svc_configall.h"
 #include <string.h>
-#include "..\hal\hal_cpu.h"
-#include "..\hal\hal_global.h"
+#include "../hal/hal_cpu.h"
+#include "../hal/hal_global.h"
+#include <../hal/hal_assert.h>
+//#include "svc_foundation.h"
 #include "svc_debugio.h"
 
 /*****************************************************************************
@@ -88,14 +90,19 @@ void debug_evolve( TDebugIo * db )
 	if (db->datalen > 0)
 	{
 		//hal_enter_critical();
-		count = uart_write( db->uart, &(db->buf[0]), db->datalen, 0 );	
-		db->datalen -= count;
-		buf = (char *)(&(db->buf[0]));
-		memmove( buf, buf + count, db->datalen );
+		count = uart_write( db->uart, &(db->buf[0]), db->datalen, 0 );
+		if (db->datalen >= count)
+			db->datalen -= count;
+		else
+			db->datalen = 0;
+		
+		if (count > 0)
+		{
+			buf = (char *)(&(db->buf[0]));
+			memmove( buf, buf + count, db->datalen );
+		}
 		//hal_leave_critical();
 	}
-	//else 
-	//	db->datalen = 0;
 }
 
 uint16 debug_write( TDebugIo * db, char * buf, uint16 size )
@@ -106,13 +113,9 @@ uint16 debug_write( TDebugIo * db, char * buf, uint16 size )
     //hal_enter_critical();
 	
 	i = CONFIG_DEBUGIO_BUFFER_CAPACITY - db->datalen;
-	copied = min(i, size);
+	assert( i <= CONFIG_DEBUGIO_BUFFER_CAPACITY ); 
 
-	if (copied > CONFIG_DEBUGIO_BUFFER_CAPACITY)	
-	{
-	    // assert( false );
-	    // uart_write( g_uart, "ffffffffff", 10, 0 );
-	}
+	copied = min(i, size);
 	if (copied > 0)
 	{
 		//memmove( &(db->buf[0] )+ db->datalen, buf, copied );
@@ -121,7 +124,6 @@ uint16 debug_write( TDebugIo * db, char * buf, uint16 size )
 		   db->buf[i+db->datalen] = buf[i];
 		}
 		db->datalen += copied;
-		///uart_write(g_uart, "uartecho run22.", 15, 0 );
 	}
 	//hal_leave_critical();
 	
