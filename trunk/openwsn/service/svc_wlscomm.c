@@ -27,9 +27,9 @@
 * this file might be covered by the GNU General Public License.
 * 
 ****************************************************************************/ 
-#include "hal_foundation.h"
-#include "hal_cc2420.h"
+#include "svc_configall.h"
 #include "svc_foundation.h"
+#include <../hal/hal_cc2420.h>
 #include "svc_wlscomm.h"
 
 /*
@@ -108,7 +108,7 @@ void wls_destroy( TWirelessComm * wls )
 		if (wls->waitack_action != ACTSCHE_INVALID_ACTION_ID)
 			acts_cancelaction( wls->actsche, wls->waitack_action );	
 			
-		cc2420_shutdown( wls->rfdriver );
+		//cc2420_shutdown( wls->rfdriver );
 		wls->txlen = 0;
 		//wls->txindex = 0;
 		wls->rxlen = 0;
@@ -507,7 +507,7 @@ int8 wls_evolve( TWirelessComm * wls )
 			}
 			else if (wls->nextstate == WLS_STATE_SLEEP)
 			{
-				cc2420_sleep( wls->rfdriver );
+				//cc2420_sleep( wls->rfdriver );
 				wls->state = WLS_STATE_SLEEP;
 			}
 			else{

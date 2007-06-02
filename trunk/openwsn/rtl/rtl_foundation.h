@@ -43,25 +43,17 @@
  ****************************************************************************/ 
 
 #include "rtl_configall.h"
-//#include "../foundation.h"
 
-/*
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <windows.h>
-
-#include "vos/vos.h"
-#include "tk_configall.h"
-*/
-
-/*******************************************************************
-*/
-
-
+/*****************************************************************************
+ * @name rtl_foundation.h
+ * @author zhangwei on 20070331
+ * 
+ * system wide definitions for runtime library (RTL)
+ * 
+ * @history
+ * @modified by xxx on 200704
+ * 
+ ****************************************************************************/ 
 
 #define STEP_CHECK(cond,retvar,retvalue) \
 	if ((retvar >= 0) && (cond)) retvar = retvalue;

@@ -83,4 +83,6 @@ typedef void (*VFPTR)(void);
 typedef void (* TInterruptHandler)( void ); 
 typedef int8 (* TEventHandler)( void * data ); 
 
+#include <string.h>
+
 #endif

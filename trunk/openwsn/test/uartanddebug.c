@@ -1,4 +1,4 @@
-
+#include <../configall.h>
 #include "..\foundation.h"
 #include "..\global.h"
 #include "uartecho.h"

@@ -1,5 +1,4 @@
 
-#include <string.h>
 #include "..\foundation.h"
 #include "..\global.h"
 #include "simplerouter.h"

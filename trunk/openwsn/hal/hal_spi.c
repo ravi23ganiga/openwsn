@@ -152,6 +152,7 @@ void spi_open( TSpiDriver * spi, uint8 devid )
               
     // the delay is to construct enough setup time of csn
     // attention the delay time not to be optimized to 0 
+    // @TODO
 	#pragma optimize=none
     while(i < 500) 
     	i++;    
