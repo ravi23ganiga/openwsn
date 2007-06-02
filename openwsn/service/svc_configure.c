@@ -1,6 +1,5 @@
 
 #include "svc_configall.h"
-#include <string.h>
 #include <../hal/hal_foundation.h>
 #include <../hal/hal_cpu.h>
 #include <../hal/hal_flash.h>

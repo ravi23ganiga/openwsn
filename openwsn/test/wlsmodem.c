@@ -13,16 +13,16 @@
 // the frame destination by allowing it to change the frame header.
 //----------------------------------------------------------------------------
 
-#include <string.h>
-#include "..\foundation.h"
-#include "..\hal\hal_foundation.h"
-#include "..\hal\hal_key.h"
-#include "..\service\svc_foundation.h"
-#include "..\service\svc_siocomm.h"
-#include "..\service\svc_wlscomm.h"
-#include "..\service\svc_debugio.h"
-#include "..\service\svc_configure.h"
-#include "..\global.h"
+#include <../configall.h>
+#include <../foundation.h>
+#include <../hal/hal_foundation.h>
+#include <../hal/hal_key.h>
+#include <../service/svc_foundation.h>
+#include <../service/svc_siocomm.h>
+#include <../service/svc_wlscomm.h>
+#include <../service/svc_debugio.h>
+#include <../service/svc_configure.h>
+#include <../global.h>
 #include "wlsmodem.h"
 
 #define MODEM_BUFFER_SIZE (CONFIG_MAX_UART_FRAME_LENGTH * 2)

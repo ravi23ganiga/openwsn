@@ -2,7 +2,7 @@
 #include "config.h"
 #include "..\hal\hal.h"
 #include "start.h"
-#include "..\hal\hal_cc2420rf.h"
+#include "..\hal\hal_cc2420base.h"
 
 #define MCP6S26_TEST
 //#define VIBRATION_TEST

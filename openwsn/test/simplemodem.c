@@ -3,9 +3,8 @@
 // @note simpelmodem V 1.0
 //----------------------------------------------------------------------------
 
-#include <string.h>
-#include "..\foundation.h"
-#include "..\hal\hal_foundation.h"
+#include <../configall.h>
+#include "../foundation.h"
 #include "..\hal\hal_key.h"
 #include "..\service\svc_foundation.h"
 #include "..\service\svc_siocomm.h"

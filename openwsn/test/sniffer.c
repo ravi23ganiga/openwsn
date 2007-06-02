@@ -28,10 +28,10 @@
  * 
  ****************************************************************************/ 
 
-#include "..\foundation.h"
-#include "..\hal\hal_cc2420.h"
-#include "..\service\svc_debugio.h"
-#include "..\global.h"
+#include "../foundation.h"
+#include "../hal/hal_cc2420.h"
+#include "../service/svc_debugio.h"
+#include "../global.h"
 #include "sniffer.h"
 
 /*****************************************************************************
@@ -51,7 +51,7 @@ void sniffer_run( void )
 	char * buf;
 	uint8 rxlen, count;
 	TSioComm sio;
-	char * out_string = "the rssi value is : ";
+	char * msg = "sniffer is running...";
 	
     target_init();
     global_construct();
@@ -71,11 +71,11 @@ void sniffer_run( void )
 	//FAST2420_SETREG(spi,CC2420_MDMCTRL0,0x02E2) ;
 
 
-      cc2420_configure( g_cc2420, CC2420_CONFIG_SNIFFER_MODE, 0, 0);
+    cc2420_configure( g_cc2420, CC2420_CONFIG_SNIFFER_MODE, 0, 0);
 	
-	 sio_construct( (char*)&sio, sizeof(TSioComm), g_uart, 0x00 );
-	 sio_configure( &sio, NULL, 0x00, 27 );
-	
+	sio_construct( (char*)&sio, sizeof(TSioComm), g_uart, 0x00 );
+	sio_configure( &sio, NULL, 0x00, 27 );
+    sio_write( &sio, msg, strlen(msg)+1, 0x00 );
 
 	//cc2420_relation( g_spi0 );
 	memset( (char*)(&rxbuf[0]), 0x00, MAX_BUFFER_SIZE ); 

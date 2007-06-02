@@ -46,7 +46,6 @@
 //----------------------------------------------------------------------------
 
 #include "hal_configall.h"
-#include <string.h> 
 #include "hal_foundation.h"
 #include "hal_global.h"
 #include "hal_led.h"

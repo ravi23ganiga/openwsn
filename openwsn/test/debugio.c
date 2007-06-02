@@ -1,8 +1,7 @@
-
-#include <string.h>
-#include "..\foundation.h"
-#include "..\global.h"
-#include "..\service\svc_debugio.h"
+#include <../configall.h>
+#include <../foundation.h>
+#include <../global.h>
+#include <../service/svc_debugio.h>
 #include "debugio.h"
 
 void debugio_test( void )

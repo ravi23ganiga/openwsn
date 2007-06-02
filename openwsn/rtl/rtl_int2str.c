@@ -28,6 +28,8 @@
  * 
  ****************************************************************************/ 
 
+#include "rtl_configall.h"
+#include "rtl_foundation.h"
 #include "rtl_int2str.h"
 
 //#define _isnumber(ch) ((ch)>='0' && (ch)<='9')

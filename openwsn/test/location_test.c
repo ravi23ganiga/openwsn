@@ -2,7 +2,7 @@
 #include "config.h"
 #include "..\hal\hal_led.h"
 #include "..\hal\hal_cc2420.h"
-#include "..\hal\hal_cc2420rf.h"
+#include "..\hal\hal_cc2420base.h"
 #include "..\hal\hal_spi.h"
 #include "..\hal\hal.h"
 #include "start.h"

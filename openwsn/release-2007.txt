@@ -5,6 +5,23 @@ Flash object read and write (hal_flash)
 svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
+
+20070601
+revision hal_cc2420.*. simplified the internal read/write logic.
+in this revison of TCc2420, eliminate some un-necessary variables. 
+
+change some modules to:
+  hal_monitor.h
+  hal_cc2420def.h
+  hal_cc2420base.h
+
+
+20070530
+
+in last two versions, i modified a lot of source file format issues. most of them are nonsense.
+
+but one critical improvement in hal_cc2420.c.  i update the read()/write() logic. read() has already been tested by MaKun. write() needs testing.
+
 20070423
 update service\svc_debugio.*
 update test\debugio.*
@@ -14,7 +31,6 @@ add module: rtl\rtl_int2str.*
 add module: test\cc2420tx.*, cc2420rx.*. 
 these two modules will replace the old cc2420dev_test.*
 revision: test\analyzer.*
-
 
 
 20070206
