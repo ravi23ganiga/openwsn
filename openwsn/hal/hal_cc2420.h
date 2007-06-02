@@ -35,7 +35,10 @@
  * @author zhangwei on 2006-07-20
  * TCc2420
  * This is an software abstraction of the cc2420 transceiver hardware. you can 
- * fully manipulate the cc2420 hardware through this object. 
+ * fully manipulate the cc2420 hardware through this object.
+ * 
+ * Though cc2420 is a IEEE 802.15.4 compatible chip, the TCc2420 is designed to 
+ * be as simple as possible. So it's not an standard PHY or MAC interface. 
  * 
  * @attention
  * 	- TCc2420 is different to TSpiDriver. TSpiDriver is only
@@ -47,9 +50,6 @@
  * however, it may contain some MAC functions. This is due to the reason that 
  * the chip "cc2420" is 802.15.4 MAC supported.
  * 
- * @TODO
- * 	try to implement standard PHY functions based on this module in the future.
- * 
  * @modified by huanghuan on 2006-08-10
  * - modified the interface function. 
  * - changes a lot data type from uint16 to uint8, because cc2420 support maximum
@@ -60,18 +60,10 @@
  * porting the old source code successfully
  * testing passed. 
  * 
- * @modified by zhangwei on 2006-09-06
- * update the comment. add a lot of descriptions.
- * revise code logic and the interface. 
- * 请黄欢按照本文件提供的接口对原代码进行调整，并注意以下问题
- * 
  * @modified by zhangwei on 2006-09-11
  * add support to sleep in the state machine
  * revised the state machine and other source code.
  * 
- * @modified by zhangwei on 2006-10-14
- * integrated with huanghuan's code. and do much more format revisions.
- *
  * @modified by zhangwei on 2006-11-19
  * formulate the I/O interface of cc2420 drvier
  *
@@ -90,10 +82,10 @@
  * 返回实际发送成功的字节数，一般情况下应该等于len，表示全部发送成功
  * 我们以一个完整的frame作为发送和接收单位，不支持发送或者接收半个frame
  *
- * int8 cc2420_sendframe( TCc2420 * cc, TCc2420Frame * frame, uint8 opt );
+ * int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt );
  * 类似于cc2420_rawwrite 但是frame信息是通过一个结构体TCc2420Frame传递进来的，不是在内存中排好再传进来的
  * 
- * int8 cc2420_recvframe( TCc2420 * cc, TCc2420Frame * frame, uint8 opt );
+ * int8 cc2420_read( TCc2420 * cc, TCc2420Frame * frame, uint8 opt );
  * 类似于cc2420_rawread, 接收一个frame，但是接收到的数据不是排列在内存中，而是放在一个结构体中
  * opt中的某一位指明是否是broadcast还是普通的发送，是否需要ACK
  * opt中的设置将覆盖参数frame中的设置
@@ -103,9 +95,6 @@
  * 广播一个frame出去，其实就是调用rawwrite或者sendframe
  * broadcast frame是不需要ACK的
  * 
- * 删除read_stream和write_stream
- * 可以不支持cc2420_read()和cc2420_write()
- *
  * @modified by zhangwei on 20070510
  * add function cc2420_open() and cc2420_close(). 
  * 
@@ -115,15 +104,18 @@
  * @modified by makun on 20070511
  * add support to disable address recognition for sniffer applications.
  * 
+ * @modified by zhangwei on 20070601
+ * revise the old logic on read/write. and eliminate some unecessary variables.
+ *
  *****************************************************************************/
 
 #include "hal_foundation.h"
 #include "hal_configall.h"
 #include "hal_spi.h"
-#include "hal_cc2420chip.h"
+#include "hal_cc2420def.h"
 #include "hal_openframe.h"
  
-/*******************************************************************************
+/******************************************************************************
  * IEEE 802.15.4 PPDU format
  * [4B Preamble][1B SFD][7b Framelength, 1b Reserved][nB PSDU/Payload]
  * 
@@ -141,7 +133,7 @@
  * MAC Control Frame
  * [2B Frame Control] [1B Sequence Number][4 or 20 ADdress][1 Command Type][n Command Payload][2 FCS]
  * 
- ******************************************************************************/
+ *****************************************************************************/
 
 #define TCc2420Driver TCc2420
 #define CC2420_BUF_CAPACITY 1 
@@ -223,6 +215,8 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
  * POWER_1 is the highest, while POWER_8 is the lowest
  * the default settings is @TODO 
  */
+#define CC2420_POWER_MIN CC2420_POWER_8
+#define CC2420_POWER_MAX CC2420_POWER_1 
 #define CC2420_POWER_1  0x01       //  0dBm   17.4mA
 #define CC2420_POWER_2  0x02       // -1dBm   16.5mA
 #define CC2420_POWER_3  0x03       // -3dBm   15.2mA
@@ -240,23 +234,21 @@ typedef struct{
   uint16 	control;
   uint8  	seqid;
   uint16 	panid;
-  uint16  nodeto;
+  uint16    nodeto;
   uint16 	nodefrom;
   uint8  	payload[OPF_PAYLOAD_SIZE];
-  uint16  footer;
+  uint16  	footer;
 }TOpenFrame;
 */
 #define TCc2420Frame TOpenFrame
 
 typedef struct {
   TCc2420Frame pRxInfo;
-  uint8 payload_length;
-  UINT8 seqid;
-  //volatile BOOL ackReceived;
-  WORD panid;
-  WORD myAddr;
-  BOOL receiveOn;
-  uint8 rssi;
+  //uint8 payload_length;
+  //UINT8 seqid;
+  //WORD panid;
+  //WORD myAddr;
+  //uint8 rssi;
 }BASIC_RF_SETTINGS;
 
 /* TCc2420 object
@@ -280,7 +272,16 @@ typedef struct {
  * 	txbuf			used to hold the frame to be sent
  * 	txlen			the data length of the frame to be sent. if "txlen == 0",
  * 	                then means the TCc2420 is avaiable for sending new frames
- *
+ *  seqid           the next sequence id to used in the sending frame. 
+ *                  it will increase automatically after sending.
+ *  ack_request		option. to indicate whether the sender required ACK frame
+ * 	                or not.
+ *  ack_response    TRUE means ACK frame received. FALSE means NAK.
+ *                  it can be used to indicate whether the last sending received
+ *                  ACK or not. generally you need not use it.
+ * receiveOn		is an status flag. used to eliminate un-necessary ON/OFF
+ *                  operations. because they are time/energy consuming.
+ * 
  * @TODO: whether txbuf and rxbuf should be volatile or not? 
  */ 
 typedef struct{
@@ -294,19 +295,17 @@ typedef struct{
   volatile uint8 rxlen;
   TCc2420Frame txbuffer[CC2420_BUF_CAPACITY];
   TCc2420Frame rxbuffer[CC2420_BUF_CAPACITY];
-  char txbuf[CC2420_BUF_CAPACITY];
-  char rxbuf[CC2420_BUF_CAPACITY];
-  volatile BASIC_RF_SETTINGS rfSettings;
+  char * txbuf;
+  char * rxbuf;
+  volatile TCc2420Frame pRxInfo;
   uint8  sleeprequest;
   uint8  power;
-  uint8  ackrequest;    
-  volatile bool received_ack;
-  uint8  rssi;                   //最近一次接收到的信息的信号强度
-  uint8  receivepacket_len;      //最近一次接收到的包的总长度
-  uint8  receivepayload_len;     //最近一次接收到的包的payload的长度
-  uint8  sendpayload_len;        //最近一次发送的包的payload长度
+  uint8  ackrequest;   
+  volatile bool ack_response;   
+  volatile uint8 seqid;          
+  volatile uint8 rssi;          //最近一次接收到的信息的信号强度
+  BOOL receiveOn;				// @TODO: @modified zhangwei on 20070601. i do think this variable is no use. 
 }TCc2420;
-
 
 
 /* The following variable is declared usually in "global.c". However, it is used
@@ -371,7 +370,7 @@ uint8 cc2420_ioresult( TCc2420 * cc );
  * @return
  * 	the character count copied successfully to the buffer
  ******************************************************************************/ 
-uint8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame,uint8 size,uint8 opt);
+uint8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame,uint8 capacity, uint8 opt);
 
 /*******************************************************************************
  * return the received frame entirely to the frame buffer. 
