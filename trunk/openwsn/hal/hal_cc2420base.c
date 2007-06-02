@@ -30,15 +30,15 @@
 
 #include "hal_foundation.h"
 #include "hal_spi.h"
-#include "hal_cc2420chip.h"
+#include "hal_cc2420def.h"
 #include "hal_cc2420.h"
-#include "hal_cc2420rf.h"
+#include "hal_cc2420base.h"
 
 #ifdef GDEBUG
 #include "hal_led.h"
 #endif
 
-/*****************************************************************************
+/******************************************************************************
  * @author zhangwei on 2006-07-20
  * TCc2420Driver
  * this file is part of the TCc2420Driver
@@ -50,12 +50,12 @@
  * 	zhangwei combine the old "basic_rf_init.c", "basic_rf_receive.c" and 
  * "basic_rf_send_packet.c" provided by Huanghuan into this unique file.
  * 
- ****************************************************************************/
+ *****************************************************************************/
 
 
-/*******************************************************************************
+/******************************************************************************
  * some utility functions
- ******************************************************************************/
+ *****************************************************************************/
  
 #define FAST2420_RX_GARBAGE(spi,pc) spi_get((spi), (pc))
 #define FAST2420_TX_ADDR(spi,a) spi_put((spi),(a)) 
@@ -80,12 +80,12 @@ void FAST2420_RX_ADDR(TSpiDriver * spi,uint8 a)
 } 
 */
 
-/*******************************************************************************
+/******************************************************************************
  * FAST SPI: Register access
  * 		s = command strobe
  * 		a = register address
  * 		v = register value
- ******************************************************************************/
+ *****************************************************************************/
 
 void FAST2420_STROBE(TSpiDriver * spi,uint8 s) 
     { 

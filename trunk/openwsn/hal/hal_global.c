@@ -1,32 +1,32 @@
-/*****************************************************************************
-* This file is part of OpenWSN, the Open Wireless Sensor Network System.
-*
-* Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
-* 
-* OpenWSN is free software; you can redistribute it and/or modify it under
-* the terms of the GNU General Public License as published by the Free
-* Software Foundation; either version 2 or (at your option) any later version.
-* 
-* OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-* for more details.
-* 
-* You should have received a copy of the GNU General Public License along
-* with eCos; if not, write to the Free Software Foundation, Inc.,
-* 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-* 
-* As a special exception, if other files instantiate templates or use macros
-* or inline functions from this file, or you compile this file and link it
-* with other works to produce a work based on this file, this file does not
-* by itself cause the resulting work to be covered by the GNU General Public
-* License. However the source code for this file must still be made available
-* in accordance with section (3) of the GNU General Public License.
-* 
-* This exception does not invalidate any other reasons why a work based on
-* this file might be covered by the GNU General Public License.
-* 
-****************************************************************************/ 
+/******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+ *
+ * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
+ * 
+ * OpenWSN is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 or (at your option) any later version.
+ * 
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with eCos; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ * 
+ * As a special exception, if other files instantiate templates or use macros
+ * or inline functions from this file, or you compile this file and link it
+ * with other works to produce a work based on this file, this file does not
+ * by itself cause the resulting work to be covered by the GNU General Public
+ * License. However the source code for this file must still be made available
+ * in accordance with section (3) of the GNU General Public License.
+ * 
+ * This exception does not invalidate any other reasons why a work based on
+ * this file might be covered by the GNU General Public License.
+ * 
+ *****************************************************************************/ 
 //----------------------------------------------------------------------------
 // @author zhangwei on 2006-07-25
 // Global Variables with initialization and finalization
@@ -45,22 +45,31 @@
 //
 //----------------------------------------------------------------------------
 
-#include "hal_foundation.h" 
+#include "hal_configall.h"
+#include <string.h> 
+#include "hal_foundation.h"
 #include "hal_global.h"
 #include "hal_led.h"
+#include "hal_assert.h"
+
+#ifdef CONFIG_DEBUG
+  #define GDEBUG
+#endif
 
 static TUartDriver 			m_uart0;
 static TUartDriver 			m_uart1;
 static TSpiDriver 			m_spi0;
 static TSpiDriver 			m_spi1;
-volatile static TCc2420Driver 		m_cc2420;
+// @modified by zhangwei on 20070601
+// zhangwei eliminate violatile before m_cc2420
+static TCc2420              m_cc2420;
 static TTimer				m_timer0;
 static TTimer				m_timer1;
 static TTimer				m_timer2;
 static TWatchdog 			m_watchdog;
-static TMcp6s26                         m_mcp6s26;
-static TVibrationSensor                 m_vibration;
-static TAdConversion                    m_ad; 
+static TMcp6s26             m_mcp6s26;
+static TVibrationSensor     m_vibration;
+static TAdConversion        m_ad; 
 
 TUartDriver *				g_uart0 = NULL; 
 TUartDriver *				g_uart1 = NULL; 
@@ -71,9 +80,9 @@ TTimer * 					g_timer0 = NULL;
 TTimer * 					g_timer1 = NULL;
 TTimer * 					g_timer2 = NULL;
 TWatchdog * 				g_watchdog = NULL;
-TMcp6s26 *                               g_mcp6s26 = NULL;
-TVibrationSensor *                       g_vibration;
-TAdConversion *                         g_ad; 
+TMcp6s26 *                  g_mcp6s26 = NULL;
+TVibrationSensor *          g_vibration = NULL;
+TAdConversion *             g_ad = NULL; 
 TLocation g_loinfo;
 TLocationService * g_loservice;
 
@@ -91,6 +100,11 @@ uint8 						g_hal_init = FALSE;
 //
 int8 hal_global_construct( void )
 {
+	#ifdef GDEBUG
+	char * msg = "hal_global_construct() running...";
+	uart_write( g_uart, msg, strlen(msg), 0x00 );
+	#endif
+
 	g_hal_init = TRUE;
 	
 	g_uart0 	= uart_construct( 0, (char*)(&m_uart0), sizeof(TUartDriver) ); 
@@ -132,7 +146,8 @@ int8 hal_global_construct( void )
 		uart_configure( g_uart1, 9600, 8, 1, 0, 0x00 );
 	}
         */
-	//uart_write( g_uart, "2.xx", 3, 0 );
+
+	assert( g_hal_init );	
 	return (g_hal_init == TRUE) ? 0 : -1;
 }
 

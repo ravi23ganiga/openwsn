@@ -31,25 +31,29 @@
 #ifndef _HAL_CC2420RF_H_3957_
 #define _HAL_CC2420RF_H_3957_
 
-/*****************************************************************************
+/******************************************************************************
  * @author zhangwei on 2006-07-20
  * TCc2420Driver
- * this file is part of the TCc2420Driver
- * 大部分TCc2420Driver代码都应该放在该文件中，hal_cc2420.* 中主要实现接口和配置逻辑。
+ * this is the fundamental module under TCc2420.*. most of the hardware related
+ * operations are implemented in this module. so if you want to port TCc2420
+ * to other platforms, you can port this module only!  
  * 
  * @history
- * @modified by zhangwei on 2006-06-24
+ * @modified by zhangwei on 20060624
  *	this header file replaced the old "basic_rf.h" provided by HuangHuan.
- * 
- ****************************************************************************/
+ * @modified by zhangwei on 20070601
+ *  change the name from hal_cc2420rf.* to hal_cc2420base.*
+ *  
+ *****************************************************************************/
 
 #include "hal_foundation.h"
 #include "hal_spi.h"
 #include "hal_cc2420.h"
 
-//----------------------------------------------------------------------------
-// Gerneal Constants
-//----------------------------------------------------------------------------
+/******************************************************************************
+ * general constants to be used in TCc2420
+ * hardware related
+ *****************************************************************************/
 
 // Constants concerned with the Basic RF packet format
 //
@@ -79,9 +83,11 @@
 #define BASIC_RF_CRC_OK_BM              0x80
 
 
-/*******************************************************************************
- * some utility functions used in hal_cc2420rf.c
- ******************************************************************************/
+/******************************************************************************
+ * general utility functions for TCc2420
+ * a lot of them are based on TSpi. 
+ * only some of them are hardware related.
+ *****************************************************************************/
  
 void FAST2420_RX_GARBAGE(TSpiDriver * spi,char *pc)  ;
 void FAST2420_TX_ADDR(TSpiDriver * spi,uint8 a); 
@@ -109,6 +115,13 @@ void FAST2420_RESET_CC2420( TSpiDriver * spi );
 // 
 void CC2420_SPI_ENABLE( void );
 void CC2420_SPI_DISABLE( void );
+
+/******************************************************************************
+ * general utility functions for TCc2420
+ * these functions are a lot of them are based on TSpi. 
+ * only some of them are hardware related.
+ *****************************************************************************/
+
 void SET_RESET_INACTIVE( void ); // // The CC2420 reset pin
 void SET_RESET_ACTIVE( void );
 void SET_VREG_ACTIVE( void ); // CC2420 voltage regulator enable pin      
@@ -121,5 +134,4 @@ BOOL VALUE_OF_SFD( void );
 // BOOL VALUE_OF_VREG(void);     // not used in this file
 
 
-//----------------------------------------------------------------------------
 #endif
