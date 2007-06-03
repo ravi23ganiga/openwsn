@@ -1,4 +1,3 @@
-
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
@@ -29,21 +28,40 @@
  * 
  ****************************************************************************/ 
 
-//----------------------------------------------------------------------------
-// @author zhangwei on 2006-07-25
-// 本程序只测试ARM 7内部的两个UART，它会把每一个收到的字符原封不动的送回去。
-// 可通过超级终端、串口调试助手等测试本程序效果
-// 
-// 本程序测试通过后，将保证两个UART可以同时工作，不发生冲突
-//----------------------------------------------------------------------------
-
-
 #ifndef _OPENMAC_TEST_H_
 #define _OPENMAC_TEST_H_
-//----------------------------------------------------------------------------
 
-#include "..\foundation.h"
-#include "..\global.h"
+/*****************************************************************************
+ * @author zhangwei on 200612
+ *	this demo is used to test whether the MAC layer work correct. 
+ *	this test require two nodes work on at the same time.
+ *
+ * process flow:
+ *	- boot as SLAVE node
+ *  - wait for MASTER node broadcast
+ *  - if cannot find a MASTER node, then itself become a MASTER node
+ *        and waiting for SLAVE node.     
+ *        master node should broadcast messages to neighbor nodes.
+ *
+ *  after the above process, you should know who is the MASTER node
+ *  and who is the SLAVE node. you can get some reference on the above 
+ *  process in "blink" demo.
+ *
+ *  - if working in MASTER mode then
+ *        send a random frame to SLAVE node
+ *        waiting for SLAVE response
+ *        check whether the data received are the same as data send
+ *        if they two are the same, then GREEN led on else RED led on.
+ *    endif
+ *  - if working in SLAVE mode then
+ *        try read frame 
+ *        if frame read, then send it back to MASTER
+ *    endif
+ *
+ ****************************************************************************/ 
+
+#include "../configall.h"
+#include "../foundation.h"
 
 void openmac_run( void );
 

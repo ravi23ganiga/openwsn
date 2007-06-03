@@ -62,7 +62,7 @@ void  mac_destroy( TOpenMAC * mac )
 }
 
 void  mac_open( TOpenMAC * mac, TCc2420 * hdl, TActionScheduler * actsche, TTimer * timer, 
-	TOpenAddress * addr )
+	TOpenAddress * addr ); 
 {
 	#ifndef GDEBUG
 	char * msg = "mac_open() run...\n";

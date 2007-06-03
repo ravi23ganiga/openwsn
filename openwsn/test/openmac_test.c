@@ -88,7 +88,7 @@ void openmac_run( void )
 	
 	g_mac = mac_construct( (char*)(&m_mac), sizeof(m_mac) );
 	
-	mac_init( g_mac, g_cc2420, g_timer1 );
+	//mac_init( g_mac, g_cc2420, g_timer1 );
 	mac_configure( g_mac, MAC_BASIC_INIT, 0);
 	
 	

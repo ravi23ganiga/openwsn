@@ -53,7 +53,6 @@
 #include "hal_mcp6s.h"
 #include "hal_ad.h"
 #include "hal_sensor_vibration.h"
-#include "..\service\svc_location.h"
 
 /* these 4 definitions should be moved from HAL to service or application layer 
  */
@@ -87,8 +86,6 @@ extern TMcp6s26 *           g_mcp6s26;
 extern TVibrationSensor *   g_vibration;
 extern TAdConversion *      g_ad; 
 
-extern TLocation g_loinfo;
-extern TLocationService * g_loservice;
 
 // construct all the necessary global object instances. The relationship between
 // all these objects are also created.

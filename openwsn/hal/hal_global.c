@@ -82,8 +82,6 @@ TWatchdog * 				g_watchdog = NULL;
 TMcp6s26 *                  g_mcp6s26 = NULL;
 TVibrationSensor *          g_vibration = NULL;
 TAdConversion *             g_ad = NULL; 
-TLocation g_loinfo;
-TLocationService * g_loservice;
 
 // an global variable to record whether the system is successfully initialized.
 uint8 						g_hal_init = FALSE;

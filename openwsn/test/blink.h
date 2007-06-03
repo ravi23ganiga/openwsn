@@ -34,11 +34,15 @@
 /*****************************************************************************
  * @author zhangwei on 20070421
  * @note
- * 	ledsync
- * 	this test will synchronize the LED flash frequvency across serveral LEDs.
+ * 	blink test and demostration
+ * 	this test will synchronize the LED flash frequvency across serveral nodes.
  * so it can be used to test whether the wireless communication and main processing
  * service is working right or not. 
- * 
+ *  different to "cc2420tx" and "cc2420rx", this demo will test both the sending
+ * and receiving process.
+ *
+ *  it's similar to the TinyOS Blink Example.
+ *
  * @status
  * 	un-tested yet
  * 
@@ -47,7 +51,10 @@
  *  
  *****************************************************************************/ 
 
-void ledsync_test();
+#include "../configall.h"
+#include "../foundation.h"
+
+void blink_test();
 
 #endif
 
