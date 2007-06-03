@@ -6,7 +6,12 @@ svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
 
+20070603
+
+delete test/uartanddebug.*, replaced by test/debugio.*
+
 20070601
+
 revision hal_cc2420.*. simplified the internal read/write logic.
 in this revison of TCc2420, eliminate some un-necessary variables. 
 

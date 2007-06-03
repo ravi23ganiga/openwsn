@@ -1,14 +1,10 @@
+#include "../configall.h"
+#include "../foundation.h"
 #include <stdlib.h>
-#include "config.h"
-#include "..\hal\hal_led.h"
-#include "..\hal\hal_cc2420.h"
-#include "..\hal\hal_cc2420base.h"
-#include "..\hal\hal_spi.h"
-#include "..\hal\hal.h"
-#include "start.h"
+#include "../hal/hal.h"
+#include "../service/svc_location.h"
+#include "../global.h"
 #include "location_test.h"
-#include "..\service\svc_location.h"
-#include "..\global.h"
 
 #define ANCHOR_NODE_1
 //#define ANCHOR_NODE_2
@@ -27,7 +23,8 @@ void location_test()
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, g_cc2420->panid, 0);    
     //initialization
-  
+
+/*  
     g_loservice 	= lcs_construct( (char*)(&m_locservice), sizeof(TLocationService));
 
     #ifdef LOCATION_REQUEST_NODE
@@ -56,5 +53,5 @@ void location_test()
       lcs_evolve(g_loservice,&m_location,g_cc2420);   //enter location service
                                                       //return x,y,z coordination 
                                                       //in the structure of m_location
-    }
+    }*/
 }

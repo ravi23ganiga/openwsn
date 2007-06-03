@@ -84,7 +84,7 @@ void sinknode_execute( void )
 	g_lcs = lcs_construct( (char*)(&m_lcs), sizeof(m_lcs) );
 	
 	
-	mac_init( g_mac, g_cc2420, g_timer1 );
+	//mac_init( g_mac, g_cc2420, g_timer1 );
 	mac_configure( g_mac, MAC_BASIC_INIT, 0);
 	net_init( g_net, g_mac, NULL );
 

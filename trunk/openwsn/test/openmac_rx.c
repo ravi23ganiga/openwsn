@@ -28,18 +28,18 @@
  * 
  ****************************************************************************/ 
 
-#include "..\hal\hal_foundation.h"
-#include "..\hal\hal_uart.h"
-#include "..\hal\hal_timer.h"
-#include "..\hal\hal_global.h"
-#include "..\foundation.h"
-#include "..\global.h"
-#include "openmac_blackhole.h"
+#include "../hal/hal_foundation.h"
+#include "../hal/hal_uart.h"
+#include "../hal/hal_timer.h"
+#include "../hal/hal_global.h"
+#include "../foundation.h"
+#include "../global.h"
+#include "openmac_rx.h"
 
 static TOpenMAC m_mac;
 static TOpenMAC * _mac;
 
-void openmac_whitehole( void )
+void openmac_rx( void )
 {
 	char txbuf[OPENMAC_BUFFER_SIZE];
 	char rxbuf[OPENMAC_BUFFER_SIZE];
@@ -49,7 +49,7 @@ void openmac_whitehole( void )
 	target_init();
 	global_construct();
 	_mac = mac_construct( (char*)(&m_mac), sizeof(m_mac) );
-	mac_init( _mac, g_cc2420, g_timer1 );
+	//mac_init( _mac, g_cc2420, g_timer1 );
 	// @TODO uart_configure(...) 
 
 	memset( (char*)(&txbuf[0]), 0x00, OPENMAC_BUFFER_SIZE ); 

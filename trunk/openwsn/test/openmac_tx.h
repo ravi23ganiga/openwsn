@@ -1,4 +1,3 @@
-
 /*****************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
@@ -39,7 +38,7 @@
  * 目前主要是与openmac_test测试配合使用，在openmac_test工作的时候，让whitehole发送
  * 数据frame进行干扰。
  */
-void openmac_whitehole( void );
+void openmac_tx( void );
 
 #endif
 

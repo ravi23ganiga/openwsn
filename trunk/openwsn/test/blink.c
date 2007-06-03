@@ -28,10 +28,11 @@
  * 
  *****************************************************************************/ 
 
-#include "..\configall.h"
-#include "..\foundation.h"
-#include "..\hal\hal.h"
-#include "ledsync.h"
+#include "../configall.h"
+#include "../foundation.h"
+#include "../hal/hal.h"
+#include "../service/openmac.h"
+#include "blink.h"
 
 #define PANID 0x2420
 #define WAITFOR_MASTER_DURATION 3000
@@ -51,22 +52,21 @@
  * a MASTER message, it should come into slave mode automatically.
  */
 
-void ledsync_test()
+void blink_test()
 {
 	enum {MODE_MASTER=0, MODE_SLAVE};
 	
-	TCc2420Frame txframe;
-	TCc2420Frame rxframe;
+	TOpenFrame txframe;
+	TOpenFrame rxframe;
 	uint8 mode;
 	
     target_init();
     global_construct();
-	cc2420_relation( g_cc2420, g_spi );
-
     spi_configure( g_spi );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PANID, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
+    //cc2420_open();
 
 	timer_configure( g_timer1, NULL );	
 	
@@ -75,9 +75,14 @@ void ledsync_test()
 
 	while (1)
 	{
+		memset( &rxframe, 0x00, sizeof(TOpenFrame) );
+		memset( &txframe, 0x00, sizeof(TOpenFrame) );
+
 		switch (state)
 		{
+		// the GREEN LED on indicates the current node running in slave mode
 		case STATE_SLAVE:
+			led_off( LED_GREEN );
 			if (cc2420_read(g_cc2420, &rxframe, sizeof(rxframe), 0x00) > 0)
 			{
 				if (rxframe.payload[0] == 0)
@@ -95,7 +100,9 @@ void ledsync_test()
 			}
 			break;
 			
+		// the green LED off indicates the current node running in master mode
 		case MODE_MASTER:
+			led_on( LED_GREEN );
 			if (timer_expired(g_timer))
 			{
 				txframe.payload[0] = !led_state();
@@ -113,9 +120,4 @@ void ledsync_test()
 	}
 }
 
-void 
 
-
-
-
- 

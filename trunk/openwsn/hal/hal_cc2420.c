@@ -384,21 +384,21 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, int8 len, uint8 opt )
 	
 	if (cc->txlen == 0)
 	{
-		count = min( len, 127 );
-		cc->txbuffer[0].length = len;  
+		count = len & 0x7F;
+		cc->txbuffer[0].length = count;  
 		//memmove(&cc->txbuffer[0].length, frame+0, 2 ); 
 		memmove(&cc->txbuffer[0].panid, frame+4, 2 );
 		memmove(&cc->txbuffer[0].nodeto, frame+6, 2 );
 		memmove(&cc->txbuffer[0].nodefrom, frame+8, 2 );
 		memmove(&cc->txbuffer[0].payload, frame+10, count-11 );     
 	
-		if((opt & 0x01))  
-			cc->ackrequest = 0;            
+		//if ((opt & 0x01))  
+		//	cc->ackrequest = 0;            
         
-    	if(cc->ackrequest ==1) 
+    	if (cc->ackrequest ==1) 
 		{
 	    	ack = _hardware_sendframe(cc, true);
-	    	if(!ack) 
+	    	if (!ack) 
 	       		count = -1;
     	}
     	else{
@@ -422,10 +422,11 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, int8 len, uint8 opt)
 	
 	if (cc->txlen == 0)
 	{
-		count = min( len, 127 );  
-		cc->txbuffer[0].length = len;  
+		count = len & 0x7F;
 		memmove( (char*)(&cc->txbuffer), frame, count ); 
-		if(cc->ackrequest == 1) 
+		cc->txbuffer[0].length = count;
+
+		if (cc->ackrequest == 1) 
 		{
 	    	ack = _hardware_sendframe(cc, true);
 	    	if (!ack) 
@@ -673,6 +674,8 @@ bool _hardware_sendframe( TCc2420 * cc, bool ackrequest )
 	// error. 
 	//
     cc->seqid++;
+	cc->txlen = 0;
+
     return success;
 }
 
@@ -956,7 +959,7 @@ void cc2420_interrupt_handler( TCc2420 * cc )
  	       	// read the footer and check for CRC OK
 			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) footer, 2);
 			// indicate the successful ack reception (this flag is polled by the 
-			// transmission routine)
+			// _hardware_send() routine)
 			if (footer[1] & BASIC_RF_CRC_OK_BM)
 			{ 
 				cc->ack_response = TRUE;
