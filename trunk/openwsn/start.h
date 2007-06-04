@@ -28,6 +28,8 @@
 #include "./test/sensor_test.h"
 #include "./test/time_led_inquire.h"
 #include "./test/time_led_interupt.h"
+#include "./test/blink.h"
+
 
 void app_start( void );
 

@@ -31,7 +31,7 @@
 #include "../configall.h"
 #include "../foundation.h"
 #include "../hal/hal.h"
-#include "../service/openmac.h"
+#include "../service/svc_openmac.h"
 #include "blink.h"
 
 #define PANID 0x2420
@@ -58,20 +58,21 @@ void blink_test()
 	
 	TOpenFrame txframe;
 	TOpenFrame rxframe;
-	uint8 mode;
-	
+	uint8 state;
+ 
+
     target_init();
     global_construct();
     spi_configure( g_spi );
+    txframe.nodefrom=0x1234;
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PANID, 0);
-    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
+    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, txframe.nodefrom, 0);
     //cc2420_open();
 
-	timer_configure( g_timer1, NULL );	
-	
+	timer_configure( g_timer1, NULL, NULL,1);	//?how much about timetimer->data timer->priority
 	state = MODE_SLAVE;
-	timer_setinterval( g_timer1, WAITFOR_MASTER_DURATION );
+	timer_setinterval( g_timer1, WAITFOR_MASTER_DURATION,1 );
 
 	while (1)
 	{
@@ -81,22 +82,22 @@ void blink_test()
 		switch (state)
 		{
 		// the GREEN LED on indicates the current node running in slave mode
-		case STATE_SLAVE:
+		case MODE_SLAVE:
 			led_off( LED_GREEN );
 			if (cc2420_read(g_cc2420, &rxframe, sizeof(rxframe), 0x00) > 0)
 			{
 				if (rxframe.payload[0] == 0)
-					led_off( LED_RED, 0 );
+					led_off( LED_RED );
 				else
-					led_on( LED_RED, 1 );
+					led_on( LED_RED );
 				
 				timer_restart( g_timer, WAITFOR_MASTER_DURATION, NULL );
 			}
 			
 			if (timer_expired(g_timer))
 			{
-				timer_restart( g_timer, MASTER_BROADCASR_INTERVAL )
-				state = STATE_MASTER;
+				timer_restart( g_timer, MASTER_BROADCASR_INTERVAL,NULL );
+				state = MODE_MASTER;
 			}
 			break;
 			
@@ -105,15 +106,15 @@ void blink_test()
 			led_on( LED_GREEN );
 			if (timer_expired(g_timer))
 			{
-				txframe.payload[0] = !led_state();
+				//txframe.payload[0] = !led_state();?led_state() does not exist
 				cc2420_write( g_cc2420, &txframe, sizeof(txframe), 0x01 );
-				timer_restart( g_timer, MASTER_BROADCASR_INTERVAL );
+				timer_restart( g_timer, MASTER_BROADCASR_INTERVAL ,NULL);
 			}
 			
-			if (cc2420_read(g_cc2420) > 0)
+			if (cc2420_read(g_cc2420,&rxframe, sizeof(rxframe), 0x01 ) > 0)
 			{
-				timer_restart( g_timer, WAIT_MASTER_DURATION );
-				state = STATE_SLAVE;			
+				timer_restart( g_timer, WAITFOR_MASTER_DURATION,NULL );
+				state = MODE_SLAVE;			
 			} 
 			break;
 		}
