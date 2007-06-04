@@ -317,7 +317,7 @@ extern TCc2420 * g_cc2420;
 TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi );
 void cc2420_destroy( TCc2420 * cc );
 
-/*******************************************************************************
+/******************************************************************************
  * configure the cc2420 driver object.
  * you may add more parameters in the functions. 
  * different to the parameters in the construct function, you can use this function
@@ -331,7 +331,7 @@ void cc2420_destroy( TCc2420 * cc );
  * pvalue	the buffer pointers to the configure data. it is also the buffer
  * 			to receive the results.
  * size		buffer size.
- ******************************************************************************/ 
+ *****************************************************************************/ 
  
  /* @modified by zhangwei on 20061108
   * 我还是觉得不要用uint16, 而用void * buf或者 void * pvalue比较好，它和后面的
@@ -353,7 +353,7 @@ uint8 cc2420_state( TCc2420 * cc );
 void cc2420_set_power(TCc2420 * cc,uint8 power);
 uint8 cc2420_ioresult( TCc2420 * cc );
 
-/*******************************************************************************
+/******************************************************************************
  * read data from cc2420 driver
  * read data from the driver's internal buffer. the interrupt service routine 
  * is responsible to place the received data into the internal buffer.
@@ -369,10 +369,10 @@ uint8 cc2420_ioresult( TCc2420 * cc );
  * 	opt			option settings.
  * @return
  * 	the character count copied successfully to the buffer
- ******************************************************************************/ 
+ *****************************************************************************/ 
 uint8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame,uint8 capacity, uint8 opt);
 
-/*******************************************************************************
+/******************************************************************************
  * return the received frame entirely to the frame buffer. 
  * different to xxx_read() function, this function will not return when a frame
  * received entirely. For "cc2420" chip, the frame is a standard 802.15.4 frame.
@@ -390,12 +390,12 @@ uint8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame,uint8 capacity, uint8 opt);
  * you'll encounter problems when there's still some data left in the buffer 
  * when you call cc2420_rawread(). you'd better identify the frame start position
  * using another member variable to improve reliability in the future.
- ******************************************************************************/ 
+ *****************************************************************************/ 
 uint8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 size, uint8 opt );
 int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, int8 len, uint8 opt);
 int8 cc2420_rawwrite( TCc2420 * cc, char * frame, int8 len, uint8 opt );
 
-/*******************************************************************************
+/******************************************************************************
  * this function is used mainly by the driver itself.
  * it will check whether there are some data to be sent. if there's data in the 
  * txbuf, then it starts the sending process. 
@@ -404,7 +404,7 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, int8 len, uint8 opt );
  * drivers, because the data receiving process is interrupt driven.
  * 
  * generally, you needn't to call this function in your source code.
- ******************************************************************************/ 
+ *****************************************************************************/ 
 int8 cc2420_evolve( TCc2420 * cc );
 
 /* 启动cc2420硬件设备

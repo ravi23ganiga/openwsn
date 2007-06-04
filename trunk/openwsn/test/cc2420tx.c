@@ -45,43 +45,49 @@
  ****************************************************************************/ 
 
 #define CONFIG_PACKET_API
-//#define CONFIG_FRAME_API
+#undef CONFIG_FRAME_API
 
-static uint8 tx_frame[128];				//using CONFIG_FRAME_API
-static TCc2420Frame tx_test;			//using CONFIG_PACKET_API
+#define PAN 0x2420
+#define LOCAL_ADDRESS 0x1234
+#define REMOTE_ADDRESS 0x5678
 
-int cc2420tx_test (void)
+int cc2420tx_test(void)
 {
     uint8 n;
     int8 length;
-    //char * out_string = "the rssi value is : ";
-    //char * enter      = "\n";
-  
+    char * msg = "cc2420tx_test() running...\n";
+	TOpenFrame txframe;			//used when CONFIG_PACKET_API
+	uint8 txbuf[128];			//used when CONFIG_FRAME_API
+
     target_init();
     global_construct();
     spi_configure( g_spi );
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     
-    tx_test.panid = 0x2420;
-    tx_test.nodeto = 0x5678;
-    //tx_test.nodeto = 0x3456;//for test the sniffer
-    tx_test.nodefrom = 0x1234;
+    uart_write( g_uart, msg, strlen(msg)+1, 0x00 ); 
+    
+    memset( &txframe, 0x00, sizeof(txframe) );
+    txframe.length = 50; // between 1 and 0x127
+    txframe.panid = PAN;
+    txframe.nodeto = REMOTE_ADDRESS;
+    txframe.nodefrom = LOCAL_ADDRESS;
+    //txframe.nodeto = 0x3456;//for test the sniffer
 
-    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
-    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
+    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PAN, 0);
+    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, LOCAL_ADDRESS, 0);
     
     for (n = 0; n < 10; n++) 
     {
-        tx_test.payload[n] = 2;
-        tx_frame[10 + n] = 2;
+        txframe.payload[n] = 2;
+        txbuf[10 + n] = 2;  //?
     }
-    tx_test.payload[2] = 1;  
+    txframe.payload[2] = 1;  
 
-    tx_frame[1] = tx_frame[2] = tx_frame[3] = 0;
-    tx_frame[4] = 0x20; tx_frame[5] = 0x24;
-    tx_frame[6] = 0x78; tx_frame[7] = 0x56;
-    tx_frame[8] = 0x34; tx_frame[9] = 0x12; 
+    txbuf[1] = txbuf[2] = txbuf[3] = 0;
+    txbuf[4] = 0x20; txbuf[5] = 0x24;
+    txbuf[6] = 0x78; txbuf[7] = 0x56;
+    txbuf[8] = 0x34; txbuf[9] = 0x12; 
     
     cc2420_receive_on(g_cc2420);  
     IRQEnable(); 
@@ -92,14 +98,14 @@ int cc2420tx_test (void)
 		// transmit using TOpenFrame based interface: cc_write
 		//
         #ifdef CONFIG_PACKET_API
-        tx_test.payload[0]++;
-        if (tx_test.payload[0] == 5)
+        txframe.payload[0]++;
+        if (txframe.payload[0] == 5)
         { 
-        	tx_test.payload[0] = 1;
+        	txframe.payload[0] = 1;
         } 
         
         led_twinkle( LED_GREEN, 1 );
-        length = cc2420_write( g_cc2420, &(tx_test), 10+11, 0 );
+        length = cc2420_write( g_cc2420, &(txframe), 10+11, 0 );
           
         /*
         if (length == -1) 
@@ -122,12 +128,12 @@ int cc2420tx_test (void)
 		// the next char buffer based interface can work properly.
 		//
 		#ifdef CONFIG_FRAME_API         
-        tx_frame[10]++;
-        if (tx_frame[10] = 5) 
+        txbuf[10]++;
+        if (txbuf[10] = 5) 
         {
-        	tx_frame[10] = 1;
+        	txbuf[10] = 1;
         }
-        cc2420_rawwrite( g_cc2420, (char *)tx_frame, 10 + 11,0);
+        cc2420_rawwrite( g_cc2420, (char *)txbuf, 10 + 11,0);
           
         led_twinkle(LED_GREEN,1);
 	  	halWait(3000);	  
