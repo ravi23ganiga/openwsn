@@ -52,6 +52,8 @@
 #include "hal_foundation.h"
 #include "hal_cpu.h"
 
+#define TSpi TSpiDriver
+
 typedef struct{
   uint8 id;
 }TSpiDriver;

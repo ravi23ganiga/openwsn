@@ -480,14 +480,14 @@ uint8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 		// copy the main body of the frame into out buffer, including the last 
 		// two bytes for footer.
 		//
-		count = min(frame[0], capacity);
+		count = min(cc->rxbuffer[0].length, capacity);
 		//memmove( frame+10, cc->rxbuffer[0].payload, cc->receivepayload_len);
 		memmove( frame+10, cc->rxbuffer[0].payload, count - BASIC_RF_PACKET_OVERHEAD_SIZE );
 		//memmove( frame+9 + cc->receivepayload_len, &cc->rxbuffer[0].footer,2 );
 		cc->rxlen = 0;
 		
 		/* future new version should simple as 
-		count = min(frame[0], capacity);
+		count = min(cc->rxbuffer[0].length, capacity);
 		memmove( frame, &cc->rxbuffer[0], count );
 		cc->rxlen = 0;
 		*/
@@ -562,6 +562,7 @@ bool _hardware_sendframe( TCc2420 * cc, bool ackrequest )
     do{
         FAST2420_UPD_STATUS( cc->spi,&spiStatusByte );
     }while (!(spiStatusByte & BM(CC2420_RSSI_VALID)));
+    // @TODO: i think we should wait here for the 2420's SRXON OK
     
     // @TODO: why comment the following? is halwait(1) enough?
     // TX begins after the CCA check has passed
@@ -577,6 +578,8 @@ bool _hardware_sendframe( TCc2420 * cc, bool ackrequest )
     //framelength = pRTI->length + BASIC_RF_PACKET_OVERHEAD_SIZE;
     //framelength = cc->sendpayload_len + BASIC_RF_PACKET_OVERHEAD_SIZE;
     framelength = cc->txbuffer[0].length;
+	assert( framelength >  BASIC_RF_PACKET_OVERHEAD_SIZE );
+    
     // @TODO
     framecontrol = ackrequest ? BASIC_RF_FCF_ACK : BASIC_RF_FCF_NOACK;
 
@@ -586,8 +589,8 @@ bool _hardware_sendframe( TCc2420 * cc, bool ackrequest )
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->seqid, 1);    // Sequence number
     
     // @TODO: or use cc->panid directly? i think this is better
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].panid, 2);          // Dest. PAN ID
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodeto, 2);            // Dest. address
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].panid, 2);
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodeto, 2);
     
     // @TODO: or use cc->nodefrom directly? i think this is better
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodefrom, 2);         // Source address
@@ -1010,6 +1013,7 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 			if (((framecontrol & (BASIC_RF_FCF_BM)) == BASIC_RF_FCF_NOACK) 
 				&& (footer[1] & BASIC_RF_CRC_OK_BM)) 
 			{
+				cc->pRxInfo.length = length;
 				 _hardware_recvframe(cc,(TCc2420Frame *)(&cc->pRxInfo));
 				 //cc->pRxInfo = *(_hardware_recvframe(cc,(TCc2420Frame *)(&cc->pRxInfo)));
 			}

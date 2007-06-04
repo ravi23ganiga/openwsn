@@ -40,10 +40,10 @@
 
 /* the booting up process of a node contains at least the following three stages:
  * 
- * - power on and self test if possible
- * - repeat SEARCHING for master node for some time. if it can receive a message
+ * 1 power on and self test if possible
+ * 2 repeat SEARCHING for master node for some time. if it can receive a message
  *   from its master, then it will flash the led according to the message received.
- * - if it cannot find a master node, then itself will become a master node by 
+ * 3 if it cannot find a master node, then itself will become a master node by 
  * 	 broadcasting the MASTER message.  the master node should broadcast the 
  * 	 MASTER message with a random interval. so the final user can understand 
  *   the slave nodes are under full control of the master nodes.
