@@ -374,7 +374,8 @@ void sio_evolve( TSioComm * sio )
 					sio->fmstate = SIO_STATE_GETSOF;
 					sio->fmstate_sofcount = 1;
 				}
-				else{
+				else
+				{
 					sio->rxbuf[sio->rxlen++] = ch;
 				}
 				break; 
@@ -388,7 +389,8 @@ void sio_evolve( TSioComm * sio )
 					if (sio->fmstate_sofcount % 2 == 0) // sofcount is even 
 						sio->rxbuf[sio->rxlen++] = ch;
 				}
-				else{
+				else
+				{
 					if (sio->fmstate_sofcount % 2 == 1) // sofcount is odd
 					{
 						framelength = ch; // this is the length byte according to UART frame

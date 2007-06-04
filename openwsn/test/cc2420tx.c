@@ -55,7 +55,7 @@ int cc2420tx_test(void)
 {
     uint8 n;
     int8 length;
-    char * msg = "cc2420tx_test() running...\n";
+    //char * msg = "cc2420tx_test() running...\n";
 	TOpenFrame txframe;			//used when CONFIG_PACKET_API
 	uint8 txbuf[128];			//used when CONFIG_FRAME_API
 
@@ -65,7 +65,7 @@ int cc2420tx_test(void)
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     
-    uart_write( g_uart, msg, strlen(msg)+1, 0x00 ); 
+    //uart_write( g_uart, msg, strlen(msg)+1, 0x00 ); 
     
     memset( &txframe, 0x00, sizeof(txframe) );
     txframe.length = 50; // between 1 and 0x127
