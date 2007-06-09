@@ -13,6 +13,8 @@ void timerupt_test( void )
 	
 
 	global_construct();
+	timer_init(g_timer0,0,0);
+        timer_init(g_timer2,1,0);
         led_twinkle(LED_YELLOW,3);
 
         IRQEnable();

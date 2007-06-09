@@ -80,6 +80,9 @@
 #define TESTCASE_TIMERLEDINTERUPT
 #undef  TESTCASE_TIMERLEDINTERUPT
 
+#define TESTCASE_LED
+#undef  TESTCASE_LED
+
 #define TESTCASE_TIMER
 #undef  TESTCASE_TIMER
 
@@ -90,7 +93,7 @@
 #undef  TESTCASE_CC2420TX
 
 #define TESTCASE_CC2420RX
-//#undef  TESTCASE_CC2420RX
+#undef  TESTCASE_CC2420RX
 
 #define TESTCASE_CC2420DEV
 #undef  TESTCASE_CC2420DEV
@@ -98,6 +101,8 @@
 #define TESTCASE_OPENMAC
 #undef  TESTCASE_OPENMAC
 
+#define TESTCASE_BLINK
+//#undef TESTCASE_BLINK
 
 #define TESTCASE_LOCATION
 #undef  TESTCASE_LOCATION
@@ -186,6 +191,10 @@ void app_start()
 	timerupt_test();
 	#endif
 	
+	#ifdef TESTCASE_LED
+	led_test();
+	#endif
+	
 	#ifdef TESTCASE_ACTSCHE
 	// @TODO: you should test each case separately.
 	// each case represent a independent programming pattern of ActionScheduler.
@@ -224,5 +233,9 @@ void app_start()
 	
 	#ifdef TESTCASE_WLSMODEM
 	wlsmodem_start();
+	#endif
+	
+	#ifdef TESTCASE_BLINK
+	blink_test();
 	#endif
 }
