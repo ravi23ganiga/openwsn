@@ -59,6 +59,7 @@
 #define GDEBUG
 #endif
 
+static void _cc2420_init(TCc2420 * cc);
 static void cc2420_interrupt_init( void );
 static bool _hardware_sendframe(TCc2420 * cc, bool ackrequest);
 static TCc2420Frame * _hardware_recvframe( TCc2420 * cc,TCc2420Frame *pRRI);
@@ -156,7 +157,7 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 		cc->power = 1;
 		cc->ackrequest = 0;
 		cc->sleeprequest = FALSE;
-	    cc2420_init(cc); 
+	    _cc2420_init(cc); 
 	    cc2420_interrupt_init();
 	    break;
 	
@@ -246,7 +247,7 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 //			unique 32-bit identifier to avoid addressing conflicts. Normally, in a //802.15.4 network, the
 //			short address will be given to associated nodes by the PAN coordinator.
 //----------------------------------------------------------------------------
-void cc2420_init(TCc2420 * cc) 
+void _cc2420_init(TCc2420 * cc) 
 {
     uint16 rereg;
 
@@ -326,6 +327,9 @@ void cc2420_init(TCc2420 * cc)
  *****************************************************************************/
 void cc2420_open( TCc2420 * cc )
 {
+    _cc2420_init( cc );
+    cc2420_receive_on(g_cc2420);  
+    IRQEnable(); 
 }
 
 /******************************************************************************
@@ -377,7 +381,7 @@ uint8 cc2420_ioresult( TCc2420 * cc )
  * 	you must guarantee the internal buffer size is larger than frame length
  * or you may encounter unexpected errors.
  *****************************************************************************/ 
-int8 cc2420_rawwrite( TCc2420 * cc, char * frame, int8 len, uint8 opt )
+int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
 {
 	bool ack;
 	int8 count;
@@ -412,17 +416,17 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, int8 len, uint8 opt )
 
 	cc->txlen = 0;
 	//cc2420_evolve( cc );
-	return count;
+	return (int8)(count & 0x7F);
 }
 
-int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, int8 len, uint8 opt)
+int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
 {
 	bool ack;
 	int8 count;
 	
 	if (cc->txlen == 0)
 	{
-		count = len & 0x7F;
+		count = frame->length & 0x7F;
 		memmove( (char*)(&cc->txbuffer), frame, count ); 
 		cc->txbuffer[0].length = count;
 
@@ -443,7 +447,7 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, int8 len, uint8 opt)
 			
 	cc->txlen = 0;
 	//cc2420_evolve( cc );
-	return count;	
+	return (int8)(count & 0x7F);	
 }
 
 /******************************************************************************
@@ -461,7 +465,7 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, int8 len, uint8 opt)
  * frame or else some data may lost!!! the buffer capacity is indicated by 
  * parameter "size".
  *****************************************************************************/ 
-uint8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
+int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 {
 	uint8 count;
 	
@@ -496,10 +500,10 @@ uint8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 	else
 		count = 0;
 		
-	return count;
+	return (int8)(count & 0x7F);
 }
 
-uint8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 capacity, uint8 opt)
+int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 {
 	uint8 count;
 	
@@ -514,7 +518,7 @@ uint8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 capacity, uint8 opt)
 	else
 		count = 0;
 		
-	return count;
+	return (int8)(count & 0x7F);
 }
 
 //应该是bool型的，当ackrequest要求时， 1代表发送成功， 0 代表没受到ack，发送不成功。

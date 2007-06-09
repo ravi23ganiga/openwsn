@@ -29,9 +29,10 @@
  *****************************************************************************/ 
 
 #include "../configall.h"
-#include "../foundation.h"
-#include "../hal/hal.h"
+#include "../hal/hal_cc2420.h"
 #include "../service/svc_openmac.h"
+#include "../foundation.h"
+#include "../global.h"
 #include "blink.h"
 
 #define PANID 0x2420
@@ -101,7 +102,7 @@ void blink_test()
                   IRQEnable(); 
 			//uart_write( g_uart, "run6..", 7, 0 );
 
-			if (cc2420_read(g_cc2420, &rxframe, 0, 0) > 0)
+			if (cc2420_read(g_cc2420, &rxframe, 0) > 0)
 			{      
 			    if (rxframe.payload[0] == 0)
 					led_off( LED_RED );
@@ -131,12 +132,13 @@ void blink_test()
 			if (timer_expired(g_timer1))
 			{  
 				txframe.payload[0] = !txframe.payload[0];
-				cc2420_write( g_cc2420, &txframe, 11+10, 0x01 );
+				//cc2420_write( g_cc2420, &txframe, 11+10, 0x01 );
+				cc2420_write( g_cc2420, &txframe, 0x01 );
 				timer_restart( g_timer1, MASTER_BROADCASR_INTERVAL ,1);
 				uart_write( g_uart, "run4..", 7, 0 );
 
 			}
-			cc2420_read(g_cc2420,&rxframe, 0, 0 ) ;
+			cc2420_read(g_cc2420,&rxframe, 0 ) ;
 			
 				timer_restart( g_timer1, WAITFOR_MASTER_DURATION,1 );
 				state = MODE_SLAVE;	

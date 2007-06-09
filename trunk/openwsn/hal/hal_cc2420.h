@@ -228,7 +228,7 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
 
 #define cc2420_broadcast(cc,frame,len,opt) cc_2420_rawwrite(cc,frame,len,opt|0x01)
 
-/* TCc2420Frame/TOpenFrame is define is hal_openframe.h. 
+/* TCc2420Frame/TOpenFrame is defined is hal_openframe.h. 
 typedef struct{
   uint8 	length;
   uint16 	control;
@@ -341,7 +341,6 @@ void cc2420_destroy( TCc2420 * cc );
   * 改，但函数原型一旦确定，就不宜轻易变动，否则日后维护容易出错
   */
 void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size );
-void cc2420_init(TCc2420 * cc);
 void cc2420_open( TCc2420 * cc );
 void cc2420_close( TCc2420 * cc ); 
 
@@ -370,7 +369,7 @@ uint8 cc2420_ioresult( TCc2420 * cc );
  * @return
  * 	the character count copied successfully to the buffer
  *****************************************************************************/ 
-uint8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame,uint8 capacity, uint8 opt);
+int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt);
 
 /******************************************************************************
  * return the received frame entirely to the frame buffer. 
@@ -391,9 +390,10 @@ uint8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame,uint8 capacity, uint8 opt);
  * when you call cc2420_rawread(). you'd better identify the frame start position
  * using another member variable to improve reliability in the future.
  *****************************************************************************/ 
-uint8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 size, uint8 opt );
-int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, int8 len, uint8 opt);
-int8 cc2420_rawwrite( TCc2420 * cc, char * frame, int8 len, uint8 opt );
+int8 cc2420_rawread( TCc2420 * cc, char * buf, uint8 capacity, uint8 opt );
+
+int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt);
+int8 cc2420_rawwrite( TCc2420 * cc, char * buf, uint8 len, uint8 opt );
 
 /******************************************************************************
  * this function is used mainly by the driver itself.

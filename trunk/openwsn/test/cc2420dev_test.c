@@ -148,7 +148,8 @@ int cc2420dev_test (void)
           #ifdef PACKET
 	  led_twinkle(LED_GREEN,ledPeriod);
 	  
-	  length = cc2420_read( g_cc2420,&rx_test,0,0);
+	  //rx_test.length = ??
+	  length = cc2420_read( g_cc2420, &rx_test, 0);
 	  
 	  if(length > 11) {
 	  ledPeriod = rx_test.payload[0];

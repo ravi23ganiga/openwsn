@@ -59,11 +59,11 @@
  * 
  *****************************************************************************/
 
-void mon_construct();
-void mon_destroy();
-void mon_install_handler();
-void mon_common_handler();
-void mon_dispatch();
+void mon_construct( void );
+void mon_destroy( void );
+void mon_install_handler( void );
+void mon_common_handler( void );
+void mon_dispatch( void );
 
 /*
 void interrupt_init( void );

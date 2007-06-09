@@ -105,7 +105,9 @@ int cc2420tx_test(void)
         } 
         
         led_twinkle( LED_GREEN, 1 );
-        length = cc2420_write( g_cc2420, &(txframe), 10+11, 0 );
+        //length = cc2420_write( g_cc2420, &(txframe), 10+11, 0 );
+        txframe.length = 10 + 11;
+        length = cc2420_write( g_cc2420, &(txframe), 0 );
           
         /*
         if (length == -1) 

@@ -1,7 +1,7 @@
-/*****************************************************************************
+/******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
- * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
+ * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
  * 
  * OpenWSN is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free
@@ -28,35 +28,37 @@
  * 
  *****************************************************************************/ 
 
-#ifndef _LEDSYNC_H_4287_
-#define _LEDSYNC_H_4287_
+#ifndef _SVC_POWER_H_
+#define _SVC_POWER_H_
 
-/*****************************************************************************
- * @author zhangwei on 20070421
- * @note
- * 	blink test and demostration
- * 	this test will synchronize the LED flash frequvency across serveral nodes.
- * so it can be used to test whether the wireless communication and main processing
- * service is working right or not. 
- *  different to "cc2420tx" and "cc2420rx", this demo will test both the sending
- * and receiving process.
+/******************************************************************************
+ * @author zhangwei on 20070610
  *
- *  it's similar to the TinyOS Blink Example.
- *
- * @status
- * 	un-tested yet
+ * PowerManagement Service
+ * this module provides a high level abstraction and interface for low management
  * 
- * @history
- * @modified by xxx on 20070421
- *  
  *****************************************************************************/ 
 
-#include "../configall.h"
-#include "../foundation.h"
+#define POWER_ACTIVE
+#define POWER_SLEEP
+#define POWER_DEEPSLEEP
+#define POWER_POWERDOWN
+#define POWER_SHUTDOWN
 
-void blink_test( void );
+#define POWER_LEVEL0
+#define POWER_LEVEL1
+#define POWER_LEVEL2
+#define POWER_LEVEL3
+#define POWER_LEVEL4
+
+
+typedef struct{
+  
+}TPowerManagement;
+
+void pm_construct( char * buf, uint16 size );
+void pm_free( TPowerManagement * pm );
+void pm_setlevel();
+void pm_evolve();
 
 #endif
-
-
- 

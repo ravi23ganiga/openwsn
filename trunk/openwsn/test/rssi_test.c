@@ -64,7 +64,6 @@ int rssi_test (void)
     uint16 temp;
     uint8 ledPeriod;
     char * out_string = "the rssi value is : ";
-    char * enter      = "\n";
   
     target_init();
     
@@ -118,7 +117,8 @@ int rssi_test (void)
           
           led_twinkle(LED_GREEN,1);
           
-          length = cc2420_write(g_cc2420, &(tx_test),10 + 11,0);
+          tx_test.length = 10 + 11;
+          length = cc2420_write(g_cc2420, &(tx_test), 0);
           
           /*
           if(length == -1) {led_twinkle(LED_RED,5);uart_putchar(g_uart,(char)0x00);}
@@ -167,7 +167,7 @@ int rssi_test (void)
 	  if((temp / 10) > 0) uart_putchar(g_uart,(char)(temp / 10 + 48));
 	  temp = temp % 10;
 	  uart_putchar(g_uart,(char)(temp + 48));
-	  uart_putchar(g_uart,*enter);
+	  uart_putchar(g_uart, '\n' );
 	  }
 	  #endif
 	  //////////////////////////////////////////////////////////////
