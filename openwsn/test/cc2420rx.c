@@ -90,7 +90,8 @@ int cc2420rx_test (void)
         #ifdef CONFIG_PACKET_API
         led_twinkle(LED_GREEN,ledPeriod);
 	  
-        length = cc2420_read( g_cc2420,&rx_test,0,0);
+        //length = cc2420_read( g_cc2420,&rx_test,0,0);
+        length = cc2420_read( g_cc2420,&rx_test,0);
 	  
 	    if(length > 11) 
 	    {

@@ -11,7 +11,6 @@
 void sensor_test()
 {
     uint16 ad_value = 0;
-    char * enter = "\n";
     
     target_init();
     global_construct();
@@ -43,7 +42,6 @@ void sensor_test()
        //ad_value = ad_read(g_ad,NULL,0,0);
        //uart_putchar( g_uart,(char)ad_value);
        //uart_putchar( g_uart,(char)(ad_value >> 8));
-       //uart_putchar( g_uart,*enter);
        led_twinkle(LED_GREEN,3);
     }	
     #endif
