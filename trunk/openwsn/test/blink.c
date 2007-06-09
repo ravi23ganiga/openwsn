@@ -35,7 +35,7 @@
 #include "blink.h"
 
 #define PANID 0x2420
-#define WAITFOR_MASTER_DURATION 3000
+#define WAITFOR_MASTER_DURATION 5000
 #define MASTER_BROADCASR_INTERVAL 2000
 
 /* the booting up process of a node contains at least the following three stages:
@@ -59,63 +59,97 @@ void blink_test()
 	TOpenFrame txframe;
 	TOpenFrame rxframe;
 	uint8 state;
- 
-
+	uint8 n;
+	
     target_init();
     global_construct();
     spi_configure( g_spi );
-    txframe.nodefrom=0x1234;
+    memset( &rxframe, 0x00, sizeof(TOpenFrame) );
+    memset( &txframe, 0x00, sizeof(TOpenFrame) );
+
+    txframe.panid = PANID;
+    txframe.nodeto = 0x1234;
+    txframe.nodefrom=0x5678;
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PANID, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, txframe.nodefrom, 0);
+     for (n = 0; n < 10; n++) 
+    {
+        txframe.payload[n] = 2;
+    }
+    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     //cc2420_open();
-
-	timer_configure( g_timer1, NULL, NULL,1);	//?how much about timetimer->data timer->priority
-	state = MODE_SLAVE;
-	timer_setinterval( g_timer1, WAITFOR_MASTER_DURATION,1 );
+    timer_init(g_timer1,0,0);
+    timer_configure( g_timer1,NULL, NULL, 0 ); 
+    state = MODE_SLAVE;
+    timer_setinterval( g_timer1,WAITFOR_MASTER_DURATION,1 );
+    //timer_setinterval( g_timer1, WAITFOR_MASTER_DURATION,1 );
+    timer_start( g_timer1 );
+//	uart_write( g_uart, "uartecho run1..", 15, 0 );
+    
 
 	while (1)
 	{
-		memset( &rxframe, 0x00, sizeof(TOpenFrame) );
-		memset( &txframe, 0x00, sizeof(TOpenFrame) );
-
+		
 		switch (state)
 		{
-		// the GREEN LED on indicates the current node running in slave mode
+		// the GREEN LED off indicates the current node running in slave mode
 		case MODE_SLAVE:
-			led_off( LED_GREEN );
-			if (cc2420_read(g_cc2420, &rxframe, sizeof(rxframe), 0x00) > 0)
-			{
-				if (rxframe.payload[0] == 0)
+			led_on( LED_GREEN );
+			hal_delay(1000);
+		 cc2420_receive_on(g_cc2420);  
+                  IRQEnable(); 
+			//uart_write( g_uart, "run6..", 7, 0 );
+
+			if (cc2420_read(g_cc2420, &rxframe, 0, 0) > 0)
+			{      
+			    if (rxframe.payload[0] == 0)
 					led_off( LED_RED );
 				else
 					led_on( LED_RED );
-				
-				timer_restart( g_timer, WAITFOR_MASTER_DURATION, NULL );
+				hal_delay(1000);
+				timer_restart( g_timer1, WAITFOR_MASTER_DURATION, 1);
+			    uart_write( g_uart, "run2..", 7, 0 );
+
 			}
 			
-			if (timer_expired(g_timer))
+			if (timer_expired(g_timer1))
 			{
-				timer_restart( g_timer, MASTER_BROADCASR_INTERVAL,NULL );
+				timer_restart( g_timer1, MASTER_BROADCASR_INTERVAL,1 );
 				state = MODE_MASTER;
+				//led_toggle( LED_YELLOW );
+				uart_write( g_uart, "run3..", 7, 0 );
+	
 			}
 			break;
 			
-		// the green LED off indicates the current node running in master mode
+		// the green LED on indicates the current node running in master mode
 		case MODE_MASTER:
-			led_on( LED_GREEN );
-			if (timer_expired(g_timer))
-			{
-				//txframe.payload[0] = !led_state();?led_state() does not exist
-				cc2420_write( g_cc2420, &txframe, sizeof(txframe), 0x01 );
-				timer_restart( g_timer, MASTER_BROADCASR_INTERVAL ,NULL);
+			led_off( LED_GREEN );
+			hal_delay(1000);
+			//uart_write( g_uart, "run7..", 7, 0 );
+			if (timer_expired(g_timer1))
+			{  
+				txframe.payload[0] = !txframe.payload[0];
+				cc2420_write( g_cc2420, &txframe, 11+10, 0x01 );
+				timer_restart( g_timer1, MASTER_BROADCASR_INTERVAL ,1);
+				uart_write( g_uart, "run4..", 7, 0 );
+
 			}
+			cc2420_read(g_cc2420,&rxframe, 0, 0 ) ;
 			
-			if (cc2420_read(g_cc2420,&rxframe, sizeof(rxframe), 0x01 ) > 0)
+				timer_restart( g_timer1, WAITFOR_MASTER_DURATION,1 );
+				state = MODE_SLAVE;	
+				uart_write( g_uart, "run5..", 7, 0 );
+		
+			/* 
+			if (cc2420_read(g_cc2420,&rxframe, 0, 0 ) > 0)
 			{
-				timer_restart( g_timer, WAITFOR_MASTER_DURATION,NULL );
-				state = MODE_SLAVE;			
-			} 
+				timer_restart( g_timer1, WAITFOR_MASTER_DURATION,1 );
+				state = MODE_SLAVE;	
+				uart_write( g_uart, "run5..", 7, 0 );
+		
+			} */
 			break;
 		}
 	}

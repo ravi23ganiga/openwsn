@@ -18,7 +18,8 @@ void timer_test( void )
 	
 
     IRQEnable();
-
+        timer_init(g_timer0,0,0);
+        timer_init(g_timer1,1,0);
 	timer_configure( g_timer0, (TEventHandler)timer_callback, NULL, 0 ); 
 	timer_configure( g_timer1, (TEventHandler)timer1_callback,NULL, 1 );
 	

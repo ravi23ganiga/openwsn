@@ -29,6 +29,7 @@
 #include "./test/time_led_inquire.h"
 #include "./test/time_led_interupt.h"
 #include "./test/blink.h"
+#include "./test/led.h"
 
 
 void app_start( void );
