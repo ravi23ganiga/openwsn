@@ -79,7 +79,7 @@ void blink_test()
         txframe.payload[n] = 2;
     }
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
-    //cc2420_open();
+    cc2420_open( g_cc2420 );
     timer_init(g_timer1,0,0);
     timer_configure( g_timer1,NULL, NULL, 0 ); 
     state = MODE_SLAVE;

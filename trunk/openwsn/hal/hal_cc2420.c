@@ -40,6 +40,9 @@
  * @modified by zhangwei on 20070529
  * revision on this module. simplified the processing of read and write().
  * eliminate some un-necessary variables.
+ * 
+ * @modified by zhangwei on 20070608
+ * eliminate volatile TCc2420Frame pRxInfo;
  *  
  *****************************************************************************/
 
@@ -62,7 +65,7 @@
 static void _cc2420_init(TCc2420 * cc);
 static void cc2420_interrupt_init( void );
 static bool _hardware_sendframe(TCc2420 * cc, bool ackrequest);
-static TCc2420Frame * _hardware_recvframe( TCc2420 * cc,TCc2420Frame *pRRI);
+//static TCc2420Frame * _hardware_recvframe( TCc2420 * cc,TCc2420Frame *pRRI);
 static void __irq cc2420_interrupt_service( void );
 static void cc2420_interrupt_handler( TCc2420 * cc );
 
@@ -112,8 +115,6 @@ TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 		cc->channel = 1;//CC2420_DEFAULT_CHANNEL
 		cc->txlen = 0;
 		cc->rxlen = 0;
-		cc->txbuf = NULL;
-		cc->rxbuf = NULL;
 		cc->sleeprequest = FALSE;
 		cc->power = CC2420_POWER_MIN;
 		cc->ackrequest = false;
@@ -308,7 +309,7 @@ void _cc2420_init(TCc2420 * cc)
     //FAST2420_UPD_STATUS(cc->spi, (uint8*)(&rereg) );
     //uart_putchar(g_uart,(char)rereg);
 	// Wait for the crystal oscillator to become stable
-    cc2420_waitfor_crystal_oscillator(cc->spi);
+    _cc2420_waitfor_crystal_oscillator(cc->spi);
 	// Write the short address and the PAN ID to the CC2420 RAM (requires that the XOSC is on and stable)
     led_twinkle(LED_GREEN,5);
   
@@ -389,12 +390,12 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
 	if (cc->txlen == 0)
 	{
 		count = len & 0x7F;
-		cc->txbuffer[0].length = count;  
+		cc->txbuffer.length = count;  
 		//memmove(&cc->txbuffer[0].length, frame+0, 2 ); 
-		memmove(&cc->txbuffer[0].panid, frame+4, 2 );
-		memmove(&cc->txbuffer[0].nodeto, frame+6, 2 );
-		memmove(&cc->txbuffer[0].nodefrom, frame+8, 2 );
-		memmove(&cc->txbuffer[0].payload, frame+10, count-11 );     
+		memmove(&cc->txbuffer.panid, frame+4, 2 );
+		memmove(&cc->txbuffer.nodeto, frame+6, 2 );
+		memmove(&cc->txbuffer.nodefrom, frame+8, 2 );
+		memmove(&cc->txbuffer.payload, frame+10, count-11 );     
 	
 		//if ((opt & 0x01))  
 		//	cc->ackrequest = 0;            
@@ -428,7 +429,7 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
 	{
 		count = frame->length & 0x7F;
 		memmove( (char*)(&cc->txbuffer), frame, count ); 
-		cc->txbuffer[0].length = count;
+		cc->txbuffer.length = count;
 
 		if (cc->ackrequest == 1) 
 		{
@@ -474,25 +475,25 @@ int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 		IRQDisable();
 
 		//frame[0] = cc->receivepayload_len + 11;	
-		memmove( frame+0, &cc->rxbuffer[0].length, 1 );
-		memmove( frame+1, &cc->rxbuffer[0].control, 2 );
-		memmove( frame+3, &cc->rxbuffer[0].seqid, 1 );	
-		memmove( frame+4, &cc->rxbuffer[0].panid, 2 );
-		memmove( frame+6, &cc->rxbuffer[0].nodeto, 2 );	
-		memmove( frame+8, &cc->rxbuffer[0].nodefrom, 2 );
+		memmove( frame+0, (char*)(&cc->rxbuffer.length), 1 );
+		memmove( frame+1, (char*)(&cc->rxbuffer.control), 2 );
+		memmove( frame+3, (char*)(&cc->rxbuffer.seqid), 1 );	
+		memmove( frame+4, (char*)(&cc->rxbuffer.panid), 2 );
+		memmove( frame+6, (char*)(&cc->rxbuffer.nodeto), 2 );	
+		memmove( frame+8, (char*)(&cc->rxbuffer.nodefrom), 2 );
 
 		// copy the main body of the frame into out buffer, including the last 
 		// two bytes for footer.
 		//
-		count = min(cc->rxbuffer[0].length, capacity);
-		//memmove( frame+10, cc->rxbuffer[0].payload, cc->receivepayload_len);
-		memmove( frame+10, cc->rxbuffer[0].payload, count - BASIC_RF_PACKET_OVERHEAD_SIZE );
-		//memmove( frame+9 + cc->receivepayload_len, &cc->rxbuffer[0].footer,2 );
+		count = min(cc->rxbuffer.length, capacity);
+		//memmove( frame+10, cc->rxbuffer.payload, cc->receivepayload_len);
+		memmove( frame+10, (char*)(cc->rxbuffer.payload), count - BASIC_RF_PACKET_OVERHEAD_SIZE );
+		//memmove( frame+9 + cc->receivepayload_len, &cc->rxbuffer.footer,2 );
 		cc->rxlen = 0;
 		
 		/* future new version should simple as 
-		count = min(cc->rxbuffer[0].length, capacity);
-		memmove( frame, &cc->rxbuffer[0], count );
+		count = min(cc->rxbuffer.length, capacity);
+		memmove( frame, &cc->rxbuffer, count );
 		cc->rxlen = 0;
 		*/
 		IRQEnable();			
@@ -510,8 +511,8 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 	if (cc->rxlen > 0)
 	{
 		IRQDisable();
-	    count = min( sizeof(TCc2420Frame), cc->rxbuffer[0].length ); 
-	    memmove( frame, &(cc->rxbuffer[0]), count );
+	    count = min( sizeof(TCc2420Frame), cc->rxbuffer.length ); 
+	    memmove( frame, (char*)(&cc->rxbuffer), count );
 		cc->rxlen = 0;
 		IRQEnable();			
 	}
@@ -581,7 +582,7 @@ bool _hardware_sendframe( TCc2420 * cc, bool ackrequest )
   
     //framelength = pRTI->length + BASIC_RF_PACKET_OVERHEAD_SIZE;
     //framelength = cc->sendpayload_len + BASIC_RF_PACKET_OVERHEAD_SIZE;
-    framelength = cc->txbuffer[0].length;
+    framelength = cc->txbuffer.length;
 	assert( framelength >  BASIC_RF_PACKET_OVERHEAD_SIZE );
     
     // @TODO
@@ -593,12 +594,12 @@ bool _hardware_sendframe( TCc2420 * cc, bool ackrequest )
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->seqid, 1);    // Sequence number
     
     // @TODO: or use cc->panid directly? i think this is better
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].panid, 2);
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodeto, 2);
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer.panid, 2);
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer.nodeto, 2);
     
     // @TODO: or use cc->nodefrom directly? i think this is better
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].nodefrom, 2);         // Source address
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer[0].payload, framelength - BASIC_RF_PACKET_OVERHEAD_SIZE);  // Payload
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer.nodefrom, 2);         // Source address
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer.payload, framelength - BASIC_RF_PACKET_OVERHEAD_SIZE);  // Payload
 
 	// wait for the transmission to begin before exiting (makes sure that this 
 	// function cannot be called a second time, and thereby cancelling the first 
@@ -694,9 +695,9 @@ bool _hardware_sendframe( TCc2420 * cc, bool ackrequest )
  *			generally speaking, this function rarely return -1.
  */
 //此函数无需返回接收到的长度，而应该返回一个包。长度存在于cc->receive_len中，cc->receive_len在接收中断中赋值
-TCc2420Frame* _hardware_recvframe(TCc2420 * cc,TCc2420Frame *pRRI) 
+/*TCc2420Frame* _hardware_recvframe(TCc2420 * cc,TCc2420Frame *pRRI) 
 {
-    cc->rxbuffer[0] = *pRRI;
+    cc->rxbuffer = *pRRI;
     //cc->rssi        = cc->rfSettings.rssi;
     //cc->receivepayload_len = cc->rfSettings.payload_length;
     //cc->receivepacket_len = cc->rfSettings.payload_length + 11;
@@ -705,7 +706,7 @@ TCc2420Frame* _hardware_recvframe(TCc2420 * cc,TCc2420Frame *pRRI)
     // continue using the (one and only) reception structure
     return pRRI;
 } 
-
+*/
 /* evolve the state machine of "TCc2420".
  * This evoluation function will be called when the you try to switch the current 
  * state to a new one and when you stay in some long time states. There are four
@@ -780,38 +781,6 @@ int8 cc2420_evolve( TCc2420 * cc )
 	return 0;
 }
  
-
-void cc2420_startup( TCc2420 * cc )
-{
-	// @TODO
-	//spi_write
-	assert( cc->state == CC_STATE_POWERDOWN );
-	cc->state = CC_STATE_IDLE;
-}
-
-void cc2420_shutdown( TCc2420 * cc )
-{
-	// @TODO
-	//spi_write
-	cc->state = CC_STATE_POWERDOWN;
-}
-
-
-void cc2420_sleep( TCc2420 * cc )
-{
-	// @TODO
-	//spi_write
-	cc->state = CC_STATE_SLEEP;
-}
-
-// assume the current state is SLEEP state
-void cc2420_wakeup( TCc2420 * cc )
-{
-	// @TODO
-	//spi_write
-	cc->state = CC_STATE_IDLE;
-}
-
 /* @attention: 
  * the valid channel value varies from 11 to 26.
  * while, the frequvency f = 2405 + 5*(channel - 11) MHz
@@ -949,18 +918,18 @@ void cc2420_interrupt_handler( TCc2420 * cc )
         
         // read the frame control field
         FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &framecontrol, 2);
-        cc->pRxInfo.control = framecontrol;
+        cc->rxbuffer.control = framecontrol;
         ack = !!(framecontrol & BASIC_RF_FCF_ACK_BM); // @TODO is it right? why double !!?
         
         // read the sequence num in the frame received
         // @TODO: why not FAST2420_READ_FIFO_NO_WAIT? what's the difference?
     	FAST2420_READ_FIFO_BYTE(cc->spi,(BYTE*)&rx_seqid);
-    	cc->pRxInfo.seqid = rx_seqid;
+    	cc->rxbuffer.seqid = rx_seqid;
     	
 		// if this is an acknowledgment packet, compare the sequence id received 
 		// and saved after last sending
     	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (framecontrol == BASIC_RF_ACK_FCF) 
-    		//&& (cc->pRxInfo.seqid == cc->seqid))
+    		//&& (cc->rxbuffer.seqid == cc->seqid))
     		&& (rx_seqid == cc->seqid)) 
     	{
  	       	// read the footer and check for CRC OK
@@ -994,20 +963,20 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 			// FAST2420_READ_FIFO_GARBAGE(cc->spi,4);
 			
 			// read the PanID
-			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->pRxInfo.panid, 2);
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->rxbuffer.panid, 2);
 			
 			// read the destination address(local address)
-			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->pRxInfo.nodeto, 2);
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->rxbuffer.nodeto, 2);
 
 			// read the source address
-			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->pRxInfo.nodefrom, 2);
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->rxbuffer.nodefrom, 2);
 
 			// read the packet payload
-			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) cc->pRxInfo.payload, length - BASIC_RF_PACKET_OVERHEAD_SIZE);
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) cc->rxbuffer.payload, length - BASIC_RF_PACKET_OVERHEAD_SIZE);
 
 			// read the footer to get the RSSI value
 			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) footer, 2);
-			cc->pRxInfo.footer = (footer[1] << 8) + footer[0];
+			cc->rxbuffer.footer = (footer[1] << 8) + footer[0];
 			cc->rssi = footer[0];
 
 			// notify the application about the received _data_ packet if the CRC is OK
@@ -1017,8 +986,8 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 			if (((framecontrol & (BASIC_RF_FCF_BM)) == BASIC_RF_FCF_NOACK) 
 				&& (footer[1] & BASIC_RF_CRC_OK_BM)) 
 			{
-				cc->pRxInfo.length = length;
-				 _hardware_recvframe(cc,(TCc2420Frame *)(&cc->pRxInfo));
+				cc->rxbuffer.length = length;
+				 //_hardware_recvframe(cc,(TCc2420Frame *)(&cc->rxbuffer));
 				 //cc->pRxInfo = *(_hardware_recvframe(cc,(TCc2420Frame *)(&cc->pRxInfo)));
 			}
 			cc->rxlen = length;  // @TODO?? shall we update it so early? and here?
@@ -1042,7 +1011,7 @@ void cc2420_receive_off(TCc2420 * cc)
 /* this function will Poll the SPI status byte until the crystal oscillator is stable    
  * your must wait until it is stable before doing further read() or write() 
  */
-void cc2420_waitfor_crystal_oscillator(TSpiDriver * spi) 
+void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi) 
 {
 	static BYTE status;
 

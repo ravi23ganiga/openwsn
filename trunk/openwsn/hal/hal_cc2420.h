@@ -136,7 +136,7 @@
  *****************************************************************************/
 
 #define TCc2420Driver TCc2420
-#define CC2420_BUF_CAPACITY 1 
+//#define CC2420_BUF_CAPACITY 1 
 
 #ifdef CONFIG_TARGET_OPENNODE_10
 #define FIFO            8  // P0.8  - Input: FIFO from CC2420
@@ -192,7 +192,9 @@
 #define CSN_PORT       0  
 #endif
 
-// the default settings when the cc2420 transceiver first started
+/* the default settings when the cc2420 transceiver first started
+ * you should change it using cc2420_configure() 
+ */
 #define CC2420_DEFAULT_PANID 1
 #define CC2420_DEFAULT_ADDRESS 1
 #define CC2420_DEFAULT_CHANNEL  19         //channel is 11 - 26
@@ -229,27 +231,13 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
 #define cc2420_broadcast(cc,frame,len,opt) cc_2420_rawwrite(cc,frame,len,opt|0x01)
 
 /* TCc2420Frame/TOpenFrame is defined is hal_openframe.h. 
-typedef struct{
-  uint8 	length;
-  uint16 	control;
-  uint8  	seqid;
-  uint16 	panid;
-  uint16    nodeto;
-  uint16 	nodefrom;
-  uint8  	payload[OPF_PAYLOAD_SIZE];
-  uint16  	footer;
-}TOpenFrame;
-*/
+ * it is an 802.15.4 frame mapping in the memory except the first "length" and 
+ * last "footer" member.
+ * 
+ * [1B length] [2B control] [1B seqid] [1B panid] [2B nodeto] [2B nodefrom]
+ * [OPF_PAYLOAD_SIZE payload] [2B footer] 
+ */
 #define TCc2420Frame TOpenFrame
-
-typedef struct {
-  TCc2420Frame pRxInfo;
-  //uint8 payload_length;
-  //UINT8 seqid;
-  //WORD panid;
-  //WORD myAddr;
-  //uint8 rssi;
-}BASIC_RF_SETTINGS;
 
 /* TCc2420 object
  * this structure represent a cc2420 object in the system. you can interact with 
@@ -293,11 +281,9 @@ typedef struct{
   uint8 channel; 
   volatile uint8 txlen;
   volatile uint8 rxlen;
-  TCc2420Frame txbuffer[CC2420_BUF_CAPACITY];
-  TCc2420Frame rxbuffer[CC2420_BUF_CAPACITY];
-  char * txbuf;
-  char * rxbuf;
-  volatile TCc2420Frame pRxInfo;
+  TCc2420Frame txbuffer;
+  volatile TCc2420Frame rxbuffer;
+  //volatile TCc2420Frame pRxInfo;
   uint8  sleeprequest;
   uint8  power;
   uint8  ackrequest;   
@@ -307,18 +293,24 @@ typedef struct{
   BOOL receiveOn;				// @TODO: @modified zhangwei on 20070601. i do think this variable is no use. 
 }TCc2420;
 
-
 /* The following variable is declared usually in "global.c". However, it is used
  * in the interrupt service routine of this module. Be sure the variable name 
  * cannot be modified! it must be "g_cc2420"!
- */
+ */ 
 extern TCc2420 * g_cc2420;
  
+/******************************************************************************
+ * construct(): initialize memory 
+ * destroy(): destroy memory used by the object. may do further resource releasing
+ *  	process.
+ *****************************************************************************/ 
 TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi );
 void cc2420_destroy( TCc2420 * cc );
 
 /******************************************************************************
  * configure the cc2420 driver object.
+ * you must do configure() before you can do read()/write().
+ * 
  * you may add more parameters in the functions. 
  * different to the parameters in the construct function, you can use this function
  * to modify parameters without rebooting the system to make them take effect.
@@ -341,26 +333,41 @@ void cc2420_destroy( TCc2420 * cc );
   * 改，但函数原型一旦确定，就不宜轻易变动，否则日后维护容易出错
   */
 void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size );
+
+/******************************************************************************
+ * open(): prepare the hardware for sending/receiving data. different to construct(), 
+ *		open() contains the processing to interact with the hardware.  
+ * close(): disable the hardware and release necessary resources.
+ *****************************************************************************/ 
 void cc2420_open( TCc2420 * cc );
 void cc2420_close( TCc2420 * cc ); 
-
-/* return the cc2420 driver state.
- * attention that state is used for other modules. it is not the same as "mode".
- */
-uint8 cc2420_state( TCc2420 * cc );
-
-void cc2420_set_power(TCc2420 * cc,uint8 power);
-uint8 cc2420_ioresult( TCc2420 * cc );
 
 /******************************************************************************
  * read data from cc2420 driver
  * read data from the driver's internal buffer. the interrupt service routine 
  * is responsible to place the received data into the internal buffer.
  * you can always call this function to check whether there has data in the internal 
- * buffer no matter what state the wireless chip "cc2420" is. 
+ * buffer no matter what state. 
  * 
  * @attention
  * you may lost the input data when you cannot call this function fast enough.
+ * 
+ *****************************************************************************/ 
+int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt);
+
+/******************************************************************************
+ * return the received frame entirely to the frame buffer.
+ * the only different between read() and rawread() is that rawread() will place 
+ * the received frame directly into a buffer other than a structure.
+ * 
+ * @attention
+ * 	- similar to cc_read(), you'll lost the received frame if you cannot call this 
+ * function quickly enough.
+ * 	- when this function is effective, you must guarantee the internal buffer is 
+ * large enough to hold a frame.
+ *  - if the input buffer "capacity" is not large enough, the additional data
+ * will be truncated and lost.
+ *  - you can freely mix using read() and rawread() in your program.
  * 
  * @param
  * 	buf			the memory to receive the data
@@ -368,30 +375,19 @@ uint8 cc2420_ioresult( TCc2420 * cc );
  * 	opt			option settings.
  * @return
  * 	the character count copied successfully to the buffer
- *****************************************************************************/ 
-int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt);
-
-/******************************************************************************
- * return the received frame entirely to the frame buffer. 
- * different to xxx_read() function, this function will not return when a frame
- * received entirely. For "cc2420" chip, the frame is a standard 802.15.4 frame.
  * 
- * @attention
- * 	- similar to cc_read(), you'll lost the received frame if you cannot call this 
- * function quickly enough.
- * 	- when this function is effective, you must guarantee the internal buffer is 
- * large enough to hold a frame.
- * 
- * @warning 
- * 	problems may be encountered when you switch between "cc2420_read()" and 
- * "cc2420_rawread()". rawread will always assume the second byte in the internal 
- * buffer as frame length and use it to check whether the whole frame received.
- * you'll encounter problems when there's still some data left in the buffer 
- * when you call cc2420_rawread(). you'd better identify the frame start position
- * using another member variable to improve reliability in the future.
  *****************************************************************************/ 
 int8 cc2420_rawread( TCc2420 * cc, char * buf, uint8 capacity, uint8 opt );
 
+/******************************************************************************
+ * write(): send a frame out.
+ * 		attention, you must set some members in the "frame" structure before you 
+ * 		call write() to send them out. they are the following:
+ * 			frame->length. panid, nodeto, payload
+ * 
+ * rawwrite(): quite similar to write() except that it uses a memory buffer other 
+ * 		than a structure to pass the frame data.
+ *****************************************************************************/ 
 int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt);
 int8 cc2420_rawwrite( TCc2420 * cc, char * buf, uint8 len, uint8 opt );
 
@@ -407,35 +403,41 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * buf, uint8 len, uint8 opt );
  *****************************************************************************/ 
 int8 cc2420_evolve( TCc2420 * cc );
 
-/* 启动cc2420硬件设备
- * 用于从Power Off / Power Down状态恢复到正常接收数据状态
- */
-void cc2420_startup( TCc2420 * cc );
+/******************************************************************************
+ * return the cc2420 driver state.
+ * attention that state is used for other modules. it is not the same as "mode".
+ *****************************************************************************/ 
+uint8 cc2420_state( TCc2420 * cc );
+uint8 cc2420_ioresult( TCc2420 * cc );
 
-/* 关闭cc2420硬件设备
- * 从正常接收发送数据状态进入Power off/Power down状态
- * 注意同时需要更改driver内部的状态标志
- */
-//void cc2420_shutdown( TCc2420 * cc );
+/******************************************************************************
+ * set the TX sending power of the transceiver chip. this will affect the communication
+ * distance. there're some constants already defined for you:
+ * 
+ * #define CC2420_POWER_MIN CC2420_POWER_8
+ * #define CC2420_POWER_MAX CC2420_POWER_1 
+ * #define CC2420_POWER_1  0x01       //  0dBm   17.4mA
+ * #define CC2420_POWER_2  0x02       // -1dBm   16.5mA
+ * #define CC2420_POWER_3  0x03       // -3dBm   15.2mA
+ * #define CC2420_POWER_4  0x04       // -5dBm   13.9mA
+ * #define CC2420_POWER_5  0x05       // -7dBm   12.5mA
+ * #define CC2420_POWER_6  0x06       //-10dBm   11.2mA
+ * #define CC2420_POWER_7  0x07       //-15dBm    8.9mA
+ * #define CC2420_POWER_8  0x08       //-25dBm    8.5mA
+ * 
+ *****************************************************************************/ 
+void cc2420_set_power(TCc2420 * cc,uint8 power);
 
-/* 休眠 */
-//void cc2420_sleep( TCc2420 * cc );
-
-/* 从休眠中唤醒 */
-void cc2420_wakeup( TCc2420 * cc );
-
-// @TODO: 20061026
-// huanghuan: you should use the following setchannel
-//void cc2420_setchannel( TCc2420 * cc, uint8 channel );
-// not this one:
+/******************************************************************************
+ * set channel of the transceiver.
+ * this will affect the frequency. 
+ *****************************************************************************/ 
 void cc2420_setchannel( TCc2420 * cc, uint8 channel );
 
 
 void cc2420_receive_on(TCc2420 * cc);
 void cc2420_receive_off(TCc2420 * cc);
-void cc2420_waitfor_crystal_oscillator(TSpiDriver * spi);
 
-//void cc2420_interrupt_init( void );
-//void cc2420_event_handler(void);
+void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi);
 
 #endif /* _HAL_CC2420_H_ */

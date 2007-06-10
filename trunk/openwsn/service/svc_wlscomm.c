@@ -473,7 +473,7 @@ int8 wls_evolve( TWirelessComm * wls )
 		case WLS_STATE_SLEEP:
 			if (wls->nextstate != WLS_STATE_SLEEP)
 			{ 
-				cc2420_wakeup( wls->rfdriver );
+				//cc2420_wakeup( wls->rfdriver );
 				wls->state = WLS_STATE_IDLE;
 				done = FALSE;
 			}
@@ -600,7 +600,7 @@ int8 wls_evolve( TWirelessComm * wls )
 		case WLS_STATE_SLEEP:
 			if (wls->nextstate != WLS_STATE_SLEEP)
 			{ 
-				cc2420_wakeup( wls->rfdriver );
+				//cc2420_wakeup( wls->rfdriver );
 				wls->state = WLS_STATE_IDLE;
 				done = FALSE;
 			}
@@ -662,7 +662,7 @@ uint8 wls_wakeup( TWirelessComm * wls )
 {
 	if (wls->state != WLS_STATE_SLEEP)
 	{
-		cc2420_wakeup( wls->rfdriver ); 
+		//cc2420_wakeup( wls->rfdriver ); 
 	}
 	return 0;
 }

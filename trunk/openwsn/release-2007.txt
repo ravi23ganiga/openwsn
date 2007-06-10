@@ -5,6 +5,12 @@ Flash object read and write (hal_flash)
 svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
+20070608
+
+revison on hal_cc2420.
+attention: 
+you should use cc2420_open() in the future. 
+cc2420_init() is eliminated().
 
 20070603
 
