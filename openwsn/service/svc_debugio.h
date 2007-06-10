@@ -48,7 +48,7 @@
 typedef struct{
   TUartDriver * uart;
   uint16 datalen;
-  char buf[CONFIG_DEBUGIO_BUFFER_CAPACITY];
+  char buf[CONFIG_DEBUGIO_BUFFER_CAPACITY]; 
 }TDebugIo;
 
 TDebugIo * debug_construct( char * buf, uint16 size );
