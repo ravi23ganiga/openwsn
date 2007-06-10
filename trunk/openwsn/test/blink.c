@@ -79,14 +79,15 @@ void blink_test()
         txframe.payload[n] = 2;
     }
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
-    cc2420_open( g_cc2420 );
+    cc2420_open(g_cc2420);
     timer_init(g_timer1,0,0);
     timer_configure( g_timer1,NULL, NULL, 0 ); 
     state = MODE_SLAVE;
     timer_setinterval( g_timer1,WAITFOR_MASTER_DURATION,1 );
-    //timer_setinterval( g_timer1, WAITFOR_MASTER_DURATION,1 );
+    cc2420_receive_on(g_cc2420);
+    timer_VICdisable(g_timer1); 
+    IRQEnable(); 
     timer_start( g_timer1 );
-//	uart_write( g_uart, "uartecho run1..", 15, 0 );
     
 
 	while (1)
@@ -97,10 +98,6 @@ void blink_test()
 		// the GREEN LED off indicates the current node running in slave mode
 		case MODE_SLAVE:
 			led_on( LED_GREEN );
-			hal_delay(1000);
-		 cc2420_receive_on(g_cc2420);  
-                  IRQEnable(); 
-			//uart_write( g_uart, "run6..", 7, 0 );
 
 			if (cc2420_read(g_cc2420, &rxframe, 0) > 0)
 			{      
@@ -110,6 +107,7 @@ void blink_test()
 					led_on( LED_RED );
 				hal_delay(1000);
 				timer_restart( g_timer1, WAITFOR_MASTER_DURATION, 1);
+				timer_VICdisable(g_timer1);
 			    uart_write( g_uart, "run2..", 7, 0 );
 
 			}
@@ -117,6 +115,7 @@ void blink_test()
 			if (timer_expired(g_timer1))
 			{
 				timer_restart( g_timer1, MASTER_BROADCASR_INTERVAL,1 );
+				timer_VICdisable(g_timer1);
 				state = MODE_MASTER;
 				//led_toggle( LED_YELLOW );
 				uart_write( g_uart, "run3..", 7, 0 );
@@ -127,31 +126,25 @@ void blink_test()
 		// the green LED on indicates the current node running in master mode
 		case MODE_MASTER:
 			led_off( LED_GREEN );
-			hal_delay(1000);
-			//uart_write( g_uart, "run7..", 7, 0 );
 			if (timer_expired(g_timer1))
 			{  
 				txframe.payload[0] = !txframe.payload[0];
 				//cc2420_write( g_cc2420, &txframe, 11+10, 0x01 );
 				cc2420_write( g_cc2420, &txframe, 0x01 );
 				timer_restart( g_timer1, MASTER_BROADCASR_INTERVAL ,1);
+				timer_VICdisable(g_timer1);
 				uart_write( g_uart, "run4..", 7, 0 );
 
 			}
-			cc2420_read(g_cc2420,&rxframe, 0 ) ;
-			
-				timer_restart( g_timer1, WAITFOR_MASTER_DURATION,1 );
-				state = MODE_SLAVE;	
-				uart_write( g_uart, "run5..", 7, 0 );
-		
-			/* 
+	
 			if (cc2420_read(g_cc2420,&rxframe, 0, 0 ) > 0)
 			{
 				timer_restart( g_timer1, WAITFOR_MASTER_DURATION,1 );
+				timer_VICdisable(g_timer1);
 				state = MODE_SLAVE;	
 				uart_write( g_uart, "run5..", 7, 0 );
 		
-			} */
+			} 
 			break;
 		}
 	}
