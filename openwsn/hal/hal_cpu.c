@@ -68,48 +68,7 @@ static uint8 IRQ_FLAG_STORE;
  * 
  ******************************************************************************/
 
-#ifdef __GNUC__
-void hal_delay( uint16 timeout ) 
-{
-  	/* usually the sequence uses exactly 8 clock cycle for each round */
-  	do {
-    	NOP();
-    	NOP();
-    	NOP();
-    	NOP();
-  	} while (--timeout);
-}
 
-#elif defined __IAR_SYSTEMS_ICC__
-#pragma optimize=none
-void hal_delay( uint16 timeout ) 
-  	do {
-    	NOP();
-  	} while (--timeout);
-}
-
-/* for unknown compiles */
-#else
-void hal_delay( uint16 delay )
-{
-	uint32 count, n;
-	
-	count = delay * 10000;
-	for (n=0; n<count; n++)
-	{
-		delay = 0;
-		delay ++;
-	}
-}
-#endif
-
-
-// reboot the whole system
-// TODO: hal_reboot
-void hal_reboot()
-{
-	
-}
 
 // obsolete functions
 void  halWait(uint32  dly)

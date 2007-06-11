@@ -79,12 +79,14 @@ void blink_test()
         txframe.payload[n] = 2;
     }
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+    
     cc2420_open(g_cc2420);
+    //cc2420_receive_on(g_cc2420);
+    
     timer_init(g_timer1,0,0);
     timer_configure( g_timer1,NULL, NULL, 0 ); 
     state = MODE_SLAVE;
     timer_setinterval( g_timer1,WAITFOR_MASTER_DURATION,1 );
-    cc2420_receive_on(g_cc2420);
     timer_VICdisable(g_timer1); 
     IRQEnable(); 
     timer_start( g_timer1 );
@@ -137,7 +139,7 @@ void blink_test()
 
 			}
 	
-			if (cc2420_read(g_cc2420,&rxframe, 0, 0 ) > 0)
+			if (cc2420_read(g_cc2420,&rxframe, 0 ) > 0)
 			{
 				timer_restart( g_timer1, WAITFOR_MASTER_DURATION,1 );
 				timer_VICdisable(g_timer1);

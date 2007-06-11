@@ -150,9 +150,9 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 	case CC2420_BASIC_INIT:
 	    cc->state = CC_STATE_POWERDOWN;
 		cc->nextstate = CC_STATE_POWERDOWN;
-		cc->panid = 0x2420; //PANID;
-		cc->address = 0x1234; //ADDR;
-		cc->channel = 19; //Channel;
+		cc->panid = CC2420_DEFAULT_PANID; 
+		cc->address = CC2420_DEFAULT_ADDRESS; 
+		cc->channel = CC2420_DEFAULT_CHANNEL; 
 		cc->txlen = 0;
 		cc->rxlen = 0;
 		cc->power = 1;

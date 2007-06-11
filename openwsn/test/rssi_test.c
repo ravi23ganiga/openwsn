@@ -102,7 +102,8 @@ int rssi_test (void)
     tx_frame[8] = 0x34; tx_frame[9] = 0x12; 
     
     
-    cc2420_receive_on(g_cc2420);  
+    cc2420_open( g_cc2420 );
+    //cc2420_receive_on(g_cc2420);  
     IRQEnable(); 
 	
 	// The main loop:
