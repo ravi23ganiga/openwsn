@@ -5,6 +5,9 @@ Flash object read and write (hal_flash)
 svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
+20070610
+add new module: hal_foundation.c
+
 20070608
 
 revison on hal_cc2420.

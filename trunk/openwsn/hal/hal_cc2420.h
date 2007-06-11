@@ -194,10 +194,13 @@
 
 /* the default settings when the cc2420 transceiver first started
  * you should change it using cc2420_configure() 
+ * 
+ * @attention
+ * the valid channel value is 11-26. the default channel is the at the center.
  */
-#define CC2420_DEFAULT_PANID 1
-#define CC2420_DEFAULT_ADDRESS 1
-#define CC2420_DEFAULT_CHANNEL  19         //channel is 11 - 26
+#define CC2420_DEFAULT_PANID    0x2420
+#define CC2420_DEFAULT_ADDRESS  0x1234
+#define CC2420_DEFAULT_CHANNEL  19         
 
 /* cc2420 state constants */
 enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };

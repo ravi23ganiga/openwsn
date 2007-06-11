@@ -89,8 +89,9 @@ int cc2420tx_test(void)
     txbuf[6] = 0x78; txbuf[7] = 0x56;
     txbuf[8] = 0x34; txbuf[9] = 0x12; 
     
-    cc2420_receive_on(g_cc2420);  
-    IRQEnable(); 
+    cc2420_open( g_cc2420 );
+    //cc2420_receive_on(g_cc2420);  
+    //IRQEnable(); 
     
 	while (TRUE) 
 	{    

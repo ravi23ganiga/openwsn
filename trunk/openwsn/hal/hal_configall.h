@@ -1,4 +1,4 @@
-/*****************************************************************************
+/******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
  * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
@@ -26,7 +26,7 @@
  * This exception does not invalidate any other reasons why a work based on
  * this file might be covered by the GNU General Public License.
  * 
- ****************************************************************************/ 
+ *****************************************************************************/ 
 
 #ifndef _HAL_CONFIGALL_H
 #define _HAL_CONFIGALL_H

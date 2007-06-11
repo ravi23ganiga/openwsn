@@ -79,8 +79,10 @@ int cc2420rx_test (void)
     tx_frame[8] = 0x34; tx_frame[9] = 0x12; 
     
     //uart_write(g_uart, "uartecho run22.", 15, 0 );
-    cc2420_receive_on(g_cc2420);  
-    IRQEnable(); 
+    cc2420_open( g_cc2420 );
+    
+    //cc2420_receive_on(g_cc2420);  
+    //IRQEnable(); 
    
     ledPeriod = 1;
     while (TRUE) 
