@@ -60,7 +60,7 @@ void wlsmodem_start( void )
 	if (key(KEY_CONFIG) == KEY_ON)
 	{
 		config_execute( g_config );
-		hal_reboot();
+		//hal_reboot();
 		return;
 	}
 

@@ -69,8 +69,8 @@ void blink_test()
     memset( &txframe, 0x00, sizeof(TOpenFrame) );
 
     txframe.panid = PANID;
-    txframe.nodeto = 0x1234;
-    txframe.nodefrom=0x5678;
+    txframe.nodeto = 0x5678;
+    txframe.nodefrom=0x1234;
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PANID, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, txframe.nodefrom, 0);
@@ -78,20 +78,19 @@ void blink_test()
     {
         txframe.payload[n] = 2;
     }
+    txframe.length=10+11;
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     
-    cc2420_open(g_cc2420);
-    //cc2420_receive_on(g_cc2420);
-    
+    //cc2420_open(g_cc2420);
     timer_init(g_timer1,0,0);
     timer_configure( g_timer1,NULL, NULL, 0 ); 
     state = MODE_SLAVE;
     timer_setinterval( g_timer1,WAITFOR_MASTER_DURATION,1 );
-    timer_VICdisable(g_timer1); 
-    IRQEnable(); 
+    cc2420_receive_on(g_cc2420);  
+    IRQEnable();
     timer_start( g_timer1 );
+    timer_VICdisable(g_timer1); 
     
-
 	while (1)
 	{
 		
@@ -110,7 +109,7 @@ void blink_test()
 				hal_delay(1000);
 				timer_restart( g_timer1, WAITFOR_MASTER_DURATION, 1);
 				timer_VICdisable(g_timer1);
-			    uart_write( g_uart, "run2..", 7, 0 );
+			        uart_write( g_uart, "run2..", 7, 0 );
 
 			}
 			

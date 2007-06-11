@@ -87,6 +87,9 @@ void NO_OS_EXIT_CRITICAL(void);
 #define hal_sleep() hal_cpu_sleep()
 #define hal_wakeup() hal_cpu_wakeup()
 
+void hal_delay( uint16 delay );
+void hal_reboot( void );
+
 // @TODO
 //void hal_attach_interrupt()
 //void hal_detach_interrupt();
