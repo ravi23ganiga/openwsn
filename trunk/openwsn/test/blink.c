@@ -69,8 +69,8 @@ void blink_test()
     memset( &txframe, 0x00, sizeof(TOpenFrame) );
 
     txframe.panid = PANID;
-    txframe.nodeto = 0x5678;
-    txframe.nodefrom=0x1234;
+    txframe.nodeto = 0x1234;
+    txframe.nodefrom=0x5678;
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PANID, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, txframe.nodefrom, 0);
@@ -132,6 +132,7 @@ void blink_test()
 				txframe.payload[0] = !txframe.payload[0];
 				//cc2420_write( g_cc2420, &txframe, 11+10, 0x01 );
 				cc2420_write( g_cc2420, &txframe, 0x01 );
+				led_toggle( LED_RED );
 				timer_restart( g_timer1, MASTER_BROADCASR_INTERVAL ,1);
 				timer_VICdisable(g_timer1);
 				uart_write( g_uart, "run4..", 7, 0 );
