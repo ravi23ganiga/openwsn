@@ -339,6 +339,7 @@ void cc2420_open( TCc2420 * cc )
  *****************************************************************************/
 void cc2420_close( TCc2420 * cc ) 
 {
+	// disable cc2420 interrupt
 }
 
 uint8 cc2420_state( TCc2420 * cc )
@@ -485,6 +486,7 @@ int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 		// two bytes for footer.
 		//
 		count = min(cc->rxbuffer.length, capacity);
+		assert( count >= BASIC_RF_PACKET_OVERHEAD_SIZE );
 		//memmove( frame+10, cc->rxbuffer.payload, cc->receivepayload_len);
 		memmove( frame+10, (char*)(cc->rxbuffer.payload), count - BASIC_RF_PACKET_OVERHEAD_SIZE );
 		//memmove( frame+9 + cc->receivepayload_len, &cc->rxbuffer.footer,2 );
@@ -510,7 +512,8 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 	if (cc->rxlen > 0)
 	{
 		IRQDisable();
-	    count = min( sizeof(TCc2420Frame), cc->rxbuffer.length ); 
+	    //count = min( sizeof(TCc2420Frame), cc->rxbuffer.length );
+	    count = sizeof(TCc2420Frame); 
 	    memmove( frame, (char*)(&cc->rxbuffer), count );
 		cc->rxlen = 0;
 		IRQEnable();			
@@ -928,7 +931,6 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 		// if this is an acknowledgment packet, compare the sequence id received 
 		// and saved after last sending
     	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (framecontrol == BASIC_RF_ACK_FCF) 
-    		//&& (cc->rxbuffer.seqid == cc->seqid))
     		&& (rx_seqid == cc->seqid)) 
     	{
  	       	// read the footer and check for CRC OK
@@ -940,6 +942,9 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 				cc->ack_response = TRUE;
 			}				
 			
+			cc->rxbuffer.length = length; // @modified by zhangwei on 20070610. added this new line
+			cc->rxlen = length; 
+
 			// @TODO
 			// if the TCc2420 object running in sniffer mode, you should update 
 			// cc->rxlen to indicate a new frame received. now the frame is ACK/NAK
@@ -989,6 +994,7 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 				 //_hardware_recvframe(cc,(TCc2420Frame *)(&cc->rxbuffer));
 				 //cc->pRxInfo = *(_hardware_recvframe(cc,(TCc2420Frame *)(&cc->pRxInfo)));
 			}
+			cc->rxbuffer.length = length; // @modified by zhangwei on 20070610. added this new line
 			cc->rxlen = length;  // @TODO?? shall we update it so early? and here?
 		}
     }

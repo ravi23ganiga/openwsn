@@ -1,7 +1,7 @@
-/*****************************************************************************
+/******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
- * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
+ * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
  * 
  * OpenWSN is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free
@@ -28,36 +28,73 @@
  * 
  *****************************************************************************/ 
 
-#ifndef _LEDSYNC_H_4287_
-#define _LEDSYNC_H_4287_
+#include "hal_configall.h"
+#include "hal_foundation.h"
 
-/*****************************************************************************
- * @author zhangwei on 20070421
- * @note
- * 	blink test and demostration
- * 	this test will synchronize the LED flash frequvency across serveral nodes.
- * so it can be used to test whether the wireless communication and main processing
- * service is working right or not. 
- *  different to "cc2420tx" and "cc2420rx", this demo will test both the sending
- * and receiving process.
- *
- *  it's similar to the TinyOS Blink Example.
- *
- * @status
- * 	un-tested yet
+/******************************************************************************
+ * @author zhangwei on 20070610
+ * @description
+ * "hal_foundation" module, contains some general utility functions used frequvently
+ * in other modules.
+ *  
+ * @state
+ *  developing
  * 
- * @history
- * @modified by makun on 20070421
- * 	tested.
+ * @modified by zhangwei on 20070610
+ *   add hal_delay()
+ *   add the interface functions on interrupt management
  *  
  *****************************************************************************/ 
 
-#include "../configall.h"
-#include "../foundation.h"
+void _hal_pause()
+{
+	static delaycounter=0;
+	delaycounter ++;
+}
 
-void blink_test( void );
+/* @param
+ * 	delay		delay period by millisecond
+ * 				1000 means delay for 1 second
+ * @attention
+ *  you should porting this function to adapt to new MCU and hardware platforms!
+ * 
+ * @state
+ * 	developing, needs testing!
+ */
+void hal_delay16( uint16 dly  )
+{
+	uint16 i;
+   	for(; dly>0; dly--) 
+		for(i=0; i<8000; i++)
+			_hal_pause();	
+}
 
-#endif
+void hal_delay32( uint32 dly  )
+{
+	uint32 i;
+	for(; dly>0; dly--) 
+    	for(i=0; i<8000; i++);
+			_hal_pause();	
+}
+
+void hal_reboot( void )
+{
+}
+
+void hal_sleep( void )
+{}
+
+void hal_sleepwait( uint32 delay )
+{}
+
+void hal_wakeup( void )
+{}
+
+void hal_powerdown( void )
+{}
+
+
+
 
 
  

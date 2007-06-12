@@ -1,4 +1,4 @@
-/*****************************************************************************
+/******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
  * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
@@ -59,41 +59,43 @@ void blink_test()
 	
 	TOpenFrame txframe;
 	TOpenFrame rxframe;
-	uint8 state;
+	uint8 state = MODE_SLAVE;
 	uint8 n;
 	
     target_init();
     global_construct();
+    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     spi_configure( g_spi );
+    
     memset( &rxframe, 0x00, sizeof(TOpenFrame) );
     memset( &txframe, 0x00, sizeof(TOpenFrame) );
-
     txframe.panid = PANID;
     txframe.nodeto = 0x1234;
-    txframe.nodefrom=0x5678;
+    txframe.nodefrom = 0x5678;
+    
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PANID, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, txframe.nodefrom, 0);
-     for (n = 0; n < 10; n++) 
+    cc2420_open(g_cc2420);
+    
+    for (n = 0; n < 10; n++) 
     {
         txframe.payload[n] = 2;
     }
     txframe.length=10+11;
-    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     
-    //cc2420_open(g_cc2420);
+	// pls not to use timer0, it maybe conflicat with uCOS-II's requirement.
+	// uCOS will use timer0.
+	//
     timer_init(g_timer1,0,0);
-    timer_configure( g_timer1,NULL, NULL, 0 ); 
-    state = MODE_SLAVE;
+    timer_configure( g_timer1, NULL, NULL, 0 ); 
     timer_setinterval( g_timer1,WAITFOR_MASTER_DURATION,1 );
-    cc2420_receive_on(g_cc2420);  
     IRQEnable();
     timer_start( g_timer1 );
     timer_VICdisable(g_timer1); 
-    
+
 	while (1)
 	{
-		
 		switch (state)
 		{
 		// the GREEN LED off indicates the current node running in slave mode
@@ -110,7 +112,6 @@ void blink_test()
 				timer_restart( g_timer1, WAITFOR_MASTER_DURATION, 1);
 				timer_VICdisable(g_timer1);
 			        uart_write( g_uart, "run2..", 7, 0 );
-
 			}
 			
 			if (timer_expired(g_timer1))
@@ -120,7 +121,6 @@ void blink_test()
 				state = MODE_MASTER;
 				//led_toggle( LED_YELLOW );
 				uart_write( g_uart, "run3..", 7, 0 );
-	
 			}
 			break;
 			
@@ -138,7 +138,6 @@ void blink_test()
 				uart_write( g_uart, "run4..", 7, 0 );
 
 			}
-	
 			if (cc2420_read(g_cc2420,&rxframe, 0 ) > 0)
 			{
 				timer_restart( g_timer1, WAITFOR_MASTER_DURATION,1 );
@@ -151,5 +150,4 @@ void blink_test()
 		}
 	}
 }
-
 
