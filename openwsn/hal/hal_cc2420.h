@@ -239,6 +239,10 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
  * 
  * [1B length] [2B control] [1B seqid] [1B panid] [2B nodeto] [2B nodefrom]
  * [OPF_PAYLOAD_SIZE payload] [2B footer] 
+ * 
+ * the first byte "length" is the 802.15.4 frame length. not the length of structure.
+ * the length the structure occupied = 1B for "length" + length B for 802.15.4 frame 
+ *   + 2B for footer. 
  */
 #define TCc2420Frame TOpenFrame
 
