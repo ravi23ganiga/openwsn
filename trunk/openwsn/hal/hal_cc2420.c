@@ -64,7 +64,7 @@
 
 static void _cc2420_init(TCc2420 * cc);
 static void cc2420_interrupt_init( void );
-static bool _hardware_sendframe(TCc2420 * cc, bool ackrequest);
+static bool _hardware_sendframe(TCc2420 * cc, char * framex, uint8 len, bool ackrequest);
 //static TCc2420Frame * _hardware_recvframe( TCc2420 * cc,TCc2420Frame *pRRI);
 static void __irq cc2420_interrupt_service( void );
 static void cc2420_interrupt_handler( TCc2420 * cc );
@@ -175,7 +175,6 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 	case CC2420_CONFIG_TUNNING_POWER:
 		cc->power = (uint8)value;
 		cc2420_set_power(cc,cc->power);
-		
 		break;
 		
 	case CC2420_CONFIG_CHANNEL:
@@ -294,17 +293,9 @@ void _cc2420_init(TCc2420 * cc)
     //}
     #endif
     
-	// Set the protocol configuration
-    //g_rfSettings.pRxInfo = pRRI;
-    //cc->rfSettings.panid = cc->panid;
-    //cc->rfSettings.myAddr = cc->address;
     cc->seqid = 0;
-    //cc->rfSettings.seqid = 0;
     cc->receiveOn = FALSE;
     cc->ack_response = FALSE;
-    //cc->rfSettings.payload_length = 0;
-    
-    //led_twinkle(LED_GREEN,1);
     
     //FAST2420_UPD_STATUS(cc->spi, (uint8*)(&rereg) );
     //uart_putchar(g_uart,(char)rereg);
@@ -381,6 +372,18 @@ uint8 cc2420_ioresult( TCc2420 * cc )
  * @attention
  * 	you must guarantee the internal buffer size is larger than frame length
  * or you may encounter unexpected errors.
+ *
+ * @parameter
+ *  frame		point to an TCc2420Frame structure in the memory
+ *  len         the data length in the memory buffer. 
+ *              len - 1 is the MAC layer frame length handed to hardware.
+ *              "1" means the "length" byte.
+ *
+ * @return
+ *  how many bytes sucessfully wroten to the TCc2420 object. 
+ *  attention the value is usually less than the data length sent by the hardware.
+ *  generally, it equals to the parameter "len"
+ *
  *****************************************************************************/ 
 int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
 {
@@ -389,25 +392,28 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
 	
 	if (cc->txlen == 0)
 	{
-		count = len & 0x7F;
+		count = (len-1) & 0x7F;
 		cc->txbuffer.length = count;  
-		//memmove(&cc->txbuffer[0].length, frame+0, 2 ); 
+		memmove(&cc->txbuffer.control, frame+1, 2 );
 		memmove(&cc->txbuffer.panid, frame+4, 2 );
 		memmove(&cc->txbuffer.nodeto, frame+6, 2 );
 		memmove(&cc->txbuffer.nodefrom, frame+8, 2 );
-		memmove(&cc->txbuffer.payload, frame+10, count-11 );     
+		//memmove(&cc->txbuffer.payload, frame+10, count-11 ); //?    
+		// @warning: you must guarantee the data is packed tightly in the memory
+		// or else the following memmove() may lead to wrong results
+		memmove(&cc->txbuffer.payload, frame+10, count-9 );    
 	
 		//if ((opt & 0x01))  
 		//	cc->ackrequest = 0;            
         
     	if (cc->ackrequest ==1) 
 		{
-	    	ack = _hardware_sendframe(cc, true);
+	    	ack = _hardware_sendframe(cc, frame, len, true);
 	    	if (!ack) 
 	       		count = -1;
     	}
     	else{
-      		_hardware_sendframe(cc, false);
+      		_hardware_sendframe(cc, frame, len, false);
 		}
 		
 		cc->nextstate = CC_STATE_IDLE;
@@ -420,6 +426,18 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
 	return (int8)(count & 0x7F);
 }
 
+/* @param
+ *   frame        point to an TCc2420Frame
+ *   opt          default to 0x00
+ * 
+ * you must initialize the "frame" correctly before you can this function. 
+ * you must initialize the following:
+ *		length, panid, nodeto, payload
+ * generally, you'd better initialize (can simply set it to 0x0000):
+ *		control
+ * you need not initialize
+ *      seqid, nodefrom
+ */
 int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
 {
 	bool ack;
@@ -433,12 +451,12 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
 
 		if (cc->ackrequest == 1) 
 		{
-	    	ack = _hardware_sendframe(cc, true);
+	    	ack = _hardware_sendframe(cc, (char*)frame, count, true);
 	    	if (!ack) 
 	    		count = -1;
    		}
     	else{
-            _hardware_sendframe(cc, false);
+            _hardware_sendframe(cc, (char*)frame, count, false);
         }
         
 		cc->nextstate = CC_STATE_IDLE;
@@ -474,7 +492,11 @@ int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 	{
 		IRQDisable();
 
-		//frame[0] = cc->receivepayload_len + 11;	
+		// the additional three bytes are for "length" byte itself and two "footer" bytes.
+		count = cc->rxbuffer.length + 3;
+		assert( (count >= BASIC_RF_PACKET_OVERHEAD_SIZE) && (count <= capacity) );
+
+		/*
 		memmove( frame+0, (char*)(&cc->rxbuffer.length), 1 );
 		memmove( frame+1, (char*)(&cc->rxbuffer.control), 2 );
 		memmove( frame+3, (char*)(&cc->rxbuffer.seqid), 1 );	
@@ -482,21 +504,17 @@ int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 		memmove( frame+6, (char*)(&cc->rxbuffer.nodeto), 2 );	
 		memmove( frame+8, (char*)(&cc->rxbuffer.nodefrom), 2 );
 
-		// copy the main body of the frame into out buffer, including the last 
+		// copy the main body of the frame into the parameter buffer, including the last 
 		// two bytes for footer.
 		//
-		count = min(cc->rxbuffer.length, capacity);
-		assert( count >= BASIC_RF_PACKET_OVERHEAD_SIZE );
 		//memmove( frame+10, cc->rxbuffer.payload, cc->receivepayload_len);
 		memmove( frame+10, (char*)(cc->rxbuffer.payload), count - BASIC_RF_PACKET_OVERHEAD_SIZE );
 		//memmove( frame+9 + cc->receivepayload_len, &cc->rxbuffer.footer,2 );
 		cc->rxlen = 0;
-		
-		/* future new version should simple as 
-		count = min(cc->rxbuffer.length, capacity);
-		memmove( frame, &cc->rxbuffer, count );
-		cc->rxlen = 0;
 		*/
+		
+		memmove( frame, (char*)(&cc->rxbuffer), count );
+		cc->rxlen = 0;
 		IRQEnable();			
 	}
 	else
@@ -512,11 +530,12 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 	if (cc->rxlen > 0)
 	{
 		IRQDisable();
-	    //count = min( sizeof(TCc2420Frame), cc->rxbuffer.length );
-	    count = sizeof(TCc2420Frame); 
-	    memmove( frame, (char*)(&cc->rxbuffer), count );
+		// increase count by 3 because the additional "length"(1B) and "footer"(2B)
+		// in the TCc2420Frame structure.
+	    count = cc->rxbuffer.length + 3;
+	    memmove( frame, (char*)(&cc->rxbuffer), sizeof(TCc2420Frame) );
 		cc->rxlen = 0;
-		IRQEnable();			
+		IRQEnable();	
 	}
 	else
 		count = 0;
@@ -538,10 +557,10 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
  *	-1		failed sending. for example, not got ACK when ACK required.
  *			generally speaking, this function rarely return -1.
  */
-bool _hardware_sendframe( TCc2420 * cc, bool ackrequest ) 
+bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackrequest ) 
 {
-    WORD framecontrol;
-    UINT8 framelength;
+    uint16 framecontrol;
+    uint8 framelength;
     bool success;
     BYTE spiStatusByte;
     
@@ -584,6 +603,10 @@ bool _hardware_sendframe( TCc2420 * cc, bool ackrequest )
   
     //framelength = pRTI->length + BASIC_RF_PACKET_OVERHEAD_SIZE;
     //framelength = cc->sendpayload_len + BASIC_RF_PACKET_OVERHEAD_SIZE;
+
+	// the framelength is actually the 802.15.4 MAC frame length. it's the data
+	// to be handed to hardware transceiver.
+	//
     framelength = cc->txbuffer.length;
 	assert( framelength >  BASIC_RF_PACKET_OVERHEAD_SIZE );
     
@@ -595,6 +618,9 @@ bool _hardware_sendframe( TCc2420 * cc, bool ackrequest )
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&framecontrol, 2);         // Frame control field
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->seqid, 1);    // Sequence number
     
+	cc->txbuffer.panid = cc->panid;
+	cc->txbuffer.nodefrom = cc->address;
+
     // @TODO: or use cc->panid directly? i think this is better
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer.panid, 2);
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuffer.nodeto, 2);
@@ -943,7 +969,7 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 			}				
 			
 			cc->rxbuffer.length = length; // @modified by zhangwei on 20070610. added this new line
-			cc->rxlen = length; 
+			cc->rxlen = length+3; 
 
 			// @TODO
 			// if the TCc2420 object running in sniffer mode, you should update 
@@ -957,7 +983,7 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 		// if the frame is too small to be a valid packet, the simply discard it
 		else if (length < BASIC_RF_PACKET_OVERHEAD_SIZE) 
 		{
-			FAST2420_READ_FIFO_GARBAGE(cc->spi, length - 3);
+			FAST2420_READ_FIFO_GARBAGE(cc->spi, length - 3); 
 			return;
 		}
 		// generally, a valid data frame now
@@ -976,7 +1002,8 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) &cc->rxbuffer.nodefrom, 2);
 
 			// read the packet payload
-			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) cc->rxbuffer.payload, length - BASIC_RF_PACKET_OVERHEAD_SIZE);
+			//FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) cc->rxbuffer.payload, length - BASIC_RF_PACKET_OVERHEAD_SIZE);
+			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) cc->rxbuffer.payload, length - 11);
 
 			// read the footer to get the RSSI value
 			FAST2420_READ_FIFO_NO_WAIT(cc->spi,(BYTE*) footer, 2);
@@ -995,7 +1022,7 @@ void cc2420_interrupt_handler( TCc2420 * cc )
 				 //cc->pRxInfo = *(_hardware_recvframe(cc,(TCc2420Frame *)(&cc->pRxInfo)));
 			}
 			cc->rxbuffer.length = length; // @modified by zhangwei on 20070610. added this new line
-			cc->rxlen = length;  // @TODO?? shall we update it so early? and here?
+			cc->rxlen = length+3;  // @TODO?? shall we update it so early? and here?
 		}
     }
 }

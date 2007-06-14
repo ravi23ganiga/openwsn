@@ -25,9 +25,20 @@ void hal_interrupt_enable( uint8 num );
 void hal_interrupt_disable( uint8 num );
 void hal_interrupt_state( uint8 num );  // has request? in servicing? masked?
 void hal_interrupt_clearrequest( uint8 num );
-void hal_interrupt_enter( uint8 num );
-void hal_interrupt_leave( uint8 num );
 
+
+how about the following names? is it more clearly to reflect the meaning?
+
+hal_irq_enable
+hal_irq_disable
+hal_fiq_enable
+hal_fiq_disable
+
+hal_vic_install
+hal_vic_uninstall
+hal_vic_enable
+hal_vic_disable
+hal_vic_clearrequest
 */
 
 #endif

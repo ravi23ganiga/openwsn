@@ -49,8 +49,7 @@ int cc2420rx_test (void)
     int8 length;
     uint16 temp;
     uint8 ledPeriod;
-    char * out_string = "the rssi value is : ";
-    char * enter      = "\n";
+    char * out_string = "   rssi = ";
   
     target_init();
     
@@ -78,12 +77,9 @@ int cc2420rx_test (void)
     tx_frame[6] = 0x78; tx_frame[7] = 0x56;
     tx_frame[8] = 0x34; tx_frame[9] = 0x12; 
     
-    //uart_write(g_uart, "uartecho run22.", 15, 0 );
+    uart_write(g_uart, "cc2420rx_test started...\r\n", 24, 0 );
     cc2420_open( g_cc2420 );
     
-    //cc2420_receive_on(g_cc2420);  
-    //IRQEnable(); 
-   
     ledPeriod = 1;
     while (TRUE) 
 	{ 
@@ -95,25 +91,25 @@ int cc2420rx_test (void)
         //length = cc2420_read( g_cc2420,&rx_test,0,0);
         length = cc2420_read( g_cc2420,&rx_test,0);
 	  
-	    if(length > 11) 
+	    //if(length > 11)
+	    if (length > 1) 
 	    {
 	        ledPeriod = rx_test.payload[0];
-            temp = g_cc2420-> rssi;
+            temp = g_cc2420->rssi;
 	  
-			uart_write( g_uart, out_string, 20,0  );
+			uart_write( g_uart, out_string, strlen(out_string), 0  );
 	  		if ((temp / 100) > 0) 
 	  			uart_putchar(g_uart,(char)(temp / 100 + 48));
 	  		
-	  		temp = temp % 100;
+	  		temp = temp % 100; 
 	  		if ((temp / 10) > 0) 
 	  			uart_putchar(g_uart,(char)(temp / 10 + 48));
 	  		temp = temp % 10;
 	  		
 	  		uart_putchar(g_uart,(char)(temp + 48));
-	  		uart_putchar(g_uart,*enter);
+	  		uart_putchar(g_uart, '\n' );
 	  	}
 	  	#endif
-	  
 	  
 	  	// test section two
 	  	// try receive using stream based API cc_rawread
