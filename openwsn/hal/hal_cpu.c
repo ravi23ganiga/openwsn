@@ -67,11 +67,11 @@ static uint8 IRQ_FLAG_STORE;
  *  The timeout in microseconds ??? QQQ
  * 
  ******************************************************************************/
-
+/*
 #ifdef __GNUC__
 void hal_delay( uint16 timeout ) 
 {
-  	/* usually the sequence uses exactly 8 clock cycle for each round */
+  	// usually the sequence uses exactly 8 clock cycle for each round 
   	do {
     	NOP();
     	NOP();
@@ -88,7 +88,7 @@ void hal_delay( uint16 timeout )
   	} while (--timeout);
 }
 
-/* for unknown compiles */
+// for unknown compiles 
 #else
 void hal_delay( uint16 delay )
 {
@@ -110,7 +110,7 @@ void hal_reboot()
 {
 	
 }
-
+*/
 // obsolete functions
 void  halWait(uint32  dly)
 {  uint32  i;

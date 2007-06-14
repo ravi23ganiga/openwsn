@@ -132,7 +132,15 @@
  * 
  * MAC Control Frame
  * [2B Frame Control] [1B Sequence Number][4 or 20 ADdress][1 Command Type][n Command Payload][2 FCS]
+ *
+ * IEEE 802.15.4 PHY Frame Header
+ * [4B Preamble] [1B SFD] [7b FrameLength] [1b Reserved]
  * 
+ * SFD is 11100101b = 0xE5
+ * Length is the total number of octets contained in PSDU(i.e. PHY payload)
+ * it's a value between 8 and 127
+ * the frame with length = 5 is often the acknowledgement
+ *
  *****************************************************************************/
 
 #define TCc2420Driver TCc2420

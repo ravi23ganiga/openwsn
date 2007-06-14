@@ -116,7 +116,7 @@
 // Status byte
 //----------------------------------------------------------------------------
 
-#define CC2420_XOSC16M_STABLE	        6
+#define CC2420_XOSC16M_STABLE	6
 #define CC2420_TX_UNDERFLOW		5
 #define CC2420_ENC_BUSY			4
 #define CC2420_TX_ACTIVE		3
