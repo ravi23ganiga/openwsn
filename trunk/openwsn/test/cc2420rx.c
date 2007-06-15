@@ -91,8 +91,8 @@ int cc2420rx_test (void)
         //length = cc2420_read( g_cc2420,&rx_test,0,0);
         length = cc2420_read( g_cc2420,&rx_test,0);
 	  
-	    //if(length > 11)
-	    if (length > 1) 
+	    if(length > 11)
+	    //if (length > 1) 
 	    {
 	        ledPeriod = rx_test.payload[0];
             temp = g_cc2420->rssi;

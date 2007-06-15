@@ -11,6 +11,7 @@
  ******************************************************************************/
  
 #include "..\foundation.h"
+#include "..\hal\hal_foundation.h"
 #include "..\hal\hal_cpu.h"
 #include "..\hal\hal_assert.h"
 #include "svc_actsche.h"
