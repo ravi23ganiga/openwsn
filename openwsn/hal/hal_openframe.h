@@ -100,6 +100,7 @@ void   mac_setshortid( TOpenAddress * addr, uint16 id );
 
 /* the maximum frame length according to IEEE 802.15.4 specification
  */  
+#define OPF_MAX_PSDU_SIZE 0x7F 
 #define OPF_FRAME_SIZE 0x7E
 #define OPF_PAYLOAD_SIZE (OPF_FRAME_SIZE-8)
 
@@ -113,13 +114,13 @@ void   mac_setshortid( TOpenAddress * addr, uint16 id );
  */
 typedef struct{
     uint8 	length;
-	uint16 	control;
-	uint8  	seqid;
-	uint16 	panid;
-	uint16  nodeto;
-	uint16 	nodefrom;
-	uint8  	payload[OPF_PAYLOAD_SIZE];
-	uint16  footer;
+    uint16 	control;
+    uint8  	seqid;
+    uint16 	panid;
+    uint16  nodeto;
+    uint16 	nodefrom;
+    uint8  	payload[OPF_PAYLOAD_SIZE];
+    uint16  footer;
 }TOpenFrame;
 
 TOpenFrame * opf_init( char * buf, uint8 size );
@@ -144,8 +145,14 @@ char * opf_panid( char * buf);
 char * opf_addrfrom_addr( char * buf );
 char * opf_addrto_addr( char * buf );
 //char * opf_command_addr( char * buf );
+
+#define PSDU(framebuf) ((char*)openframe + 1)
+#define MSDU(openframe) ((char*)openframe+10)
+//#define NSDU(framebuf) ((char*)framebuf+?)
+
 //char * opf_psdu( char * buf );
 char * opf_msdu( char * buf );
+// char * opf_nsdu( char * buf );
 char * opf_packet( char * buf );
 
 #endif

@@ -533,7 +533,7 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 		// increase count by 3 because the additional "length"(1B) and "footer"(2B)
 		// in the TCc2420Frame structure.
 	    count = cc->rxbuffer.length + 3;
-	    memmove( frame, (char*)(&cc->rxbuffer), sizeof(TCc2420Frame) );
+	    memmove( frame, (char*)(&cc->rxbuffer), count );
 		cc->rxlen = 0;
 		IRQEnable();	
 	}
