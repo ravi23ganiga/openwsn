@@ -70,8 +70,8 @@ void blink_test()
     memset( &rxframe, 0x00, sizeof(TOpenFrame) );
     memset( &txframe, 0x00, sizeof(TOpenFrame) );
     txframe.panid = PANID;
-    txframe.nodeto = 0x1234;
-    txframe.nodefrom = 0x5678;
+    txframe.nodeto = 0x5678;
+    txframe.nodefrom = 0x1234;
     
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PANID, 0);
