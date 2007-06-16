@@ -112,7 +112,7 @@ void   mac_setshortid( TOpenAddress * addr, uint16 id );
  * in the following structure byte by byte. you should attention this if you 
  * want to port OpenMAC to other platform and compiles.
  */
-typedef struct{
+typedef __packed struct{
     uint8 	length;
     uint16 	control;
     uint8  	seqid;
@@ -146,7 +146,7 @@ char * opf_addrfrom_addr( char * buf );
 char * opf_addrto_addr( char * buf );
 //char * opf_command_addr( char * buf );
 
-#define PSDU(framebuf) ((char*)openframe + 1)
+#define PSDU(openframe) ((char*)openframe + 1)
 #define MSDU(openframe) ((char*)openframe+10)
 //#define NSDU(framebuf) ((char*)framebuf+?)
 
