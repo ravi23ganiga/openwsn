@@ -90,7 +90,7 @@ static void cc2420_interrupt_handler( TCc2420 * cc );
  * 	cc2420_configure( cc, CC2420_CONFIG_NODEADDRESS, (void*)&nodeaddress );
  * 	cc2420_configure( cc, CC2420_CONFIG_TUNNING_POWER, (void*)&power );
  * 	cc2420_configure( cc, CC2420_CONFIG_CHANNEL, (void*)&channel );
- *  cc2420_configure( cc, CC2420_CONFIG_APPLY, NULL );
+ *   cc2420_configure( cc, CC2420_CONFIG_APPLY, NULL );
  * 
  *****************************************************************************/
 TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
@@ -394,14 +394,14 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
 	{
 		count = (len-1) & 0x7F;
 		cc->txbuffer.length = count;  
-		memmove(&cc->txbuffer.control, frame+1, 2 );
-		memmove(&cc->txbuffer.panid, frame+4, 2 );
-		memmove(&cc->txbuffer.nodeto, frame+6, 2 );
-		memmove(&cc->txbuffer.nodefrom, frame+8, 2 );
+		memmove( (char*)(&cc->txbuffer.control), frame+1, 2 );
+		memmove( (char*)(&cc->txbuffer.panid), frame+4, 2 );
+		memmove( (char*)(&cc->txbuffer.nodeto), frame+6, 2 );
+		memmove( (char*)(&cc->txbuffer.nodefrom), frame+8, 2 );
 		//memmove(&cc->txbuffer.payload, frame+10, count-11 ); //?    
 		// @warning: you must guarantee the data is packed tightly in the memory
 		// or else the following memmove() may lead to wrong results
-		memmove(&cc->txbuffer.payload, frame+10, count-9 );    
+		memmove( (char*)(&cc->txbuffer.payload), frame+10, count-9 );    
 	
 		//if ((opt & 0x01))  
 		//	cc->ackrequest = 0;            
@@ -446,7 +446,7 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
 	if (cc->txlen == 0)
 	{
 		count = frame->length & 0x7F;
-		memmove( (char*)(&cc->txbuffer), frame, count ); 
+		memmove( (char*)(&cc->txbuffer), (char*)frame, count ); 
 		cc->txbuffer.length = count;
 
 		if (cc->ackrequest == 1) 
@@ -533,7 +533,7 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 		// increase count by 3 because the additional "length"(1B) and "footer"(2B)
 		// in the TCc2420Frame structure.
 	    count = cc->rxbuffer.length + 3;
-	    memmove( frame, (char*)(&cc->rxbuffer), count );
+	    memmove( (char*)frame, (char*)(&cc->rxbuffer), count );
 		cc->rxlen = 0;
 		IRQEnable();	
 	}
@@ -550,7 +550,13 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 注意函数原型不可以改变
 */
 /* send a frame out. this function will start the sending process immediately.
- * 
+ * @param
+ *  cc       an pointer to the TCc2420 object
+ *  frame  an frame to be sent in the memory. it's a standard TCc2420Frame format. so the first byte in the buffer
+ *              is essentially the length byte.
+ *  len       the data length in the buffer. 
+ *  ackrequest
+ *
  * @return
  * 	>0 	    how many byte sent
  *	=0   	no byte sent
@@ -589,7 +595,7 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
         FAST2420_UPD_STATUS( cc->spi,&spiStatusByte );
     }while (!(spiStatusByte & BM(CC2420_RSSI_VALID)));
     // @TODO: i think we should wait here for the 2420's SRXON OK
-    
+
     // @TODO: why comment the following? is halwait(1) enough?
     // TX begins after the CCA check has passed
     // do{
