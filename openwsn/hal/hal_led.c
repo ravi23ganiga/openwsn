@@ -30,15 +30,53 @@
 #include "hal_foundation.h"
 #include "hal_led.h"
 #include "hal_cpu.h"
+
+#ifdef CONFIG_TARGET_OPENNODE_10
+#define LED_GREEN_PIN 	25  
+#define LED_YELLOW_PIN 	21 
+#define LED_RED_PIN	21  
+#define LED_GREEN_PORT 	1
+#define LED_YELLOW_PORT 0
+#define LED_RED_PORT	0
+#endif
+
+#ifdef CONFIG_TARGET_OPENNODE_20
+#define LED_GREEN_PIN 	25  
+#define LED_YELLOW_PIN 	18  
+#define LED_RED_PIN	16  
+#define LED_GREEN_PORT 	0
+#define LED_YELLOW_PORT 1
+#define LED_RED_PORT	1
+#endif
+
+#ifdef CONFIG_TARGET_OPENNODE_30
+#define LED_GREEN_PIN 	25  
+#define LED_YELLOW_PIN 	18  
+#define LED_RED_PIN	16  
+#define LED_GREEN_PORT 	0
+#define LED_YELLOW_PORT 1
+#define LED_RED_PORT	1
+#endif
+
+#ifdef CONFIG_TARGET_WLSMODEM_11
+#define LED_GREEN_PIN 	19  
+#define LED_YELLOW_PIN 	19  
+#define LED_RED_PIN	18  
+#define LED_GREEN_PORT 	0
+#define LED_YELLOW_PORT 0
+#define LED_RED_PORT	0
+#endif
+
+
 /*
-void led( uint8 idx, uint8 state )
+void led( uint8 id, uint8 state )
 {
 	
 }
 */
-void led_off( uint8 idx )
+void led_off( uint8 id )
 {
-	switch(idx)
+	switch(id)
 	{
 	    case LED_GREEN:    
 	         #if LED_GREEN_PORT == 0 
@@ -70,9 +108,9 @@ void led_off( uint8 idx )
 	}
 }
 
-void led_on( uint8 idx )
+void led_on( uint8 id )
 {
-	switch(idx)
+	switch(id)
 	{
 	    case LED_GREEN:    
 	         #if LED_GREEN_PORT == 0 
@@ -104,9 +142,9 @@ void led_on( uint8 idx )
 	}
 }
 
-void led_toggle( uint8 idx )
+void led_toggle( uint8 id )
 {
-	switch(idx)
+	switch(id)
 	{
 	    case LED_GREEN:    
 	         {
@@ -153,32 +191,32 @@ void led_toggle( uint8 idx )
 	}
 }
 
-void led_twinkle( uint8 idx ,uint16 delay)
+void led_twinkle( uint8 id ,uint16 delay)
 {
-  	switch(idx)
+  	switch(id)
 	{
 	    case LED_GREEN:
 	         {
 	         	led_toggle(LED_GREEN);
-	                halWait(200*delay);	
+	                halWait( delay << 7 );	
 	                led_toggle(LED_GREEN);
-	                halWait(200*delay);
+	                halWait( delay << 7 );
 	                break;
 	         }
 	    case LED_RED:
 	         {
 	         	led_toggle(LED_RED);
-	                halWait(200*delay);	
+	                halWait( delay << 7 );	
 	                led_toggle(LED_RED);
-	                halWait(200*delay);
+	                halWait( delay << 7 );
 	                break;
 	         }
 	    case LED_YELLOW:
 	         {
 	         	led_toggle(LED_YELLOW);
-	                halWait(200*delay);	
+	                halWait( delay << 7 );	
 	                led_toggle(LED_YELLOW);
-	                halWait(200*delay);
+	                halWait( delay << 7 );
 	                break;
 	         }	
 	}
