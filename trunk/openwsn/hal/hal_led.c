@@ -31,42 +31,6 @@
 #include "hal_led.h"
 #include "hal_cpu.h"
 
-#ifdef CONFIG_TARGET_OPENNODE_10
-#define LED_GREEN_PIN 	25  
-#define LED_YELLOW_PIN 	21 
-#define LED_RED_PIN	21  
-#define LED_GREEN_PORT 	1
-#define LED_YELLOW_PORT 0
-#define LED_RED_PORT	0
-#endif
-
-#ifdef CONFIG_TARGET_OPENNODE_20
-#define LED_GREEN_PIN 	25  
-#define LED_YELLOW_PIN 	18  
-#define LED_RED_PIN	16  
-#define LED_GREEN_PORT 	0
-#define LED_YELLOW_PORT 1
-#define LED_RED_PORT	1
-#endif
-
-#ifdef CONFIG_TARGET_OPENNODE_30
-#define LED_GREEN_PIN 	25  
-#define LED_YELLOW_PIN 	18  
-#define LED_RED_PIN	16  
-#define LED_GREEN_PORT 	0
-#define LED_YELLOW_PORT 1
-#define LED_RED_PORT	1
-#endif
-
-#ifdef CONFIG_TARGET_WLSMODEM_11
-#define LED_GREEN_PIN 	19  
-#define LED_YELLOW_PIN 	19  
-#define LED_RED_PIN	18  
-#define LED_GREEN_PORT 	0
-#define LED_YELLOW_PORT 0
-#define LED_RED_PORT	0
-#endif
-
 
 /*
 void led( uint8 id, uint8 state )
