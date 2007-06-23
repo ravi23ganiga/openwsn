@@ -112,7 +112,7 @@ void   mac_setshortid( TOpenAddress * addr, uint16 id );
  * in the following structure byte by byte. you should attention this if you 
  * want to port OpenMAC to other platform and compiles.
  */
-typedef __packed struct{
+typedef struct{
     uint8 	length;
     uint16 	control;
     uint8  	seqid;
