@@ -174,7 +174,6 @@ void target_init( void )
     #if     FIFO_PORT == 1                        
     IO1DIR &= (~BM(FIFO));    
     #endif
-	#endif
     
 	led_init();
 	
