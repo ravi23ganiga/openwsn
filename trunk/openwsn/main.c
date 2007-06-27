@@ -30,21 +30,20 @@
 #include "foundation.h"
 #include ".\src\config.h"
 #include ".\hal\hal.h"
-#include "start.h"
-
-#ifdef CONFIG_USE_RTOS
+#if (CONFIG_OS == OPENWSN_OS_UCOSII)
 #include ".\test\ucos_test.h"
 #endif
+#include "start.h"
 
 int main (void)
 {
 	/* If you don't introduce an RTOS such as uCOS-II, just call app_start() here, 
-	 * or else you may need to create some  threads here. */
-	#ifndef CONFIG_USE_RTOS
+	 * or else you may need to create some task or threads here. */
+	#if CONFIG_OS == OPENWSN_OS_NONE
 	app_start();
 	#endif
 
-	#ifdef CONFIG_USE_RTOS
+	#if CONFIG_OS == OPENWSN_OS_UCOSII
 	ucos_main();
 	#endif
 

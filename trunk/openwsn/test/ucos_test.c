@@ -34,6 +34,7 @@
 #include "..\hal\hal.h"
 #include "..\src\config.h"
 #include "..\global.h"
+#include "..\start.h"
 
 /* Define the Task0 stack length 定义用户任务0的堆栈长度 
  * Define the Task0 stack 定义用户任务0的堆栈
@@ -59,15 +60,19 @@ int ucos_main (void)
 **                            Task0 任务0
 ********************************************************************************************************/
 
+// @modified by zhangwei on 20070627
+// add the call to app_start() in Task0.
+//
 void Task0( void * pdata )
 {
 	pdata = pdata;
-	TargetInit();
+	//TargetInit();
 		
 	OSTimeDly( 10 );
 
 	OSTimeDly( 10 );
 	// call app_start() in your own application;
+	app_start();
 }
    
 /*********************************************************************************************************

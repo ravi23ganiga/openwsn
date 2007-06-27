@@ -67,8 +67,8 @@ void blink_test()
     uart_configure( g_uart, 115200, 0, 0, 0, 0 );
     spi_configure( g_spi );
     
-    memset( &rxframe, 0x00, sizeof(TOpenFrame) );
-    memset( &txframe, 0x00, sizeof(TOpenFrame) );
+    memset( (char*)(&rxframe), 0x00, sizeof(TOpenFrame) );
+    memset( (char*)(&txframe), 0x00, sizeof(TOpenFrame) );
     txframe.panid = PANID;
     txframe.nodeto = 0x5678;
     txframe.nodefrom = 0x1234;

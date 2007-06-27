@@ -196,7 +196,7 @@ void VICInit(void)
 	// 但是张伟原先的版本中有这样几句
 	// 这几句很可能是为了跑uCOS，要保留的——有待确认
     OS_ENTER_CRITICAL();
-    srand((uint32) TargetInit);
+    //srand((uint32) TargetInit); // 这里什么意思?不懂?所以张伟comment it @modified by zhangwei on 20070623
     VICInit();
     Timer0Init();
     OS_EXIT_CRITICAL();
@@ -252,7 +252,8 @@ void VICInit(void)
 ** Modified date:
 **------------------------------------------------------------------------------------------------------
 ********************************************************************************************************/
-        void TargetResetInit(void)
+
+void TargetResetInit(void)
 {
 #ifdef __DEBUG_RAM    
     MEMMAP = 0x2;                   //remap
@@ -338,6 +339,9 @@ void VICInit(void)
     T0TCR = 0X02;
 }
 
+
+
+
 /*********************************************************************************************************
 **                  以下为一些与系统相关的库函数的实现
 **                  具体作用请ads的参考编译器与库函数手册
@@ -355,34 +359,32 @@ void VICInit(void)
 
 #pragma import(__use_no_semihosting_swi)
 
-        int __rt_div0(int a)
+int __rt_div0(int a)
 {
     a = a;
     return 0;
 }
 
-        int fputc(int ch,FILE *f)
+int fputc(int ch,FILE *f)
 {
     ch = ch;
     f = f;
     return 0;
 }
 
-    int fgetc(FILE *f)
+int fgetc(FILE *f)
 {
     f = f;
     return 0;
 }
 
-
-        int _sys_close(FILEHANDLE fh)
+int _sys_close(FILEHANDLE fh)
 {
     fh = fh;
     return 0;
 }
 
-        int _sys_write(FILEHANDLE fh, const unsigned char * buf,
-                      unsigned len, int mode)
+int _sys_write(FILEHANDLE fh, const unsigned char * buf, unsigned len, int mode)
 {
     fh = fh;
     buf = buf;
@@ -390,8 +392,7 @@ void VICInit(void)
     mode = mode;
     return 0;
 }
-        int _sys_read(FILEHANDLE fh, unsigned char * buf,
-                     unsigned len, int mode)
+int _sys_read(FILEHANDLE fh, unsigned char * buf, unsigned len, int mode)
 {
     fh = fh;
     buf = buf;
@@ -401,33 +402,36 @@ void VICInit(void)
     return 0;
 }
 
-       void _ttywrch(int ch)
+void _ttywrch(int ch)
 {
     ch = ch;
 }
 
-        int _sys_istty(FILEHANDLE fh)
-{
-    fh = fh;
-    return 0;
-}
-        int _sys_seek(FILEHANDLE fh, long pos)
-{
-    fh = fh;
-    return 0;
-}
-        int _sys_ensure(FILEHANDLE fh)
+int _sys_istty(FILEHANDLE fh)
 {
     fh = fh;
     return 0;
 }
 
-        long _sys_flen(FILEHANDLE fh)
+int _sys_seek(FILEHANDLE fh, long pos)
 {
     fh = fh;
     return 0;
 }
-       int _sys_tmpnam(char * name, int sig, unsigned maxlen)
+
+int _sys_ensure(FILEHANDLE fh)
+{
+    fh = fh;
+    return 0;
+}
+
+long _sys_flen(FILEHANDLE fh)
+{
+    fh = fh;
+    return 0;
+}
+
+int _sys_tmpnam(char * name, int sig, unsigned maxlen)
 {
     name = name;
     sig = sig;
@@ -435,18 +439,15 @@ void VICInit(void)
     return 0;
 }
 
-        void _sys_exit(int returncode)
+void _sys_exit(int returncode)
 {
     returncode = returncode;
 }
 
-        char *_sys_command_string(char * cmd, int len)
+char *_sys_command_string(char * cmd, int len)
 {
     cmd = cmd;
     len = len;
     return 0;
 }
 
-/*********************************************************************************************************
-**                            End Of File
-********************************************************************************************************/

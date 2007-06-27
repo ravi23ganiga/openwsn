@@ -182,6 +182,25 @@
 #define CSN_PORT       1  
 #endif
 
+#ifdef CONFIG_TARGET_OPENNODE_30
+// @TODO
+#define FIFO           22  
+#define FIFOP          15  
+#define CCA            13  
+#define RESET_N        12 
+#define VREG_EN        10  
+#define SFD            16 
+#define CSN            21  
+
+#define SFD_PORT       0
+#define CCA_PORT       0     
+#define FIFO_PORT      1    
+#define FIFOP_PORT     0     
+#define VREG_EN_PORT   0       
+#define RESET_N_PORT   0
+#define CSN_PORT       1  
+#endif
+
 #ifdef CONFIG_TARGET_WLSMODEM_11
 #define FIFO           16  // P0.16  - Input: FIFO from CC2420
 #define FIFOP          15  // P0.15  - Input: FIFOP from CC2420

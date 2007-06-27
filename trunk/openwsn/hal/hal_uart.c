@@ -31,6 +31,7 @@
 #include "hal_foundation.h"
 #include "hal_cpu.h"
 #include "hal_lpc213x.h"
+#include "hal_interrupt.h"
 #include "hal_uart.h"
 #include "hal_global.h"
 #include "hal_led.h"

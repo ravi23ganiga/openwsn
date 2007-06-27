@@ -65,6 +65,10 @@
 #define g_spi g_spi0
 #endif
 
+#ifdef CONFIG_TARGET_OPENNODE_30  
+#define g_spi g_spi0
+#endif
+
 #ifdef CONFIG_TARGET_WLSMODEM_11
 #define g_spi g_spi0
 #endif

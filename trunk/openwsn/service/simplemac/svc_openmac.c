@@ -304,7 +304,7 @@ int8 mac_evolve( TOpenMAC * mac )
 			break;
 				
 		case MAC_STATE_TX_DELAY:
-		                halWait(mac->backoff);
+		                hal_delay(mac->backoff);
 				_hdl_rawwrite( mac->phy, mac->txbuf, mac->txlen, 0x00 );
 				mac->state = MAC_STATE_IDLE;
 				done = true;		

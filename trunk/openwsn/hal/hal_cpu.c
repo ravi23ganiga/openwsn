@@ -39,11 +39,9 @@
  * update compiling macros of hal_delay()
  *
  * @modified by zhangwei on 20070410
- * modified NO_OS_EXIT_CRITICAL. changed it to always irq_enable() though this is 
- * not a right solution.
  ******************************************************************************/
 
-static uint8 IRQ_FLAG_STORE;
+//static uint8 IRQ_FLAG_STORE;
 
 /*******************************************************************************
  * Runs an idle loop for [timeout] microseconds.
@@ -111,26 +109,13 @@ void hal_reboot()
 	
 }
 */
+/*
 // obsolete functions
 void  halWait(uint32  dly)
-{  uint32  i;
+{  
+	uint32  i;
 
    for(; dly>0; dly--) 
       for(i=0; i<8000; i++);
 }
-
-void NO_OS_ENTER_CRITICAL(void)
-{
-   // @TODO 20061025
-   // zhangwei comment the following to make it compile pass
-  //IRQ_FLAG_STORE = IRQ_FLAG;
-  IRQDisable();	
-}
-
-
-void NO_OS_EXIT_CRITICAL(void)
-{
-  //if(IRQ_FLAG_STORE) IRQDisable();	
-  //else               IRQEnable();		
-   IRQEnable();	
-}
+*/
