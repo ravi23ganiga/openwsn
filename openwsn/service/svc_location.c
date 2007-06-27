@@ -258,7 +258,7 @@ int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * c
 	        }
     	    }
     	    
-    	    halWait(2000);
+    	    hal_delay(2000);
     	    
     	    //send request to anchor_2, if received infor of anchor_2, then do next
     	    location_tx_packet.nodeto = 0x2222;
@@ -314,7 +314,7 @@ int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * c
 	        }
     	    }
     	    
-    	    halWait(2000);
+    	    hal_delay(2000);
     	    
     	    //send request to anchor_3, if received infor of anchor_3, then do next
     	    location_tx_packet.nodeto = 0x3333;
@@ -392,7 +392,7 @@ int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * c
     	    uart_putchar(g_uart,(char)(*enter));
     	    uart_putchar(g_uart,(char)(*enter));
     	    
-    	    halWait(2000);
+    	    hal_delay(2000);
     }
     
     if(lcs->state & LOC_TYPE_ARCHOR)  //anchor node	

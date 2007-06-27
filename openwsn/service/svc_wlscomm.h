@@ -101,7 +101,7 @@
 #define TWirelessCommunication TWirelessComm
 #define TRfDriver TCc2420Driver
 
-#define WLS_FRAMEBUFFER_SIZE CONFIG_MAX_PHY_FRAME_LENGTH
+#define WLS_FRAMEBUFFER_SIZE OPENWSN_MAX_PHY_FRAME_LENGTH
 
 /* Q: leaved problems
  * R: 如果需要CRC校验的话，应该在这个模块中完成，但cc2420已经帮我们做了CRC。我的问题是：

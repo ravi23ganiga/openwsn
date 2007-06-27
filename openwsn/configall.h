@@ -27,6 +27,10 @@
  * @attention
  *                  IMPORTANT ISSUE ON HOW TO USE THIS FILE
  *
+ * OPENWSN_XXX are constant macro definitions. you should NOT change them. while, 
+ * CONFIG_XXX are configure setting macros. you can change them to reflect your own 
+ * settings
+ *
  * if you want to cancel some macro, pls use #undef macro. you can just place
  * the #undef after the previous macro. if you want it to take effective, you 
  * can place the #undef XXX macro before the configuration macro.
@@ -51,26 +55,20 @@
 
 /* Hardware Platform Choosing Configuration
  * now we have four hardware platforms:
- * - OpenNODE version 1.0
- * - OpenNODE version 2.0
- * - WlsModem version 1.1
- * - GAINS
+ * - CONFIG_TARGET_OPENNODE_10  for OpenNODE version 1.0
+ * - CONFIG_TARGET_OPENNODE_20  for OpenNODE version 2.0
+ * - CONFIG_TARGET_OPENNODE_30  for OpenNODE version 3.0
+ * - CONFIG_TARGET_WLSMODEM_11 for WlsModem version 1.1
+ * - CONFIG_TARGET_GAINS for ICT'sGAINS hardware
+ * 
+ * @attention: there're only one above macro allowed in the system!
+ * currently, openwsn only support OPENNODE_10, 20, 30
  */
 #undef CONFIG_TARGET_OPENNODE_10
-#define CONFIG_TARGET_OPENNODE_20
+//#define CONFIG_TARGET_OPENNODE_20
 #undef CONFIG_TARGET_WLSMODEM_11
 #undef CONFIG_TARGET_GAINS
-
-//#define TARGET_OPENNODE_10
-//#undef TARGET_OPENNODE_10
-
-//#ifdef CONFIG_TARGET_OPENNODE_20
-//#define TARGET_OPENNODE_20
-//#endif
-//#undef TARGET_OPENNODE_20
-
-//#define TARGET_WLSMODEM_11
-//#undef TARGET_WLSMODEM_11
+#define CONFIG_TARGET_OPENNODE_30
 
 
 
@@ -107,16 +105,32 @@
   #undef CONFIG_UART_RS485
 #endif  
 
-/* If you want the application to support RTOS like uCOS, you should define the following 
- * macro. the default setting is RTOS enabled */
+/* "openwsn" is designed to be integrated with existed mature OS. currently, it
+ * only support uCOS-II. you can change the value of macro CONFIG_OS
+ * to select the OS.  the default setting is OS_NONE 
+ */
+#define OPENWSN_OS_NONE 0  
+#define OPENWSN_OS_TINYOS 1
+#define OPENWSN_OS_UCOSII 2
+#define OPENWSN_OS_EMBEDDEDLINUX 3
+#define OPENWSN_OS_FREERTOS 4
+#define OPENWSN_OS_DEFAULT OPENWSN_OS_NONE 
 
-#define CONFIG_USE_RTOS  
-#undef CONFIG_USE_RTOS
+#define CONFIG_OS OPENWSN_OS_UCOSII
 
-/* maximum frame length. no more than 127*/
-#define CONFIG_MAX_PHY_FRAME_LENGTH 0x7F
-#define CONFIG_MAX_MAC_FRAME_LENGTH (CONFIG_MAX_PHY_FRAME_LENGTH-9)
-#define CONFIG_MAX_UART_FRAME_LENGTH 0x7F
+
+/* maximum MAC layer frame length. no more than 127.  
+ * attention the length value in 802.15.4's PHY frame does NOT include itself. 
+ * according to cc2420's definition, the length of PHY frame 
+ *  = 4B preamble + 1B SFD(0xA7) + 1B frame length
+ * the 1B frame length is essentially the length of MAC frame. 
+ */
+//#define CONFIG_MAX_PHY_FRAME_LENGTH 0x7F
+//#define CONFIG_MAX_MAC_FRAME_LENGTH (CONFIG_MAX_PHY_FRAME_LENGTH-9)
+//#define CONFIG_MAX_UART_FRAME_LENGTH 0x7F
+#define OPENWSN_MAX_MAC_FRAME_LENGTH 0x7F
+#define OPENWSN_MAX_PHY_FRAME_LENGTH (OPENWSN_MAX_MAC_FRAME_LENGTH+1)
+#define OPENWSN_MAX_UART_FRAME_LENGTH (OPENWSN_MAX_MAC_FRAME_LENGTH+1)
 
 /* UART frame identification byte */
 #define CONFIG_DEFAULT_ESCAPE_CHAR 27
@@ -158,8 +172,7 @@ typedef unsigned short 	uint16;
 typedef unsigned long 	uint32;
 typedef unsigned long long uint64;
 typedef unsigned char 	boolean;
-typedef float          	fp32;             /* single precision floating point variable (32bits) 单精度浮点数（32位长度） */
-typedef double         	fp64;             /* double precision floating point variable (64bits) 双精度浮点数（64位长度） */
-
+typedef float          	fp32;             /* single precision floating point variable (32bits)  */
+typedef double         	fp64;             /* double precision floating point variable (64bits)  */
 
 #endif

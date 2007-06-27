@@ -30,6 +30,7 @@
 
 #include "../foundation.h"
 #include "../hal/hal_cc2420.h"
+#include "../hal/hal_global.h"
 #include "../service/svc_debugio.h"
 #include "../global.h"
 #include "sniffer.h"

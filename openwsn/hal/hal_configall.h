@@ -37,12 +37,6 @@
 #include "..\configall.h"
 #include "..\src\config.h"
 
-// If you use uCOS-II in your system, you should define the following macro
-// this will enable some hal_xxx functions bases on uCOS implementation!
-
-#undef HAL_USE_UCOSII
-#define HAL_USE_UCOSII
-
 #define CONFIG_UART_READ_ENABLE 1
 #define CONFIG_UART_WRITE_ENABLE 1
 

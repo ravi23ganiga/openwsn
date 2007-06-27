@@ -25,7 +25,7 @@
 #include <../global.h>
 #include "wlsmodem.h"
 
-#define MODEM_BUFFER_SIZE (CONFIG_MAX_UART_FRAME_LENGTH * 2)
+#define MODEM_BUFFER_SIZE (OPENWSN_MAX_UART_FRAME_LENGTH * 2)
 
 #ifdef GDEBUG
 static char * m_debugwelcome = "Wireless Modem Started...";

@@ -51,6 +51,11 @@
 #define CSN            21  
 #endif
 
+#ifdef CONFIG_TARGET_OPENNODE_30 
+// @TODO
+#define CSN            21  
+#endif
+
 // P1.17 - Output: SPI Chip Select (CS_N)
 #ifdef CONFIG_TARGET_WLSMODEM_11
 #define CSN            17  
@@ -146,14 +151,19 @@ void spi_open( TSpiDriver * spi, uint8 devid )
     IO1CLR = BM(CSN);
     #endif
         
+    #ifdef CONFIG_TARGET_OPENNODE_30
+	// @TODO
+    IO1CLR = BM(CSN);
+    #endif
+        
     #ifdef CONFIG_TARGET_WLSMODEM_11
     IO0CLR  = BM(CSN);
     #endif
               
     // the delay is to construct enough setup time of csn
     // attention the delay time not to be optimized to 0 
-    // @TODO
-	#pragma optimize=none
+    // @TODO you should use hal_delay here
+	//#pragma optimize=none
     while(i < 500) 
     	i++;    
 }
@@ -172,6 +182,11 @@ void spi_close( TSpiDriver * spi )
     #endif
         
     #ifdef CONFIG_TARGET_OPENNODE_20
+    IO1SET = BM(CSN);
+    #endif
+        
+    #ifdef CONFIG_TARGET_OPENNODE_30
+	// @TODO
     IO1SET = BM(CSN);
     #endif
         

@@ -118,7 +118,7 @@ int cc2420dev_test (void)
           if(length == -1) {led_twinkle(LED_RED,5);uart_putchar(g_uart,(char)0x00);}
           else {led_twinkle(LED_RED,1);uart_putchar(g_uart,(char)0x11);}
           */ 
-	  halWait(2000);
+	  hal_delay(2000);
 	  #endif
 	  /////////////////////////////////////////
 	  
@@ -132,7 +132,7 @@ int cc2420dev_test (void)
           
           led_twinkle(LED_GREEN,1);
        	  //cc2420_sendframe(g_cc2420);
-	  halWait(3000);	  
+	  hal_delay(3000);	  
 	  #endif
 	  ///////////////////////////////////////
         }

@@ -14,30 +14,31 @@ void led_test( void )
 	while (i<5)
 	{
 	        led_off(LED_RED) ; 
-	        halWait(3000);
+	        hal_delay(3000);
 	        led_on(LED_RED) ; 
-	        halWait(3000);
+	        hal_delay(3000);
 	        i++;
-         }
-         i=0;
-        while (i<6)
+    }
+	
+	i=0;
+	while (i<6)
  	{
 	        led_off(LED_GREEN) ; 
-	        halWait(3000);
+	        hal_delay(3000);
 	        led_on(LED_GREEN) ; 
-	        halWait(3000);
+	        hal_delay(3000);
 	        i++;
 
-         }
-        i=0;
-        while (i<8)
+    }
+    
+	i=0;
+    while (i<8)
  	{
 	        led_off(LED_YELLOW) ; 
-	        halWait(3000);
+	        hal_delay(3000);
 	        led_on(LED_YELLOW) ; 
-	        halWait(3000);
+	        hal_delay(3000);
 	        i++;
-
 	}
 	global_destroy();
 }

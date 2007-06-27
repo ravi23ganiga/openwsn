@@ -67,7 +67,7 @@ int cc2420tx_test(void)
     
     //uart_write( g_uart, msg, strlen(msg)+1, 0x00 ); 
     
-    memset( &txframe, 0x00, sizeof(txframe) );
+    memset( (char*)(&txframe), 0x00, sizeof(txframe) );
     txframe.length = 50; // between 1 and 0x127
     txframe.panid = PAN;
     txframe.nodeto = REMOTE_ADDRESS;
@@ -121,7 +121,7 @@ int cc2420tx_test(void)
         	uart_putchar(g_uart,(char)0x11);
         }
         */ 
-		halWait(2000);
+		hal_delay(2000);
 		#endif
 	  
 	    // test section two: 
@@ -139,7 +139,7 @@ int cc2420tx_test(void)
         cc2420_rawwrite( g_cc2420, (char *)txbuf, 10 + 11,0);
           
         led_twinkle(LED_GREEN,1);
-	  	halWait(3000);	  
+	  	hal_delay(3000);	  
 	  	#endif
 	}
 	

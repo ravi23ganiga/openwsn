@@ -253,15 +253,15 @@ void _cc2420_init(TCc2420 * cc)
 
     // Make sure that the voltage regulator is on, and that the reset pin is inactive
     SET_VREG_ACTIVE();
-    halWait(1000);
+    hal_delay(1000);
      
     SET_RESET_ACTIVE();
-    halWait(1000);
+    hal_delay(1000);
     
     SET_RESET_INACTIVE();
-    halWait(500);
+    hal_delay(500);
     FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
-    halWait(1000);
+    hal_delay(1000);
     
     //FASTSPI_SETREG(CC2420_TXCTRL, 0xA0E3); // To control the output power, added by huanghuan
     FAST2420_SETREG(cc->spi,CC2420_MDMCTRL0, 0x0AF2); // Turn on automatic packet acknowledgment 
@@ -596,12 +596,12 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     }while (!(spiStatusByte & BM(CC2420_RSSI_VALID)));
     // @TODO: i think we should wait here for the 2420's SRXON OK
 
-    // @TODO: why comment the following? is halwait(1) enough?
+    // @TODO: why comment the following? is hal_delay(1) enough?
     // TX begins after the CCA check has passed
     // do{
 	//	FASTSPI_STROBE( CC2420_STXONCCA );
 	//	FASTSPI_UPD_STATUS( spiStatusByte );
-	//	halWait(1);
+	//	hal_delay(1);
     // }while (!(spiStatusByte & BM(CC2420_TX_ACTIVE)));
 
     // write the packet to the TX FIFO (the FCS is appended automatically 
@@ -649,9 +649,9 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
    	// returnram[3] ++;                          
    
    	// FASTSPI_STROBE(CC2420_SFLUSHTX);
-   	// halWait(1000);
+   	// hal_delay(1000);
    	// FASTSPI_STROBE(CC2420_SFLUSHTX);
-   	// halWait(1000);
+   	// hal_delay(1000);
    	// FASTSPI_READ_RAM_LE(returnram,CC2420RAM_TXFIFO,20); 
    	// returnram[0] ++;
    	// returnram[1] ++;
@@ -690,7 +690,7 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
         // we'll enter RX automatically, so just wait until we can be sure that 
         // the ack reception should have finished. The timeout consists of a 
         // 12-symbol turnaround time, the ack packet duration, and a small margin
-        halWait((12 * BASIC_RF_SYMBOL_DURATION) + (BASIC_RF_ACK_DURATION) + (2 * BASIC_RF_SYMBOL_DURATION) + 100);
+        hal_delay((12 * BASIC_RF_SYMBOL_DURATION) + (BASIC_RF_ACK_DURATION) + (2 * BASIC_RF_SYMBOL_DURATION) + 100);
 
 		// if an acknowledgment has been received (indicated by the FIFOP 
 		// interrupt), the ack_response flag should be set. attention that the 
@@ -857,6 +857,18 @@ void cc2420_interrupt_init()
 	EXTINT         = 0x04;			                // 清除EINT2中断标志 
 	#endif	
 	
+	#ifdef CONFIG_TARGET_OPENNODE_30
+	// @TODO
+	EXTMODE        = 0x04;              
+	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
+	VICIntEnClr    = ~(1 << 16);                    // 使能IRQ中断	       	
+	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
+	VICVectCntl0   = 0x20 | 16;		                // 分配外部中断2到向量中断0
+	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
+	VICIntEnable   = 1 << 16;		                // 使能EINT2中断
+	EXTINT         = 0x04;			                // 清除EINT2中断标志 
+	#endif	
+	
 	#ifdef CONFIG_TARGET_WLSMODEM_11
 	EXTMODE        = 0x04;              
 	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
@@ -884,6 +896,11 @@ void __irq cc2420_interrupt_service( void )
 	#endif
 	
 	#ifdef CONFIG_TARGET_OPENNODE_20
+	EXTINT = 0x04;	
+	#endif
+	
+	#ifdef CONFIG_TARGET_OPENNODE_30
+	// @TODO
 	EXTINT = 0x04;	
 	#endif
 	
