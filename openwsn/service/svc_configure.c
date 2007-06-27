@@ -87,8 +87,8 @@ void config_apply( TConfigure * config )
 void config_getdefault( TConfigStore * store )
 {
   	store->mode = CONFIGURE_MODE_MODEMGROUP;
-	store->majorversion = MAJOR_VERSION;
-  	store->minorversion = MINOR_VERSION;
+	store->majorversion = OPENWSN_MAJOR_VERSION;
+  	store->minorversion = OPENWSN_MINOR_VERSION;
   	store->uart_baudrate = 9600;
   	store->uart_databits = 8;
   	store->uart_stopbits = 1;

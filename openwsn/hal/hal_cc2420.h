@@ -144,8 +144,11 @@
  *****************************************************************************/
 
 #define TCc2420Driver TCc2420
-//#define CC2420_BUF_CAPACITY 1 
 
+#if (!defined(CONFIG_TARGET_OPENNODE_10) && !defined(CONFIG_TARGET_OPENNODE_20) && !defined(CONFIG_TARGET_OPENNODE_30) && !defined(CONFIG_TARGET_WLSMODEM_11))
+#define CONFIG_TARGET_DEFAULT
+#endif
+	
 #ifdef CONFIG_TARGET_OPENNODE_10
 #define FIFO            8  // P0.8  - Input: FIFO from CC2420
 #define FIFOP           9  // P0.9  - Input: FIFOP from CC2420
