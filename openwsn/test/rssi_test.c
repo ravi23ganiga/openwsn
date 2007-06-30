@@ -61,7 +61,9 @@ int rssi_test (void)
     ///*     Fof RF test	
     UINT8 n;
     int8 length;
+	#ifdef PACKET
     uint16 temp;
+    #endif
     uint8 ledPeriod;
     char * out_string = "the rssi value is : ";
   
@@ -69,7 +71,7 @@ int rssi_test (void)
     
     global_construct();
     spi_configure( g_spi );
-    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+    uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     
     tx_test.panid = 0x2420;

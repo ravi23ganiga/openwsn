@@ -30,14 +30,23 @@
  ****************************************************************************/ 
 #include "hal_foundation.h"
 #include "hal_led.h"
-#include "hal_cpu.h"
+#include "hal_target.h"
 
 /*****************************************************************************
  * @modified by zhangwei on 20070626
  * revision the old version source code
  * add support to opennode-3.0 hardware
  * 
+ * @modified by openwsn on 20070626
+ * correct the error in led_toggle. you should use IO0PIN rather than IO0SET.
+ * thanks for Jiang. using IO0SET may lead to wrong results in LPCxxx chips.
+ * 
+ * @modified by openwsn on 20070626
+ * moved the LED initialization instructions from "target.c" to "led_init()"
+ * in this file.
+ *
  ****************************************************************************/ 
+
 void led_init()
 {
 	#ifdef CONFIG_TARGET_OPENNODE_10
@@ -47,44 +56,73 @@ void led_init()
 	#endif
 	
 	#ifdef CONFIG_TARGET_OPENNODE_30
-	// @TODO
 	#endif
 	
 	#ifdef CONFIG_TARGET_WLSMODEM_11
 	#endif
 }
 
+void led( uint8 id, bool state )
+{
+	if (state)
+		led_on( id );
+	else
+		led_off( id );
+}
+
 void led_off( uint8 id )
 {
 	switch(id)
 	{
-	    case LED_GREEN:    
-	         #if LED_GREEN_PORT == 0 
-	         IO0SET  = BM(LED_GREEN_PIN);    break;
-	         #endif
+	case LED_GREEN:    
+		  #if LED_GREEN_PORT == 0 
+	    IO0SET  = BM(LED_GREEN_PIN);    break;
+	    #endif
 	         
-	         #if LED_GREEN_PORT == 1 
-	         IO1SET  = BM(LED_GREEN_PIN);    break;
-	         #endif
+	    #if LED_GREEN_PORT == 1 
+	    IO1SET  = BM(LED_GREEN_PIN);    break;
+	    #endif
 	         
-	    case LED_RED:    
-	         #if LED_RED_PORT == 0 
-	         IO0SET  = BM(LED_RED_PIN);      break;
-	         #endif
+	case LED_RED:    
+		#if LED_RED_PORT == 0 
+	    IO0SET  = BM(LED_RED_PIN);      break;
+	    #endif
 	         
-	         #if LED_RED_PORT == 1 
-	         IO1SET  = BM(LED_RED_PIN);      break;
-	         #endif
+	    #if LED_RED_PORT == 1 
+	    IO1SET  = BM(LED_RED_PIN);      break;
+	    #endif
 	         
-	    case LED_YELLOW:   
-	         #if LED_YELLOW_PORT == 0 
-	         IO0SET  = BM(LED_YELLOW_PIN);   break;
-	         #endif
+	case LED_YELLOW:   
+		#if LED_YELLOW_PORT == 0 
+	    IO0SET  = BM(LED_YELLOW_PIN);   break;
+	    #endif
 	         
-	         #if LED_YELLOW_PORT == 1 
-	         IO1SET  = BM(LED_YELLOW_PIN);   break;
-	         #endif
-	         
+		#if LED_YELLOW_PORT == 1 
+	    IO1SET  = BM(LED_YELLOW_PIN);   break;
+	    #endif
+	
+	case LED_ALL:
+		  #if LED_GREEN_PORT == 0 
+	    IO0SET  = BM(LED_GREEN_PIN);    
+	    #endif
+	    #if LED_GREEN_PORT == 1 
+	    IO1SET  = BM(LED_GREEN_PIN);    
+	    #endif
+
+  		#if LED_RED_PORT == 0 
+	    IO0SET  = BM(LED_RED_PIN);      
+	    #endif
+	    #if LED_RED_PORT == 1 
+	    IO1SET  = BM(LED_RED_PIN);      
+	    #endif
+
+	  	#if LED_YELLOW_PORT == 0 
+	    IO0SET  = BM(LED_YELLOW_PIN);   
+	    #endif
+			#if LED_YELLOW_PORT == 1 
+	    IO1SET  = BM(LED_YELLOW_PIN);   
+	    #endif
+	    break;
 	}
 }
 
@@ -92,33 +130,57 @@ void led_on( uint8 id )
 {
 	switch(id)
 	{
-	    case LED_GREEN:    
-	         #if LED_GREEN_PORT == 0 
-	         IO0CLR  = BM(LED_GREEN_PIN);   break;
-	         #endif
+	case LED_GREEN:    
+		#if LED_GREEN_PORT == 0 
+	    IO0CLR  = BM(LED_GREEN_PIN);   break;
+	    #endif
 	         
-	         #if LED_GREEN_PORT == 1 
-	         IO1CLR  = BM(LED_GREEN_PIN);   break;
-	         #endif
+	    #if LED_GREEN_PORT == 1 
+	    IO1CLR  = BM(LED_GREEN_PIN);   break;
+	    #endif
 	         
-	    case LED_RED:    
-	         #if LED_RED_PORT == 0 
-	         IO0CLR  = BM(LED_RED_PIN);     break;
-	         #endif
+	case LED_RED:    
+		#if LED_RED_PORT == 0 
+	    IO0CLR  = BM(LED_RED_PIN);     break;
+	    #endif
 	         
-	         #if LED_RED_PORT == 1 
-	         IO1CLR  = BM(LED_RED_PIN);     break;
-	         #endif
+	    #if LED_RED_PORT == 1 
+	    IO1CLR  = BM(LED_RED_PIN);     break;
+	    #endif
 	         
-	    case LED_YELLOW:   
-	         #if LED_YELLOW_PORT == 0 
-	         IO0CLR  = BM(LED_YELLOW_PIN);   break;
-	         #endif
+	case LED_YELLOW:   
+		#if LED_YELLOW_PORT == 0 
+	    IO0CLR  = BM(LED_YELLOW_PIN);   break;
+	    #endif
 	         
-	         #if LED_YELLOW_PORT == 1 
-	         IO1CLR  = BM(LED_YELLOW_PIN);   break;
-	         #endif
+	    #if LED_YELLOW_PORT == 1 
+	    IO1CLR  = BM(LED_YELLOW_PIN);   break;
+	    #endif
+	    
+	case LED_ALL: 
+			#if LED_GREEN_PORT == 0 
+	    IO0CLR  = BM(LED_GREEN_PIN);   
+	    #endif
+	    #if LED_GREEN_PORT == 1 
+	    IO1CLR  = BM(LED_GREEN_PIN);   
+	    #endif
+
+		  #if LED_RED_PORT == 0 
+	    IO0CLR  = BM(LED_RED_PIN);     
+	    #endif
 	         
+	    #if LED_RED_PORT == 1 
+	    IO1CLR  = BM(LED_RED_PIN);     
+	    #endif
+	         
+  		#if LED_YELLOW_PORT == 0 
+	    IO0CLR  = BM(LED_YELLOW_PIN);   
+	    #endif
+	         
+	    #if LED_YELLOW_PORT == 1 
+	    IO1CLR  = BM(LED_YELLOW_PIN);   
+	    #endif
+			break;
 	}
 }
 
@@ -126,80 +188,67 @@ void led_toggle( uint8 id )
 {
 	switch(id)
 	{
-	    case LED_GREEN:    
-	         {
-	         	#if LED_GREEN_PORT == 0
-	         	if(IO0SET & BM(LED_GREEN_PIN))  IO0CLR  = BM(LED_GREEN_PIN); 
-	         	else                            IO0SET  = BM(LED_GREEN_PIN);   	     
-	         	break;
-	         	#endif
+	case LED_GREEN:    
+		#if LED_GREEN_PORT == 0
+	    if(IO0PIN & BM(LED_GREEN_PIN))  IO0CLR  = BM(LED_GREEN_PIN); 
+		else                            IO0SET  = BM(LED_GREEN_PIN);   	     
+	    #endif
 	         	
-	         	#if LED_GREEN_PORT == 1
-	         	if(IO1SET & BM(LED_GREEN_PIN))  IO1CLR  = BM(LED_GREEN_PIN); 
-	         	else                            IO1SET  = BM(LED_GREEN_PIN);   	     
-	         	break;
-	         	#endif
-	         }
-	    case LED_RED:      
-	         {
-	         	#if LED_RED_PORT == 0
-	         	if(IO0SET & BM(LED_RED_PIN))  IO0CLR  = BM(LED_RED_PIN); 
-	         	else                          IO0SET  = BM(LED_RED_PIN);   	     
-	         	break;
-	         	#endif
+	    #if LED_GREEN_PORT == 1
+	    if(IO1PIN & BM(LED_GREEN_PIN))  IO1CLR  = BM(LED_GREEN_PIN); 
+	    else                            IO1SET  = BM(LED_GREEN_PIN);   	     
+	    #endif
+	    break;
+
+	case LED_RED:      
+		#if LED_RED_PORT == 0
+	    if(IO0PIN & BM(LED_RED_PIN))  IO0CLR  = BM(LED_RED_PIN); 
+	    else                          IO0SET  = BM(LED_RED_PIN);   	     
+	    #endif
 	         	
-	         	#if LED_RED_PORT == 1
-	         	if(IO1SET & BM(LED_RED_PIN))  IO1CLR  = BM(LED_RED_PIN); 
-	         	else                          IO1SET  = BM(LED_RED_PIN);   	     
-	         	break;
-	         	#endif
-	         }
-	    case LED_YELLOW:   
-	         {
-	         	#if LED_YELLOW_PORT == 0
-	         	if(IO0SET & BM(LED_YELLOW_PIN))  IO0CLR  = BM(LED_YELLOW_PIN); 
-	         	else                             IO0SET  = BM(LED_YELLOW_PIN);   	     
-	         	break;
-	         	#endif
+	    #if LED_RED_PORT == 1
+	    if(IO1PIN & BM(LED_RED_PIN))  IO1CLR  = BM(LED_RED_PIN); 
+	    else                          IO1SET  = BM(LED_RED_PIN);   	     
+	    #endif
+	    break;
+
+	case LED_YELLOW:   
+		#if LED_YELLOW_PORT == 0
+	    if(IO0PIN & BM(LED_YELLOW_PIN))  IO0CLR  = BM(LED_YELLOW_PIN); 
+	    else                             IO0SET  = BM(LED_YELLOW_PIN);   	     
+	    #endif
 	         	
-	         	#if LED_YELLOW_PORT == 1
-	         	if(IO1SET & BM(LED_YELLOW_PIN))  IO1CLR  = BM(LED_YELLOW_PIN); 
-	         	else                             IO1SET  = BM(LED_YELLOW_PIN);   	     
-	         	break;
-	         	#endif
-	         }
+		#if LED_YELLOW_PORT == 1
+	    if(IO1PIN & BM(LED_YELLOW_PIN))  IO1CLR  = BM(LED_YELLOW_PIN); 
+	    else                             IO1SET  = BM(LED_YELLOW_PIN);   	     
+	    #endif
+	    break;
 	}
 }
 
-void led_twinkle( uint8 id ,uint16 delay)
+void led_twinkle( uint8 id ,uint16 interval)
 {
   	switch(id)
 	{
-	    case LED_GREEN:
-	         {
-	         	led_toggle(LED_GREEN);
-	                hal_delay( delay << 7 );	
-	                led_toggle(LED_GREEN);
-	                hal_delay( delay << 7 );
-	                break;
-	         }
-	    case LED_RED:
-	         {
-	         	led_toggle(LED_RED);
-	                hal_delay( delay << 7 );	
-	                led_toggle(LED_RED);
-	                hal_delay( delay << 7 );
-	                break;
-	         }
-	    case LED_YELLOW:
-	         {
-	         	led_toggle(LED_YELLOW);
-	                hal_delay( delay << 7 );	
-	                led_toggle(LED_YELLOW);
-	                hal_delay( delay << 7 );
-	                break;
-	         }	
+	case LED_GREEN:
+		led_toggle(LED_GREEN);
+	    hal_delay( interval );	
+	    led_toggle(LED_GREEN);
+	    hal_delay( interval );
+	    break;
+
+	case LED_RED:
+		led_toggle(LED_RED);
+	    hal_delay( interval );	
+	    led_toggle(LED_RED);
+	    hal_delay( interval );
+	    break;
+
+	case LED_YELLOW:
+		led_toggle(LED_YELLOW);
+	    hal_delay( interval );	
+	    led_toggle(LED_YELLOW);
+	    hal_delay( interval );
+	    break;
 	}
 }
-
-

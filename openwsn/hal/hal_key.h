@@ -40,6 +40,7 @@
 #define KEY_ON 		0x01
 #define KEY_OFF		0x02
 
+void key_init( void );
 uint8 key( uint8 idx );
 
 #endif

@@ -84,7 +84,7 @@ uint8 						g_init = FALSE;
 //
 int8 global_construct( void )
 {
-	TConfigStore * data;
+	//TConfigStore * data;
 	g_init = TRUE;
 	
 	hal_global_construct();

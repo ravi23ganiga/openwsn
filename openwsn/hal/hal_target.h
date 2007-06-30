@@ -46,6 +46,159 @@
 
 #include "hal_foundation.h"
 
+#ifdef CONFIG_TARGET_DEFAULT
+#undef CONFIG_TARGET_DEFAULT
+#endif
+
+#if ((!defined(CONFIG_TARGET_OPENNODE_10)) && (!defined(CONFIG_TARGET_OPENNODE_20)) \
+  	&& (!defined(CONFIG_TARGET_OPENNODE_30)) && (!defined(CONFIG_TARGET_WLSMODEM_11)))
+#define CONFIG_TARGET_DEFAULT
+#endif
+ 
+/*****************************************************************************
+ * LED Target Settings
+ ****************************************************************************/
+
+#ifdef CONFIG_TARGET_OPENNODE_10
+#define LED_GREEN_PIN 	25  
+#define LED_YELLOW_PIN 	21 
+#define LED_RED_PIN	21  
+#define LED_GREEN_PORT 	1
+#define LED_YELLOW_PORT 0
+#define LED_RED_PORT	0
+#endif
+
+#ifdef CONFIG_TARGET_OPENNODE_20
+#define LED_GREEN_PIN 	25  
+#define LED_YELLOW_PIN 	18  
+#define LED_RED_PIN	16  
+#define LED_GREEN_PORT 	0
+#define LED_YELLOW_PORT 1
+#define LED_RED_PORT	1
+#endif
+
+#ifdef CONFIG_TARGET_OPENNODE_30
+#define LED_GREEN_PIN 	25  
+#define LED_YELLOW_PIN 	18  
+#define LED_RED_PIN	16  
+#define LED_GREEN_PORT 	1
+#define LED_YELLOW_PORT 1
+#define LED_RED_PORT	1
+#endif
+
+#ifdef CONFIG_TARGET_WLSMODEM_11
+#define LED_GREEN_PIN 	19  
+#define LED_YELLOW_PIN 	19  
+#define LED_RED_PIN	18  
+#define LED_GREEN_PORT 	0
+#define LED_YELLOW_PORT 0
+#define LED_RED_PORT	0
+#endif
+
+#ifdef CONFIG_TARGET_DEFAULT
+#define LED_GREEN_PIN 	25  
+#define LED_YELLOW_PIN 	18  
+#define LED_RED_PIN	16  
+#define LED_GREEN_PORT 	1
+#define LED_YELLOW_PORT 1
+#define LED_RED_PORT	1
+#endif
+
+
+/*****************************************************************************
+ * Cc2420 Transceiver Target Settings
+ ****************************************************************************/
+
+#ifdef CONFIG_TARGET_OPENNODE_10
+#define FIFO            8  // P0.8  - Input: FIFO from CC2420
+#define FIFOP           9  // P0.9  - Input: FIFOP from CC2420
+#define CCA            10  // p0.10 - Input:  CCA from CC2420
+#define RESET_N        12  // P0.12 - Output: RESET_N to CC2420
+#define VREG_EN        13  // P0.13 - Output: VREG_EN to CC2420
+#define SFD            16  // P0.16 - Input:  SFD from CC2420
+#define CSN            21  // P1.21 - Output: SPI Chip Select (CS_N)  
+
+#define FIFO_PORT      0    
+#define FIFOP_PORT     0     
+#define CCA_PORT       0     
+#define RESET_N_PORT   0
+#define VREG_EN_PORT   0       
+#define SFD_PORT       0
+#define CSN_PORT       1  
+#endif
+
+#ifdef CONFIG_TARGET_OPENNODE_20
+#define FIFO           22  
+#define FIFOP          15  
+#define CCA            13  
+#define RESET_N        12 
+#define VREG_EN        10  
+#define SFD            16 
+#define CSN            21  
+
+#define FIFO_PORT      1    
+#define FIFOP_PORT     0     
+#define CCA_PORT       0     
+#define RESET_N_PORT   0
+#define VREG_EN_PORT   0       
+#define SFD_PORT       0
+#define CSN_PORT       1  
+#endif
+
+#ifdef CONFIG_TARGET_OPENNODE_30
+#define FIFO           22  	// P1.22 input from 2420 to ARM
+#define FIFOP          15  	// P0.15 input from 2420 to ARM as interrupt request
+#define CCA            17  	// P1.17 input from 2420 to ARM as channel indication  // @TODO is port correct?
+#define RESET_N        23 	// P1.23 output from ARM to cc2420.
+#define VREG_EN        19  	// P1.19 output from ARM to cc2420  
+#define SFD            16 	// P0.16 input from 2420 to ARM to indicate the frame's arrival
+#define CSN            21  	// P1.21 output from 2420 to cc2420 as SPI select (chip select)
+
+#define FIFO_PORT      1    
+#define FIFOP_PORT     0     
+#define CCA_PORT       1    
+#define RESET_N_PORT   1
+#define VREG_EN_PORT   1       
+#define SFD_PORT       0
+#define CSN_PORT       1  
+#endif
+
+#ifdef CONFIG_TARGET_WLSMODEM_11
+#define FIFO           16  // P0.16  - Input: FIFO from CC2420
+#define FIFOP          15  // P0.15  - Input: FIFOP from CC2420
+#define CCA            12  // p0.12 - Input:  CCA from CC2420
+#define RESET_N        23  // P1.23 - Output: RESET_N to CC2420
+#define VREG_EN        10  // P0.10 - Output: VREG_EN to CC2420
+#define SFD            11  // P0.11 - Input:  SFD from CC2420
+#define CSN            17  // P0.17 - Output: SPI Chip Select (CS_N)  
+
+#define FIFO_PORT      0    
+#define FIFOP_PORT     0     
+#define CCA_PORT       0     
+#define RESET_N_PORT   1
+#define VREG_EN_PORT   0       
+#define SFD_PORT       0
+#define CSN_PORT       0  
+#endif
+
+#ifdef CONFIG_TARGET_DEFAULT
+#define FIFO           22  	// P1.22 input from 2420 to ARM
+#define FIFOP          15  	// P0.15 input from 2420 to ARM as interrupt request
+#define CCA            17  	// P1.17 input from 2420 to ARM as channel indication  // @TODO is port correct?
+#define RESET_N        23 	// P1.23 output from ARM to cc2420.
+#define VREG_EN        19  	// P1.19 output from ARM to cc2420  
+#define SFD            16 	// P0.16 input from 2420 to ARM to indicate the frame's arrival
+#define CSN            21  	// P1.21 output from 2420 to cc2420 as SPI select (chip select)
+
+#define FIFO_PORT      1    
+#define FIFOP_PORT     0     
+#define CCA_PORT       1    
+#define RESET_N_PORT   1
+#define VREG_EN_PORT   1       
+#define SFD_PORT       0
+#define CSN_PORT       1  
+#endif
+
 /*****************************************************************************
  * initialize the target hardware 
  * this function MUST run successfully. it's usually the first function called in your application.

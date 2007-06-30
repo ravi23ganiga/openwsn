@@ -10,7 +10,7 @@ static void timer1_callback( void * data );
 void timerupt_test( void )
 {
 	target_init();
-	
+	led_init();
 
 	global_construct();
 	timer_init(g_timer0,0,0);

@@ -1,4 +1,4 @@
-/*****************************************************************************
+/******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network System.
  *
  * Copyright (C) 2005,2006,2007,2008 zhangwei (openwsn@gmail.com)
@@ -26,33 +26,9 @@
  * This exception does not invalidate any other reasons why a work based on
  * this file might be covered by the GNU General Public License.
  * 
- ****************************************************************************/ 
- 
-#include <stdlib.h>
-#include "foundation.h"
-#include ".\src\config.h"
-#include ".\hal\hal.h"
-#ifdef CONFIG_OS_UCOSII
-#include ".\test\ucos_test.h"
-#endif
-#include "start.h"
+ *****************************************************************************/ 
 
-#if (!defined(CONFIG_OS_UCOSII))
-  #define CONFIG_OS_DEFAULT
-#endif  
-
-int main (void)
+void test(void)
 {
-	#ifdef CONFIG_OS_UCOSII
-	ucos_main();
-	#endif
-
-	/* If you don't introduce an RTOS such as uCOS-II, just call app_start() here, 
-	 * or else you may need to create some task or threads here. */
-	#ifdef CONFIG_OS_DEFAULT
-	app_start();
-	#endif
-
-	return 0;															
+	return;
 }
-

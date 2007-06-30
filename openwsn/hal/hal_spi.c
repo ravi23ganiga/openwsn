@@ -36,10 +36,17 @@
  * TSPIDriver 
  *
  * @modified by zhangwei on 20061010
+ * revision
+ * add support to OpenNode-3.0 target hardware 
  * based on Huanghuan's mature code. 
  * support multiple SPI channel.
  * 
  ****************************************************************************/
+
+#if ((!defined(CONFIG_TARGET_OPENNODE_10)) && (!defined(CONFIG_TARGET_OPENNODE_20)) \
+  	&& (!defined(CONFIG_TARGET_OPENNODE_30)) && (!defined(CONFIG_TARGET_WLSMODEM_11)))
+#define CONFIG_TARGET_DEFAULT
+#endif
 
 // P1.21 - Output: SPI Chip Select (CS_N)
 #ifdef CONFIG_TARGET_OPENNODE_10 
@@ -51,14 +58,18 @@
 #define CSN            21  
 #endif
 
+// P1.21 - Output: SPI Chip Select (CS_N)
 #ifdef CONFIG_TARGET_OPENNODE_30 
-// @TODO
 #define CSN            21  
 #endif
 
 // P1.17 - Output: SPI Chip Select (CS_N)
 #ifdef CONFIG_TARGET_WLSMODEM_11
 #define CSN            17  
+#endif
+
+#ifdef CONFIG_TARGET_DEFAULT 
+#define CSN            21  
 #endif
 
 TSpiDriver * spi_construct( uint8 id, char * buf, uint8 size )
@@ -76,16 +87,12 @@ TSpiDriver * spi_construct( uint8 id, char * buf, uint8 size )
 		spi->id = id;
 	}
 	
-	// @modified by zhangwei on 20061025
-	//
-	// I delete spi_configure(spi)
-	// this line is in huanghuan's code 
-	
 	return spi;
 }
 
 void spi_destroy( TSpiDriver * spi )
 {
+	NULL;
 }
 
 /* configure the SPI here. for example, the interrupt settings 
@@ -152,7 +159,6 @@ void spi_open( TSpiDriver * spi, uint8 devid )
     #endif
         
     #ifdef CONFIG_TARGET_OPENNODE_30
-	// @TODO
     IO1CLR = BM(CSN);
     #endif
         
@@ -160,8 +166,13 @@ void spi_open( TSpiDriver * spi, uint8 devid )
     IO0CLR  = BM(CSN);
     #endif
               
+    #ifdef CONFIG_TARGET_DEFAULT
+    IO1CLR = BM(CSN);
+    #endif
+        
     // the delay is to construct enough setup time of csn
     // attention the delay time not to be optimized to 0 
+	//
     // @TODO you should use hal_delay here
 	//#pragma optimize=none
     while(i < 500) 
@@ -174,6 +185,7 @@ void spi_close( TSpiDriver * spi )
         
     // the delay is to provide enough holdup time of csn
     // attention the delay time not to be optimized to 0 
+	// @TODO
     while(i < 1500) 
     	i++;
         	
@@ -186,64 +198,69 @@ void spi_close( TSpiDriver * spi )
     #endif
         
     #ifdef CONFIG_TARGET_OPENNODE_30
-	// @TODO
     IO1SET = BM(CSN);
     #endif
         
     #ifdef CONFIG_TARGET_WLSMODEM_11
     IO0SET  = BM(CSN);
 	#endif
+
+    #ifdef CONFIG_TARGET_DEFAULT
+    IO1SET = BM(CSN);
+    #endif
 }
 
 uint8 spi_read(TSpiDriver * spi, char * buf, uint8 capacity, uint8 opt )
 {
-        UINT8 spiCnt = 0;
+	UINT8 n = 0;
         
-        for (spiCnt = 0; spiCnt < capacity; spiCnt++) { 
-            spi_get(spi,buf + spiCnt); 
-        } 
+    for (n = 0; n < capacity; n++) 
+	{ 
+		spi_get(spi,buf + n); 
+	} 
        
-        return 0;
+    return 0;
 }
 
 uint8 spi_write(TSpiDriver * spi,  char * buf, uint8 len, uint8 opt )
 {
-        uint8 spiCnt = 0;
-        for (spiCnt = 0; spiCnt < len; spiCnt++) { 
-            spi_put(spi,((BYTE*)(buf))[spiCnt]); 
-        } 
+	uint8 n = 0;
+    for (n = 0; n < len; n++) 
+	{ 
+		spi_put(spi,((BYTE*)(buf))[n]); 
+	} 
       
-        return 0;
+    return 0;
 }
 
 void spi_put(TSpiDriver * spi, char ch )
 {
-        if (spi->id == 0)
-        {
-          SPI_SPDR = ch; 
-          spi_wait(spi);
-        }
-        else if (spi->id == 1)
-        {
-          SSPDR = ch;
-          spi_wait(spi);	
-        }
+    if (spi->id == 0)
+    {
+		SPI_SPDR = ch; 
+        spi_wait(spi);
+	}
+    else if (spi->id == 1)
+    {
+		SSPDR = ch;
+        spi_wait(spi);	
+	}
 }
 
 int8 spi_get(TSpiDriver * spi, char * pc )
 {
-        if(spi->id == 0)
-        {
-          SPI_SPDR = 0; 
-          spi_wait(spi); 
-          *pc = SPI_SPDR; 
-        }
-        if(spi->id == 1)
-        {
-          SSPDR = 0;
-          spi_wait(spi);
-          *pc = SSPDR; 	
-        }
+    if(spi->id == 0)
+    {
+		SPI_SPDR = 0; 
+        spi_wait(spi); 
+        *pc = SPI_SPDR; 
+	}
+    if(spi->id == 1)
+    {
+		SSPDR = 0;
+        spi_wait(spi);
+        *pc = SSPDR; 	
+	}
         
     return 0;
 }
@@ -251,17 +268,21 @@ int8 spi_get(TSpiDriver * spi, char * pc )
 
 void spi_wait(TSpiDriver * spi) 
 { 
-        if (spi->id == 0) 
-        {	
-        	while (!(SPI_SPSR & BM(7)));	
-    	}
-        else if(spi->id == 1) 
-        {
-        	while (!(SSPSR & 0x01));
-        }
+    if (spi->id == 0) 
+    {	
+		while (!(SPI_SPSR & BM(7)));	
+	}
+    else if(spi->id == 1) 
+    {
+		while (!(SSPSR & 0x01));
+	}
 }
 
 
+// @TODO
+// obsolete functions
+// will be eliminated soon
+//
 void FASTSPI_TX_WORD_LE(TSpiDriver * spi, uint16 x) 
     { 
         spi_put(spi,x); 

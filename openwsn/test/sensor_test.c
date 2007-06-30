@@ -16,7 +16,7 @@ void sensor_test()
     global_construct();
     led_twinkle(LED_YELLOW,1);
     spi_configure( g_spi0 );
-    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+    uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
     //ad_configutre(g_ad);
     
     SET_VREG_INACTIVE();

@@ -43,8 +43,6 @@
  * User Changable Configurations
  *****************************************************************************/
  
-//#define FOR_2420_TEST 
- 
 #define OPENWSN_MAJOR_VERSION 0
 #define OPENWSN_MINOR_VERSION 8
  
@@ -64,11 +62,11 @@
  * @attention: there're only one above macro allowed in the system!
  * currently, openwsn only support OPENNODE_10, 20, 30
  */
-#undef CONFIG_TARGET_OPENNODE_10
-//#define CONFIG_TARGET_OPENNODE_20
-#undef CONFIG_TARGET_WLSMODEM_11
-#undef CONFIG_TARGET_GAINS
+#undef  CONFIG_TARGET_OPENNODE_10
+#undef  CONFIG_TARGET_OPENNODE_20
 #define CONFIG_TARGET_OPENNODE_30
+#undef  CONFIG_TARGET_WLSMODEM_11
+#undef  CONFIG_TARGET_GAINS
 
 /* FlashStore的开始地址和大小
  * FlashStore用于系统掉电期间存储各种设置参数,它是MCU芯片E2PROM或者Flash地址空间中的一片
@@ -103,18 +101,20 @@
   #undef CONFIG_UART_RS485
 #endif  
 
-/* "openwsn" is designed to be integrated with existed mature OS. currently, it
- * only support uCOS-II. you can change the value of macro CONFIG_OS
- * to select the OS.  the default setting is OS_NONE 
- */
-#define OPENWSN_OS_NONE 0  
-#define OPENWSN_OS_TINYOS 1
-#define OPENWSN_OS_UCOSII 2
-#define OPENWSN_OS_EMBEDDEDLINUX 3
-#define OPENWSN_OS_FREERTOS 4
-#define OPENWSN_OS_DEFAULT OPENWSN_OS_NONE 
+#define CONFIG_UART0_STARTUP_BAUDRATE 115200
+#define CONFIG_UART_BAUDRATE 9600
 
-#define CONFIG_OS OPENWSN_OS_UCOSII
+/* "openwsn" is designed to be integrated with existed mature OS. currently, it
+ * only support uCOS-II. you can change the following macro to configure the OS
+ * to be integrated. 
+ * currently, it only support uCOS. it's also the default settings. 
+ * in the future, the default setting will be OS_NONE
+ */
+#undef  CONFIG_OS_NONE 
+#define CONFIG_OS_TINYOS 
+#undef  CONFIG_OS_UCOSII 
+#undef  CONFIG_OS_EMBEDDEDLINUX 
+#undef  CONFIG_OS_FREERTOS 
 
 
 /* maximum MAC layer frame length. no more than 127.  
@@ -123,9 +123,6 @@
  *  = 4B preamble + 1B SFD(0xA7) + 1B frame length
  * the 1B frame length is essentially the length of MAC frame. 
  */
-//#define CONFIG_MAX_PHY_FRAME_LENGTH 0x7F
-//#define CONFIG_MAX_MAC_FRAME_LENGTH (CONFIG_MAX_PHY_FRAME_LENGTH-9)
-//#define CONFIG_MAX_UART_FRAME_LENGTH 0x7F
 #define OPENWSN_MAX_MAC_FRAME_LENGTH 0x7F
 #define OPENWSN_MAX_PHY_FRAME_LENGTH (OPENWSN_MAX_MAC_FRAME_LENGTH+1)
 #define OPENWSN_MAX_UART_FRAME_LENGTH (OPENWSN_MAX_MAC_FRAME_LENGTH+1)
@@ -133,6 +130,35 @@
 /* UART frame identification byte */
 #define CONFIG_DEFAULT_ESCAPE_CHAR 27
 #define CONFIG_DEFAULT_FRAME_PREFIX CONFIG_DEFAULT_ESCAPE_CHAR
+
+
+/* System wide configuration for lpc213x.
+ * Fosc、Fcclk、Fcco、Fpclk must be defined or you may encounter data failure
+ * when using UART, especially when the communication data rate is high. 
+ *
+ * Fosc:	Crystal frequence,10MHz~25MHz，should be the same as actual status. 
+ *          应当与实际一至晶振频率,10MHz~25MHz，应当与实际一致
+ * Fcclk:   System frequence,should be (1~32)multiples of Fosc,and should be equal or less  than 60MHz. 
+ *          系统频率，必须为Fosc的整数倍(1~32)，且<=60MHZ
+ * Fcco:    CCO frequence,should be 2、4、8、16 multiples of Fcclk, ranged from 156MHz to 320MHz. 
+ *          CCO频率，必须为Fcclk的2、4、8、16倍，范围为156MHz~320MHz
+ * Fpclk:   VPB clock frequence , must be 1、2、4 multiples of (Fcclk / 4).
+ *          VPB时钟频率，只能为(Fcclk / 4)的1、2、4倍
+ */
+#if (defined(CONFIG_TARGET_OPENNODE_10) || defined(CONFIG_TARGET_OPENNODE_20) || defined(CONFIG_TARGET_WLSMODEM_11))
+  #define Fosc            11059200                  
+  #define Fcclk           (Fosc * 4)                  
+  #define Fcco            (Fcclk * 4)                 
+  #define Fpclk           (Fcclk / 4) * 1             
+#endif
+
+#ifdef CONFIG_TARGET_OPENNODE_30
+  #define Fosc            16000000                
+  #define Fcclk           (Fosc * 4)              
+  #define Fcco            (Fcclk * 4)             
+  #define Fpclk           (Fcclk / 4) * 1         
+#endif	    
+
 
 /*******************************************************************************
  * User Un-Changable Configurations

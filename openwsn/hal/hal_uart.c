@@ -202,6 +202,13 @@ int16 uart_configure (TUartDriver * uart,uint32 baudrate, uint8 databits, uint8 
 		U0DLM = bak >>8;
 		U0DLL = bak &0xFF;
 
+	// @TODO
+	// you may deleted the following		
+    U0LCR = 0x03;                               /* Disable to access the frequenc regecter 禁止访问分频因子寄存器 */
+                                                /* set to 8,1,n 且设置为8,1,n */
+		U0IER = 0x00;                               /* Disable interrupt禁止中断 */
+    U0FCR = 0x00;                               /* initial FIFO 初始化FIFO */
+
 	}
     else
     {

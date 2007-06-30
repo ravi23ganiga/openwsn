@@ -64,7 +64,7 @@ void blink_test()
 	
     target_init();
     global_construct();
-    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+    uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
     spi_configure( g_spi );
     
     memset( (char*)(&rxframe), 0x00, sizeof(TOpenFrame) );
