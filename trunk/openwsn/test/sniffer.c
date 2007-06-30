@@ -52,17 +52,17 @@ void sniffer_run( void )
 	char * buf;
 	uint8 rxlen, count;
 	TSioComm sio;
-	char * msg = "sniffer is running...";
+	char * msg = "sniffer started...\n";
 	
     target_init();
     global_construct();
+	led_init();
     spi_configure( g_spi );
-    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
-    cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
-    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, 0x2420, 0);
-   
-
+    uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
+    cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0 );
+    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, 0x2420, 0 );
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, 0x5678, 0);
+
     //uart_write( g_uart, "program run1..", 15, 0 );
     // this configure will disable the address recognition mechanism so that 
     // the transceiver "cc2420" can receive all the frames in transmission, even
@@ -70,7 +70,6 @@ void sniffer_run( void )
 	// hardware address recognition can be enabled or disabled using 
 	// MDMCTRL0.ADR_DECODE bit in register CC2420_MDMCTRL0 (p.39, cc2420 datasheet) 
 	//FAST2420_SETREG(spi,CC2420_MDMCTRL0,0x02E2) ;
-
 
     cc2420_configure( g_cc2420, CC2420_CONFIG_SNIFFER_MODE, 0, 0);
 	
@@ -81,32 +80,20 @@ void sniffer_run( void )
 	//cc2420_relation( g_spi0 );
 	memset( (char*)(&rxbuf[0]), 0x00, MAX_BUFFER_SIZE ); 
 	rxlen = 0;   
-        cc2420_receive_on(g_cc2420);  
-        IRQEnable();
+    cc2420_receive_on(g_cc2420);  
+    IRQEnable();
 		
-	// assume you have construct g_cc2420, g_sio, g_uart successfully now
-	
-	 
+	// assume: you should have construct g_cc2420, g_sio, g_uart successfully now
+	// each time the sniffer received a frame, the LED will toggle its state	
+	sio_write( &sio, msg, strlen(msg), 0x00 );
 	while (TRUE)
-	{   
-	  
-		
-	   // uart_write(g_uart, "uartecho run22.", 15, 0 );
-		//buf = (char*)(rxbuf[0]) + rxlen;
+	{
+		led_toggle( LED_RED );
 		count = cc2420_rawread( g_cc2420, buf, rxlen, 0 );
-		//rxlen += count;
-		
-		//buf = (char*)(rxbuf[0]);
-		//count = sio_write( g_sio, buf, rxlen, 0 );
-		//count = uart_write( g_uart, buf, rxlen, 0 );
-		//uart_write( g_uart, buf, count, 0 );
-		sio_write(&sio, buf, count, 0 );
-		/*if (count > 0)
-		{   uart_write( g_uart, "program run2..", 15, 0 );
-			rxlen -= count;
-			memmove( buf, buf + count, rxlen );
-		}*/
-	 
+		if (count > 0)
+		{
+			sio_write(&sio, buf, count, 0 );
+		}
 	}
 		
 	global_destroy();	

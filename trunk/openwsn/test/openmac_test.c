@@ -83,7 +83,7 @@ void openmac_run( void )
 	
 	global_construct();
 	spi_configure( g_spi );
-	uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+	uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
 	//timer_init( g_timer1, 1, 2 );
 	
 	g_mac = mac_construct( (char*)(&m_mac), sizeof(m_mac) );

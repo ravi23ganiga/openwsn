@@ -50,6 +50,7 @@ int cc2420rx_test (void)
     uint16 temp;
     uint8 ledPeriod;
     char * out_string = "   rssi = ";
+    bool led_state = true;
   
     target_init();
     
@@ -59,7 +60,7 @@ int cc2420rx_test (void)
 
     global_construct();
     spi_configure( g_spi );
-    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+    uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
    
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
@@ -91,9 +92,15 @@ int cc2420rx_test (void)
         //length = cc2420_read( g_cc2420,&rx_test,0,0);
         length = cc2420_read( g_cc2420,&rx_test,0);
 	  
-	    if(length > 11)
+	    if(length > 0)
 	    //if (length > 1) 
 	    {
+	    	led_state = !led_state;
+	    	if (led_state)
+	    		led_on( LED_RED );
+	    	else
+	    		led_off( LED_RED ); 
+	    	
 	        ledPeriod = rx_test.payload[0];
             temp = g_cc2420->rssi;
 	  

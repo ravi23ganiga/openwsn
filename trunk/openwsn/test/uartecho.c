@@ -53,21 +53,31 @@ void uartecho_run( void )
 	char * buf1 = (char *)( &memory[0] );
 	char * buf2 = buf1 + UART_BUF_SIZE;
 	uint8 rxlen1, rxlen2, count;
+	char * msgboot = "uartecho started...\n";
+	char * inputmsg = "please input some word in the terminal and press <Enter>\n";
 
 	target_init();
 	global_construct();
-    
-	IRQEnable();
 	
-	uart_write( g_uart, "uartecho run...", 15, 0 );
-	uart_configure( g_uart, 115200, 0, 0, 0, 0 );
-	uart_write( g_uart, "after", 5, 0 );
+	// make all the LED blank for 1 time to indicate the program is running!
+	//
+	led_off( LED_ALL );
+	led_on( LED_ALL );
+	hal_delay( 500 );
+	led_off( LED_ALL );
+    
+	uart_write( g_uart, msgboot, strlen(msgboot)+1, 0x00 );
+	uart_configure( g_uart, 9600, 0, 0, 0, 0 );
+	uart_write( g_uart, inputmsg, strlen(inputmsg)+1, 0 );
 	
 	memset( buf1, 0x61, UART_BUF_SIZE ); 
 	memset( buf2, 0x00, UART_BUF_SIZE ); 
 	rxlen1 = 3;
 	rxlen2 = 0;
-
+	
+	// do repeat accepting from the UART.
+	// once receiving some data, send them back. that's why it was called "Echo".
+	//
 	while (1)
 	{
 		count = uart_write( g_uart, buf1, rxlen1, 0 );

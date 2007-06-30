@@ -29,13 +29,20 @@
  *****************************************************************************/ 
 
 #include "hal_foundation.h"
+#include "hal_target.h"
 #include "hal_spi.h"
 #include "hal_cc2420def.h"
 #include "hal_cc2420.h"
 #include "hal_cc2420base.h"
-
-#ifdef GDEBUG
 #include "hal_led.h"
+
+#ifdef CONFIG_TARGET_DEFAULT
+#undef CONFIG_TARGET_DEFAULT
+#endif
+
+#if ((!defined(CONFIG_TARGET_OPENNODE_10)) && (!defined(CONFIG_TARGET_OPENNODE_20)) \
+	&& (!defined(CONFIG_TARGET_WLSMODEM_11)))
+#define CONFIG_TARGET_DEFAULT
 #endif
 
 /******************************************************************************
@@ -61,25 +68,6 @@
 #define FAST2420_TX_ADDR(spi,a) spi_put((spi),(a)) 
 #define FAST2420_RX_ADDR(spi,a) spi_put((spi),(a)|0x40) 
  
-/*
-void FAST2420_RX_GARBAGE(TSpiDriver * spi,char *pc) 
-{ 
-	spi_get(spi, pc );
-}
-        
-// Register address:
-void FAST2420_TX_ADDR(TSpiDriver * spi,uint8 a) 
-{ 
-	spi_put(spi,a); 
-} 
-
-// Register address:
-void FAST2420_RX_ADDR(TSpiDriver * spi,uint8 a) 
-{ 
-	spi_put(spi, (a) | 0x40 ); 
-} 
-*/
-
 /******************************************************************************
  * FAST SPI: Register access
  * 		s = command strobe
@@ -129,23 +117,23 @@ void FAST2420_UPD_STATUS(TSpiDriver * spi,uint8 *s)
 
 void FAST2420_WRITE_FIFO(TSpiDriver * spi,uint8 *p,uint8 c) 
     { 
-        UINT8 spiCnt = 0;
+        UINT8 n = 0;
         CC2420_SPI_ENABLE(); 
         FAST2420_TX_ADDR(spi,CC2420_TXFIFO);
-        for (spiCnt = 0; spiCnt < (c); spiCnt++) { 
-            spi_put(spi,((BYTE*)(p))[spiCnt]); 
+        for (n = 0; n < (c); n++) { 
+            spi_put(spi,((BYTE*)(p))[n]); 
         }
         CC2420_SPI_DISABLE(); 
     }
 
 void FAST2420_READ_FIFO(TSpiDriver * spi,uint8 *p,uint8 c) 
     { 
-        UINT8 spiCnt = 0;
+        UINT8 n = 0;
         CC2420_SPI_ENABLE(); 
         FAST2420_RX_ADDR(spi,CC2420_RXFIFO); 
-        for (spiCnt = 0; spiCnt < (c); spiCnt++) { 
+        for (n = 0; n < (c); n++) { 
             while (!VALUE_OF_FIFO()); 
-            spi_get(spi,(char*)(p + spiCnt)); 
+            spi_get(spi,(char*)(p + n)); 
         } 
         CC2420_SPI_DISABLE(); 
     }
@@ -160,22 +148,22 @@ void FAST2420_READ_FIFO_BYTE(TSpiDriver * spi,uint8 *b)
 
 void FAST2420_READ_FIFO_NO_WAIT(TSpiDriver * spi,uint8 *p, uint8 c) 
     { 
-        UINT8 spiCnt = 0;
+        UINT8 n = 0;
         CC2420_SPI_ENABLE(); 
         FAST2420_RX_ADDR(spi,CC2420_RXFIFO); 
-        for (spiCnt = 0; spiCnt < (c); spiCnt++) { 
-            spi_get(spi,(char*)(p + spiCnt)); 
+        for (n = 0; n < (c); n++) { 
+            spi_get(spi,(char*)(p + n)); 
         } 
         CC2420_SPI_DISABLE(); 
     }
 
 void FAST2420_READ_FIFO_GARBAGE(TSpiDriver * spi,uint8 c) 
     { 
-        uint8 spiCnt = 0;
+        uint8 n = 0;
         char  value;
         CC2420_SPI_ENABLE(); 
         FAST2420_RX_ADDR(spi,CC2420_RXFIFO); 
-        for (spiCnt = 0; spiCnt < (c); spiCnt++) { 
+        for (n = 0; n < (c); n++) { 
             FAST2420_RX_GARBAGE(spi, &value); 
         } 
         CC2420_SPI_DISABLE(); 
@@ -399,12 +387,12 @@ BOOL VALUE_OF_SFD( void )
         //PINSEL1 = 0x00000000; 
         //IO0DIR  = IO0DIR & (~BM(SFD)); 
         #if SFD_PORT == 0 
-        if(IO0PIN & BM(SFD)) result = 1;
+        if (IO0PIN & BM(SFD)) result = 1;
         else                  result = 0;
         #endif
         
         #if SFD_PORT == 1 
-        if(IO1PIN & BM(SFD)) result = 1;
+        if (IO1PIN & BM(SFD)) result = 1;
         else                  result = 0;
         #endif
         return(result);

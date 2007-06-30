@@ -31,12 +31,11 @@
 #ifndef __TARGET_H 
 #define __TARGET_H
 
-    #ifdef __cplusplus
-    extern "C" {
-    #endif
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-
-    #ifndef IN_TARGET 
+#ifndef IN_TARGET 
 
 extern void Reset(void);
 /*********************************************************************************************************
@@ -78,14 +77,11 @@ extern void TargetInit(void);
 ** Notice:					Add IntDisable() and IntEnable() Functions 
 **------------------------------------------------------------------------------------------------------
 ********************************************************************************************************/
-    #endif
+#endif
 
-    #ifdef __cplusplus
-    }
-    #endif
- 
-
-
+#ifdef __cplusplus
+}
+#endif
 
 __swi(0x00) void SwiHandle1(int Handle);
 
@@ -93,7 +89,6 @@ __swi(0x00) void SwiHandle1(int Handle);
 #define IRQEnable() SwiHandle1(1)
 #define FIQDisable() SwiHandle1(2)
 #define FIQEnable() SwiHandle1(3)
-
 
 #endif
 /*********************************************************************************************************

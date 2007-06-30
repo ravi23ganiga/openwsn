@@ -36,9 +36,17 @@
 #include "hal_sensor_switch.h"
 #include "hal_sensor_vibration.h"
 
+#ifdef CONFIG_TARGET_OPENNODE_20	
+static void target_init_opennode_20( void );
+#endif
 #ifdef CONFIG_TARGET_OPENNODE_30	
 static void target_init_opennode_30( void );
 #endif
+#ifdef CONFIG_TARGET_DEFAULT
+static void target_init_default( void );
+#endif
+
+static void target_init_uart0( uint32 bps );
 
 /* initialize the target hardware 
  * this function MUST run successfully or the later code will dead.
@@ -176,25 +184,16 @@ void target_init( void )
     #endif
     
 	led_init();
-	
-	/* initialze UART0 for startup. 
-	 * the default configurations will be used. you may change it in the future 
-	 * @modified by zhangwei on 20060628
-	 * huanghuan delete the following section.
-	 * but i think UART0 config should be kept here. that's better than to delete them.
-	 * @modified by zhangwei on 200706
-	 * @TODO: you should delete the following UART configuration because you've already 
-	 * done the same thing in hal_target_reset()/BootTargetResetInit
-	 */
-    PINSEL0 = (PINSEL0 & (~0x0f)) | 0x05;
-    U0LCR = 0x83;                   // DLAB=1,允许设置波特率
-    Fdiv  = (Fpclk / 16) / 115200;	// 设置波特率
-    U0DLM = Fdiv / 256;
-    U0DLL = Fdiv % 256;
-    U0LCR = 0x03;	
-     
+    target_init_uart0( 9600 );
+    
     return; 
 }    
+
+#ifdef CONFIG_TARGET_OPENNODE_20	
+void target_init_opennode_20( void )
+{
+}
+#endif
 
 #ifdef CONFIG_TARGET_OPENNODE_30	
 void target_init_opennode_30( void )
@@ -207,7 +206,35 @@ void target_init_opennode_30( void )
 }
 #endif
 
-
-
-
+#ifdef CONFIG_TARGET_DEFAULT
+void target_init_default( void )
+{
+}
+#endif
+	
+/* initialze UART0 for startup. 
+ * the default configurations will be used. you may change it in the future 
+ * @modified by zhangwei on 20060628
+ * huanghuan delete the following section.
+ * but i think UART0 config should be kept here. that's better than to delete them.
+ * @modified by zhangwei on 200706
+ * @TODO: you should delete the following UART configuration because you've already 
+ * done the same thing in hal_target_reset()/BootTargetResetInit
+ */    
+void target_init_uart0( uint32 bps )
+{  	
+    uint16 Fdiv;
+    
+    //PINSEL0 = (PINSEL0 & 0xfffffff0) | 0x05;    /* Select the pins for Uart 选择管脚为UART0 */
+	PINSEL0 = (PINSEL0 & (~0x0f)) | 0x05;		/* Select the pins for Uart 选择管脚为UART0 */
+	U0LCR = 0x83;                   			/* DLAB=1,允许设置波特率 */
+    //U0LCR = 0x80;                               /* Enable to access the frequenc regecter 允许访问分频因子寄存器 */
+    Fdiv = (Fpclk / 16) / bps;                  /* Set the baudrate设置波特率 */
+    U0DLM = Fdiv / 256;							
+	U0DLL = Fdiv % 256;						
+    U0LCR = 0x03;                               /* Disable to access the frequenc regecter 禁止访问分频因子寄存器 */
+                                                /* set to 8,1,n 且设置为8,1,n */
+	U0IER = 0x00;                               /* Disable interrupt禁止中断 */
+    U0FCR = 0x00;                               /* initial FIFO 初始化FIFO */
+} 
 

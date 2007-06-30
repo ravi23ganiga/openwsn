@@ -17,7 +17,7 @@ void uniqueid_run( void )
   led_twinkle(LED_GREEN,3);
   
   global_construct();
-  uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+  uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
   uid_construct( 1, (char*)(&uid), sizeof(uid), 1 );
   uart_putchar(g_uart, 0x22);
   

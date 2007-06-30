@@ -9,7 +9,7 @@ void debugio_test( void )
 	char * buf = "debug uart output! \r\n";
 	
 	global_construct();
-	uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+	uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
 	debug_open( g_debugio, g_uart );
 	while (1) 
 	{       

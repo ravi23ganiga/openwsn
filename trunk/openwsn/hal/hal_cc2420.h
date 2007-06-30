@@ -145,85 +145,8 @@
 
 #define TCc2420Driver TCc2420
 
-#if (!defined(CONFIG_TARGET_OPENNODE_10) && !defined(CONFIG_TARGET_OPENNODE_20) && !defined(CONFIG_TARGET_OPENNODE_30) && !defined(CONFIG_TARGET_WLSMODEM_11))
-#define CONFIG_TARGET_DEFAULT
-#endif
-	
-#ifdef CONFIG_TARGET_OPENNODE_10
-#define FIFO            8  // P0.8  - Input: FIFO from CC2420
-#define FIFOP           9  // P0.9  - Input: FIFOP from CC2420
-#define CCA            10  // p0.10 - Input:  CCA from CC2420
-#define RESET_N        12  // P0.12 - Output: RESET_N to CC2420
-#define VREG_EN        13  // P0.13 - Output: VREG_EN to CC2420
-#define SFD            16  // P0.16 - Input:  SFD from CC2420
-#define CSN            21  // P1.21 - Output: SPI Chip Select (CS_N)  
-
-#define SFD_PORT       0
-#define CCA_PORT       0     
-#define FIFO_PORT      0    
-#define FIFOP_PORT     0     
-#define VREG_EN_PORT   0       
-#define RESET_N_PORT   0
-#define CSN_PORT       1  
-#endif
-
-#ifdef CONFIG_TARGET_OPENNODE_20
-#define FIFO           22  
-#define FIFOP          15  
-#define CCA            13  
-#define RESET_N        12 
-#define VREG_EN        10  
-#define SFD            16 
-#define CSN            21  
-
-#define SFD_PORT       0
-#define CCA_PORT       0     
-#define FIFO_PORT      1    
-#define FIFOP_PORT     0     
-#define VREG_EN_PORT   0       
-#define RESET_N_PORT   0
-#define CSN_PORT       1  
-#endif
-
-#ifdef CONFIG_TARGET_OPENNODE_30
-// @TODO
-#define FIFO           22  
-#define FIFOP          15  
-#define CCA            13  
-#define RESET_N        12 
-#define VREG_EN        10  
-#define SFD            16 
-#define CSN            21  
-
-#define SFD_PORT       0
-#define CCA_PORT       0     
-#define FIFO_PORT      1    
-#define FIFOP_PORT     0     
-#define VREG_EN_PORT   0       
-#define RESET_N_PORT   0
-#define CSN_PORT       1  
-#endif
-
-#ifdef CONFIG_TARGET_WLSMODEM_11
-#define FIFO           16  // P0.16  - Input: FIFO from CC2420
-#define FIFOP          15  // P0.15  - Input: FIFOP from CC2420
-#define CCA            12  // p0.12 - Input:  CCA from CC2420
-#define RESET_N        23  // P1.23 - Output: RESET_N to CC2420
-#define VREG_EN        10  // P0.10 - Output: VREG_EN to CC2420
-#define SFD            11  // P0.11 - Input:  SFD from CC2420
-#define CSN            17  // P0.17 - Output: SPI Chip Select (CS_N)  
-
-#define SFD_PORT       0
-#define CCA_PORT       0     
-#define FIFO_PORT      0    
-#define FIFOP_PORT     0     
-#define VREG_EN_PORT   0       
-#define RESET_N_PORT   1
-#define CSN_PORT       0  
-#endif
-
 /* the default settings when the cc2420 transceiver first started
- * you should change it using cc2420_configure() 
+ * you should change it using cc2420_configure() to adapt to your own settings.
  * 
  * @attention
  * the valid channel value is 11-26. the default channel is the at the center.
@@ -252,6 +175,7 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
  */
 #define CC2420_POWER_MIN CC2420_POWER_8
 #define CC2420_POWER_MAX CC2420_POWER_1 
+#define CC2420_POWER_DEFAULT CC2420_POWER_MIN 
 #define CC2420_POWER_1  0x01       //  0dBm   17.4mA
 #define CC2420_POWER_2  0x02       // -1dBm   16.5mA
 #define CC2420_POWER_3  0x03       // -3dBm   15.2mA
@@ -318,9 +242,8 @@ typedef struct{
   uint8 channel; 
   volatile uint8 txlen;
   volatile uint8 rxlen;
-  TCc2420Frame txbuffer;
-  volatile TCc2420Frame rxbuffer;
-  //volatile TCc2420Frame pRxInfo;
+  TCc2420Frame txbuf;
+  volatile TCc2420Frame rxbuf;
   uint8  sleeprequest;
   uint8  power;
   uint8  ackrequest;   
@@ -330,9 +253,9 @@ typedef struct{
   BOOL receiveOn;				// @TODO: @modified zhangwei on 20070601. i do think this variable is no use. 
 }TCc2420;
 
-/* The following variable is declared usually in "global.c". However, it is used
- * in the interrupt service routine of this module. Be sure the variable name 
- * cannot be modified! it must be "g_cc2420"!
+/* @attention: The following variable is declared usually in "global.c". However, 
+ * it is used in the interrupt service routine of this module. Be sure the variable 
+ * name cannot be modified! it must be "g_cc2420"!
  */ 
 extern TCc2420 * g_cc2420;
  
@@ -476,5 +399,14 @@ void cc2420_receive_on(TCc2420 * cc);
 void cc2420_receive_off(TCc2420 * cc);
 
 void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi);
+
+
+
+uint8 cc2420_rssi( TCc2420 * cc );
+
+
+//void cc2420_test_command();
+//void cc2420_test_ram();
+
 
 #endif /* _HAL_CC2420_H_ */

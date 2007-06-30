@@ -61,8 +61,25 @@ int cc2420tx_test(void)
 
     target_init();
     global_construct();
+
+	led_init();
+	led_off( LED_RED );
+	led_off( LED_GREEN );
+	led_off( LED_YELLOW );
+	led_on( LED_RED );
+	led_on( LED_GREEN );
+	led_on( LED_YELLOW );
+	hal_delay(500);
+	led_off( LED_RED );
+	led_off( LED_GREEN );
+	led_off( LED_YELLOW );
+
+    uart_configure( g_uart, 9600, 0, 0, 0, 0 );
+    uart_write( g_uart, "cc2420tx_test started...", 24, 0x00 );
+    
+	spi_open( g_spi, 0 );
     spi_configure( g_spi );
-    uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+    led_on( LED_RED );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
     
     //uart_write( g_uart, msg, strlen(msg)+1, 0x00 ); 
@@ -75,6 +92,7 @@ int cc2420tx_test(void)
     //txframe.nodeto = 0x3456;//for test the sniffer
 
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PAN, 0);
+    //led_on( LED_YELLOW );
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, LOCAL_ADDRESS, 0);
     
     for (n = 0; n < 10; n++) 
@@ -92,36 +110,36 @@ int cc2420tx_test(void)
     cc2420_open( g_cc2420 );
     //cc2420_receive_on(g_cc2420);  
     //IRQEnable(); 
-    
+
 	while (TRUE) 
 	{    
-	    // test section one: 
+		uart_write( g_uart, "sending...\n", 12, 0x00 );
+		led_off( LED_RED );
+		led_off( LED_GREEN );
+		led_off( LED_YELLOW );
+		hal_delay(1000);
+		led_on( LED_RED );
+		led_on( LED_GREEN );
+		led_on( LED_YELLOW );
+		hal_delay(1000);
+		led_off( LED_RED );
+		led_off( LED_GREEN );
+		led_off( LED_YELLOW );
+	
+		// test section one: 
 		// transmit using TOpenFrame based interface: cc_write
 		//
-        #ifdef CONFIG_PACKET_API
+		#ifdef CONFIG_PACKET_API
         txframe.payload[0]++;
         if (txframe.payload[0] == 5)
-        { 
-        	txframe.payload[0] = 1;
-        } 
+		{ 
+			txframe.payload[0] = 1;
+		} 
         
-        led_twinkle( LED_GREEN, 1 );
+        led_twinkle( LED_GREEN, 1000 );
         //length = cc2420_write( g_cc2420, &(txframe), 10+11, 0 );
         txframe.length = 10 + 11;
         length = cc2420_write( g_cc2420, &(txframe), 0 );
-          
-        /*
-        if (length == -1) 
-        {
-        	led_twinkle(LED_RED,5);
-        	uart_putchar(g_uart,(char)0x00);
-        }
-        else{
-        	led_twinkle(LED_RED,1);
-        	uart_putchar(g_uart,(char)0x11);
-        }
-        */ 
-		hal_delay(2000);
 		#endif
 	  
 	    // test section two: 
@@ -131,15 +149,13 @@ int cc2420tx_test(void)
 		// the next char buffer based interface can work properly.
 		//
 		#ifdef CONFIG_FRAME_API         
-        txbuf[10]++;
+		txbuf[10]++;
         if (txbuf[10] = 5) 
         {
-        	txbuf[10] = 1;
+			txbuf[10] = 1;
         }
+        led_twinkle(LED_GREEN,1000);
         cc2420_rawwrite( g_cc2420, (char *)txbuf, 10 + 11,0);
-          
-        led_twinkle(LED_GREEN,1);
-	  	hal_delay(3000);	  
 	  	#endif
 	}
 	

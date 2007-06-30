@@ -76,7 +76,7 @@ void sinknode_execute( void )
 
 
 	spi_configure( g_spi );
-	uart_configure( g_uart, 115200, 0, 0, 0, 0 );
+	uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
 	
 	g_mac = mac_construct( (char*)(&m_mac), sizeof(m_mac) );
 	g_net = net_construct( (char*)(&m_net), sizeof(m_net) );

@@ -30,6 +30,7 @@
 ********************************************************************************************************/
 
 #define IN_TARGET
+#include "../configall.h"
 #include "config.h"
 
 // @modified by zhangwei on 20061025
@@ -188,7 +189,7 @@ void VICInit(void)
 ** Modified date:
 **------------------------------------------------------------------------------------------------------
 ********************************************************************************************************/
-        void TargetInit(void)
+void TargetInit(void)
 {
 	// @modified by zhangwei on 20061013
 	// @TODO
@@ -202,7 +203,7 @@ void VICInit(void)
     OS_EXIT_CRITICAL();
 }
 /*********************************************************************************************************
-** Function name:			InitialiseUART0
+** Function name:			TargetInitUart0
 **
 ** Descriptions:			Initialize the Uart0
 **
@@ -219,7 +220,7 @@ void VICInit(void)
 ** Modified date:
 **------------------------------------------------------------------------------------------------------
 ********************************************************************************************************/
-        void InitialiseUART0(uint32 bps)
+void TargetInitUart0(uint32 bps)
 {  	
     uint16 Fdiv;
     
@@ -316,14 +317,12 @@ void TargetResetInit(void)
 #endif
     MAMCR = 2;
 
-/* 设置串行口 */
-/* initialize UART*/
-	// 黄欢原有代码没有这句，但张伟版本中有这句
-	// 估计以后应该可以删除
-    InitialiseUART0(115200);
+	/* 设置串行口 */
+	/* initialize UART*/
+    TargetInitUart0( CONFIG_UART0_STARTUP_BAUDRATE );
 
-/* 设置实时时钟 */
-/* initialize RTC*/
+	/* 设置实时时钟 */
+	/* initialize RTC*/
     CCR = 1;
     PREINT = Fpclk / 32768 - 1;
     PREFRAC = Fpclk - (Fpclk / 32768) * 32768;
@@ -331,7 +330,7 @@ void TargetResetInit(void)
     MONTH = 6;
     DOM = 2;
     
-/* initialize VIC*/
+	/* initialize VIC*/
     VICIntEnClr = 0xffffffff;
     VICVectAddr = 0;
     VICIntSelect = 0;

@@ -51,7 +51,6 @@
 #include "hal_led.h"
 #include "hal_assert.h"
 #include "hal_cpu.h"
-#include "hal_monitor.h"
 #include "hal_target.h"
 #include "hal_boot.h"
 #include "hal_spi.h"
