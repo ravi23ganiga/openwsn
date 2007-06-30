@@ -28,10 +28,10 @@
  * 
  *****************************************************************************/
  
-#include "..\foundation.h"
+#include "../foundation.h"
 #include <stdlib.h>
-#include "..\hal\hal.h"
-#include "..\global.h"
+#include "../hal/hal.h"
+#include "../global.h"
 
 /*****************************************************************************
  * this test demostrate how to send a frame using TCc2420 object 
@@ -44,8 +44,8 @@
  *   
  ****************************************************************************/ 
 
-#define CONFIG_PACKET_API
-#undef CONFIG_FRAME_API
+#define CONFIG_RW
+#undef  CONFIG_RAW_RW
 
 #define PAN 0x2420
 #define LOCAL_ADDRESS 0x1234
@@ -55,35 +55,28 @@ int cc2420tx_test(void)
 {
     uint8 n;
     int8 length;
-    //char * msg = "cc2420tx_test() running...\n";
-	TOpenFrame txframe;			//used when CONFIG_PACKET_API
-	uint8 txbuf[128];			//used when CONFIG_FRAME_API
+	char * welcome = "cc2420tx_test started...\n";
+	TOpenFrame txframe;			//used when CONFIG_RW
+	uint8 txbuf[128];			//used when CONFIG_RAW_RW
 
     target_init();
     global_construct();
 
 	led_init();
-	led_off( LED_RED );
-	led_off( LED_GREEN );
-	led_off( LED_YELLOW );
-	led_on( LED_RED );
-	led_on( LED_GREEN );
-	led_on( LED_YELLOW );
+	led_off( LED_ALL );
+	led_on( LED_ALL );
 	hal_delay(500);
-	led_off( LED_RED );
-	led_off( LED_GREEN );
-	led_off( LED_YELLOW );
+	led_off( LED_ALL );
 
     uart_configure( g_uart, 9600, 0, 0, 0, 0 );
-    uart_write( g_uart, "cc2420tx_test started...", 24, 0x00 );
+    uart_write( g_uart, welcome, strlen(welcome), 0x00 );
     
 	spi_open( g_spi, 0 );
     spi_configure( g_spi );
     led_on( LED_RED );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
-    
-    //uart_write( g_uart, msg, strlen(msg)+1, 0x00 ); 
-    
+	uart_write( g_uart, "configure ok", 12, 0x00 );
+
     memset( (char*)(&txframe), 0x00, sizeof(txframe) );
     txframe.length = 50; // between 1 and 0x127
     txframe.panid = PAN;
@@ -114,22 +107,16 @@ int cc2420tx_test(void)
 	while (TRUE) 
 	{    
 		uart_write( g_uart, "sending...\n", 12, 0x00 );
-		led_off( LED_RED );
-		led_off( LED_GREEN );
-		led_off( LED_YELLOW );
+		led_off( LED_ALL );
 		hal_delay(1000);
-		led_on( LED_RED );
-		led_on( LED_GREEN );
-		led_on( LED_YELLOW );
+		led_on( LED_ALL );
 		hal_delay(1000);
-		led_off( LED_RED );
-		led_off( LED_GREEN );
-		led_off( LED_YELLOW );
+		led_off( LED_ALL );
 	
 		// test section one: 
 		// transmit using TOpenFrame based interface: cc_write
 		//
-		#ifdef CONFIG_PACKET_API
+		#ifdef CONFIG_RW
         txframe.payload[0]++;
         if (txframe.payload[0] == 5)
 		{ 
@@ -148,7 +135,7 @@ int cc2420tx_test(void)
 		// huanghuan seems test the following section. i cannot guartantee whether 
 		// the next char buffer based interface can work properly.
 		//
-		#ifdef CONFIG_FRAME_API         
+		#ifdef CONFIG_RAW_RW         
 		txbuf[10]++;
         if (txbuf[10] = 5) 
         {

@@ -86,6 +86,7 @@ void FAST2420_SETREG(TSpiDriver * spi,uint8 a,uint16 v)
     { 
 
         CC2420_SPI_ENABLE(); 
+		led_on( LED_YELLOW ); // debug only
         FAST2420_TX_ADDR(spi,a); 
         FASTSPI_TX_WORD(spi, v); 
         CC2420_SPI_DISABLE(); 
@@ -129,6 +130,7 @@ void FAST2420_WRITE_FIFO(TSpiDriver * spi,uint8 *p,uint8 c)
 void FAST2420_READ_FIFO(TSpiDriver * spi,uint8 *p,uint8 c) 
     { 
         UINT8 n = 0;
+
         CC2420_SPI_ENABLE(); 
         FAST2420_RX_ADDR(spi,CC2420_RXFIFO); 
         for (n = 0; n < (c); n++) { 

@@ -277,6 +277,8 @@ void _cc2420_init(TCc2420 * cc)
 {
     uint16 rereg;
 
+	uart_write( g_uart, "_cc2420_init 1\n", 15, 0x00 );
+
     // Make sure that the voltage regulator is on, and that the reset pin is inactive
     SET_VREG_ACTIVE();
     hal_delay(1000);
@@ -285,12 +287,12 @@ void _cc2420_init(TCc2420 * cc)
     hal_delay(1000);
     
     SET_RESET_INACTIVE();
+	uart_write( g_uart, "_cc2420_init 2", 15, 0 ); // debug
     hal_delay(500);
     FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
     hal_delay(1000);
 
-	led_on( LED_GREEN );
-	uart_write( g_uart, "_cc2420_init", 12, 0 ); // debug
+	uart_write( g_uart, "_cc2420_init 3", 15, 0 ); // debug
 	 
     //FASTSPI_SETREG(CC2420_TXCTRL, 0xA0E3); // To control the output power, added by huanghuan
     FAST2420_SETREG(cc->spi,CC2420_MDMCTRL0, 0x0AF2); // Turn on automatic packet acknowledgment 

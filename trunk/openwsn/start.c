@@ -31,7 +31,7 @@
 
 #include <string.h>
 #include "foundation.h"
-#include ".\hal\hal.h"
+#include "hal/hal.h"
 #include "global.h"
 #include "start.h"
 
@@ -40,12 +40,12 @@
  *	test cases
  * 
  * @modified by zhangwei on 2006-09-06
- *	add support to ActionScheduler
+ *	add support to ActionScheduler(not test)
  * 
  ****************************************************************************/ 
 
 #define TESTCASE_NULL
-#undef TESTCASE_NULL
+#undef  TESTCASE_NULL
 
 #define TESTCASE_DEBUGIO
 #undef  TESTCASE_DEBUGIO

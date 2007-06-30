@@ -1,11 +1,16 @@
 
-#include "..\configall.h"
-#include "..\foundation.h"
-#include "..\hal\hal.h"
-#include "..\global.h"
+/*****************************************************************************
+ * @author zhangwei on 20070629
+ * first created
+ ****************************************************************************/
+
+#include "../configall.h"
+#include "../foundation.h"
+#include "../hal/hal.h"
+#include "../global.h"
 
 void led_test( void )
-{    
+{     
 	int i;
 	
 	target_init();
