@@ -55,6 +55,7 @@ void target_init( void )
 {
     uint16 Fdiv;
 
+	/* TargetPortInit()*/
 	/* when CONFIG_TARGET_OPENNODE_10 
 	 * this is already an obsolete hardware. it may be eliminated soon */
 	 
@@ -65,27 +66,7 @@ void target_init( void )
 	/* when CONFIG_TARGET_OPENNODE_20 */
 
 	#ifdef CONFIG_TARGET_OPENNODE_20
-    PINSEL0 = PINSEL0 | 0x80000000;                   //FIFOP is EXTIN2	
-    PINSEL0 = PINSEL0 & 0xbfffffff;
-    
-    PINSEL1 = PINSEL1 | 0x10000000; 
-    PINSEL1 = PINSEL1 & 0xdfffffff;                   //P0.30 is AD0.3
-    
-    #if     AVCCS_SWITCH_PORT == 0    
-    IO0DIR |= BM(AVCCS_SWITCH_PIN);  
-    #endif
-    
-    #if     AVCCS_SWITCH_PORT == 1             
-    IO1DIR |= BM(AVCCS_SWITCH_PIN);  
-    #endif
-    
-    #if     MCP6S26_SPI_CS_PORT == 0    
-    IO0DIR |= BM(MCP6S26_SPI_CS_PIN);  
-    #endif
-    
-    #if     MCP6S26_SPI_CS_PORT == 1             
-    IO1DIR |= BM(MCP6S26_SPI_CS_PIN);  
-    #endif  
+	target_init_opennode_20();
     #endif
 
 	/* when CONFIG_TARGET_OPENNODE_30
@@ -192,6 +173,27 @@ void target_init( void )
 #ifdef CONFIG_TARGET_OPENNODE_20	
 void target_init_opennode_20( void )
 {
+	PINSEL0 = PINSEL0 | 0x80000000;                   //FIFOP is EXTIN2	
+    PINSEL0 = PINSEL0 & 0xbfffffff;
+    
+    PINSEL1 = PINSEL1 | 0x10000000; 
+    PINSEL1 = PINSEL1 & 0xdfffffff;                   //P0.30 is AD0.3
+    
+    #if     AVCCS_SWITCH_PORT == 0    
+    IO0DIR |= BM(AVCCS_SWITCH_PIN);  
+    #endif
+    
+    #if     AVCCS_SWITCH_PORT == 1             
+    IO1DIR |= BM(AVCCS_SWITCH_PIN);  
+    #endif
+    
+    #if     MCP6S26_SPI_CS_PORT == 0    
+    IO0DIR |= BM(MCP6S26_SPI_CS_PIN);  
+    #endif
+    
+    #if     MCP6S26_SPI_CS_PORT == 1             
+    IO1DIR |= BM(MCP6S26_SPI_CS_PIN);  
+    #endif  
 }
 #endif
 
