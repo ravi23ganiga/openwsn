@@ -183,6 +183,7 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 		cc->ackrequest = 0;
 		cc->sleeprequest = FALSE;
 
+		spi_open( cc->spi, 0 );
 	    _cc2420_init(cc); 
 	    cc2420_interrupt_init();
 
