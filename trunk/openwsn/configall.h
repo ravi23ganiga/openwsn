@@ -67,6 +67,7 @@
 #define CONFIG_TARGET_OPENNODE_30
 #undef  CONFIG_TARGET_WLSMODEM_11
 #undef  CONFIG_TARGET_GAINS
+//#define CONFIG_TARGET_OPENNODE_30
 
 /* FlashStore的开始地址和大小
  * FlashStore用于系统掉电期间存储各种设置参数,它是MCU芯片E2PROM或者Flash地址空间中的一片

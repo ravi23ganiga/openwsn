@@ -28,8 +28,18 @@
  * 
  ****************************************************************************/ 
 
+#ifdef CONFIG_DEBUG
+#define GDEBUG
+#endif
+
+#include "hal_foundation.h"
 #include "hal_spi.h"
+#include "hal_lpc213x.h"
+#ifdef GDEBUG
 #include "hal_led.h"
+#include "hal_uart.h"
+#include "hal_global.h"
+#endif
 
 /***************************************************************************** 
  * @author zhangwei on 2006-07-20
@@ -102,7 +112,13 @@ void spi_configure( TSpiDriver * spi )
 	if (spi->id == 0)
     {
     	PINSEL0 = (PINSEL0 & 0xffff00ff) | 0x00005500;
+    	#if (defined(CONFIG_TARGET_OPENNODE_10) || defined(CONFIG_TARGET_OPENNODE_20))
         SPI_SPCCR = 0x52;		               // 设置SPI时钟分频
+        #elif defined(CONFIG_TARGET_OPENNODE_30)
+        SPI_SPCCR = 0x88;
+        #else
+        SPI_SPCCR = 0x52;
+        #endif
  	  	SPI_SPCR  = (0 << 3) |		       // CPHA = 0, 数据在SCK 的第一个时钟沿采样
  			        (0 << 4) |	       // CPOL = 0, SCK 为高有效
  			        (1 << 5) |	       // MSTR = 1, SPI 处于主模式
@@ -235,8 +251,13 @@ uint8 spi_write(TSpiDriver * spi,  char * buf, uint8 len, uint8 opt )
 
 void spi_put(TSpiDriver * spi, char ch )
 {
+	#ifdef GDEBUG
+	//uart_write( g_uart, "spi_put: 1\n", 11, 0x00 );
+	#endif
+	
     if (spi->id == 0)
     {
+    	// SPI_SPSR; // clear all the flags
 		SPI_SPDR = ch; 
         spi_wait(spi);
 	}
@@ -270,6 +291,9 @@ void spi_wait(TSpiDriver * spi)
 { 
     if (spi->id == 0) 
     {	
+    	//uart_write( g_uart, "spi_wait: 1\n", 12, 0x00 );
+    	//uart_putchar( g_uart, SPI_SPSR ); 
+
 		while (!(SPI_SPSR & BM(7)));	
 	}
     else if(spi->id == 1) 
