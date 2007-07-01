@@ -200,9 +200,24 @@ void target_init_opennode_20( void )
 #ifdef CONFIG_TARGET_OPENNODE_30	
 void target_init_opennode_30( void )
 {
-    PINSEL0 = PINSEL0 | 0x80000000;                   //FIFOP is EXTIN2	
+	// P0[0:1] UART
+	// P0[4:7]: SPI0 SCLK, MISO, MOSI, SSEL (P0.7 is set to GIO)
+	// P0.15: FIFOP (EXTINT2)
+	// P0.16: SFD(GIO)
+	// correct!
+	//PINSEL0 = PINSEL0 & 0x3FFF00F0 | 0x80001505;
+	
+	// wrong
+	// TODO
+    PINSEL0 = PINSEL0 | 0x80000000;                   
     PINSEL0 = PINSEL0 & 0xbfffffff;
-    
+
+	// P1.17 RF-CCA
+	// P1.18 RF-VREGEN 
+	// P1.21 RF-CS
+	// P1.22 RF-FIFO
+	// P1.23 RF-RESET
+	//PINSEL1 = PINSEL1 & 0x8CFFFF | ?
     PINSEL1 = PINSEL1 | 0x10000000; 
     PINSEL1 = PINSEL1 & 0xdfffffff;                   //P0.30 is AD0.3
 }

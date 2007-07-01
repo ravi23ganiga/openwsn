@@ -41,10 +41,14 @@
  *
  * @modified by zhangwei on 20070418
  * just modify the format of the source file and including files
+ * 
+ * @modified by zhangwei on 20070701
+ * port to OpenNode-3.0 hardware
+ * and speed the transimisson rate. 
  *   
  ****************************************************************************/ 
 
-#define CONFIG_RW
+#define CONFIG_GENERAL_RW
 #undef  CONFIG_RAW_RW
 
 #define PAN 0x2420
@@ -55,27 +59,26 @@ int cc2420tx_test(void)
 {
     uint8 n;
     int8 length;
-	char * welcome = "cc2420tx_test started...\n";
-	TOpenFrame txframe;			//used when CONFIG_RW
-	uint8 txbuf[128];			//used when CONFIG_RAW_RW
+    char * welcome = "cc2420tx_test started...\r\n";
+    TOpenFrame txframe;			//used when CONFIG_GENERAL_RW
+    uint8 txbuf[128];			//used when CONFIG_RAW_RW
 
     target_init();
     global_construct();
 
-	led_init();
-	led_off( LED_ALL );
-	led_on( LED_ALL );
-	hal_delay(500);
-	led_off( LED_ALL );
+    led_init();
+    led_off( LED_ALL );
+    led_on( LED_ALL );
+    hal_delay(500);
+    led_off( LED_ALL );
 
     uart_configure( g_uart, 9600, 0, 0, 0, 0 );
     uart_write( g_uart, welcome, strlen(welcome), 0x00 );
     
-	spi_open( g_spi, 0 );
     spi_configure( g_spi );
     led_on( LED_RED );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
-	uart_write( g_uart, "configure ok", 12, 0x00 );
+    uart_write( g_uart, "configure ok\r\n", 14, 0x00 );
 
     memset( (char*)(&txframe), 0x00, sizeof(txframe) );
     txframe.length = 50; // between 1 and 0x127
@@ -85,7 +88,6 @@ int cc2420tx_test(void)
     //txframe.nodeto = 0x3456;//for test the sniffer
 
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PAN, 0);
-    //led_on( LED_YELLOW );
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, LOCAL_ADDRESS, 0);
     
     for (n = 0; n < 10; n++) 
@@ -104,48 +106,45 @@ int cc2420tx_test(void)
     //cc2420_receive_on(g_cc2420);  
     //IRQEnable(); 
 
-	while (TRUE) 
-	{    
-		uart_write( g_uart, "sending...\n", 12, 0x00 );
-		led_off( LED_ALL );
-		hal_delay(1000);
-		led_on( LED_ALL );
-		hal_delay(1000);
-		led_off( LED_ALL );
-	
-		// test section one: 
-		// transmit using TOpenFrame based interface: cc_write
+    while (TRUE) 
+    {    
+        // test section one: 
+        // transmit using TOpenFrame based interface: cc_write
 		//
-		#ifdef CONFIG_RW
+		#ifdef CONFIG_GENERAL_RW
         txframe.payload[0]++;
         if (txframe.payload[0] == 5)
-		{ 
-			txframe.payload[0] = 1;
-		} 
+        { 
+            txframe.payload[0] = 1;
+        } 
         
-        led_twinkle( LED_GREEN, 1000 );
-        //length = cc2420_write( g_cc2420, &(txframe), 10+11, 0 );
         txframe.length = 10 + 11;
+        uart_write( g_uart, "sending...\r\n", 12, 0x00 );
         length = cc2420_write( g_cc2420, &(txframe), 0 );
-		#endif
+        if (length > 0)
+        {
+            led_twinkle( LED_RED, 500 );
+            uart_write( g_uart, "sent\r\n", 6, 0x00 );
+        }
+        #endif
 	  
-	    // test section two: 
-		// transmit using char buffer based interface
-		// @modified by zhangwei on 20070418
-		// huanghuan seems test the following section. i cannot guartantee whether 
-		// the next char buffer based interface can work properly.
-		//
-		#ifdef CONFIG_RAW_RW         
-		txbuf[10]++;
+        // test section two: 
+        // transmit using char buffer based interface
+        // @modified by zhangwei on 20070418
+        // huanghuan seems test the following section. i cannot guartantee whether 
+        // the next char buffer based interface can work properly.
+        //
+        #ifdef CONFIG_RAW_RW         
+        txbuf[10]++;
         if (txbuf[10] = 5) 
         {
-			txbuf[10] = 1;
+            txbuf[10] = 1;
         }
         led_twinkle(LED_GREEN,1000);
         cc2420_rawwrite( g_cc2420, (char *)txbuf, 10 + 11,0);
-	  	#endif
-	}
+        #endif
+    }
 	
-	global_destroy();
-	return 0;															
+    global_destroy();
+    return 0;															
 }

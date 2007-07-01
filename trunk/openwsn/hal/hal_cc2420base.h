@@ -92,7 +92,7 @@
 void FAST2420_RX_GARBAGE(TSpiDriver * spi,char *pc)  ;
 void FAST2420_TX_ADDR(TSpiDriver * spi,uint8 a); 
 void FAST2420_RX_ADDR(TSpiDriver * spi,uint8 a); 
-void FAST2420_STROBE(TSpiDriver * spi,uint8 s); 
+uint8 FAST2420_STROBE(TSpiDriver * spi,uint8 s); 
 void FAST2420_SETREG(TSpiDriver * spi,uint8 a,uint16 v); 
 void FAST2420_GETREG(TSpiDriver * spi,uint8 a,uint16 *v); 
 void FAST2420_UPD_STATUS(TSpiDriver * spi,uint8 *s); 

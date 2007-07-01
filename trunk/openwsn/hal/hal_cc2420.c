@@ -61,6 +61,7 @@
 #include "hal_cc2420def.h"
 #include "hal_cc2420base.h"
 #include "hal_cc2420.h"
+
 #ifdef GDEBUG
 #include "hal_uart.h"
 #endif
@@ -183,6 +184,7 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 		cc->ackrequest = 0;
 		cc->sleeprequest = FALSE;
 
+		spi_configure( cc->spi );
 		spi_open( cc->spi, 0 );
 	    _cc2420_init(cc); 
 	    cc2420_interrupt_init();
@@ -277,23 +279,28 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 void _cc2420_init(TCc2420 * cc) 
 {
     uint16 rereg;
+    uint8 status;
 
 	uart_write( g_uart, "_cc2420_init 1\n", 15, 0x00 );
 
     // Make sure that the voltage regulator is on, and that the reset pin is inactive
     SET_VREG_ACTIVE();
-    hal_delay(1000);
-     
+    hal_delay(500); //at least delay_us(600);
+
+
     SET_RESET_ACTIVE();
-    hal_delay(1000);
-    
+    hal_delay(10); // at least delay_us(1). low voltage is effective
     SET_RESET_INACTIVE();
 	uart_write( g_uart, "_cc2420_init 2", 15, 0 ); // debug
-    hal_delay(500);
-    FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
-    hal_delay(1000);
-
+    hal_delay(500); // at least dela_us(1) 
+    status = FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
+	//while (!(status & 0x40)) 
+	//{
+	//	uart_putchar( g_uart, status ); // debug
+	//	status = FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
+	//}
 	uart_write( g_uart, "_cc2420_init 3", 15, 0 ); // debug
+    hal_delay(1000);
 	 
     //FASTSPI_SETREG(CC2420_TXCTRL, 0xA0E3); // To control the output power, added by huanghuan
     FAST2420_SETREG(cc->spi,CC2420_MDMCTRL0, 0x0AF2); // Turn on automatic packet acknowledgment 
@@ -604,7 +611,6 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     bool success;
     BYTE spiStatusByte;
 
-	led_on( LED_RED );
 	// @modified by zhangwei on 20070628
 	// what's its functionality?
 	cc2420_receive_off( cc );
@@ -703,15 +709,8 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     // start sending by sending a STXON command
 	FAST2420_STROBE(cc->spi,CC2420_STXON);
         
-    #ifdef GDEBUG
-	//led_on(LED_YELLOW);
-	#endif  
-
-	while (!VALUE_OF_SFD()) NULL;
-
-    #ifdef GDEBUG
-	//led_on(LED_GREEN);
-	#endif  
+	while (!VALUE_OF_SFD()) 
+		NULL;
 	
 	// wait for acknowledgement(ACK) if necessary
 	// @TODO: you'd better judge this by checking control byte in the frame
@@ -743,7 +742,7 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
 	// turn off the receiver if it should not continue to be enabled
 	if (!cc->receiveOn)
 	{ 
-		FAST2420_STROBE(cc->spi,CC2420_SRFOFF);
+		FAST2420_STROBE(cc->spi, CC2420_SRFOFF);
 	}
 
 	// @attention
@@ -760,7 +759,6 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
 	// @modified by zhangwei on 20070628
 	// what's its functionality?
 	cc2420_receive_on( cc );
-	led_on( LED_YELLOW );
 
     return success;
 }

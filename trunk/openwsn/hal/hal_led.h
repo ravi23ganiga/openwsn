@@ -41,6 +41,9 @@
 #include "hal_foundation.h"
  
 #define LED_ALL 	0
+#define LED1  1
+#define LED2  2
+#define LED3  3
 #define LED_GREEN 	1
 #define LED_YELLOW 	2
 #define LED_RED		3
