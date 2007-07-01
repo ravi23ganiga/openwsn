@@ -234,21 +234,18 @@ void led_twinkle( uint8 id ,uint16 interval)
 		led_toggle(LED_GREEN);
 	    hal_delay( interval );	
 	    led_toggle(LED_GREEN);
-	    hal_delay( interval );
 	    break;
 
 	case LED_RED:
 		led_toggle(LED_RED);
 	    hal_delay( interval );	
 	    led_toggle(LED_RED);
-	    hal_delay( interval );
 	    break;
 
 	case LED_YELLOW:
 		led_toggle(LED_YELLOW);
 	    hal_delay( interval );	
 	    led_toggle(LED_YELLOW);
-	    hal_delay( interval );
 	    break;
 	}
 }

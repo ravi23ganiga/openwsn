@@ -69,6 +69,11 @@
 #undef  CONFIG_TARGET_GAINS
 //#define CONFIG_TARGET_OPENNODE_30
 
+/* Compiler used to Compile the Source code
+ */
+#define CONFIG_COMPILER_ADS
+#undef  CONFIG_COMPILER_GNU
+ 
 /* FlashStore的开始地址和大小
  * FlashStore用于系统掉电期间存储各种设置参数,它是MCU芯片E2PROM或者Flash地址空间中的一片
  * 区域. 这两个参数用于初始化TConfigure对象(service\configure.*)

@@ -75,11 +75,18 @@
  * 		v = register value
  *****************************************************************************/
 
-void FAST2420_STROBE(TSpiDriver * spi,uint8 s) 
-    { 
-        CC2420_SPI_ENABLE(); 
-        FAST2420_TX_ADDR(spi,s); 
-        CC2420_SPI_DISABLE(); 
+// @modified by zhangwei on 20070701 
+// to support return  value
+//
+uint8 FAST2420_STROBE(TSpiDriver * spi,uint8 s) 
+	{ 
+		uint8 status;
+        //CC2420_SPI_ENABLE(); 
+		spi_open( spi, 0 );
+        status = FAST2420_TX_ADDR(spi,s); 
+		spi_close( spi );
+        //CC2420_SPI_DISABLE(); 
+		return status;
     } 
 
 void FAST2420_SETREG(TSpiDriver * spi,uint8 a,uint16 v) 
