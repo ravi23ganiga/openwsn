@@ -34,25 +34,26 @@
 #include "..\service\svc_debugio.h"
 #include "..\global.h"
 
-#define CONFIG_PACKET_API
-//#define CONFIG_FRAME_API
+#define CONFIG_GENERAL_RW
+//#define CONFIG_RAW_RW
 
 static uint8 tx_frame[128];
-//static uint8 rx_frame[128];            //using CONFIG_FRAME_API
+//static uint8 rx_frame[128];            //using CONFIG_RAW_RW
 
 static TCc2420Frame tx_test;
-static TCc2420Frame rx_test;           //using CONFIG_PACKET_API
+static TCc2420Frame rx_test;           //using CONFIG_GENERAL_RW
 
 int cc2420rx_test (void)
 {
-    UINT8 n;
-    int8 length;
+    int8 length, n;
     uint16 temp;
     uint8 ledPeriod;
+	char * msg = "cc2420rx started...\r\n";
     char * out_string = "   rssi = ";
     bool led_state = true;
   
     target_init();
+	led_twinkle( LED_RED, 1000 );
     
     tx_test.panid = 0x2420;
     tx_test.nodeto = 0x1234;
@@ -78,20 +79,18 @@ int cc2420rx_test (void)
     tx_frame[6] = 0x78; tx_frame[7] = 0x56;
     tx_frame[8] = 0x34; tx_frame[9] = 0x12; 
     
-    uart_write(g_uart, "cc2420rx_test started...\r\n", 24, 0 );
+    uart_write(g_uart, msg, strlen(msg), 0 );
     cc2420_open( g_cc2420 );
     
     ledPeriod = 1;
     while (TRUE) 
 	{ 
+		led_off( LED_ALL );
+		
 	    // test section one
 	    // try receive frame using the frame-based API cc_read  
-        #ifdef CONFIG_PACKET_API
-        led_twinkle(LED_GREEN,ledPeriod);
-	  
-        //length = cc2420_read( g_cc2420,&rx_test,0,0);
-        length = cc2420_read( g_cc2420,&rx_test,0);
-	  
+        #ifdef CONFIG_GENERAL_RW
+        length = cc2420_read( g_cc2420, &rx_test, 0);
 	    if(length > 0)
 	    //if (length > 1) 
 	    {
@@ -100,6 +99,8 @@ int cc2420rx_test (void)
 	    		led_on( LED_RED );
 	    	else
 	    		led_off( LED_RED ); 
+			hal_delay( 500 );	
+			
 	    	
 	        ledPeriod = rx_test.payload[0];
             temp = g_cc2420->rssi;
@@ -120,7 +121,7 @@ int cc2420rx_test (void)
 	  
 	  	// test section two
 	  	// try receive using stream based API cc_rawread
-		#ifdef CONFIG_FRAME_API
+		#ifdef CONFIG_RAW_RW
 	  	led_twinkle(LED_GREEN,ledPeriod);
     	length = cc2420_rawread( g_cc2420,(char *)rx_frame, sizeof(rx_frame),0 );
 	  	if (length > 11) 

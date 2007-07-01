@@ -59,7 +59,7 @@ int cc2420tx_test(void)
 {
     uint8 n;
     int8 length;
-    char * welcome = "cc2420tx_test started...\r\n";
+    char * welcome = "cc2420tx started...\r\n";
     TOpenFrame txframe;			//used when CONFIG_GENERAL_RW
     uint8 txbuf[128];			//used when CONFIG_RAW_RW
 
@@ -76,9 +76,10 @@ int cc2420tx_test(void)
     uart_write( g_uart, welcome, strlen(welcome), 0x00 );
     
     spi_configure( g_spi );
-    led_on( LED_RED );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
-    uart_write( g_uart, "configure ok\r\n", 14, 0x00 );
+    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PAN, 0);
+    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, LOCAL_ADDRESS, 0);
+    uart_write( g_uart, "cc2420 configure ok\r\n", 21, 0x00 );
 
     memset( (char*)(&txframe), 0x00, sizeof(txframe) );
     txframe.length = 50; // between 1 and 0x127
@@ -86,9 +87,6 @@ int cc2420tx_test(void)
     txframe.nodeto = REMOTE_ADDRESS;
     txframe.nodefrom = LOCAL_ADDRESS;
     //txframe.nodeto = 0x3456;//for test the sniffer
-
-    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PAN, 0);
-    cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, LOCAL_ADDRESS, 0);
     
     for (n = 0; n < 10; n++) 
     {
@@ -103,11 +101,11 @@ int cc2420tx_test(void)
     txbuf[8] = 0x34; txbuf[9] = 0x12; 
     
     cc2420_open( g_cc2420 );
-    //cc2420_receive_on(g_cc2420);  
-    //IRQEnable(); 
 
     while (TRUE) 
     {    
+		led_off( LED_ALL );
+		
         // test section one: 
         // transmit using TOpenFrame based interface: cc_write
 		//
@@ -123,8 +121,8 @@ int cc2420tx_test(void)
         length = cc2420_write( g_cc2420, &(txframe), 0 );
         if (length > 0)
         {
-            led_twinkle( LED_RED, 500 );
             uart_write( g_uart, "sent\r\n", 6, 0x00 );
+            led_twinkle( LED_RED, 1000 );
         }
         #endif
 	  
@@ -140,7 +138,7 @@ int cc2420tx_test(void)
         {
             txbuf[10] = 1;
         }
-        led_twinkle(LED_GREEN,1000);
+        led_twinkle(LED_RED, 1000);
         cc2420_rawwrite( g_cc2420, (char *)txbuf, 10 + 11,0);
         #endif
     }

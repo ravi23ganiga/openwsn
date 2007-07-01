@@ -60,6 +60,9 @@ void led_init()
 	
 	#ifdef CONFIG_TARGET_WLSMODEM_11
 	#endif
+
+	#ifdef CONFIG_TARGET_DEFAULT
+	#endif
 }
 
 void led( uint8 id, bool state )
@@ -75,7 +78,7 @@ void led_off( uint8 id )
 	switch(id)
 	{
 	case LED_GREEN:    
-		  #if LED_GREEN_PORT == 0 
+		#if LED_GREEN_PORT == 0 
 	    IO0SET  = BM(LED_GREEN_PIN);    break;
 	    #endif
 	         
@@ -102,7 +105,7 @@ void led_off( uint8 id )
 	    #endif
 	
 	case LED_ALL:
-		  #if LED_GREEN_PORT == 0 
+		#if LED_GREEN_PORT == 0 
 	    IO0SET  = BM(LED_GREEN_PIN);    
 	    #endif
 	    #if LED_GREEN_PORT == 1 
@@ -119,7 +122,7 @@ void led_off( uint8 id )
 	  	#if LED_YELLOW_PORT == 0 
 	    IO0SET  = BM(LED_YELLOW_PIN);   
 	    #endif
-			#if LED_YELLOW_PORT == 1 
+		#if LED_YELLOW_PORT == 1 
 	    IO1SET  = BM(LED_YELLOW_PIN);   
 	    #endif
 	    break;
@@ -158,7 +161,7 @@ void led_on( uint8 id )
 	    #endif
 	    
 	case LED_ALL: 
-			#if LED_GREEN_PORT == 0 
+		#if LED_GREEN_PORT == 0 
 	    IO0CLR  = BM(LED_GREEN_PIN);   
 	    #endif
 	    #if LED_GREEN_PORT == 1 
@@ -180,7 +183,7 @@ void led_on( uint8 id )
 	    #if LED_YELLOW_PORT == 1 
 	    IO1CLR  = BM(LED_YELLOW_PIN);   
 	    #endif
-			break;
+		break;
 	}
 }
 

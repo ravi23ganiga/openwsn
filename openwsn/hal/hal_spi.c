@@ -119,7 +119,7 @@ void spi_configure( TSpiDriver * spi )
     	#if (defined(CONFIG_TARGET_OPENNODE_10) || defined(CONFIG_TARGET_OPENNODE_20))
         SPI_SPCCR = 0x52;		               // 设置SPI时钟分频 for 11.0592 Khz 
         #elif defined(CONFIG_TARGET_OPENNODE_30)
-        SPI_SPCCR = 0x78;
+        SPI_SPCCR = 0x08;
         #else
         SPI_SPCCR = 0x52;
         #endif
@@ -259,19 +259,19 @@ uint8 spi_put(TSpiDriver * spi, char ch )
 	uint8 ret = 0;
 	
 	#ifdef GDEBUG
-	uart_write( g_uart, "spi_put:\r\n", 10, 0x00 );
+	//uart_write( g_uart, "spi_put:\r\n", 10, 0x00 );
 	#endif
 	
     if (spi->id == 0)
     {
     	// SPI_SPSR; // clear all the flags
-		//SPI_SPDR = ch; 
+		SPI_SPDR = ch; 
         spi_wait(spi);
         ret = SPI_SPDR; 
 	}
     else if (spi->id == 1)
     {
-		//SSPDR = ch;
+		SSPDR = ch;
         spi_wait(spi);	
         ret = SSPDR; 
 	}
@@ -297,6 +297,15 @@ int8 spi_get(TSpiDriver * spi, char * pc )
     return 0;
 }
 
+uint8 spi_status( TSpiDriver * spi )
+{
+	if (spi->id == 0)
+	{
+		return SPI_SPSR;
+	}
+	
+	return 0x00;
+}
 
 void spi_wait(TSpiDriver * spi) 
 { 
@@ -307,16 +316,16 @@ void spi_wait(TSpiDriver * spi)
     if (spi->id == 0) 
     {	
 		#ifdef GDEBUG
-    	uart_write( g_uart, "spi_wait:\r\n", 11, 0x00 );
+    	//uart_write( g_uart, "spi_wait:\r\n", 11, 0x00 );
 		while (TRUE)
 		{
 			status = SPI_SPSR;
-			uart_putchar( g_uart, status ); 
+			//uart_putchar( g_uart, status ); 
 			if (status & 0x0010)
 			{
 				// Mode Error: 
 				SPI_SPCR  = SPI_SPCR | 0x10; // MSTR = 1, SPI 处于主模式
-				hal_delay( 10 ); // for test only
+				hal_delay( 10 ); // @TODO: for test only, this should never happen!
 				break;
 			}
 
@@ -326,7 +335,7 @@ void spi_wait(TSpiDriver * spi)
 		#endif
 
 		#ifndef GDEBUG
-		//while (!(SPI_SPSR & BM(7)));	
+		//while  (!(SPI_SPSR & BM(7)));	
 		while (TRUE)
 		{
 			status = SPI_SPSR;

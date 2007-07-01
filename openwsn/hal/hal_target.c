@@ -36,6 +36,10 @@
 #include "hal_sensor_switch.h"
 #include "hal_sensor_vibration.h"
 
+#ifdef CONFIG_DEBUG
+#define GDEBUG
+#endif
+
 #ifdef CONFIG_TARGET_OPENNODE_20	
 static void target_init_opennode_20( void );
 #endif
@@ -53,8 +57,9 @@ static void target_init_uart0( uint32 bps );
  */
 void target_init( void )
 {
-    uint16 Fdiv;
-
+	//char * msg = "hal_target_init success\r\n";
+	//uint8 n;
+	
 	/* TargetPortInit()*/
 	/* when CONFIG_TARGET_OPENNODE_10 
 	 * this is already an obsolete hardware. it may be eliminated soon */
@@ -84,7 +89,7 @@ void target_init( void )
     PINSEL0 = PINSEL0& 0xbfffffff;
     #endif
    
-    #if     VIBRATION_SLEEP_PORT == 0    
+    #if VIBRATION_SLEEP_PORT == 0    
     IO0DIR |= BM(VIBRATION_SLEEP_PIN);  
     #endif
     
@@ -166,6 +171,19 @@ void target_init( void )
     
 	led_init();
     target_init_uart0( 9600 );
+	
+	// output a message through UART0
+	/*
+	n = 0;
+	while (msg[n] != '\0')
+	{
+		U0THR = msg[n];
+		while ((U0LSR & 0x20) == 0)
+		{
+			NULL;
+		}
+	}
+	*/
     
     return; 
 }    
@@ -198,28 +216,39 @@ void target_init_opennode_20( void )
 #endif
 
 #ifdef CONFIG_TARGET_OPENNODE_30	
+/* initialization for OpenNode 3.0 hardware
+ * mainly the Port initialization */
 void target_init_opennode_30( void )
 {
+	uint32 mask, ctrl;
 	// P0[0:1] UART
 	// P0[4:7]: SPI0 SCLK, MISO, MOSI, SSEL (P0.7 is set to GIO)
-	// P0.15: FIFOP (EXTINT2)
-	// P0.16: SFD(GIO)
+	// P0[15]: RF-FIFOP (EXTINT2)
 	// correct!
-	//PINSEL0 = PINSEL0 & 0x3FFF00F0 | 0x80001505;
-	
-	// wrong
-	// TODO
-    PINSEL0 = PINSEL0 | 0x80000000;                   
-    PINSEL0 = PINSEL0 & 0xbfffffff;
+	mask = 0x3FFF00F0;
+	ctrl = 0x80001505;
+	PINSEL0 = PINSEL0 & mask | ctrl;
 
-	// P1.17 RF-CCA
-	// P1.18 RF-VREGEN 
-	// P1.21 RF-CS
-	// P1.22 RF-FIFO
-	// P1.23 RF-RESET
-	//PINSEL1 = PINSEL1 & 0x8CFFFF | ?
-    PINSEL1 = PINSEL1 | 0x10000000; 
-    PINSEL1 = PINSEL1 & 0xdfffffff;                   //P0.30 is AD0.3
+    //PINSEL0 = PINSEL0 | 0x80000000;                   
+    //PINSEL0 = PINSEL0 & 0xbfffffff;
+
+	// P0.16: RF-SFD(GIO or timer capture)
+	mask = 0xFFFFFFFC;
+	ctrl = 0x00000000;
+	PINSEL1 = PINSEL1 & mask | ctrl;
+	
+    //PINSEL1 = PINSEL1 | 0x10000000; 
+    //PINSEL1 = PINSEL1 & 0xdfffffff;                   //P0.30 is AD0.3
+
+	// P1[16,18,25]: LED
+	// P1[17] RF-CCA
+	// P1[18] RF-VREGEN 
+	// P1[21] RF-CS
+	// P1[22] RF-FIFO
+	// P1[23] RF-RESET
+	mask = ~(1 << 3);
+	ctrl = 0x80;
+	PINSEL2 = PINSEL2 & mask | ctrl;
 }
 #endif
 

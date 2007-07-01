@@ -72,6 +72,7 @@ uint8 spi_read( TSpiDriver * spi, char * buf, uint8 capacity, uint8 opt );
 uint8 spi_write( TSpiDriver * spi, char * buf, uint8 len, uint8 opt );
 uint8 spi_put( TSpiDriver * spi, char ch );
 int8  spi_get( TSpiDriver * spi, char * pc );
+uint8 spi_status( TSpiDriver * spi );
 void  spi_wait( TSpiDriver * spi );
 
 /* @attention
