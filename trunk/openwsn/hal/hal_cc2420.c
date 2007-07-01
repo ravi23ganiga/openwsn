@@ -185,7 +185,7 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 		cc->sleeprequest = FALSE;
 
 		spi_configure( cc->spi );
-		spi_open( cc->spi, 0 );
+		//spi_open( cc->spi, 0 );
 	    _cc2420_init(cc); 
 	    cc2420_interrupt_init();
 
@@ -294,11 +294,11 @@ void _cc2420_init(TCc2420 * cc)
 	uart_write( g_uart, "_cc2420_init 2", 15, 0 ); // debug
     hal_delay(500); // at least dela_us(1) 
     status = FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
-	//while (!(status & 0x40)) 
-	//{
-	//	uart_putchar( g_uart, status ); // debug
-	//	status = FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
-	//}
+	while (!(status & 0x40)) 
+	{
+		uart_putchar( g_uart, status ); // debug
+		status = FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
+	}
 	uart_write( g_uart, "_cc2420_init 3", 15, 0 ); // debug
     hal_delay(1000);
 	 
@@ -343,7 +343,6 @@ void _cc2420_init(TCc2420 * cc)
 	// Wait for the crystal oscillator to become stable
     _cc2420_waitfor_crystal_oscillator(cc->spi);
 	// Write the short address and the PAN ID to the CC2420 RAM (requires that the XOSC is on and stable)
-    led_twinkle(LED_GREEN,5);
   
     FAST2420_WRITE_RAM_LE(cc->spi,&(cc->address), CC2420RAM_SHORTADDR, 2);
     FAST2420_WRITE_RAM_LE(cc->spi,&(cc->panid), CC2420RAM_PANID, 2);

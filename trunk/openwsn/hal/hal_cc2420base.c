@@ -81,11 +81,11 @@
 uint8 FAST2420_STROBE(TSpiDriver * spi,uint8 s) 
 	{ 
 		uint8 status;
-        //CC2420_SPI_ENABLE(); 
-		spi_open( spi, 0 );
+        CC2420_SPI_ENABLE(); 
+		//spi_open( spi, 0 );
         status = FAST2420_TX_ADDR(spi,s); 
-		spi_close( spi );
-        //CC2420_SPI_DISABLE(); 
+		//spi_close( spi );
+        CC2420_SPI_DISABLE(); 
 		return status;
     } 
 
