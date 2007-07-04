@@ -2,6 +2,7 @@
 #define _EXT_LIBOPEN_H_7388_
 //----------------------------------------------------------------------------
 
+#define CONFIG_APPLICATION
 #include "configall.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -136,6 +137,7 @@ typedef struct{
   uint8  rxlen;
   char   txbuf[NODE_TXBUFFER_CAPACITY];
   char   rxbuf[NODE_RXBUFFER_CAPACITY];
+  void * data;
   uint32 sen_temprature;
   uint32 sen_strain; 
 }TOpenNode;
@@ -224,26 +226,26 @@ typedef struct{
   char data[CONFIG_DATAPACKET_DATASIZE];
 }TOpenDataPacket;
 
-DLLAPI TOpenNetwork * _stdcall opennet_create( TSioComm * sio, TTimer * timer );
-DLLAPI void _stdcall opennet_free( TOpenNetwork * net );
-DLLAPI int _stdcall  opennet_open( TOpenNetwork * net );
-DLLAPI void _stdcall opennet_close( TOpenNetwork * net );
-DLLAPI int _stdcall  opennet_write( TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
-DLLAPI int _stdcall  opennet_read(  TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
-DLLAPI int _stdcall  opennet_rawwrite( TOpenNetwork * net, char * buf, uint8 len, uint8 opt );
-DLLAPI int _stdcall  opennet_rawread( TOpenNetwork * net, char * buf, uint8 capacity, uint8 opt );
-DLLAPI void _stdcall opennet_evolve( TOpenNetwork * net );
-DLLAPI void _stdcall opennet_probe( TOpenNetwork * net );
-DLLAPI void _stdcall opennet_probe_node( TOpenNetwork * net, uint16 nodeid );
-DLLAPI uint16 _stdcall opennet_get_node_count( TOpenNetwork * net );
-DLLAPI TOpenNode * _stdcall opennet_node( TOpenNetwork * net, uint16 idx );
-DLLAPI int _stdcall  opennet_get_neighbor_nodes( TOpenNetwork * net, uint16 id, uint32 radius, uint16 * buf, uint16 capacity );
-DLLAPI uint32 _stdcall opennet_distance_between( TOpenNetwork * net, uint16 id1, uint16 id2 );
-DLLAPI int _stdcall  opennet_generate( TOpenNetwork * net );
-DLLAPI int _stdcall  opennet_load( TOpenNetwork * net, char * filename );
-DLLAPI int _stdcall  opennet_save( TOpenNetwork * net, char * filename );
-DLLAPI int _stdcall  opennet_sleep( TOpenNetwork * net );
-DLLAPI int _stdcall  opennet_wakeup( TOpenNetwork * net );
+DLLAPI TOpenNetwork * _stdcall net_create( uint8 mode, TSioComm * sio, TTimer * timer );
+DLLAPI void _stdcall net_free( TOpenNetwork * net );
+DLLAPI int _stdcall  net_open( TOpenNetwork * net );
+DLLAPI void _stdcall net_close( TOpenNetwork * net );
+DLLAPI int _stdcall  net_write( TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
+DLLAPI int _stdcall  net_read(  TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt );
+DLLAPI int _stdcall  net_rawwrite( TOpenNetwork * net, char * buf, uint8 len, uint8 opt );
+DLLAPI int _stdcall  net_rawread( TOpenNetwork * net, char * buf, uint8 capacity, uint8 opt );
+DLLAPI void _stdcall net_evolve( TOpenNetwork * net );
+DLLAPI void _stdcall net_probe( TOpenNetwork * net );
+DLLAPI void _stdcall net_probe_node( TOpenNetwork * net, uint16 nodeid );
+DLLAPI uint16 _stdcall net_get_node_count( TOpenNetwork * net );
+DLLAPI TOpenNode * _stdcall net_node( TOpenNetwork * net, uint16 idx );
+DLLAPI int _stdcall  net_get_neighbor_nodes( TOpenNetwork * net, uint16 id, uint32 radius, uint16 * buf, uint16 capacity );
+DLLAPI uint32 _stdcall net_distance_between( TOpenNetwork * net, uint16 id1, uint16 id2 );
+DLLAPI int _stdcall  net_generate( TOpenNetwork * net );
+DLLAPI int _stdcall  net_load( TOpenNetwork * net, char * filename );
+DLLAPI int _stdcall  net_save( TOpenNetwork * net, char * filename );
+DLLAPI int _stdcall  net_sleep( TOpenNetwork * net );
+DLLAPI int _stdcall  net_wakeup( TOpenNetwork * net );
 
 
 //----------------------------------------------------------------------------
@@ -264,36 +266,18 @@ typedef struct{
 
 
 //----------------------------------------------------------------------------
-// General Interface of OpenWSN system
-// generally, it's enough to use the following functions only for most of the 
-// application.
+// TOpenWSN Service
 //----------------------------------------------------------------------------
 
-DLLAPI int _stdcall  wsn_open( int mode );
-DLLAPI void _stdcall wsn_close();
-DLLAPI TOpenNetwork* wsn_get_network();
-DLLAPI int _stdcall  wsn_write( TOpenDataPacket * datapacket, uint8 opt );
-DLLAPI int _stdcall  wsn_read(  TOpenDataPacket * datapacket, uint8 opt );
-DLLAPI int _stdcall  wsn_rawwrite( char * buf, uint8 len, uint8 opt );
-DLLAPI int _stdcall  wsn_rawread( char * buf, uint8 capacity, uint8 opt );
-DLLAPI void _stdcall wsn_evolve();
-DLLAPI void _stdcall wsn_probe();
-DLLAPI void _stdcall wsn_probe_node( uint16 nodeid );
-DLLAPI uint16 _stdcall wsn_get_node_count();
-DLLAPI TOpenNode * _stdcall wsn_node( uint16 idx );
-DLLAPI int _stdcall  wsn_get_neighbor_nodes( uint16 id, uint32 radius, uint16 * buf, uint16 capacity );
-DLLAPI uint32 _stdcall wsn_distance_between( uint16 id1, uint16 id2 );
-DLLAPI int _stdcall  wsn_generate();
-DLLAPI int _stdcall  wsn_load( char * filename );
-DLLAPI int _stdcall  wsn_save( char * filename );
-DLLAPI int _stdcall  wsn_sleep();
-DLLAPI int _stdcall  wsn_wakeup();
-
-// @TODO
-DLLAPI TSioComm * _stdcall wsn_get_siocomm();
-DLLAPI TUart * _stdcall wsn_get_uart();
-DLLAPI TQueryEngine * _stdcall wsn_get_queryengine();
-DLLAPI int _stdcall  wsn_query();
+DLLAPI int32 _stdcall svc_create( int mode );
+DLLAPI void _stdcall svc_free();
+DLLAPI void _stdcall svc_startup();
+DLLAPI void _stdcall svc_shutdown();
+DLLAPI TOpenNetwork * _stdcall svc_get_network();
+DLLAPI TQueryEngine * _stdcall svc_get_queryengine();
+DLLAPI TSioComm * _stdcall svc_get_siocomm();
+DLLAPI TUart * _stdcall svc_get_uart();
+DLLAPI void * _stdcall svc_query();
 
 //----------------------------------------------------------------------------
 #endif

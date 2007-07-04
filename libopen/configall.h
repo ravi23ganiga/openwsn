@@ -62,9 +62,16 @@
  * User Changable Macros
  ****************************************************************************/
 
-#define MAJOR_VERSION 1
-#define MINOR_VERSION 2
+#define CONFIG_MAJOR_VERSION 0
+#define CONFIG_MINOR_VERSION 9
+#define CONFIG_MICRO_VERSION 1
 
+/* CONFIG_VERSION_10 
+ * is developed by Zhou Songli. it is used with ICT's GAINZ and Zhou's routing
+ * 
+ * CONFIG_VERSION_20 (default)
+ * is developed by zhangwei and xxx. it is used with OpenWSN Software on ARM nodes.
+ */
 #undef  CONFIG_VERSION_10
 #define CONFIG_VERSION_20
 

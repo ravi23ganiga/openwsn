@@ -23,173 +23,123 @@
 #include "global.h"
 
 //----------------------------------------------------------------------------
-// Interface of OpenWSN system
-// generally, it's enough to use the following functions only for most of the 
-// application.
+// Service
 //----------------------------------------------------------------------------
 
-DLLAPI int _stdcall wsn_open( int mode )
+#ifdef CONFIG_VERSION_20
+//----------------------------------------------------------------------------
+// create the OpenWSN System Service for User Application 
+//----------------------------------------------------------------------------
+DLLAPI int32 _stdcall svc_create( int mode )
 {
 	global_create( mode );
 	net_open( g_network );
 	return 0;
 }
+#endif
 
-DLLAPI void _stdcall wsn_close()
+#ifdef CONFIG_VERSION_20
+//----------------------------------------------------------------------------
+// free the resources allocated to the OpenWSN System Service
+//----------------------------------------------------------------------------
+DLLAPI void _stdcall svc_free()
 {
-	net_close( g_network );
 	global_free();
 }
+#endif
 
-DLLAPI TOpenNetwork* wsn_get_network()
+#ifdef CONFIG_VERSION_20
+//----------------------------------------------------------------------------
+// start the OpenWSN System Service
+//----------------------------------------------------------------------------
+DLLAPI void _stdcall svc_startup()
+{
+}
+#endif
+
+#ifdef CONFIG_VERSION_20
+//----------------------------------------------------------------------------
+// shutdown the OpenWSN System Service
+//----------------------------------------------------------------------------
+DLLAPI void _stdcall svc_shutdown()
+{
+}
+#endif
+
+#ifdef CONFIG_VERSION_20
+//----------------------------------------------------------------------------
+// get the Network interface for OpenWSN
+// the Network service is essentially the Network Layer Developing Interface.
+// generally, the user application uses the network API to interact with lower
+// level communications.
+//----------------------------------------------------------------------------
+DLLAPI TOpenNetwork * _stdcall svc_get_network()
 {
 	return g_network;
 }
+#endif
 
-DLLAPI int _stdcall wsn_write( TOpenDataPacket * datapacket, uint8 opt )
+#ifdef CONFIG_VERSION_20
+//----------------------------------------------------------------------------
+// get the Query interface for OpenWSN
+//----------------------------------------------------------------------------
+DLLAPI TQueryEngine * _stdcall svc_get_queryengine()
 {
-	if (g_mode)
-		return opennet_write( g_network, datapacket, opt );
-	else
-		return simunet_write( g_network, datapacket, opt );
+	return NULL;
 }
+#endif
 
-DLLAPI int _stdcall wsn_read(  TOpenDataPacket * datapacket, uint8 opt )
+#ifdef CONFIG_VERSION_20
+//----------------------------------------------------------------------------
+// get the SioComm communication interface for OpenWSN
+//----------------------------------------------------------------------------
+DLLAPI TSioComm * _stdcall svc_get_siocomm()
 {
-	if (g_mode)
-		return opennet_read( g_network, datapacket, opt );
-	else
-		return simunet_read( g_network, datapacket, opt );
+	return NULL;
 }
+#endif
 
-DLLAPI int _stdcall wsn_rawwrite( char * buf, uint8 len, uint8 opt )
+#ifdef CONFIG_VERSION_20
+//----------------------------------------------------------------------------
+// get uart interface for OpenWSN
+//----------------------------------------------------------------------------
+DLLAPI TUart * _stdcall svc_get_uart()
 {
-	if (g_mode)
-		return opennet_rawwrite( g_network, buf, len, opt );
-	else
-		return simunet_rawwrite( g_network, buf, len, opt );
+	return NULL;
 }
+#endif
 
-DLLAPI int _stdcall  wsn_rawread( char * buf, uint8 capacity, uint8 opt )
+#ifdef CONFIG_VERSION_20
+//----------------------------------------------------------------------------
+// get uart interface for OpenWSN
+//----------------------------------------------------------------------------
+DLLAPI void * _stdcall svc_query()
 {
-	if (g_mode)
-		return opennet_rawread( g_network, buf, capacity, opt );
-	else
-		return simunet_rawread( g_network, buf, capacity, opt );
+	return NULL;
 }
-
-DLLAPI void _stdcall wsn_evolve()
-{
-	if (g_mode)
-		return opennet_evolve( g_network );
-	else
-		return simunet_evolve( g_network );
-}
-
-DLLAPI void _stdcall wsn_probe()
-{
-	if (g_mode)
-		return opennet_probe( g_network );
-	else
-		return simunet_probe( g_network );
-}
-
-DLLAPI void _stdcall wsn_probe_node( uint16 nodeid )
-{
-	if (g_mode)
-		return opennet_probe_node( g_network, nodeid );
-	else
-		return simunet_probe_node( g_network, nodeid );
-}
-
-DLLAPI uint16 _stdcall wsn_get_node_count()
-{
-	if (g_mode)
-		return opennet_get_node_count( g_network );
-	else
-		return simunet_get_node_count( g_network );
-}
-
-DLLAPI TOpenNode * _stdcall wsn_node( uint16 idx )
-{
-	if (g_mode)
-		return opennet_node( g_network, idx );
-	else
-		return simunet_node( g_network, idx );
-}
-
-DLLAPI int _stdcall  wsn_get_neighbor_nodes( uint16 id, uint32 radius, uint16 * buf, uint16 capacity )
-{
-	if (g_mode)
-		return opennet_get_neighbor_nodes( g_network, id, radius, buf, capacity );
-	else
-		return simunet_get_neighbor_nodes( g_network, id, radius, buf, capacity );
-}
-
-DLLAPI uint32 _stdcall wsn_distance_between( uint16 id1, uint16 id2 )
-{
-	if (g_mode)
-		return opennet_distance_between( g_network, id1, id2 );
-	else
-		return simunet_distance_between( g_network, id1, id2 );
-}
-
-DLLAPI int _stdcall  wsn_generate()
-{
-	if (g_mode)
-		return opennet_generate( g_network );
-	else
-		return simunet_generate( g_network );
-}
-
-DLLAPI int _stdcall  wsn_load( char * filename )
-{
-	if (g_mode)
-		return opennet_load( g_network, filename );
-	else
-		return simunet_load( g_network, filename );
-}
-
-DLLAPI int _stdcall  wsn_save( char * filename )
-{
-	if (g_mode)
-		return opennet_save( g_network, filename );
-	else
-		return simunet_save( g_network, filename );
-}
-
-DLLAPI int _stdcall  wsn_sleep()
-{
-	if (g_mode)
-		return opennet_sleep( g_network );
-	else
-		return simunet_sleep( g_network );
-}
-
-DLLAPI int _stdcall  wsn_wakeup()
-{
-	if (g_mode)
-		return opennet_wakeup( g_network );
-	else
-		return simunet_wakeup( g_network );
-}
-
+#endif
 
 //----------------------------------------------------------------------------
 // Interface of TOpenNetwork 
 //----------------------------------------------------------------------------
 
-DLLAPI TOpenNetwork * _stdcall net_create( TSioComm * sio, TTimer * timer )
+DLLAPI TOpenNetwork * _stdcall net_create( uint8 mode, TSioComm * sio, TTimer * timer )
 {
-	return simunet_create( sio, timer );
+	if (mode == OPENNET_MODE_REALNETWORK)
+		return opennet_create( sio, timer );
+	else
+		return simunet_create( sio, timer );
 }
 
 DLLAPI void _stdcall net_free( TOpenNetwork * net )
 {
-	return simunet_free( net );
+	if (net->mode == OPENNET_MODE_REALNETWORK)
+		opennet_free( net );
+	else
+		simunet_free( net );
 }
 
-DLLAPI int _stdcall  net_open( TOpenNetwork * net )
+DLLAPI int _stdcall net_open( TOpenNetwork * net )
 {
 	if (net->mode == OPENNET_MODE_REALNETWORK)
 		return opennet_open( net );
@@ -205,7 +155,7 @@ DLLAPI void _stdcall net_close( TOpenNetwork * net )
 		return simunet_close( net );
 }
 
-DLLAPI int _stdcall  net_write( TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt )
+DLLAPI int _stdcall net_write( TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt )
 {
 	if (net->mode == OPENNET_MODE_REALNETWORK)
 		return opennet_write( net, datapacket, opt );
@@ -213,7 +163,7 @@ DLLAPI int _stdcall  net_write( TOpenNetwork * net, TOpenDataPacket * datapacket
 		return simunet_write( net, datapacket, opt );
 }
 
-DLLAPI int _stdcall  net_read(  TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt )
+DLLAPI int _stdcall net_read(  TOpenNetwork * net, TOpenDataPacket * datapacket, uint8 opt )
 {
 	if (net->mode == OPENNET_MODE_REALNETWORK)
 		return opennet_read( net, datapacket, opt );
@@ -221,7 +171,7 @@ DLLAPI int _stdcall  net_read(  TOpenNetwork * net, TOpenDataPacket * datapacket
 		return simunet_read( net, datapacket, opt );
 }
 
-DLLAPI int _stdcall  net_rawwrite( TOpenNetwork * net, char * buf, uint8 len, uint8 opt )
+DLLAPI int _stdcall net_rawwrite( TOpenNetwork * net, char * buf, uint8 len, uint8 opt )
 {
 	if (net->mode == OPENNET_MODE_REALNETWORK)
 		return opennet_rawwrite( net, buf, len, opt );
@@ -229,7 +179,7 @@ DLLAPI int _stdcall  net_rawwrite( TOpenNetwork * net, char * buf, uint8 len, ui
 		return simunet_rawwrite( net, buf, len, opt );
 }
 
-DLLAPI int _stdcall  net_rawread( TOpenNetwork * net, char * buf, uint8 capacity, uint8 opt )
+DLLAPI int _stdcall net_rawread( TOpenNetwork * net, char * buf, uint8 capacity, uint8 opt )
 {
 	if (net->mode == OPENNET_MODE_REALNETWORK)
 		return opennet_rawread( net, buf, capacity, opt );
