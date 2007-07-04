@@ -44,6 +44,7 @@ typedef struct{
   uint8  rxlen;
   char   txbuf[NODE_TXBUFFER_CAPACITY];
   char   rxbuf[NODE_RXBUFFER_CAPACITY];
+  void * data;
   uint32 sen_temprature;
   uint32 sen_strain; 
 }TOpenNode;

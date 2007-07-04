@@ -65,6 +65,7 @@
 //
 //----------------------------------------------------------------------------
 
+#include "configall.h"
 #include "foundation.h"
 #include "hal/hal_uart.h"
 #include "hal/hal_usb.h"
@@ -80,37 +81,23 @@
 // application.
 //----------------------------------------------------------------------------
 
-DLLAPI int _stdcall  wsn_open( int mode );
-DLLAPI void _stdcall wsn_close();
-DLLAPI TOpenNetwork* wsn_get_network();
-DLLAPI int _stdcall  wsn_write( TOpenDataPacket * datapacket, uint8 opt );
-DLLAPI int _stdcall  wsn_read(  TOpenDataPacket * datapacket, uint8 opt );
-DLLAPI int _stdcall  wsn_rawwrite( char * buf, uint8 len, uint8 opt );
-DLLAPI int _stdcall  wsn_rawread( char * buf, uint8 capacity, uint8 opt );
-DLLAPI void _stdcall wsn_evolve();
-DLLAPI void _stdcall wsn_probe();
-DLLAPI void _stdcall wsn_probe_node( uint16 nodeid );
-DLLAPI uint16 _stdcall wsn_get_node_count();
-DLLAPI TOpenNode * _stdcall wsn_node( uint16 idx );
-DLLAPI int _stdcall  wsn_get_neighbor_nodes( uint16 id, uint32 radius, uint16 * buf, uint16 capacity );
-DLLAPI uint32 _stdcall wsn_distance_between( uint16 id1, uint16 id2 );
-DLLAPI int _stdcall  wsn_generate();
-DLLAPI int _stdcall  wsn_load( char * filename );
-DLLAPI int _stdcall  wsn_save( char * filename );
-DLLAPI int _stdcall  wsn_sleep();
-DLLAPI int _stdcall  wsn_wakeup();
-
-// @TODO
-DLLAPI TSioComm * _stdcall wsn_get_siocomm();
-DLLAPI TUart * _stdcall wsn_get_uart();
-DLLAPI TQueryEngine * _stdcall wsn_get_queryengine();
-DLLAPI int _stdcall  wsn_query();
+#ifdef CONFIG_VERSION_20
+DLLAPI int32 _stdcall svc_create( int mode );
+DLLAPI void _stdcall svc_free();
+DLLAPI void _stdcall svc_startup();
+DLLAPI void _stdcall svc_shutdown();
+DLLAPI TOpenNetwork * _stdcall svc_get_network();
+DLLAPI TQueryEngine * _stdcall svc_get_queryengine();
+DLLAPI TSioComm * _stdcall svc_get_siocomm();
+DLLAPI TUart * _stdcall svc_get_uart();
+DLLAPI void * _stdcall svc_query();
+#endif
 
 //----------------------------------------------------------------------------
 // Interface of TOpenNetwork 
 //----------------------------------------------------------------------------
 
-DLLAPI TOpenNetwork * _stdcall net_create( TSioComm * sio, TTimer * timer );
+DLLAPI TOpenNetwork * _stdcall net_create( uint8 mode, TSioComm * sio, TTimer * timer );
 DLLAPI void _stdcall net_free( TOpenNetwork * net );
 DLLAPI int _stdcall  net_open( TOpenNetwork * net );
 DLLAPI void _stdcall net_close( TOpenNetwork * net );
