@@ -2,7 +2,7 @@ LIBRARY     LIBOPEN.DLL
 
 EXPORTS
     net_close                     = _net_close@4                        
-    net_create                    = _net_create@8                       
+    net_create                    = _net_create@12                      
     net_distance_between          = _net_distance_between@12            
     net_evolve                    = _net_evolve@4                       
     net_free                      = _net_free@4                         
@@ -73,24 +73,14 @@ EXPORTS
     simunode_free                 = _simunode_free@4                    
     simunode_read                 = _simunode_read@16                   
     simunode_write                = _simunode_write@16                  
-    wsn_close                     = _wsn_close@0                        
-    wsn_distance_between          = _wsn_distance_between@8             
-    wsn_evolve                    = _wsn_evolve@0                       
-    wsn_generate                  = _wsn_generate@0                     
-    wsn_get_neighbor_nodes        = _wsn_get_neighbor_nodes@16          
-    wsn_get_node_count            = _wsn_get_node_count@0               
-    wsn_load                      = _wsn_load@4                         
-    wsn_node                      = _wsn_node@4                         
-    wsn_open                      = _wsn_open@4                         
-    wsn_probe                     = _wsn_probe@0                        
-    wsn_probe_node                = _wsn_probe_node@4                   
-    wsn_rawread                   = _wsn_rawread@12                     
-    wsn_rawwrite                  = _wsn_rawwrite@12                    
-    wsn_read                      = _wsn_read@8                         
-    wsn_save                      = _wsn_save@4                         
-    wsn_sleep                     = _wsn_sleep@0                        
-    wsn_wakeup                    = _wsn_wakeup@0                       
-    wsn_write                     = _wsn_write@8                        
+    svc_create                    = _svc_create@4                       
+    svc_free                      = _svc_free@0                         
+    svc_get_network               = _svc_get_network@0                  
+    svc_get_queryengine           = _svc_get_queryengine@0              
+    svc_get_siocomm               = _svc_get_siocomm@0                  
+    svc_get_uart                  = _svc_get_uart@0                     
+    svc_query                     = _svc_query@0                        
+    svc_shutdown                  = _svc_shutdown@0                     
+    svc_startup                   = _svc_startup@0                      
     _query_engine_create          = query_engine_create                 ; query_engine_create
     _query_engine_free            = query_engine_free                   ; query_engine_free
-    _wsn_get_network              = wsn_get_network                     ; wsn_get_network
