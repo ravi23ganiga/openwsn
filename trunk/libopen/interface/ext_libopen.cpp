@@ -1,5 +1,13 @@
 #include "configall.h"
 #include "ext_libopen.h"
 
-// the following compiler option only takes effective in Borland C++ Builder
-#pragma link "libopen_bcb.lib"
+//----------------------------------------------------------------------------
+// @attention: for Microsoft Visual Studio Developers, please use this:
+// #prgama link "libopen.lib"
+//
+// for Borland C++ Builder developers, use this one:
+// #pragma link "libopen_bcb.lib"
+//----------------------------------------------------------------------------
+
+//#pragma link "libopen_bcb.lib"
+#pragma link "libopen.lib"
