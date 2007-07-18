@@ -5,6 +5,12 @@ Flash object read and write (hal_flash)
 svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
+
+20070718
+revision on note(2007).txt and release.txt
+"release.txt" is published for final customers. it will records the major features of every version of openwsn. while, "note.txt" is used as a working log. it's used by the developer themselves. it records each small improvements and changes.
+
+
 20070704
 add support to opennode-3.0 support.
 3.0 hardware is the default support now.
