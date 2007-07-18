@@ -88,6 +88,7 @@ int8 net_sleep( TOpenNET * net );
 int8 net_wakeup( TOpenNET * net );
 int8 net_installnotify( TOpenNET * net, TEventHandler * callback, void * data );
 
+
 #endif
 
 

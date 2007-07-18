@@ -5,6 +5,10 @@ Flash object read and write (hal_flash)
 svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
+20070704
+add support to opennode-3.0 support.
+3.0 hardware is the default support now.
+
 20070612
 add new module: hal_interrupt.*
 contains some utility functions to manipulate the interrupts

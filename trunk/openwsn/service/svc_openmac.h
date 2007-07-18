@@ -51,12 +51,17 @@
  * as global effective configuration settings. 
  */
 
-#undef CONFIG_OPENMAC_SIMPLE
+#undef  CONFIG_OPENMAC_SIMPLE
 #define CONFIG_OPENMAC_SIMPLE
 
 #define CONFIG_OPENMAC_FULL
-#undef CONFIG_OPENMAC_FULL 
+#undef  CONFIG_OPENMAC_FULL 
 
+#undef  CONFIG_OPENMAC_EXTENSION_ENABLE
+#define CONFIG_OPENMAC_EXTENSION_ENABLE
+
+#define CONFIG_OPENMAC_SECURITY_ENABLE
+#undef  CONFIG_OPENMAC_SECURITY_ENABLE
 
 /* The following macros are used as the network PHY layers interface.
  * so you can easily port to other PHY implementations with the most less 
@@ -112,6 +117,14 @@
 #define OPENMAC_RETRY_LIMIT 3
 #define OPENMAC_BUFFER_SIZE OPF_FRAME_SIZE
 
+typedef struct{
+  uint8 state;
+  TOpenAddress addr;
+  uint8 linkquality;
+  uint8 signalstrength;
+  uint32 distance;  
+}TOpenMACNode;
+
 #define MAC_CONFIG_PANID 			0x01 
 #define MAC_CONFIG_LOCALADDRESS		0x02 
 #define MAC_CONFIG_TUNNING_POWER 	0x03
@@ -144,6 +157,9 @@ typedef struct{
   char 		txbuf[OPF_FRAME_SIZE];
   char 		rxbuf[OPF_FRAME_SIZE];
   char 		rxheader[7];
+  #ifdef CONFIG_OPENMAC_EXTENSION_ENABLE  
+  TOpenMACNode 
+  #endif
 }TOpenMAC;  
 
 TOpenMAC * mac_construct( char * buf, uint16 size );
@@ -168,19 +184,13 @@ uint8 mac_getrmtaddress( TOpenMAC * mac, TOpenAddress * addr );
 uint8 mac_getlocaladdress( TOpenMAC * mac, TOpenAddress * addr );
 uint8 mac_installnotify( TOpenMAC * mac, TEventHandler * callback, void * owner );
 
-typedef struct{
-  uint8 state;
-  TOpenAddress addr;
-  uint8 linkquality;
-  uint8 signalstrength;
-  uint32 distance;  
-}TOpenMACNode;
-
+#ifdef CONFIG_OPENMAC_EXTENSION_ENABLE
 int8 mac_probe( TOpenMAC * mac );
 int8 mac_updatestatistics( TOpenMAC * mac );
 int8 mac_getnode( TOpenMAC * mac, TOpenMACNode * node );
 int8 mac_getneighbors( TOpenMAC * mac, TOpenAddress * addr[] );
 uint8 mac_getlinkquality( TOpenMAC * mac, TOpenAddress * addr );
 uint8 mac_getsignalstrength( TOpenMAC * mac, TOpenAddress * addr );
+#endif
 
 #endif
