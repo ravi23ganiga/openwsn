@@ -33,6 +33,14 @@
 
 #include "..\hal_foundation.h"
 
+/*****************************************************************************
+ * @author zhangwei on 200610xx
+ * @note
+ *    this is a OpenMAC test program
+ * @status: developing
+ * 
+ ****************************************************************************/ 
+
 /* backhole 
  * 是一个单纯接收openmac frame的测试工具
  */
