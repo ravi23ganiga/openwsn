@@ -64,6 +64,7 @@ int cc2420rx_test (void)
     uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
    
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
+    uart_write( g_uart, "cc2420 configure ok\r\n", 21, 0x00 );
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, tx_test.panid, 0);
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, tx_test.nodefrom, 0);
     

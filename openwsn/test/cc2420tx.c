@@ -49,7 +49,7 @@
  ****************************************************************************/ 
 
 #define CONFIG_GENERAL_RW
-#undef  CONFIG_RAW_RW
+//#define  CONFIG_RAW_RW
 
 #define PAN 0x2420
 #define LOCAL_ADDRESS 0x1234
