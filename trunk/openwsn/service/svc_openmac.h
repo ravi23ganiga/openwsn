@@ -158,7 +158,7 @@ typedef struct{
   char 		rxbuf[OPF_FRAME_SIZE];
   char 		rxheader[7];
   #ifdef CONFIG_OPENMAC_EXTENSION_ENABLE  
-  TOpenMACNode 
+  //TOpenMACNode ;?
   #endif
 }TOpenMAC;  
 
