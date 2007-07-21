@@ -110,6 +110,7 @@ int cc2420tx_test(void)
         // transmit using TOpenFrame based interface: cc_write
 		//
 		#ifdef CONFIG_GENERAL_RW
+        uart_write( g_uart, "sending...\r\n", 12, 0x00 );
         txframe.payload[0]++;
         if (txframe.payload[0] == 5)
         { 
@@ -117,7 +118,6 @@ int cc2420tx_test(void)
         } 
         
         txframe.length = 10 + 11;
-        uart_write( g_uart, "sending...\r\n", 12, 0x00 );
         length = cc2420_write( g_cc2420, &(txframe), 0 );
         if (length > 0)
         {

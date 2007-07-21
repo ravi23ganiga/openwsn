@@ -229,7 +229,7 @@ void led_toggle( uint8 id )
 	}
 }
 
-void led_twinkle( uint8 id ,uint16 interval)
+void led_twinkle( uint8 id ,uint16 interval )
 {
   	switch(id)
 	{

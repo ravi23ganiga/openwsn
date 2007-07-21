@@ -291,7 +291,7 @@ void _cc2420_init(TCc2420 * cc)
     SET_RESET_ACTIVE();
     hal_delay(10); // at least delay_us(1). low voltage is effective
     SET_RESET_INACTIVE();
-	uart_write( g_uart, "_cc2420_init 2", 15, 0 ); // debug
+	uart_write( g_uart, "_cc2420_init 2\n", 15, 0 ); // debug
     hal_delay(500); // at least dela_us(1) 
     status = FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
 	while (!(status & 0x40)) 
@@ -299,7 +299,7 @@ void _cc2420_init(TCc2420 * cc)
 		uart_putchar( g_uart, status ); // debug
 		status = FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
 	}
-	uart_write( g_uart, "_cc2420_init 3", 15, 0 ); // debug
+	uart_write( g_uart, "_cc2420_init 3\n", 15, 0 ); // debug
     hal_delay(1000);
 	 
     //FASTSPI_SETREG(CC2420_TXCTRL, 0xA0E3); // To control the output power, added by huanghuan
@@ -470,6 +470,7 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
  *   frame        point to an TCc2420Frame
  *   opt          default to 0x00
  * 
+ * @attention
  * you must initialize the "frame" correctly before you can this function. 
  * you must initialize the following:
  *		length, panid, nodeto, payload
@@ -477,12 +478,20 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
  *		control
  * you need not initialize
  *      seqid, nodefrom
+ * 
+ * @attention
+ * you can NOT disable interrupt in "cc2420_write()". because _hardware_sendframe()
+ * need the interrupt service routine to modify some flags.
  */
 int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
 {
 	bool ack;
 	int8 count;
 	
+	/* if there's no more frame to send in TCc2420 object 
+	 * if TCc2420's internal buffer is not empty, then simply return 0.
+	 * return 0 means the TCc2420 object is busy 
+	 */
 	if (cc->txlen == 0)
 	{
 		count = frame->length & 0x7F;
@@ -530,8 +539,6 @@ int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 	
 	if (cc->rxlen > 0)
 	{
-		IRQDisable();
-
 		// the additional three bytes are for "length" byte itself and two "footer" bytes.
 		count = cc->rxbuf.length + 3;
 		assert( (count >= BASIC_RF_PACKET_OVERHEAD_SIZE) && (count <= capacity) );
@@ -555,7 +562,6 @@ int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 		
 		memmove( frame, (char*)(&cc->rxbuf), count );
 		cc->rxlen = 0;
-		IRQEnable();			
 	}
 	else
 		count = 0;
@@ -1109,6 +1115,13 @@ void cc2420_receive_on(TCc2420 * cc)
 {
 	cc->receiveOn = TRUE;
 	FAST2420_STROBE(cc->spi,CC2420_SRXON);
+	
+	// @TODO
+	// cc2420 reference said about SFLUSHRX
+	// Flush the RX FIFO buffer and reset the demodulator. Always read at least 
+	// one byte from the RXFIFO before issuing the SFLUSHRX command strobe
+	// i don't know why the old source code is just one line.
+	//
 	FAST2420_STROBE(cc->spi,CC2420_SFLUSHRX);
 } 
 
