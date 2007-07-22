@@ -93,7 +93,7 @@ void FAST2420_SETREG(TSpiDriver * spi,uint8 a,uint16 v)
     { 
 
         CC2420_SPI_ENABLE(); 
-		led_on( LED_YELLOW ); // debug only
+		//led_on( LED_YELLOW ); // debug only
         FAST2420_TX_ADDR(spi,a); 
         FASTSPI_TX_WORD(spi, v); 
         CC2420_SPI_DISABLE(); 

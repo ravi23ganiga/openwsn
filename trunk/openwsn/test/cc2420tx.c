@@ -48,6 +48,10 @@
  *   
  ****************************************************************************/ 
 
+#ifdef CONFIG_DEBUG
+#define GDEBUG
+#endif
+ 
 #define CONFIG_GENERAL_RW
 //#define  CONFIG_RAW_RW
 
@@ -117,11 +121,18 @@ int cc2420tx_test(void)
             txframe.payload[0] = 1;
         } 
         
+        //txframe.length = 10 + 11;
         txframe.length = 10 + 11;
         length = cc2420_write( g_cc2420, &(txframe), 0 );
         if (length > 0)
         {
             uart_write( g_uart, "sent\r\n", 6, 0x00 );
+			#ifdef GDEBUG
+            uart_write( g_uart, "****", 4, 0x00 );
+			uart_putchar( g_uart, length );
+			uart_putchar( g_uart, '\r' );
+			uart_putchar( g_uart, '\n' );
+			#endif
             led_twinkle( LED_RED, 1000 );
         }
         #endif
@@ -132,7 +143,7 @@ int cc2420tx_test(void)
         // huanghuan seems test the following section. i cannot guartantee whether 
         // the next char buffer based interface can work properly.
         //
-        #ifdef CONFIG_RAW_RW         
+        #ifdef CONFIG_RAW_RW          
         txbuf[10]++;
         if (txbuf[10] = 5) 
         {

@@ -399,14 +399,13 @@ void cc2420_receive_on(TCc2420 * cc);
 void cc2420_receive_off(TCc2420 * cc);
 
 void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi);
-
-
-
 uint8 cc2420_rssi( TCc2420 * cc );
 
+#ifdef CONFIG_DEBUG
+void cc2420_dump( TCc2420 * cc );
+#endif
 
 //void cc2420_test_command();
 //void cc2420_test_ram();
-
 
 #endif /* _HAL_CC2420_H_ */

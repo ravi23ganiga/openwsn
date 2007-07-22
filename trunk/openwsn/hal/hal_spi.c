@@ -171,6 +171,9 @@ void spi_open( TSpiDriver * spi, uint8 devid )
 {
     uint16 i = 0;
       
+	// @TODO
+	// you should distinguish SPI0 and SPI1
+	
     #ifdef CONFIG_TARGET_OPENNODE_10
     IO1CLR = BM(CSN);
     #endif
