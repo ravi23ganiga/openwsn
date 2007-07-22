@@ -616,6 +616,8 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     bool success;
     BYTE spiStatusByte;
 
+    uart_write( g_uart, "hardware_sendframe\r\n", 20, 0x00 );
+	
 	// @modified by zhangwei on 20070628
 	// what's its functionality?
 	cc2420_receive_off( cc );
@@ -1170,4 +1172,11 @@ uint8 cc2420_rssi( TCc2420 * cc )
 {
 	return cc->rssi;
 }
+
+#ifdef CONFIG_DEBUG
+void cc2420_dump( TCc2420 * cc )
+{
+	cc = cc;
+}
+#endif
 

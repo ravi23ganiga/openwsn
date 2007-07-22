@@ -62,17 +62,27 @@
  * @attention: there're only one above macro allowed in the system!
  * currently, openwsn only support OPENNODE_10, 20, 30
  */
+#define CONFIG_TARGET_OPENNODE_10
 #undef  CONFIG_TARGET_OPENNODE_10
+
+#define CONFIG_TARGET_OPENNODE_20
 #undef  CONFIG_TARGET_OPENNODE_20
-//#define  CONFIG_TARGET_OPENNODE_20
+
 #define CONFIG_TARGET_OPENNODE_30
+//#undef  CONFIG_TARGET_OPENNODE_30
+
+#define CONFIG_TARGET_WLSMODEM_11
 #undef  CONFIG_TARGET_WLSMODEM_11
+
+#define CONFIG_TARGET_GAINS
 #undef  CONFIG_TARGET_GAINS
-//#define CONFIG_TARGET_OPENNODE_30
 
 /* Compiler used to Compile the Source code
  */
 #define CONFIG_COMPILER_ADS
+//#undef  CONFIG_COMPILER_ADS
+
+#define CONFIG_COMPILER_GNU
 #undef  CONFIG_COMPILER_GNU
  
 /* FlashStore的开始地址和大小
