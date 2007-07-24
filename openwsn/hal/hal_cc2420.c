@@ -283,26 +283,33 @@ void _cc2420_init(TCc2420 * cc)
 
 	uart_write( g_uart, "_cc2420_init 1\n", 15, 0x00 );
 
-    // Make sure that the voltage regulator is on, and that the reset pin is inactive
+    // Make sure that the voltage regulator is on, and reset the transceiver.
+	// finally it will set the reset pin to inactive
+	//
     SET_VREG_ACTIVE();
-    hal_delay(500); //at least delay_us(600);
-
-
+    hal_delay(1000); 	//at least delay_us(600);
     SET_RESET_ACTIVE();
-    hal_delay(10); // at least delay_us(1). low voltage is effective
+    hal_delay(10); 		// at least delay_us(1). low voltage is effective
     SET_RESET_INACTIVE();
-	uart_write( g_uart, "_cc2420_init 2\n", 15, 0 ); // debug
-    hal_delay(500); // at least dela_us(1) 
-    status = FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
+    hal_delay(50); 		// at least dela_us(1) 
+
+	// assert: FIFOP interrupt pin is selected and enabled
+
+    // Turn off all interrupts while we're accessing the CC2420 registers
+	hal_disable_interrupts();
+	
+	uart_write( g_uart, "_cc2420_init 2\n", 15, 0 ); 
+    status = cc2420_spi_strobe( cc->spi, CC2420_SXOSCON );
 	while (!(status & 0x40)) 
 	{
-		uart_putchar( g_uart, status ); // debug
-		status = FAST2420_STROBE(cc->spi,CC2420_SXOSCON);
+		uart_putchar( g_uart, status ); 
+		hal_delay( 100 );
+		status = cc2420_spi_strobe( cc->spi,CC2420_SXOSCON );
 	}
 	uart_write( g_uart, "_cc2420_init 3\n", 15, 0 ); // debug
     hal_delay(1000);
 	 
-    //FASTSPI_SETREG(CC2420_TXCTRL, 0xA0E3); // To control the output power, added by huanghuan
+    //FAST2420_SETREG(CC2420_TXCTRL, 0xA0E3); // To control the output power, added by huanghuan
     FAST2420_SETREG(cc->spi,CC2420_MDMCTRL0, 0x0AF2); // Turn on automatic packet acknowledgment 
     FAST2420_SETREG(cc->spi,CC2420_MDMCTRL1, 0x0500); // Set the correlation threshold = 20
     FAST2420_SETREG(cc->spi,CC2420_IOCFG0, 0x007F);   // Set the FIFOP threshold to maximum
@@ -310,7 +317,7 @@ void _cc2420_init(TCc2420 * cc)
     
     // Set the RF channel
     cc2420_setchannel(cc, cc->channel);
-
+	
 	#ifdef GDEBUG
     //led_twinkle(LED_RED,1);
 	#endif
@@ -341,16 +348,93 @@ void _cc2420_init(TCc2420 * cc)
     //FAST2420_UPD_STATUS(cc->spi, (uint8*)(&rereg) );
     //uart_putchar(g_uart,(char)rereg);
 	// Wait for the crystal oscillator to become stable
-    _cc2420_waitfor_crystal_oscillator(cc->spi);
+	hal_disable_interrupts();
+	_cc2420_waitfor_crystal_oscillator( cc->spi );
+
 	// Write the short address and the PAN ID to the CC2420 RAM (requires that the XOSC is on and stable)
-  
+	hal_enable_interrupts();
     FAST2420_WRITE_RAM_LE(cc->spi,&(cc->address), CC2420RAM_SHORTADDR, 2);
     FAST2420_WRITE_RAM_LE(cc->spi,&(cc->panid), CC2420RAM_PANID, 2);
-    
     //FAST2420_READ_RAM_LE(cc,reram,CC2420RAM_SHORTADDR,2);
     //reram[0]++;
-    //reram[1]++; 
+    //reram[1]++;
+	hal_enable_interrupts();
 }
+
+
+/*
+//-------------------------------------------------------------------------------------------------------
+//  void basicRfInit(BASIC_RF_RX_INFO *pRRI, UINT8 channel, WORD panId, WORD myAddr)
+//
+//  DESCRIPTION:
+//      Initializes CC2420 for radio communication via the basic RF library functions. Turns on the
+//		voltage regulator, resets the CC2420, turns on the crystal oscillator, writes all necessary
+//		registers and protocol addresses (for automatic address recognition). Note that the crystal
+//		oscillator will remain on (forever).
+//
+//  ARGUMENTS:
+//      BASIC_RF_RX_INFO *pRRI
+//          A pointer the BASIC_RF_RX_INFO data structure to be used during the first packet reception.
+//			The structure can be switched upon packet reception.
+//      UINT8 channel
+//          The RF channel to be used (11 = 2405 MHz to 26 = 2480 MHz)
+//      WORD panId
+//          The personal area network identification number
+//      WORD myAddr
+//          The 16-bit short address which is used by this node. Must together with the PAN ID form a
+//			unique 32-bit identifier to avoid addressing conflicts. Normally, in a 802.15.4 network, the
+//			short address will be given to associated nodes by the PAN coordinator.
+//-------------------------------------------------------------------------------------------------------
+void basicRfInit(BASIC_RF_RX_INFO *pRRI, UINT8 channel, WORD panId, WORD myAddr) {
+    UINT8 n;
+
+    // Make sure that the voltage regulator is on, and that the reset pin is inactive
+    SET_VREG_ACTIVE();
+    halWait(1000);
+    SET_RESET_ACTIVE();
+    halWait(1);
+    SET_RESET_INACTIVE();
+    halWait(5);
+
+    // Initialize the FIFOP external interrupt
+    FIFOP_INT_INIT();
+    ENABLE_FIFOP_INT();
+
+    // Turn off all interrupts while we're accessing the CC2420 registers
+	DISABLE_GLOBAL_INT();
+
+
+    // Register modifications
+    FASTSPI_STROBE(CC2420_SXOSCON);
+    FASTSPI_SETREG(CC2420_MDMCTRL0, 0x0AF2); // Turn on automatic packet acknowledgment
+    FASTSPI_SETREG(CC2420_MDMCTRL1, 0x0500); // Set the correlation threshold = 20
+    FASTSPI_SETREG(CC2420_IOCFG0, 0x007F);   // Set the FIFOP threshold to maximum
+    FASTSPI_SETREG(CC2420_SECCTRL0, 0x01C4); // Turn off "Security enable"
+
+    // Set the RF channel
+    halRfSetChannel(channel);
+
+    // Turn interrupts back on
+	ENABLE_GLOBAL_INT();
+
+	// Set the protocol configuration
+	rfSettings.pRxInfo = pRRI;
+	rfSettings.panId = panId;
+	rfSettings.myAddr = myAddr;
+	rfSettings.txSeqNumber = 0;
+    rfSettings.receiveOn = FALSE;
+
+	// Wait for the crystal oscillator to become stable
+    halRfWaitForCrystalOscillator();
+
+	// Write the short address and the PAN ID to the CC2420 RAM (requires that the XOSC is on and stable)
+   	DISABLE_GLOBAL_INT();
+    FASTSPI_WRITE_RAM_LE(&myAddr, CC2420RAM_SHORTADDR, 2, n);
+    FASTSPI_WRITE_RAM_LE(&panId, CC2420RAM_PANID, 2, n);
+  	ENABLE_GLOBAL_INT();
+
+} // basicRfInit
+*/
 
 /******************************************************************************
  * open the driver for read and write
@@ -360,7 +444,9 @@ void _cc2420_init(TCc2420 * cc)
 void cc2420_open( TCc2420 * cc )
 {
     cc2420_receive_on(g_cc2420);  
-    IRQEnable(); 
+
+	// @TODO: interrupts
+    hal_enable_interrupts();
 }
 
 /******************************************************************************
@@ -608,6 +694,9 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
  *	=0   	no byte sent
  *	-1		failed sending. for example, not got ACK when ACK required.
  *			generally speaking, this function rarely return -1.
+ * @attention
+ * 	this function will affect the interrupt status. after execution, the global
+ * interrupt control bit will be enabled.
  */
 bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackrequest ) 
 {
@@ -620,7 +709,8 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
 	
 	// @modified by zhangwei on 20070628
 	// what's its functionality?
-	cc2420_receive_off( cc );
+	// seems you can comment the following. the most original version has not the following line
+	//cc2420_receive_off( cc );
 		
     // measure the timing using following source code.
     // for test only. recommend keeping in the source code.
@@ -631,6 +721,9 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     // wait until the transceiver is idle
     while (VALUE_OF_FIFOP() || VALUE_OF_SFD());
 
+    // turn off global interrupts to avoid interference from the SPI interface
+    hal_disable_interrupts();
+
     // flush the TX FIFO just in case...
     // @TODO: shall we send two SFFLUSHTX or just one here?
     FAST2420_STROBE( cc->spi, CC2420_SFLUSHTX );
@@ -638,7 +731,8 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     // turn on RX if necessary
     if (!cc->receiveOn) 
     {
-    	FAST2420_STROBE( cc->spi,CC2420_SRXON );
+    	//FAST2420_STROBE( cc->spi,CC2420_SRXON );
+    	cc2420_spi_strobe( cc->spi,CC2420_SRXON );
     }
     
     // @TODO: why shall we wait for the RSSI?
@@ -650,11 +744,11 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
 
     // @TODO: why comment the following? is hal_delay(1) enough?
     // TX begins after the CCA check has passed
-    // do{
-	//	FASTSPI_STROBE( CC2420_STXONCCA );
-	//	FASTSPI_UPD_STATUS( spiStatusByte );
-	//	hal_delay(1);
-    // }while (!(spiStatusByte & BM(CC2420_TX_ACTIVE)));
+    do{
+		cc2420_spi_strobe( cc->spi, CC2420_STXONCCA );
+		FAST2420_UPD_STATUS( cc->spi, &spiStatusByte );
+		hal_delay(10);
+    }while (!(spiStatusByte & BM(CC2420_TX_ACTIVE)));
 
     // write the packet to the TX FIFO (the FCS is appended automatically 
     // when AUTOCRC is enabled)
@@ -714,13 +808,18 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
    	// FASTSPI_UPD_STATUS(&spiStatusByte); //²âÊÔÊÇ·ñÒç³ö
      
     // start sending by sending a STXON command
+	// @TODO: this line doesn't in the most original version
 	FAST2420_STROBE(cc->spi,CC2420_STXON);
         
+	// wait for the transmission to begin before exiting (makes sure that this 
+	// function cannot be called a second time, and thereby cancelling the first 
+	// transmission (observe the FIFOP + SFD test above).
 	while (!VALUE_OF_SFD()) 
 		NULL;
 	
 	// wait for acknowledgement(ACK) if necessary
 	// @TODO: you'd better judge this by checking control byte in the frame
+	hal_enable_interrupts();
     if (ackrequest) 
     {
     	// wait for ACK frame. the interrupt will update the value of "cc->ack_response".
@@ -765,10 +864,110 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
 
 	// @modified by zhangwei on 20070628
 	// what's its functionality?
+	// @TODO: the following line is reduant
 	cc2420_receive_on( cc );
 
     return success;
 }
+
+
+
+
+//-------------------------------------------------------------------------------------------------------
+//  BYTE basicRfSendPacket(BASIC_RF_TX_INFO *pRTI)
+//
+//  DESCRIPTION:
+//		Transmits a packet using the IEEE 802.15.4 MAC data packet format with short addresses. CCA is
+//		measured only once before backet transmission (not compliant with 802.15.4 CSMA-CA).
+//		The function returns:
+//			- When pRTI->ackRequest is FALSE: After the transmission has begun (SFD gone high)
+//			- When pRTI->ackRequest is TRUE: After the acknowledgment has been received/declared missing.
+//		The acknowledgment is received through the FIFOP interrupt.
+//
+//  ARGUMENTS:
+//      BASIC_RF_TX_INFO *pRTI
+//          The transmission structure, which contains all relevant info about the packet.
+//
+//  RETURN VALUE:
+//		BOOL
+//			Successful transmission (acknowledgment received)
+//-------------------------------------------------------------------------------------------------------
+/*
+BOOL basicRfSendPacket(BASIC_RF_TX_INFO *pRTI) {
+	WORD frameControlField;
+    UINT8 packetLength;
+    BOOL success;
+    BYTE spiStatusByte;
+
+    // Wait until the transceiver is idle
+    while (FIFOP_IS_1 || SFD_IS_1);
+
+    // Turn off global interrupts to avoid interference on the SPI interface
+    DISABLE_GLOBAL_INT();
+
+	// Flush the TX FIFO just in case...
+	FASTSPI_STROBE(CC2420_SFLUSHTX);
+
+    // Turn on RX if necessary
+    if (!rfSettings.receiveOn) FASTSPI_STROBE(CC2420_SRXON);
+
+    // Wait for the RSSI value to become valid
+    do {
+        FASTSPI_UPD_STATUS(spiStatusByte);
+    } while (!(spiStatusByte & BM(CC2420_RSSI_VALID)));
+
+	// TX begins after the CCA check has passed
+    do {
+		FASTSPI_STROBE(CC2420_STXONCCA);
+		FASTSPI_UPD_STATUS(spiStatusByte);
+		halWait(100);
+    } while (!(spiStatusByte & BM(CC2420_TX_ACTIVE)));
+
+    // Write the packet to the TX FIFO (the FCS is appended automatically when AUTOCRC is enabled)
+    packetLength = pRTI->length + BASIC_RF_PACKET_OVERHEAD_SIZE;
+    FASTSPI_WRITE_FIFO((BYTE*)&packetLength, 1);               // Packet length
+    frameControlField = pRTI->ackRequest ? BASIC_RF_FCF_ACK : BASIC_RF_FCF_NOACK;
+    FASTSPI_WRITE_FIFO((BYTE*) &frameControlField, 2);         // Frame control field
+    FASTSPI_WRITE_FIFO((BYTE*) &rfSettings.txSeqNumber, 1);    // Sequence number
+    FASTSPI_WRITE_FIFO((BYTE*) &rfSettings.panId, 2);          // Dest. PAN ID
+    FASTSPI_WRITE_FIFO((BYTE*) &pRTI->destAddr, 2);            // Dest. address
+    FASTSPI_WRITE_FIFO((BYTE*) &rfSettings.myAddr, 2);         // Source address
+	FASTSPI_WRITE_FIFO((BYTE*) pRTI->pPayload, pRTI->length);  // Payload
+
+	// Wait for the transmission to begin before exiting (makes sure that this function cannot be called
+	// a second time, and thereby cancelling the first transmission (observe the FIFOP + SFD test above).
+	while (!SFD_IS_1);
+	success = TRUE;
+
+	// Turn interrupts back on
+	ENABLE_GLOBAL_INT();
+
+    // Wait for the acknowledge to be received, if any
+    if (pRTI->ackRequest) {
+		rfSettings.ackReceived = FALSE;
+
+		// Wait for the SFD to go low again
+		while (SFD_IS_1);
+
+        // We'll enter RX automatically, so just wait until we can be sure that the ack reception should have finished
+        // The timeout consists of a 12-symbol turnaround time, the ack packet duration, and a small margin
+        halWait((12 * BASIC_RF_SYMBOL_DURATION) + (BASIC_RF_ACK_DURATION) + (2 * BASIC_RF_SYMBOL_DURATION) + 100);
+
+		// If an acknowledgment has been received (by the FIFOP interrupt), the ackReceived flag should be set
+		success = rfSettings.ackReceived;
+    }
+
+	// Turn off the receiver if it should not continue to be enabled
+    DISABLE_GLOBAL_INT();
+	if (!rfSettings.receiveOn) FASTSPI_STROBE(CC2420_SRFOFF);
+    ENABLE_GLOBAL_INT();
+
+    // Increment the sequence number, and return the result
+    rfSettings.txSeqNumber++;
+    return success;
+
+} // halRfSendPacket
+*/
 
 /* try to recv a frame from cc2420 driver
  * @return 
@@ -863,6 +1062,42 @@ int8 cc2420_evolve( TCc2420 * cc )
 	
 	return 0;
 }
+
+/*******************************************************************************************************
+ * The Chipcon Hardware Abstraction Library is a collection of functions, macros and constants, which  *
+ * can be used to ease access to the hardware on the CC2420 and the target microcontroller.            *
+ *                                                                                                     *
+ * This file contains a function that allows you to switch radio channels on the CC2420.               *
+ *                                                                                                     *
+ * EXAMPLE OF USAGE:                                                                                   *
+ *     // Turn off RX...                                                                               *
+ *     DISABLE_GLOBAL_INT();                                                                           *
+ *     FASTSPI_STROBE(CC2420_SRFOFF);                                                                  *
+ *     ENABLE_GLOBAL_INT();                                                                            *
+ *                                                                                                     *
+ *     // ... switch to the next channel in the loop ...                                               *
+ *     halRfSetChannel(channel++);                                                                     *
+ *     if (channel == 27) channel = 11;                                                                *
+ *                                                                                                     *
+ *     // ... and go back into RX                                                                      *
+ *     DISABLE_GLOBAL_INT();                                                                           *
+ *     FASTSPI_STROBE(CC2420_SRXON);                                                                   *
+ *     ENABLE_GLOBAL_INT();                                                                            *
+ *******************************************************************************************************
+ * Compiler: AVR-GCC                                                                                   *
+ * Target platform: CC2420DB, CC2420 + any MCU with very few modifications required                    *
+ *******************************************************************************************************/ 
+//-------------------------------------------------------------------------------------------------------
+//	void halRfSetChannel(UINT8 Channel)
+//
+//	DESCRIPTION:
+//		Programs CC2420 for a given IEEE 802.15.4 channel. 
+//		Note that SRXON, STXON or STXONCCA must be run for the new channel selection to take full effect.
+//
+//	PARAMETERS:
+//		UINT8 channel
+//			The channel number (11-26)
+//-------------------------------------------------------------------------------------------------------
  
 /* @attention: 
  * the valid channel value varies from 11 to 26.
@@ -880,7 +1115,10 @@ void cc2420_setchannel( TCc2420 * cc, uint8 channel )
 	f = f + (f << 2);    		 // multiply with 5, which is the channel spacing
 	f = f + 357 + 0x4000;		 // 357 is 2405-2048, 0x4000 is LOCK_THR = 1
 	
+	// write it to cc2420 
+	hal_disable_interrupts();
 	FAST2420_SETREG(cc->spi,CC2420_FSCTRL, f);
+	hal_enable_interrupts();
 }
 
 void cc2420_interrupt_init()
@@ -1113,6 +1351,14 @@ void cc2420_interrupt_handler( TCc2420 * cc )
     }
 }
 
+/*****************************************************************************
+ * enables the cc2420 receiver and the FIFOP interrupt. when a frame arrived, 
+ * the arrival event will trigger a FIFOP interrrupt. and the interrupt will 
+ * captured by MCU to invoke interrupt service routine automatically. 
+ * 
+ * you must implement an FIFOP interrupt service routine is you want to receive
+ * frames 
+ ****************************************************************************/
 void cc2420_receive_on(TCc2420 * cc) 
 {
 	cc->receiveOn = TRUE;
@@ -1125,23 +1371,47 @@ void cc2420_receive_on(TCc2420 * cc)
 	// i don't know why the old source code is just one line.
 	//
 	FAST2420_STROBE(cc->spi,CC2420_SFLUSHRX);
+	
+	// @TODO
+    //ENABLE_FIFOP_INT();
 } 
 
+/*****************************************************************************
+ * disables the cc2420 receiver and the FIFOP interrupt.
+ * this is useful when sending frames. or else the transceiver may encounter
+ * state conflication. (i'm not sure about this, maybe the transceiver cc2420
+ * can deal with this.)
+ ****************************************************************************/
 void cc2420_receive_off(TCc2420 * cc) 
 {
 	cc->receiveOn = FALSE;
 	FAST2420_STROBE(cc->spi,CC2420_SRFOFF);
+    //DISABLE_FIFOP_INT();
 } 
 
 /* this function will Poll the SPI status byte until the crystal oscillator is stable    
  * your must wait until it is stable before doing further read() or write() 
+ * 
  */
+//-------------------------------------------------------------------------------------------------------
+//  void rfWaitForCrystalOscillator(void)
+//
+//  DESCRIPTION:
+//      Waits for the crystal oscillator to become stable. The flag is polled via the SPI status byte.
+//      
+//      Note that this function will lock up if the SXOSCON command strobe has not been given before the
+//      function call. Also note that global interrupts will always be enabled when this function 
+//      returns.
+//-------------------------------------------------------------------------------------------------------
 void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi) 
 {
-	static BYTE status;
+	static uint8 status;
 
 	do{	   
+		// @TODO: interrupt
+		hal_disable_interrupts();
 		FAST2420_UPD_STATUS(spi, (uint8*)(&status) );
+		hal_enable_interrupts();
 	}while (!(status & BM(CC2420_XOSC16M_STABLE)));
 }
 
@@ -1173,10 +1443,85 @@ uint8 cc2420_rssi( TCc2420 * cc )
 	return cc->rssi;
 }
 
-#ifdef CONFIG_DEBUG
-void cc2420_dump( TCc2420 * cc )
-{
-	cc = cc;
-}
-#endif
+/*
+//-------------------------------------------------------------------------------------------------------
+//  SIGNAL(SIG_INTERRUPT0) - CC2420 FIFOP interrupt service routine
+//
+//  DESCRIPTION:
+//		When a packet has been completely received, this ISR will extract the data from the RX FIFO, put
+//		it into the active BASIC_RF_RX_INFO structure, and call basicRfReceivePacket() (defined by the
+//		application). FIFO overflow and illegally formatted packets is handled by this routine.
+//
+//      Note: Packets are acknowledged automatically by CC2420 through the auto-acknowledgment feature.
+//-------------------------------------------------------------------------------------------------------
+SIGNAL(SIG_INTERRUPT0) {
+	WORD frameControlField;
+	INT8 length;
+	BYTE pFooter[2];
 
+    // Clean up and exit in case of FIFO overflow, which is indicated by FIFOP = 1 and FIFO = 0
+	if((FIFOP_IS_1) && (!(FIFO_IS_1))) {	   
+	    FASTSPI_STROBE(CC2420_SFLUSHRX);
+	    FASTSPI_STROBE(CC2420_SFLUSHRX);
+	    return;
+	}
+
+	// Payload length
+	FASTSPI_READ_FIFO_BYTE(length);
+	length &= BASIC_RF_LENGTH_MASK; // Ignore MSB
+
+    // Ignore the packet if the length is too short
+    if (length < BASIC_RF_ACK_PACKET_SIZE) {
+    	FASTSPI_READ_FIFO_GARBAGE(length);
+
+    // Otherwise, if the length is valid, then proceed with the rest of the packet
+    } else {
+
+        // Register the payload length
+        rfSettings.pRxInfo->length = length - BASIC_RF_PACKET_OVERHEAD_SIZE;
+
+        // Read the frame control field and the data sequence number
+        FASTSPI_READ_FIFO_NO_WAIT((BYTE*) &frameControlField, 2);
+        rfSettings.pRxInfo->ackRequest = !!(frameControlField & BASIC_RF_FCF_ACK_BM);
+    	FASTSPI_READ_FIFO_BYTE(rfSettings.pRxInfo->seqNumber);
+
+		// Is this an acknowledgment packet?
+    	if ((length == BASIC_RF_ACK_PACKET_SIZE) && (frameControlField == BASIC_RF_ACK_FCF) && (rfSettings.pRxInfo->seqNumber == rfSettings.txSeqNumber)) {
+
+ 	       	// Read the footer and check for CRC OK
+			FASTSPI_READ_FIFO_NO_WAIT((BYTE*) pFooter, 2);
+
+			// Indicate the successful ack reception (this flag is polled by the transmission routine)
+			if (pFooter[1] & BASIC_RF_CRC_OK_BM) rfSettings.ackReceived = TRUE;
+ 
+		// Too small to be a valid packet?
+		} else if (length < BASIC_RF_PACKET_OVERHEAD_SIZE) {
+			FASTSPI_READ_FIFO_GARBAGE(length - 3);
+			return;
+
+		// Receive the rest of the packet
+		} else {
+
+			// Skip the destination PAN and address (that's taken care of by harware address recognition!)
+			FASTSPI_READ_FIFO_GARBAGE(4);
+
+			// Read the source address
+			FASTSPI_READ_FIFO_NO_WAIT((BYTE*) &rfSettings.pRxInfo->srcAddr, 2);
+
+			// Read the packet payload
+			FASTSPI_READ_FIFO_NO_WAIT(rfSettings.pRxInfo->pPayload, rfSettings.pRxInfo->length);
+
+			// Read the footer to get the RSSI value
+			FASTSPI_READ_FIFO_NO_WAIT((BYTE*) pFooter, 2);
+			rfSettings.pRxInfo->rssi = pFooter[0];
+
+			// Notify the application about the received _data_ packet if the CRC is OK
+			if (((frameControlField & (BASIC_RF_FCF_BM)) == BASIC_RF_FCF_NOACK) && (pFooter[1] & BASIC_RF_CRC_OK_BM)) {
+				rfSettings.pRxInfo = basicRfReceivePacket(rfSettings.pRxInfo);
+			}
+		}
+    }
+
+} // SIGNAL(SIG_INTERRUPT0)
+
+*/

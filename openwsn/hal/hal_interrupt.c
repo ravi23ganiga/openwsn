@@ -62,7 +62,7 @@ void hal_disable_interrupts()
 #endif
 }
 
-   /* @modified by zhangwei on 20070425
+/* @modified by zhangwei on 20070425
  * enble irq and fiq of arm
  * 		MRS	r1, cpsr		
  * 		BIC r1, r1, #0xC0
