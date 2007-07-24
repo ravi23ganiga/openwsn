@@ -1,6 +1,3 @@
-#ifndef _CONFIGALL_H_4237_
-#define _CONFIGALL_H_4237_
-
 /******************************************************************************
  * @author zhangwei on 2006-07-20
  * this is the configure file of the whole project
@@ -22,6 +19,9 @@
  * replace TARGET_XXX with CONFIG_TARGET_XXX
  * 
  *****************************************************************************/
+
+#ifndef _CONFIGALL_H_4237_
+#define _CONFIGALL_H_4237_
 
 /******************************************************************************
  * @attention

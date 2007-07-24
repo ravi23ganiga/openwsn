@@ -89,6 +89,9 @@
  * only some of them are hardware related.
  *****************************************************************************/
  
+#define cc2420_spi_strobe(spi,cmd) FAST2420_STROBE(spi,cmd)
+
+ 
 void FAST2420_RX_GARBAGE(TSpiDriver * spi,char *pc)  ;
 void FAST2420_TX_ADDR(TSpiDriver * spi,uint8 a); 
 void FAST2420_RX_ADDR(TSpiDriver * spi,uint8 a); 

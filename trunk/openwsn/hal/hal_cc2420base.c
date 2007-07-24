@@ -68,6 +68,9 @@
 #define FAST2420_TX_ADDR(spi,a) spi_put((spi),(a)) 
 #define FAST2420_RX_ADDR(spi,a) spi_put((spi),(a)|0x40) 
  
+//#define cc2420_spi_enable(spi) spi_open(spi)
+//#define cc2420_spi_disable(spi) spi_close(spi)
+ 
 /******************************************************************************
  * FAST SPI: Register access
  * 		s = command strobe
