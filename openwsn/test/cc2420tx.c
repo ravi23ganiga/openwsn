@@ -53,9 +53,12 @@
 #endif
  
 #define CONFIG_GENERAL_RW
-//#define  CONFIG_RAW_RW
+//#undef CONFIG_GENERAL_RW
 
-#define PAN 0x2420
+#define CONFIG_RAWFRAME_RW
+#undef CONFIG_RAWFRAME_RW
+
+#define PANID 0x2420
 #define LOCAL_ADDRESS 0x1234
 #define REMOTE_ADDRESS 0x5678
 
@@ -64,13 +67,12 @@ int cc2420tx_test(void)
     uint8 n;
     int8 length;
     char * welcome = "cc2420tx started...\r\n";
-    TOpenFrame txframe;			//used when CONFIG_GENERAL_RW
-    uint8 txbuf[128];			//used when CONFIG_RAW_RW
+    TOpenFrame txframe;		//used when CONFIG_GENERAL_RW
+    uint8 txbuf[0xFF];			//used when CONFIG_RAWFRAME_RW
 
     target_init();
     global_construct();
 
-    led_init();
     led_off( LED_ALL );
     led_on( LED_ALL );
     hal_delay(500);
@@ -78,24 +80,26 @@ int cc2420tx_test(void)
 
     uart_configure( g_uart, 9600, 0, 0, 0, 0 );
     uart_write( g_uart, welcome, strlen(welcome), 0x00 );
-    uart_write( g_uart, "01", 2, 0x00 );
     
+    uart_write( g_uart, "01\r\n", 4, 0x00 );
     spi_configure( g_spi );
-    uart_write( g_uart, "02", 2, 0x00 );
+    
+    uart_write( g_uart, "02\r\n", 4, 0x00 );   
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
-    uart_write( g_uart, "03", 2, 0x00 );
-    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PAN, 0);
-    uart_write( g_uart, "04", 2, 0x00 );
+    
+    uart_write( g_uart, "03\r\n", 4, 0x00 );
+    cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PANID, 0);
+    
+    uart_write( g_uart, "04\r\n", 4, 0x00 );
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, LOCAL_ADDRESS, 0);
     uart_write( g_uart, "cc2420 configure ok\r\n", 21, 0x00 );
 
     memset( (char*)(&txframe), 0x00, sizeof(txframe) );
     txframe.length = 50; // between 1 and 0x127
-    txframe.panid = PAN;
+    txframe.panid = PANID;
+    //txframe.nodeto = 0x3456; //arbitray address for testing the sniffer
     txframe.nodeto = REMOTE_ADDRESS;
     txframe.nodefrom = LOCAL_ADDRESS;
-    //txframe.nodeto = 0x3456;//for test the sniffer
-    
     for (n = 0; n < 10; n++) 
     {
         txframe.payload[n] = 2;
@@ -112,12 +116,12 @@ int cc2420tx_test(void)
 
     while (TRUE) 
     {    
-		led_off( LED_RED );
+        led_off( LED_RED );
 		
         // test section one: 
-        // transmit using TOpenFrame based interface: cc_write
-		//
-		#ifdef CONFIG_GENERAL_RW
+        // transmit using TOpenFrame based interface: cc2420_write
+        //
+        #ifdef CONFIG_GENERAL_RW
         uart_write( g_uart, "sending...\r\n", 12, 0x00 );
         txframe.payload[0]++;
         if (txframe.payload[0] == 5)
@@ -126,17 +130,17 @@ int cc2420tx_test(void)
         } 
         
         //txframe.length = 10 + 11;
-        txframe.length = 10 + 11;
+        txframe.length = 25;
         length = cc2420_write( g_cc2420, &(txframe), 0 );
         if (length > 0)
         {
             uart_write( g_uart, "sent\r\n", 6, 0x00 );
-			#ifdef GDEBUG
+            #ifdef GDEBUG
             uart_write( g_uart, "****", 4, 0x00 );
-			uart_putchar( g_uart, length );
-			uart_putchar( g_uart, '\r' );
-			uart_putchar( g_uart, '\n' );
-			#endif
+            uart_putchar( g_uart, length );
+            uart_putchar( g_uart, '\r' );
+            uart_putchar( g_uart, '\n' );
+            #endif
             led_twinkle( LED_RED, 500 );
         }
         #endif
@@ -147,7 +151,7 @@ int cc2420tx_test(void)
         // huanghuan seems test the following section. i cannot guartantee whether 
         // the next char buffer based interface can work properly.
         //
-        #ifdef CONFIG_RAW_RW          
+        #ifdef CONFIG_RAWFRAME_RW          
         txbuf[10]++;
         if (txbuf[10] = 5) 
         {
@@ -156,6 +160,8 @@ int cc2420tx_test(void)
         led_twinkle(LED_RED, 500);
         cc2420_rawwrite( g_cc2420, (char *)txbuf, 10 + 11,0);
         #endif
+
+        hal_delay( 200 );
     }
 	
     global_destroy();

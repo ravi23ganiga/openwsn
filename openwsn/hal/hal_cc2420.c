@@ -28,6 +28,23 @@
  * 
  *****************************************************************************/ 
 
+#include "hal_configall.h"
+#include "hal_foundation.h"
+#include "hal_target.h"
+#include "hal_interrupt.h"
+#include "hal_cpu.h"
+#include "hal_led.h"
+#include "hal_assert.h"
+#include "hal_spi.h"
+#include "hal_cc2420def.h"
+#include "hal_cc2420base.h"
+#include "hal_cc2420.h"
+
+#ifdef CONFIG_DEBUG
+#include "hal_uart.h"
+#endif
+#include "hal_global.h"
+
 /******************************************************************************
  * @author zhangwei on 2006-07-20
  * TCc2420Driver
@@ -52,36 +69,17 @@
  *  
  *****************************************************************************/
 
+/* macro GDEBUG is used to replace CONFIG_DEBUG in the module to control debug behaviors */
 #ifdef CONFIG_DEBUG
 #define GDEBUG
 #endif
 
-#include "hal_configall.h"
-#include "hal_foundation.h"
-#include "hal_target.h"
-#include "hal_interrupt.h"
-#include "hal_cpu.h"
-#include "hal_led.h"
-#include "hal_assert.h"
-#include "hal_spi.h"
-#include "hal_cc2420def.h"
-#include "hal_cc2420base.h"
-#include "hal_cc2420.h"
-
+/* macro _gwrite() is used to output a C language string to UART. generally, it is used for debugging
+ * attention the input parameter "msg" must be a valid C language string terminated by '\0'.  */
+ 
 #ifdef GDEBUG
-#include "hal_uart.h"
-#endif
-#include "hal_global.h"
-
-/* macro GDEBUG is used to replace CONFIG_DEBUG in the module to control debug behaviors
- * macro _gwrite() is used to output a C language string to UART. generally, it is used for debugging
- * attention the input parameter "msg" must be a valid C language string terminated by '\0'.
- */
-#ifdef CONFIG_DEBUG
-#define GDEBUG
 #define _gwrite(msg) uart_write(g_uart,(msg),strlen(msg),0x00)
-#endif
-#ifndef CONFIG_DEBUG
+#else
 #define _gwrite(msg) NULL
 #endif
 
@@ -93,7 +91,7 @@
   	&& (!defined(CONFIG_TARGET_OPENNODE_30)) && (!defined(CONFIG_TARGET_WLSMODEM_11)))
 #define CONFIG_TARGET_DEFAULT
 #endif
-
+ 
 /* RSSI to Energy Detection conversion
  * RSSI_OFFSET defines the RSSI level where the PLME.ED generates a zero-value */
  
@@ -162,7 +160,7 @@ TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 		cc->rssi = 0;
 		cc->receiveOn = true;
 		
-		uart_write(g_uart, msg,28, 0);
+		_gwrite( msg );
 	}
         
 	return cc;
@@ -289,6 +287,8 @@ void _cc2420_init( TCc2420 * cc )
 {
     //uint16 rereg;
     uint8 status;
+
+    _gwrite( "cc2420_init...\r\n" );
 
 	    cc->state = CC_STATE_POWERDOWN;
 		cc->nextstate = CC_STATE_POWERDOWN;
@@ -686,13 +686,13 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 	
 	if (cc->rxlen > 0)
 	{
-		IRQDisable();
+		hal_disable_interrupts();
 		// increase count by 3 because the additional "length"(1B) and "footer"(2B)
 		// in the TCc2420Frame structure.
 	    count = cc->rxbuf.length + 3;
 	    memmove( (char*)frame, (char*)(&cc->rxbuf), count );
 		cc->rxlen = 0;
-		IRQEnable();	
+		hal_disable_interrupts();
 	}
 	else
 		count = 0;
@@ -730,8 +730,6 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     bool success;
     BYTE spiStatusByte;
 
-    uart_write( g_uart, "hardware_sendframe\r\n", 20, 0x00 );
-	
 	// @modified by zhangwei on 20070628
 	// what's its functionality?
 	// seems you can comment the following. the most original version has not the following line
@@ -745,7 +743,7 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
      
     // wait until the transceiver is idle
     while (VALUE_OF_FIFOP() || VALUE_OF_SFD());
-    uart_write( g_uart, "hardware_sendframe 01\r\n", 23, 0x00 );
+    _gwrite( "hardware_sendframe 01\r\n" );
 
     // turn off global interrupts to avoid interference from the SPI interface
     hal_disable_interrupts();
@@ -753,7 +751,7 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     // flush the TX FIFO just in case...
     // @TODO: shall we send two SFFLUSHTX or just one here?
     FAST2420_STROBE( cc->spi, CC2420_SFLUSHTX );
-    uart_write( g_uart, "hardware_sendframe 02\r\n", 23, 0x00 );
+    _gwrite( "hardware_sendframe 02\r\n" );
 
     // turn on RX if necessary
     if (!cc->receiveOn) 
@@ -768,7 +766,7 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
         FAST2420_UPD_STATUS( cc->spi,&spiStatusByte );
     }while (!(spiStatusByte & BM(CC2420_RSSI_VALID)));
     // @TODO: i think we should wait here for the 2420's SRXON OK
-    uart_write( g_uart, "hardware_sendframe 05\r\n", 23, 0x00 );
+    _gwrite( "hardware_sendframe 05\r\n" );
 
     // @TODO: why comment the following? is hal_delay(1) enough?
     // TX begins after the CCA check has passed
@@ -798,7 +796,7 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&framecontrol, 2);         // Frame control field
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->seqid, 1);    // Sequence number
     
-    uart_write( g_uart, "hardware_sendframe 06\r\n", 23, 0x00 );
+    _gwrite( "hardware_sendframe 06\r\n" );
 
 	cc->txbuf.panid = cc->panid;
 	cc->txbuf.nodefrom = cc->address;
@@ -807,7 +805,7 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuf.panid, 2);
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuf.nodeto, 2);
     
-    uart_write( g_uart, "hardware_sendframe 07\r\n", 23, 0x00 );
+    _gwrite( "hardware_sendframe 07\r\n" );
 
     // @TODO: or use cc->nodefrom directly? i think this is better
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuf.nodefrom, 2);         // Source address
@@ -843,14 +841,14 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
 	// @TODO: this line doesn't in the most original version
 	FAST2420_STROBE(cc->spi,CC2420_STXON);
         
-    uart_write( g_uart, "hardware_sendframe 08\r\n", 23, 0x00 );
+    _gwrite( "hardware_sendframe 08\r\n" );
 
 	// wait for the transmission to begin before exiting (makes sure that this 
 	// function cannot be called a second time, and thereby cancelling the first 
 	// transmission (observe the FIFOP + SFD test above).
 	//while (!VALUE_OF_SFD()) 
 	//	NULL;
-    //uart_write( g_uart, "hardware_sendframe 09\r\n", 23, 0x00 );
+    //_gwrite( g_uart, "hardware_sendframe 09\r\n", 23, 0x00 );
 	
 	// wait for acknowledgement(ACK) if necessary
 	// @TODO: you'd better judge this by checking control byte in the frame
@@ -879,14 +877,14 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     else{
         success = TRUE;
     }
-    uart_write( g_uart, "hardware_sendframe 10\r\n", 23, 0x00 );
+    _gwrite( "hardware_sendframe 10\r\n" );
 
 	// turn off the receiver if it should not continue to be enabled
 	if (!cc->receiveOn)
 	{ 
 		FAST2420_STROBE(cc->spi, CC2420_SRFOFF);
 	}
-    uart_write( g_uart, "hardware_sendframe 11\r\n", 23, 0x00 );
+    _gwrite( "hardware_sendframe 11\r\n" );
 	
 
 	// @attention
@@ -1273,8 +1271,10 @@ void _hardware_recvframe( TCc2420 * cc )
 	uint8 ack;
 	static rx_seqid = 0;
 
-	#ifdef GDEBUG
-	//led_toggle(LED_RED);
+    /* LED_RED is used for debugging only.
+     * the state of it will be switched if a new frame arrived. */
+     	#ifdef GDEBUG
+	led_toggle(LED_RED);
 	#endif
       
     // @modified by zhangwei on 20070601  
