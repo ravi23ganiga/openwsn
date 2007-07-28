@@ -55,6 +55,9 @@
 #include "hal_sensor_vibration.h"
 
 /* these 4 definitions should be moved from HAL to service or application layer 
+ * @attention
+ * you should guarantee you have already created these objects before you using them!
+ * such a error maybe: you try to output some information to "g_uart" before you initialize it.
  */
   
 #ifdef CONFIG_TARGET_OPENNODE_10  
@@ -73,8 +76,9 @@
 #define g_spi g_spi0
 #endif
 
-#define g_uart (g_uart0)
-#define g_debuguart (g_uart1)
+#define g_uart g_uart0
+//#define g_debuguart g_uart1
+#define g_debuguart g_uart0
 #define g_timer (g_timer1)
 
 extern TUartDriver *		g_uart0;

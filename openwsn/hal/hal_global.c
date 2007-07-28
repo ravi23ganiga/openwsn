@@ -55,7 +55,10 @@
   #define GDEBUG
 #endif
 
+#ifdef CONFIG_UART0_ENABLE 
 static TUartDriver 			m_uart0;
+#endif
+
 static TUartDriver 			m_uart1;
 static TSpiDriver 			m_spi0;
 static TSpiDriver 			m_spi1;
@@ -70,7 +73,10 @@ static TMcp6s26             m_mcp6s26;
 static TVibrationSensor     m_vibration;
 static TAdConversion        m_ad; 
 
-TUartDriver *				g_uart0 = NULL; 
+#ifdef CONFIG_UART0_ENABLE 
+TUartDriver *               g_uart0 = NULL; 
+#endif
+
 TUartDriver *				g_uart1 = NULL; 
 TSpiDriver *				g_spi0 = NULL;  
 TSpiDriver *				g_spi1 = NULL;
@@ -98,15 +104,24 @@ uint8 						g_hal_init = FALSE;
 int8 hal_global_construct( void )
 {
 	#ifdef GDEBUG
-	char * msg = "hal_global_construct() running...";
-	uart_write( g_uart, msg, strlen(msg), 0x00 );
+	char * msg = "hal_global_construct() running...\r\n";
 	#endif
 
 	g_hal_init = TRUE;
-	
+
+    #ifdef CONFIG_UART0_ENABLE 
 	g_uart0 	= uart_construct( 0, (char*)(&m_uart0), sizeof(TUartDriver) ); 
+    #endif
+
+    #ifdef CONFIG_UART1_ENABLE 
 	//g_uart1     = uart_construct( 1, (char*)(&m_uart1), sizeof(TUartDriver) ); 
-	g_spi0 		= spi_construct( 0, (char*)(&m_spi0), sizeof(TSpiDriver) );
+	#endif
+    
+    #ifdef GDEBUG
+    	uart_write( g_uart, msg, strlen(msg), 0x00 );
+    #endif
+
+        g_spi0 		= spi_construct( 0, (char*)(&m_spi0), sizeof(TSpiDriver) );
 	//g_spi1 		= spi_construct( 1, (char*)(&m_spi1), sizeof(TSpiDriver) );
 	
 	g_cc2420 	= cc2420_construct( (char*)(&m_cc2420), sizeof(TCc2420Driver), g_spi );
@@ -142,7 +157,7 @@ int8 hal_global_construct( void )
 		uart_configure( g_uart1, 9600, 8, 1, 0, 0x00 );
 	}
         */
-
+        
 	assert( g_hal_init );	
 	return (g_hal_init == TRUE) ? 0 : -1;
 }

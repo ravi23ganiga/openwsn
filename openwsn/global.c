@@ -54,9 +54,10 @@ static TSioComm 			m_sio;
 static TConsole 			m_console;
 //static TConfigure 		m_configure;
 //static TActionScheduler  	m_actsche;
-static TDebugIo 			m_debugio;
 
-
+#ifdef CONFIG_DEBUGIO_ENABLE
+static TDebugIo m_debugio;
+#endif
 
 TActionScheduler *			g_actsche = NULL;
 TSioComm *					g_sio = NULL;
@@ -152,16 +153,20 @@ int8 global_construct( void )
 
 int8 global_destroy( void )
 {
-	lcs_destroy( g_lcs );
+	//lcs_destroy( g_lcs );
 	sen_destroy( g_sensors );
-	net_destroy( g_net );
+	//net_destroy( g_net );
 	mac_destroy( g_mac );
+	
+	#ifdef CONFIG_DEBUGIO_ENABLE
 	debug_destroy( g_debugio );
-	config_destroy( g_config );
+	#endif
+	
+	//config_destroy( g_config );
 	console_destroy( g_console );
-	wls_destroy( g_wls );
+	//wls_destroy( g_wls );
 	sio_destroy( g_sio );
-	acts_destroy( g_actsche );
+	//acts_destroy( g_actsche );
 	hal_global_destroy();
 
 	return 0;

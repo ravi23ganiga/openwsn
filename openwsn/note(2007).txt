@@ -5,6 +5,10 @@ Flash object read and write (hal_flash)
 svc_configure:  channel and frequencey configure
 hal_cpu: hal_reboot, hal_interrupt, etc, improve hal_delay
 
+@modified by zhangwei on 20070728
+- add new version _hardware_recvframe. it's essentially the interrupt service routine triggered by external interrupt request. in this driver, it is triggered by "cc2420" transceiver.
+- correct the fault in "cc2420_interrupt_init()". in the past, the code will cause the system to be reboot again and correct in the second time. now corrected.
+
 
 20070718
 revision on note(2007).txt and release.txt
