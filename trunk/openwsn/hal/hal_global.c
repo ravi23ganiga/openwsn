@@ -109,6 +109,8 @@ int8 hal_global_construct( void )
 
 	g_hal_init = TRUE;
 
+    led_init();
+
     #ifdef CONFIG_UART0_ENABLE 
 	g_uart0 	= uart_construct( 0, (char*)(&m_uart0), sizeof(TUartDriver) ); 
     #endif

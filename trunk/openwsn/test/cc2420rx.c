@@ -49,7 +49,7 @@
 static TCc2420Frame g_frame;
 static uint8 g_buf[0xFF];
 
-int cc2420rx_test (void)
+int cc2420rx_test (void) 
 {
     int8 length, n;
     uint16 temp;
@@ -59,7 +59,8 @@ int cc2420rx_test (void)
     bool led_state = true;
   
     target_init();
-    led_twinkle( LED_RED, 1000 );
+    led_twinkle( LED_RED, 500 );
+    led_twinkle( LED_RED, 500 );
     
     global_construct();
     spi_configure( g_spi );
@@ -88,7 +89,7 @@ int cc2420rx_test (void)
     g_buf[8] = 0x34; g_buf[9] = 0x12; 
 
     cc2420_open( g_cc2420 );
-    uart_write( g_uart, "11\r\n", 4, 0x00 ); 
+    uart_write( g_uart, "waiting for frames...\r\n", 23, 0x00 ); 
     
     led_period = 1;
     while (TRUE) 
