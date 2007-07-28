@@ -25,7 +25,7 @@
 #ifndef __CONFIG_H 
 #define __CONFIG_H
 
-#include "../foundation.h"
+#include "../configall.h"
 
 #ifndef TRUE
 #define TRUE  1

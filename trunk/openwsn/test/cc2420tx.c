@@ -78,10 +78,14 @@ int cc2420tx_test(void)
 
     uart_configure( g_uart, 9600, 0, 0, 0, 0 );
     uart_write( g_uart, welcome, strlen(welcome), 0x00 );
+    uart_write( g_uart, "01", 2, 0x00 );
     
     spi_configure( g_spi );
+    uart_write( g_uart, "02", 2, 0x00 );
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
+    uart_write( g_uart, "03", 2, 0x00 );
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PAN, 0);
+    uart_write( g_uart, "04", 2, 0x00 );
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, LOCAL_ADDRESS, 0);
     uart_write( g_uart, "cc2420 configure ok\r\n", 21, 0x00 );
 
@@ -108,7 +112,7 @@ int cc2420tx_test(void)
 
     while (TRUE) 
     {    
-		led_off( LED_ALL );
+		led_off( LED_RED );
 		
         // test section one: 
         // transmit using TOpenFrame based interface: cc_write
@@ -133,7 +137,7 @@ int cc2420tx_test(void)
 			uart_putchar( g_uart, '\r' );
 			uart_putchar( g_uart, '\n' );
 			#endif
-            led_twinkle( LED_RED, 1000 );
+            led_twinkle( LED_RED, 500 );
         }
         #endif
 	  
@@ -149,7 +153,7 @@ int cc2420tx_test(void)
         {
             txbuf[10] = 1;
         }
-        led_twinkle(LED_RED, 1000);
+        led_twinkle(LED_RED, 500);
         cc2420_rawwrite( g_cc2420, (char *)txbuf, 10 + 11,0);
         #endif
     }

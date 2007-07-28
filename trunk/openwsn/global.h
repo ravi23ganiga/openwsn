@@ -46,6 +46,7 @@
 //  
 //----------------------------------------------------------------------------
 
+#include "configall.h"
 #include "foundation.h"
 #include ".\hal\hal.h"
 #include ".\service\svc_actsche.h"
@@ -59,12 +60,21 @@
 #include ".\service\svc_location.h"
 #include ".\service\svc_sensor.h"
 
+
+#define CONFIG_SIOCOMM_ENABLE
+#define CONFIG_CONSOLE_ENABLE
+#define CONFIG_DEBUGIO_ENABLE
+
 extern TActionScheduler * 	g_actsche;
 extern TSioComm *			g_sio;
 extern TWirelessComm *		g_wls;
 extern TConsole *			g_console;
 extern TConfigure *			g_config;
-extern TDebugIo * 			g_debugio;
+
+#ifdef CONFIG_DEBUGIO_ENABLE
+extern TDebugIo * g_debugio;
+#endif
+
 extern TOpenMAC * 			g_mac;
 extern TOpenNET *			g_net;
 extern TSensorService *		g_sensors;
