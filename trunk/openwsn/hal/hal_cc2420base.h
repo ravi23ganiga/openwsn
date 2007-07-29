@@ -108,7 +108,7 @@ void FAST2420_WRITE_RAM_LE(TSpiDriver * spi,uint16 *p,uint16 a,uint8 c);
 void FAST2420_READ_RAM_LE(TSpiDriver * spi,uint8 *p,uint16 a,uint8 c); 
 void FAST2420_WRITE_RAM(TSpiDriver * spi,uint16 *p,uint16 a,uint8 c); 
 void FAST2420_READ_RAM(TSpiDriver * spi,uint8 *p, uint16 a, uint8 c); 
-void FAST2420_RESET_CC2420( TSpiDriver * spi ); 
+void cc2420_reset( TSpiDriver * spi ); 
 
 // @TODO 200703 for huanghuan
 // 如何在两个SPI之间实现代码的Port，请在代码中给与说明

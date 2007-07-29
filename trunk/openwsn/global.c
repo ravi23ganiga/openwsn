@@ -168,6 +168,11 @@ int8 global_destroy( void )
 	sio_destroy( g_sio );
 	//acts_destroy( g_actsche );
 	hal_global_destroy();
+	
+	// to eliminate the ADS warning of unused m_debugio 
+	m_debugio = m_debugio;
+	m_console = m_console;
+	m_sio = m_sio;
 
 	return 0;
 }

@@ -81,25 +81,14 @@ int cc2420tx_test(void)
     uart_configure( g_uart, 9600, 0, 0, 0, 0 );
     uart_write( g_uart, welcome, strlen(welcome), 0x00 );
     
-    uart_write( g_uart, "01\r\n", 4, 0x00 );
     spi_configure( g_spi );
-    
-    uart_write( g_uart, "02\r\n", 4, 0x00 );   
     cc2420_configure( g_cc2420, CC2420_BASIC_INIT, 0, 0);
-    
-    uart_write( g_uart, "03\r\n", 4, 0x00 );
     cc2420_configure( g_cc2420, CC2420_CONFIG_PANID, PANID, 0);
-    
-    uart_write( g_uart, "04\r\n", 4, 0x00 );
     cc2420_configure( g_cc2420, CC2420_CONFIG_LOCALADDRESS, LOCAL_ADDRESS, 0);
-    uart_write( g_uart, "cc2420 configure ok\r\n", 21, 0x00 );
 
     memset( (char*)(&txframe), 0x00, sizeof(txframe) );
-    txframe.length = 50; // between 1 and 0x127
-    txframe.panid = PANID;
-    //txframe.nodeto = 0x3456; //arbitray address for testing the sniffer
-    txframe.nodeto = REMOTE_ADDRESS;
-    txframe.nodefrom = LOCAL_ADDRESS;
+    memset( (char*)(&txbuf), 0x00, sizeof(txbuf) );
+
     for (n = 0; n < 10; n++) 
     {
         txframe.payload[n] = 2;
@@ -107,11 +96,6 @@ int cc2420tx_test(void)
     }
     txframe.payload[2] = 1;  
 
-    txbuf[1] = txbuf[2] = txbuf[3] = 0;
-    txbuf[4] = 0x20; txbuf[5] = 0x24;
-    txbuf[6] = 0x78; txbuf[7] = 0x56;
-    txbuf[8] = 0x34; txbuf[9] = 0x12; 
-    
     cc2420_open( g_cc2420 );
 
     while (TRUE) 
@@ -120,17 +104,20 @@ int cc2420tx_test(void)
 		
         // test section one: 
         // transmit using TOpenFrame based interface: cc2420_write
+        // every time a frame sent, the program will dump a short message to UART for display 
+        // and twinkle the LED for 1 time.
         //
         #ifdef CONFIG_GENERAL_RW
         uart_write( g_uart, "sending...\r\n", 12, 0x00 );
-        txframe.payload[0]++;
-        if (txframe.payload[0] == 5)
-        { 
-            txframe.payload[0] = 1;
-        } 
-        
+		
         //txframe.length = 10 + 11;
-        txframe.length = 25;
+        txframe.length = 50; // between 1 and 0x127
+        txframe.panid = PANID;
+        txframe.nodeto = REMOTE_ADDRESS; //can be arbitray address for testing the sniffer
+        txframe.nodefrom = LOCAL_ADDRESS;
+        txframe.payload[0] %= 8;
+        txframe.payload[0]++;
+
         length = cc2420_write( g_cc2420, &(txframe), 0 );
         if (length > 0)
         {
@@ -152,8 +139,14 @@ int cc2420tx_test(void)
         // the next char buffer based interface can work properly.
         //
         #ifdef CONFIG_RAWFRAME_RW          
+		txbuf[1] = txbuf[2] = txbuf[3] = 0;
+		// set PANID, REMOTE_ADDRESS, LOCAL_ADDRESS. little endium
+		txbuf[4] = 0x20; txbuf[5] = 0x24; 
+		txbuf[6] = 0x78; txbuf[7] = 0x56;
+		txbuf[8] = 0x34; txbuf[9] = 0x12; 
+    
         txbuf[10]++;
-        if (txbuf[10] = 5) 
+        if (txbuf[10] >= 5) 
         {
             txbuf[10] = 1;
         }
@@ -161,7 +154,7 @@ int cc2420tx_test(void)
         cc2420_rawwrite( g_cc2420, (char *)txbuf, 10 + 11,0);
         #endif
 
-        hal_delay( 200 );
+        hal_delay( 400 );
     }
 	
     global_destroy();

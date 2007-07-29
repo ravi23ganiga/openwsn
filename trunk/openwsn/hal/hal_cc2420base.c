@@ -245,7 +245,7 @@ void FAST2420_READ_RAM(TSpiDriver * spi,uint8 *p,uint16 a,uint8 c)
 
 //-------------------------------------------------------------------------------------------------------
 // Other useful SPI macros
-void FAST2420_RESET_CC2420( TSpiDriver * spi )
+void cc2420_reset( TSpiDriver * spi )
     { 
         FAST2420_SETREG( spi, CC2420_MAIN, 0x0000); 
         FAST2420_SETREG( spi, CC2420_MAIN, 0xF800); 
