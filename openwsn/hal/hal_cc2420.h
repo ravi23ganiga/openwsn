@@ -159,7 +159,8 @@
 enum { CC_MODE_GENERAL=0x00, CC_MODE_SNIFFER=0x01 };
 
 /* cc2420 state constants */
-enum { CC_STATE_RECVING=0x00, CC_STATE_SENDING=0x01, CC_STATE_POWERDOWN=0x02 };
+enum { CC_STATE_IDLE=0x00, CC_STATE_RECVING, CC_STATE_SENDING, CC_STATE_SLEEP, 
+	CC_STATE_POWERDOWN };
     
 /* config control code */    
 #define CC2420_CONFIG_PANID 			0x01 
@@ -237,7 +238,7 @@ enum { CC_STATE_RECVING=0x00, CC_STATE_SENDING=0x01, CC_STATE_POWERDOWN=0x02 };
 typedef struct{
   uint8 mode;
   uint8 state;
-  uint8 nextstate;
+  volatile uint8 nextstate;
   TSpiDriver * spi; 
   uint16 panid;
   uint16 address;
@@ -405,6 +406,8 @@ uint8 cc2420_rssi( TCc2420 * cc );
 
 void cc2420_powerdown( TCc2420 * cc );
 void cc2420_activate( TCc2420 * cc );
+void cc2420_sleep( TCc2420 * cc );
+void cc2420_wakeup( TCc2420 * cc );
 
 void cc2420_disable_interrupt( TCc2420 * cc );
 void cc2420_enable_interrupt( TCc2420 * cc );

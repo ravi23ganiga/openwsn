@@ -33,7 +33,6 @@
 
 #include "hal_foundation.h"
 
-
 /* cpu sleep
  * the cpu will be wakeup by external hardware interrupts such as 
  * - UART interrupts

@@ -64,7 +64,7 @@
  * @modified by zhangwei on 20070728
  * - add new version _hardware_recvframe. it's essentially the interrupt service routine triggered
  * by external interrupt request. in this driver, it is triggered by "cc2420" transceiver.
- * - correct the fault in "cc2420_interrupt_init()". in the past, the code will cause the system
+ * - correct the fault in "_cc2420_interrupt_init()". in the past, the code will cause the system
  * to be reboot again and correct in the second time. now corrected.
  *  
  *****************************************************************************/
@@ -100,12 +100,10 @@
 #define ED_2_LQI(ed) (((ed) > 63 ? 255 : ((ed) << 2)))
 
 static void _cc2420_init(TCc2420 * cc);
-static void cc2420_interrupt_init( void );
+static void _cc2420_interrupt_init( void );
 static bool _hardware_sendframe(TCc2420 * cc, char * framex, uint8 len, bool ackrequest);
-//static TCc2420Frame * _hardware_recvframe( TCc2420 * cc,TCc2420Frame *pRRI);
+static void _hardware_recvframe( TCc2420 * cc, char * frame, uint8 capacity );
 static void __irq cc2420_interrupt_service( void );
-static void _hardware_recvframe( TCc2420 * cc );
-
 
 /******************************************************************************
  * construct a TCc2420 object
@@ -146,7 +144,7 @@ TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 		memset( (char*)cc, 0x00, sizeof(TCc2420) );
 		cc->mode = CC_MODE_GENERAL;
 		cc->state = CC_STATE_POWERDOWN;
-		cc->nextstate = CC_STATE_POWERDOWN;
+		cc->nextstate = CC_STATE_IDLE;
 		cc->spi = spi;
 		cc->panid = CC2420_DEFAULT_PANID;
 		cc->address = CC2420_DEFAULT_ADDRESS;
@@ -291,19 +289,19 @@ void _cc2420_init( TCc2420 * cc )
 
     _gwrite( "cc2420_init...\r\n" );
 
-	    cc->state = CC_STATE_POWERDOWN;
-		cc->nextstate = CC_STATE_POWERDOWN;
-		cc->panid = CC2420_DEFAULT_PANID; 
-		cc->address = CC2420_DEFAULT_ADDRESS; 
-		cc->channel = CC2420_DEFAULT_CHANNEL; 
-		cc->txlen = 0;
-		cc->rxlen = 0;
-		cc->power = 1;
-		cc->ackrequest = 0;
-		cc->sleeprequest = FALSE;
+	cc->state = CC_STATE_POWERDOWN;
+	cc->nextstate = CC_STATE_IDLE;
+	cc->panid = CC2420_DEFAULT_PANID; 
+	cc->address = CC2420_DEFAULT_ADDRESS; 
+	cc->channel = CC2420_DEFAULT_CHANNEL; 
+	cc->txlen = 0;
+	cc->rxlen = 0;
+	cc->power = 1;
+	cc->ackrequest = 0;
+	cc->sleeprequest = FALSE;
 
-	    spi_open( cc->spi, 0 );
-	    spi_configure( cc->spi );
+	spi_open( cc->spi, 0 );
+	spi_configure( cc->spi );
 
     // Make sure that the voltage regulator is on, and reset the transceiver.
 	// finally it will set the reset pin to inactive
@@ -383,7 +381,10 @@ void _cc2420_init( TCc2420 * cc )
     //reram[0]++;
     //reram[1]++;
 
-    cc2420_interrupt_init();
+    _cc2420_interrupt_init();
+	
+	cc->state = CC_STATE_IDLE;
+	cc->nextstate = CC_STATE_IDLE;
 }
 
 
@@ -509,6 +510,79 @@ uint8 cc2420_ioresult( TCc2420 * cc )
 	return ioresult;	
 }
 
+/*****************************************************************************
+ * @param
+ *   frame        point to an TCc2420Frame
+ *   opt          default to 0x00
+ * 
+ * @attention
+ * you must initialize the "frame" correctly before you can this function. 
+ * you must initialize the following:
+ *		length, panid, nodeto, payload
+ * generally, you'd better initialize (can simply set it to 0x0000):
+ *		control
+ * you need not initialize
+ *      seqid, nodefrom
+ * 
+ * @attention
+ * you can NOT disable interrupt in "cc2420_write()". because _hardware_sendframe()
+ * need the interrupt service routine to modify some flags.
+ ****************************************************************************/
+int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
+{
+	bool ack;
+	int8 count=0;
+	
+	/* CC_STATE_IDLE is essentially the state wait for sending data
+	 * and receiving data. so if the current state is not CC_STATE_IDLE
+	 * you should return and wait 
+	 */
+	if (cc->state != CC_STATE_IDLE)
+	{
+		return -1; 
+	}
+	
+	if (cc->txlen == 0)
+	{
+		count = frame->length & 0x7F;
+		memmove( (char*)(&cc->txbuf), (char*)frame, count ); 
+		cc->txbuf.length = count;
+		cc->nextstate = CC_STATE_SENDING;
+		cc2420_evolve( cc );
+		count = (cc->txlen == 0) ? frame->length : 0;
+	}
+	
+	return count;
+	
+	/* if there's no more frame to send in TCc2420 object 
+	 * if TCc2420's internal buffer is not empty, then simply return 0.
+	 * return 0 means the TCc2420 object is busy 
+	 */
+	if (cc->txlen == 0)
+	{
+		cc->state = CC_STATE_SENDING;
+		count = frame->length & 0x7F;
+		memmove( (char*)(&cc->txbuf), (char*)frame, count ); 
+		cc->txbuf.length = count;
+
+		if (cc->ackrequest == 1) 
+		{
+	    	ack = _hardware_sendframe(cc, (char*)frame, count, true);
+	    	if (!ack) 
+	    		count = -1;
+   		}
+    	else{
+			_hardware_sendframe(cc, (char*)frame, count, false);
+        }        
+		cc->state = CC_STATE_IDLE;
+	}
+	else
+		count = 0;
+			
+	cc->txlen = 0;
+	return (int8)(count & 0x7F);	
+}
+
 /******************************************************************************
  * send a frame out. the frame should be arranged well by the master function
  * 
@@ -542,11 +616,11 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
 	bool ack;
 	int8 count;
 	
-	/* CC_STATE_RECVING is essentially the state wait for sending data
-	 * and receiving data. so if the current state is not CC_STATE_RECVING
+	/* CC_STATE_IDLE is essentially the state wait for sending data
+	 * and receiving data. so if the current state is not CC_STATE_IDLE
 	 * you should return and wait 
 	 */
-	if (cc->state != CC_STATE_RECVING)
+	if (cc->state != CC_STATE_IDLE)
 	{
 		return 0;
 	}
@@ -578,73 +652,13 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
       		_hardware_sendframe(cc, frame, len, false);
 		}
 		
-		cc->state = CC_STATE_RECVING;
+		cc->state = CC_STATE_IDLE;
 	}
 	else
 		count = 0;
 
 	cc->txlen = 0;
 	return (int8)(count & 0x7F);
-}
-
-/* @param
- *   frame        point to an TCc2420Frame
- *   opt          default to 0x00
- * 
- * @attention
- * you must initialize the "frame" correctly before you can this function. 
- * you must initialize the following:
- *		length, panid, nodeto, payload
- * generally, you'd better initialize (can simply set it to 0x0000):
- *		control
- * you need not initialize
- *      seqid, nodefrom
- * 
- * @attention
- * you can NOT disable interrupt in "cc2420_write()". because _hardware_sendframe()
- * need the interrupt service routine to modify some flags.
- */
-int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
-{
-	bool ack;
-	int8 count;
-	
-	/* CC_STATE_RECVING is essentially the state wait for sending data
-	 * and receiving data. so if the current state is not CC_STATE_RECVING
-	 * you should return and wait 
-	 */
-	if (cc->state != CC_STATE_RECVING)
-	{
-		return 0;
-	}
-	
-	/* if there's no more frame to send in TCc2420 object 
-	 * if TCc2420's internal buffer is not empty, then simply return 0.
-	 * return 0 means the TCc2420 object is busy 
-	 */
-	if (cc->txlen == 0)
-	{
-		cc->state = CC_STATE_SENDING;
-		count = frame->length & 0x7F;
-		memmove( (char*)(&cc->txbuf), (char*)frame, count ); 
-		cc->txbuf.length = count;
-
-		if (cc->ackrequest == 1) 
-		{
-	    	ack = _hardware_sendframe(cc, (char*)frame, count, true);
-	    	if (!ack) 
-	    		count = -1;
-   		}
-    	else{
-            _hardware_sendframe(cc, (char*)frame, count, false);
-        }        
-		cc->state = CC_STATE_RECVING;
-	}
-	else
-		count = 0;
-			
-	cc->txlen = 0;
-	return (int8)(count & 0x7F);	
 }
 
 /******************************************************************************
@@ -662,9 +676,33 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
  * frame or else some data may lost!!! the buffer capacity is indicated by 
  * parameter "size".
  *****************************************************************************/ 
+int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
+{
+	uint8 count;
+	
+	cc2420_evolve( cc );
+
+	if (cc->rxlen > 0)
+	{
+		hal_disable_interrupts();
+		// increase count by 3 because the additional "length"(1B) and "footer"(2B)
+		// in the TCc2420Frame structure.
+	    count = cc->rxbuf.length + 3;
+	    memmove( (char*)frame, (char*)(&cc->rxbuf), count );
+		cc->rxlen = 0;
+		hal_disable_interrupts();
+	}
+	else
+		count = 0;
+		
+	return (int8)(count & 0x7F);
+}
+
 int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 {
 	uint8 count;
+	
+	cc2420_evolve( cc );
 	
 	if (cc->rxlen > 0)
 	{
@@ -698,24 +736,114 @@ int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 	return (int8)(count & 0x7F);
 }
 
-int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
+/* evolve the state machine of "TCc2420".
+ * This evoluation function will be called when the you try to switch the current 
+ * state to a new one and when you stay in some long time states. There are four
+ * state in the CC driver now:
+ * 
+ * 	SENDING, RECVING, SLEEP and POWERDOWN
+ * 
+ * The driver will firstly in POWERDOWN state when the system powered on.
+ * 
+ * @attention
+ * 	attention that the switch function almost does NONE valid checkings when you 
+ * switch the state! This may cause problems in some cases! for example, you 
+ * switch the wireless module into sleep() state while there are still some data
+ * in the buffer to be sent! This will cause data loss! You master code should 
+ * responsible for this fault!
+ * 
+ * @attention
+ * 	the SLEEP state may not be used in some applications! these applications 
+ * often require low transmission latency and you'd better turn on the transceiver
+ * all the time! 
+ */
+int8 cc2420_evolve( TCc2420 * cc )
 {
-	uint8 count;
+	BOOL done = TRUE;
 	
-	if (cc->rxlen > 0)
-	{
-		hal_disable_interrupts();
-		// increase count by 3 because the additional "length"(1B) and "footer"(2B)
-		// in the TCc2420Frame structure.
-	    count = cc->rxbuf.length + 3;
-	    memmove( (char*)frame, (char*)(&cc->rxbuf), count );
-		cc->rxlen = 0;
-		hal_disable_interrupts();
-	}
-	else
-		count = 0;
+	do{
+		switch (cc->state)
+		{
+		case CC_STATE_IDLE:
+			/* generally, the TCc2420 object will stay in this state and wait 
+			 * for wireless frames. the cc2420 transceiver will inform ARM through
+			 * the FIFOP interrupt when a new frame arrived. The ARM and OpenWSN
+			 * software should run fast enough to catch every frames or else the incomming 
+			 * frames will be lost.
+			 * attention the FIFOP interrupt is disabled in other states.
+			 */
+			if (cc->nextstate == CC_STATE_RECVING)
+			{
+				// just waiting. the ISR will place the data into internal buffer
+				//hal_disable_interrupts();
+				//_hardware_recvframe( cc );
+				//hal_enable_interrupts();
+				cc->nextstate = CC_STATE_IDLE;
+			} 
+			else if (cc->nextstate == CC_STATE_SENDING)
+			{
+				if (cc->ackrequest == 1) 
+				{
+					if (!_hardware_sendframe(cc, (char*)(&cc->txbuf), cc->txbuf.length, true))
+						cc->txlen = cc->txbuf.length;
+					else
+						cc->txlen = 0;
+				}
+				else{
+					_hardware_sendframe(cc, (char*)(&cc->txbuf), cc->txbuf.length, false);
+					cc->txlen = 0;
+				}        
+				cc->nextstate = CC_STATE_IDLE;
+			}
+			else if (cc->nextstate == CC_STATE_POWERDOWN)
+			{
+				cc2420_disable_interrupt( cc );
+				// @TODO: power down the chip
+				cc->state = CC_STATE_POWERDOWN;
+			}
+			else if (cc->nextstate == CC_STATE_SLEEP)
+			{
+				// @TODO: sleep the chip
+				cc->state = CC_STATE_SLEEP;
+			}
+			break;
+			
+		case CC_STATE_SLEEP:
+			if ((cc->nextstate == CC_STATE_IDLE) || (cc->nextstate == CC_STATE_RECVING)
+				|| (cc->nextstate == CC_STATE_SENDING))
+			{
+				// wakeup cc2420. it's fast than POWERUP
+				cc->state = CC_STATE_IDLE;
+				done = FALSE;
+			}	
+			else if (cc->nextstate == CC_STATE_POWERDOWN)
+			{
+				cc2420_disable_interrupt( cc );
+				// @TODO: power down the chip
+				cc->state = CC_STATE_POWERDOWN;
+			}
+			break;
 		
-	return (int8)(count & 0x7F);
+		case CC_STATE_POWERDOWN:
+			if (cc->nextstate == CC_STATE_IDLE)
+			{
+				// @TODO: recover the chip from powerdown state
+				// it may need some time for full recovery
+				// may need do calibrate
+				_cc2420_init( cc );
+				cc->state = CC_STATE_IDLE;
+				cc2420_enable_interrupt( cc );
+			}
+			break;
+		
+		default:
+			cc->state = CC_STATE_IDLE;
+			cc->nextstate = CC_STATE_IDLE;
+			break;
+		}
+	}while (!done);
+	
+	return 0;
 }
 
 //应该是bool型的，当ackrequest要求时， 1代表发送成功， 0 代表没受到ack，发送不成功。
@@ -748,34 +876,38 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     bool success;
     BYTE spiStatusByte;
 
+    _gwrite( "->sendframe 01\r\n" );
+
 	// @modified by zhangwei on 20070628
 	// what's its functionality?
 	// seems you can comment the following. the most original version has not the following line
 	//cc2420_receive_off( cc );
-		
+	
+	// you can do the following test with the help of wave viewer
+	#ifdef GDEBUG
     // measure the timing using following source code.
     // for test only. recommend keeping in the source code.
     // uint8 a[4];
     // a[0] = 0x17;a[1] = 0x50;a[2] = 0x89;
     // while(1) FAST2420_WRITE_FIFO(cc->spi,a, 3);      
+	#endif
      
     // wait until the transceiver is idle
     while (VALUE_OF_FIFOP() || VALUE_OF_SFD());
-    _gwrite( "hardware_sendframe 01\r\n" );
 
     // turn off global interrupts to avoid interference from the SPI interface
 	// and the FIFOP interrupt
-    hal_disable_interrupts( cc );
+    hal_disable_interrupts( );
 
     // flush the TX FIFO just in case...
     // @TODO: shall we send two SFFLUSHTX or just one here?
     FAST2420_STROBE( cc->spi, CC2420_SFLUSHTX );
-    _gwrite( "hardware_sendframe 02\r\n" );
 
     // turn on RX if necessary
-    if (!cc->receiveOn) 
+    //if (!cc->receiveOn) 
     {
     	//FAST2420_STROBE( cc->spi,CC2420_SRXON );
+		// zhangwei comment the following 20070729, right?
     	cc2420_spi_strobe( cc->spi,CC2420_SRXON );
     }
     
@@ -785,7 +917,6 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
         FAST2420_UPD_STATUS( cc->spi,&spiStatusByte );
     }while (!(spiStatusByte & BM(CC2420_RSSI_VALID)));
     // @TODO: i think we should wait here for the 2420's SRXON OK
-    _gwrite( "hardware_sendframe 05\r\n" );
 
     // @TODO: why comment the following? is hal_delay(1) enough?
     // TX begins after the CCA check has passed
@@ -795,7 +926,7 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
 		hal_delay(10);
     }while (!(spiStatusByte & BM(CC2420_TX_ACTIVE)));
 
-    // write the packet to the TX FIFO (the FCS is appended automatically 
+    // write the frame to the TX FIFO (the FCS is appended automatically 
     // when AUTOCRC is enabled)
   
     //framelength = pRTI->length + BASIC_RF_PACKET_OVERHEAD_SIZE;
@@ -805,26 +936,22 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
 	// to be handed to hardware transceiver.
 	//
     framelength = cc->txbuf.length;
-	assert( framelength >  BASIC_RF_PACKET_OVERHEAD_SIZE );
+	//assert( framelength >  BASIC_RF_PACKET_OVERHEAD_SIZE );
     
     // @TODO
     framecontrol = ackrequest ? BASIC_RF_FCF_ACK : BASIC_RF_FCF_NOACK;
 
 	// @TODO: you can arrage these data in the buffer and send them one time 
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&framelength, 1);               // Packet length
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&framecontrol, 2);         // Frame control field
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->seqid, 1);    // Sequence number
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&framelength, 1);               // frame length
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&framecontrol, 2);         // frame control field
+    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->seqid, 1);    // sequence number
     
-    _gwrite( "hardware_sendframe 06\r\n" );
-
 	cc->txbuf.panid = cc->panid;
 	cc->txbuf.nodefrom = cc->address;
 
     // @TODO: or use cc->panid directly? i think this is better
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuf.panid, 2);
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuf.nodeto, 2);
-    
-    _gwrite( "hardware_sendframe 07\r\n" );
 
     // @TODO: or use cc->nodefrom directly? i think this is better
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuf.nodefrom, 2);         // Source address
@@ -843,10 +970,10 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
    	// returnram[2] ++;
    	// returnram[3] ++;                          
    
-   	// FASTSPI_STROBE(CC2420_SFLUSHTX);
-   	// hal_delay(1000);
-   	// FASTSPI_STROBE(CC2420_SFLUSHTX);
-   	// hal_delay(1000);
+   	FAST2420_STROBE(cc->spi,CC2420_SFLUSHTX);
+   	hal_delay(100);
+   	FAST2420_STROBE(cc->spi,CC2420_SFLUSHTX);
+   	hal_delay(100);
    	// FASTSPI_READ_RAM_LE(returnram,CC2420RAM_TXFIFO,20); 
    	// returnram[0] ++;
    	// returnram[1] ++;
@@ -859,8 +986,6 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     // start sending by sending a STXON command
 	// @TODO: this line doesn't in the most original version
 	FAST2420_STROBE(cc->spi,CC2420_STXON);
-        
-    _gwrite( "hardware_sendframe 08\r\n" );
 
 	// wait for the transmission to begin before exiting (makes sure that this 
 	// function cannot be called a second time, and thereby cancelling the first 
@@ -896,15 +1021,12 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     else{
         success = TRUE;
     }
-    _gwrite( "hardware_sendframe 10\r\n" );
 
 	// turn off the receiver if it should not continue to be enabled
-	if (!cc->receiveOn)
+	//if (!cc->receiveOn)
 	{ 
 		FAST2420_STROBE(cc->spi, CC2420_SRFOFF);
 	}
-    _gwrite( "hardware_sendframe 11\r\n" );
-	
 
 	// @attention
 	// if what you sent is a data or command frame (except ACK/NAK) frame
@@ -920,7 +1042,9 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
 	// @modified by zhangwei on 20070628
 	// what's its functionality?
 	// @TODO: the following line is reduant
-	cc2420_receive_on( cc );
+	//cc2420_receive_on( cc );
+
+    _gwrite( "->sendframe end\r\n" );
 
     return success;
 }
@@ -1044,273 +1168,18 @@ BOOL basicRfSendPacket(BASIC_RF_TX_INFO *pRTI) {
     return pRRI;
 } 
 */
-/* evolve the state machine of "TCc2420".
- * This evoluation function will be called when the you try to switch the current 
- * state to a new one and when you stay in some long time states. There are four
- * state in the CC driver now:
- * 
- * 	SENDING, RECVING, SLEEP and POWERDOWN
- * 
- * The driver will firstly in POWERDOWN state when the system powered on.
- * 
- * @attention
- * 	attention that the switch function almost does NONE valid checkings when you 
- * switch the state! This may cause problems in some cases! for example, you 
- * switch the wireless module into sleep() state while there are still some data
- * in the buffer to be sent! This will cause data loss! You master code should 
- * responsible for this fault!
- * 
- * @attention
- * 	the SLEEP state may not be used in some applications! these applications 
- * often require low transmission latency and you'd better turn on the transceiver
- * all the time! 
- */
-int8 cc2420_evolve( TCc2420 * cc )
-{
-	/* @modified by zhangwei on 20061013
-	 * @TODO
-	 * 黄欢请按照如下逻辑实现
-	 */
 
-	BOOL done = TRUE;
-	
-	do{
-		switch (cc->state)
-		{
-		case CC_STATE_RECVING:
-			/* in this state, the cc2420's FIFOP interrupt can occur. in other 
-			 * state, the FIFOP interrupt request will be ignore and lost.
-			 *
-			 * the process has been carried out by other functions, including:
-			 * cc2420_powerdown(), cc2420_read(), cc2420_rawread() */
-			if (cc->nextstate == CC_STATE_POWERDOWN)
-			{
-				cc2420_disable_interrupt();
-				// @TODO: power down the chip
-				cc->state = CC_STATE_POWERDOWN);
-			}
-			break;
-			
-		case CC_STATE_SENDING:
-			/* the process has been carried out by other functions, including:
-			 * cccc2420_write(), cc2420_rawwrite() */
-			//_hardware_sendframe(cc, frame, len, false);
-			break;
-			
-		case CC_STATE_POWERDOWN:
-			if (cc->nextstate == CC_STATE_RECVING)
-			{
-				// @TODO: recover the chip from powerdown state
-				cc2420_enable_interrupt();
-			}
-			break;
-			
-		case CC_STATE_IDLE:
-			/* 请补充
-			if (driver内部有数据要发送)
-				发送之 spi_write
-				
-			else if cc->nextstate == CC_STATE_SLEEP
-				cc2420 sleep
-				
-			else 
-				尝试接收数据。新收到的frame可以覆盖以前老的frame: spi_read
-			*/
-			break;
-		
-		case CC_STATE_SLEEP:
-			if (cc->nextstate != CC_STATE_SLEEP)
-			{
-				// wakeup cc2420
-				cc->state = cc->nextstate;
-				done = FALSE;
-			}	
-			break;
-		
-		case CC_STATE_POWERDOWN:
-			if (cc->nextstate != CC_STATE_POWERDOWN)
-			{
-				// wakeup cc2420
-				// may need do calibrate
-				cc->state = cc->nextstate;
-				done = false;
-			}
-			break;
-			
-		default:
-			cc->nextstate = CC_STATE_IDLE;
-			break;
-		}
-	}while (!done);
-	
-	return 0;
-}
 
-/*******************************************************************************************************
- * The Chipcon Hardware Abstraction Library is a collection of functions, macros and constants, which  *
- * can be used to ease access to the hardware on the CC2420 and the target microcontroller.            *
- *                                                                                                     *
- * This file contains a function that allows you to switch radio channels on the CC2420.               *
- *                                                                                                     *
- * EXAMPLE OF USAGE:                                                                                   *
- *     // Turn off RX...                                                                               *
- *     DISABLE_GLOBAL_INT();                                                                           *
- *     FASTSPI_STROBE(CC2420_SRFOFF);                                                                  *
- *     ENABLE_GLOBAL_INT();                                                                            *
- *                                                                                                     *
- *     // ... switch to the next channel in the loop ...                                               *
- *     halRfSetChannel(channel++);                                                                     *
- *     if (channel == 27) channel = 11;                                                                *
- *                                                                                                     *
- *     // ... and go back into RX                                                                      *
- *     DISABLE_GLOBAL_INT();                                                                           *
- *     FASTSPI_STROBE(CC2420_SRXON);                                                                   *
- *     ENABLE_GLOBAL_INT();                                                                            *
- *******************************************************************************************************
- * Compiler: AVR-GCC                                                                                   *
- * Target platform: CC2420DB, CC2420 + any MCU with very few modifications required                    *
- *******************************************************************************************************/ 
-//-------------------------------------------------------------------------------------------------------
-//	void halRfSetChannel(UINT8 Channel)
-//
-//	DESCRIPTION:
-//		Programs CC2420 for a given IEEE 802.15.4 channel. 
-//		Note that SRXON, STXON or STXONCCA must be run for the new channel selection to take full effect.
-//
-//	PARAMETERS:
-//		UINT8 channel
-//			The channel number (11-26)
-//-------------------------------------------------------------------------------------------------------
- 
-/* @attention: 
- * the valid channel value varies from 11 to 26.
- * while, the frequvency f = 2405 + 5*(channel - 11) MHz
- */
-void cc2420_setchannel( TCc2420 * cc, uint8 channel )
-{
-	uint16 f;
-
-	cc->channel = channel;
-	assert((channel >= 11) && (channel <=26));
-
-	// derive frequency to be programmed from the given channel number
-	f = (uint16) (channel - 11); // subtract the base channel 
-	f = f + (f << 2);    		 // multiply with 5, which is the channel spacing
-	f = f + 357 + 0x4000;		 // 357 is 2405-2048, 0x4000 is LOCK_THR = 1
-	
-	// write it to cc2420 
-	hal_disable_interrupts();
-	FAST2420_SETREG(cc->spi,CC2420_FSCTRL, f);
-	hal_enable_interrupts();
-}
-
-void cc2420_interrupt_init()
-{              		
-	#ifdef CONFIG_TARGET_OPENNODE_10
-	EXTMODE        = 0x08;              
-	EXTPOLAR       = 0x08;                          //EINT3中断为上升沿触发  
-	VICIntEnClr    = ~(1 << 17);                    // 使能IRQ中断	          	
-	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
-	VICVectCntl0   = 0x20 | 17;		                // 分配外部中断3到向量中断0
-	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
-	VICIntEnable   = 1 << 17;		                // 使能EINT3中断
-	EXTINT         = 0x08;			                // 清除EINT3中断标志 
-	#endif
-	
-	#ifdef CONFIG_TARGET_OPENNODE_20
-	EXTMODE        = 0x04;              
-	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
-	VICIntEnClr    = ~(1 << 16);                    // 使能IRQ中断	       	
-	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
-	VICVectCntl0   = 0x20 | 16;		                // 分配外部中断2到向量中断0
-	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
-	VICIntEnable   = 1 << 16;		                // 使能EINT2中断
-	//EXTINT         = 0x04;			                // 清除EINT2中断标志 
-	#endif	
-	
-	#ifdef CONFIG_TARGET_OPENNODE_30
-	EXTMODE        = 0x04;              
-	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
-
-	VICIntEnClr    = ~(1 << 16);                    // set 1 will disable related interrupt and 0 keeps unchanged
-	                                                              // ~(1 << 16) will disable external interrupt 2(EINT2)
-	VICIntSelect   = 0x00000000;		            // assign all VIC interrupts to Vector IRQ type rather than FIQ
-	                                                                    // and Non-Vector IRQ
-	VICVectCntl0   = 0x20 | 16;		                // assign external interrupt 2(EINT2) to vector interrupt 0
-	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// address of interrupt service routine
-	EXTINT         = 0x04;			                // clear the EINT2 interrupt request flag
-	                                                                 // this operation is usually at the end of the interrupt 
-	                                                                 // service routine. i add it here to eliminate unnecessary 
-	                                                                 // interrupt request flag potential exists.
-	VICIntEnable   = 1 << 16;		                // enable external interrupt 2(EINT2)
-	#endif	
-	
-	#ifdef CONFIG_TARGET_WLSMODEM_11
-	EXTMODE        = 0x04;              
-	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
-	VICIntEnClr    = ~(1 << 16);                    // 使能IRQ中断	       	
-	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
-	VICVectCntl0   = 0x20 | 16;		                // 分配外部中断2到向量中断0
-	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
-	VICIntEnable   = 1 << 16;		                // 使能EINT2中断
-	//EXTINT         = 0x04;			                // 清除EINT2中断标志 
-	#endif
-
-	#ifdef CONFIG_TARGET_DEFAULT
-	EXTMODE        = 0x04;              
-	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
-	VICIntEnClr    = ~(1 << 16);                    // 使能IRQ中断	       	
-	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
-	VICVectCntl0   = 0x20 | 16;		                // 分配外部中断2到向量中断0
-	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
-	VICIntEnable   = 1 << 16;		                // 使能EINT2中断
-	//EXTINT         = 0x04;			                // 清除EINT2中断标志 
-	#endif	
-}
-
-/* the interrupt handler is responsible to read data from cc2420 to driver's
- * internal buffer or write the internal buffer's data to cc2420 transceiver.
- * 
- * the handler also responses for changing the state of the driver.
- */
-
-void __irq cc2420_interrupt_service( void )
-{
-	_hardware_recvframe( g_cc2420 );
-
-    /* clear the external interrupt request/pending flag */   
-	#ifdef CONFIG_TARGET_OPENNODE_10
-	EXTINT = 0x08;		
-	#endif
-	
-	#ifdef CONFIG_TARGET_OPENNODE_20
-	EXTINT = 0x04;	
-	#endif
-	
-	#ifdef CONFIG_TARGET_OPENNODE_30
-	EXTINT = 0x04;	
-	#endif
-	
-	#ifdef CONFIG_TARGET_WLSMODEM_11
-	EXTINT = 0x04;
-	#endif
-	
-	#ifdef CONFIG_TARGET_DEFAULT
-	EXTINT = 0x04;	
-	#endif
-
-    /* indicate the VIC interrupt processing finished */     
-	VICVectAddr   = 0;	
-}
-
-/* this function is called when cc2420 raised an interrupt request.
+/* this function is used to retrieve arrived frames from cc2420 to micro processor.
+ * it can be called in evolve(...) or in the interrupt service routine(ISR) directly.
+ * the previous solution is recommended.
  * 
  * @parameter
  * 	cc			indicate which "TCc2420" should respond to the interrupt.
  * 				so that this handler function can be shared by serveral TCc2420
  * 				object.
  */
-void _hardware_recvframe( TCc2420 * cc )
+void _hardware_recvframe( TCc2420 * cc, char * frame, uint8 capacity )
 {
 	WORD framecontrol;
 	UINT8 length;
@@ -1319,28 +1188,31 @@ void _hardware_recvframe( TCc2420 * cc )
 	static rx_seqid = 0;
 
     /* LED_RED is used for debugging only.
-     * the state of it will be switched if a new frame arrived. */
-     	#ifdef GDEBUG
+     * the state of it will be switched if a new frame arrived. every ON/OFF period
+	 * means two frames received. 
+	 */
+    #ifdef GDEBUG
 	led_toggle(LED_RED);
 	#endif
       
-    // @modified by zhangwei on 20070601  
-    // @attention: if the last frame received hasn't read out by the master module,
-    // then the interrupt will simply exit and the new comming frame will be lost!!!
-    // so you should keep polling the frame out as fast as possible.
-    //
-	if (cc->rxlen > 0)
+    /* @modified by zhangwei on 20070729
+	 * if the destination buffer still occupied by last frame, then this function
+	 * will simply override the data buffer with the new incoming frame. so you
+	 * read the frame out as soon as possible. */
+
+	if (cc->state != CC_STATE_IDLE)
 	{
+		// the following line should be kept in release version
 		//return;
 	}
 	
-    // clean up and exit in case of FIFO overflow, which is indicated by FIFOP = 1 
-    // and FIFO = 0
-    //
+    /* clean up and exit in case of FIFO overflow, which is indicated by FIFOP = 1 
+     * and FIFO = 0 
+	 */
 	if ((VALUE_OF_FIFOP()) && (!(VALUE_OF_FIFO()))) 
 	{	   
-	    FAST2420_STROBE(cc->spi,CC2420_SFLUSHRX);
-	    FAST2420_STROBE(cc->spi,CC2420_SFLUSHRX);
+	    cc2420_spi_strobe( cc->spi,CC2420_SFLUSHRX );
+	    cc2420_spi_strobe( cc->spi,CC2420_SFLUSHRX );
 	    return;
 	}
 
@@ -1351,8 +1223,8 @@ void _hardware_recvframe( TCc2420 * cc )
 	FAST2420_READ_FIFO_BYTE(cc->spi, &length);
 	length &= 0x7F; 
 
-    // ignore the packet if the length is too short
-    // otherwise, if the length is valid, then proceed with the rest of the packet
+    // ignore the frame if the length is too short
+    // otherwise, if the length is valid, then proceed with the rest of the frame
     if (length < BASIC_RF_ACK_PACKET_SIZE) 
     {
     	FAST2420_READ_FIFO_GARBAGE(cc->spi,length);
@@ -1445,6 +1317,7 @@ void _hardware_recvframe( TCc2420 * cc )
     }
 }
 
+
 /*****************************************************************************
  * enables the cc2420 receiver and the FIFOP interrupt. when a frame arrived, 
  * the arrival event will trigger a FIFOP interrrupt. and the interrupt will 
@@ -1483,6 +1356,171 @@ void cc2420_receive_off(TCc2420 * cc)
     //DISABLE_FIFOP_INT();
 } 
 
+
+/*******************************************************************************************************
+ * The Chipcon Hardware Abstraction Library is a collection of functions, macros and constants, which  *
+ * can be used to ease access to the hardware on the CC2420 and the target microcontroller.            *
+ *                                                                                                     *
+ * This file contains a function that allows you to switch radio channels on the CC2420.               *
+ *                                                                                                     *
+ * EXAMPLE OF USAGE:                                                                                   *
+ *     // Turn off RX...                                                                               *
+ *     DISABLE_GLOBAL_INT();                                                                           *
+ *     FASTSPI_STROBE(CC2420_SRFOFF);                                                                  *
+ *     ENABLE_GLOBAL_INT();                                                                            *
+ *                                                                                                     *
+ *     // ... switch to the next channel in the loop ...                                               *
+ *     halRfSetChannel(channel++);                                                                     *
+ *     if (channel == 27) channel = 11;                                                                *
+ *                                                                                                     *
+ *     // ... and go back into RX                                                                      *
+ *     DISABLE_GLOBAL_INT();                                                                           *
+ *     FASTSPI_STROBE(CC2420_SRXON);                                                                   *
+ *     ENABLE_GLOBAL_INT();                                                                            *
+ *******************************************************************************************************
+ * Compiler: AVR-GCC                                                                                   *
+ * Target platform: CC2420DB, CC2420 + any MCU with very few modifications required                    *
+ *******************************************************************************************************/ 
+//-------------------------------------------------------------------------------------------------------
+//	void halRfSetChannel(UINT8 Channel)
+//
+//	DESCRIPTION:
+//		Programs CC2420 for a given IEEE 802.15.4 channel. 
+//		Note that SRXON, STXON or STXONCCA must be run for the new channel selection to take full effect.
+//
+//	PARAMETERS:
+//		UINT8 channel
+//			The channel number (11-26)
+//-------------------------------------------------------------------------------------------------------
+ 
+/* @attention: 
+ * the valid channel value varies from 11 to 26.
+ * while, the frequvency f = 2405 + 5*(channel - 11) MHz
+ */
+void cc2420_setchannel( TCc2420 * cc, uint8 channel )
+{
+	uint16 f;
+
+	cc->channel = channel;
+	assert((channel >= 11) && (channel <=26));
+
+	// derive frequency to be programmed from the given channel number
+	f = (uint16) (channel - 11); // subtract the base channel 
+	f = f + (f << 2);    		 // multiply with 5, which is the channel spacing
+	f = f + 357 + 0x4000;		 // 357 is 2405-2048, 0x4000 is LOCK_THR = 1
+	
+	// write it to cc2420 
+	hal_disable_interrupts();
+	FAST2420_SETREG(cc->spi,CC2420_FSCTRL, f);
+	hal_enable_interrupts();
+}
+
+void _cc2420_interrupt_init()
+{              		
+	#ifdef CONFIG_TARGET_OPENNODE_10
+	EXTMODE        = 0x08;              
+	EXTPOLAR       = 0x08;                          //EINT3中断为上升沿触发  
+	VICIntEnClr    = ~(1 << 17);                    // 使能IRQ中断	          	
+	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
+	VICVectCntl0   = 0x20 | 17;		                // 分配外部中断3到向量中断0
+	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
+	VICIntEnable   = 1 << 17;		                // 使能EINT3中断
+	EXTINT         = 0x08;			                // 清除EINT3中断标志 
+	#endif
+	
+	#ifdef CONFIG_TARGET_OPENNODE_20
+	EXTMODE        = 0x04;              
+	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
+	VICIntEnClr    = ~(1 << 16);                    // 使能IRQ中断	       	
+	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
+	VICVectCntl0   = 0x20 | 16;		                // 分配外部中断2到向量中断0
+	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
+	VICIntEnable   = 1 << 16;		                // 使能EINT2中断
+	//EXTINT         = 0x04;			                // 清除EINT2中断标志 
+	#endif	
+	
+	#ifdef CONFIG_TARGET_OPENNODE_30
+	EXTMODE        = 0x04;              
+	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
+
+	VICIntEnClr    = ~(1 << 16);                    // set 1 will disable related interrupt and 0 keeps unchanged
+	                                                              // ~(1 << 16) will disable external interrupt 2(EINT2)
+	VICIntSelect   = 0x00000000;		            // assign all VIC interrupts to Vector IRQ type rather than FIQ
+	                                                                    // and Non-Vector IRQ
+	VICVectCntl0   = 0x20 | 16;		                // assign external interrupt 2(EINT2) to vector interrupt 0
+	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// address of interrupt service routine
+	EXTINT         = 0x04;			                // clear the EINT2 interrupt request flag
+	                                                                 // this operation is usually at the end of the interrupt 
+	                                                                 // service routine. i add it here to eliminate unnecessary 
+	                                                                 // interrupt request flag potential exists.
+	VICIntEnable   = 1 << 16;		                // enable external interrupt 2(EINT2)
+	#endif	
+	
+	#ifdef CONFIG_TARGET_WLSMODEM_11
+	EXTMODE        = 0x04;              
+	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
+	VICIntEnClr    = ~(1 << 16);                    // 使能IRQ中断	       	
+	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
+	VICVectCntl0   = 0x20 | 16;		                // 分配外部中断2到向量中断0
+	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
+	VICIntEnable   = 1 << 16;		                // 使能EINT2中断
+	//EXTINT         = 0x04;			                // 清除EINT2中断标志 
+	#endif
+
+	#ifdef CONFIG_TARGET_DEFAULT
+	EXTMODE        = 0x04;              
+	EXTPOLAR       = 0x04;                          //EINT2中断为上升沿触发     
+	VICIntEnClr    = ~(1 << 16);                    // 使能IRQ中断	       	
+	VICIntSelect   = 0x00000000;		            // 设置所有中断分配为IRQ中断
+	VICVectCntl0   = 0x20 | 16;		                // 分配外部中断2到向量中断0
+	VICVectAddr0   = (uint32)cc2420_interrupt_service;	// 设置中断服务程序地址
+	VICIntEnable   = 1 << 16;		                // 使能EINT2中断
+	//EXTINT         = 0x04;			                // 清除EINT2中断标志 
+	#endif	
+}
+
+/* the interrupt handler is responsible to read data from cc2420 to driver's
+ * internal buffer or write the internal buffer's data to cc2420 transceiver.
+ * 
+ * the handler also responses for changing the state of the driver.
+ */
+
+void __irq cc2420_interrupt_service( void )
+{
+	// @modified by zhangwei on 20070729
+	// set the "nextstate" flag to indicate the main program to retrieve data
+	// out from hardware cc2420. in the obsolete code, _hardware_recvframe(...)
+	// was called directly in the ISR. this will consume too much interrupt processing
+	// time that will decrease the real time response ability.
+	//
+	//g_cc2420->nextstate = CC_STATE_RECVING;
+	
+	_hardware_recvframe( g_cc2420, (char*)&(g_cc2420->rxbuf), sizeof(TOpenFrame) );
+
+    /* clear the external interrupt request/pending flag */   
+	#ifdef CONFIG_TARGET_OPENNODE_10
+	EXTINT = 0x08;		
+	#endif
+	
+	#ifdef CONFIG_TARGET_OPENNODE_20
+	EXTINT = 0x04;	
+	#endif
+	
+	#ifdef CONFIG_TARGET_OPENNODE_30
+	EXTINT = 0x04;	
+	#endif
+	
+	#ifdef CONFIG_TARGET_WLSMODEM_11
+	EXTINT = 0x04;
+	#endif
+	
+	#ifdef CONFIG_TARGET_DEFAULT
+	EXTINT = 0x04;	
+	#endif
+
+    /* indicate the VIC interrupt processing finished */     
+	VICVectAddr   = 0;	
+}
 /* this function will Poll the SPI status byte until the crystal oscillator is stable    
  * your must wait until it is stable before doing further read() or write() 
  * 
@@ -1539,13 +1577,25 @@ uint8 cc2420_rssi( TCc2420 * cc )
 
 void cc2420_powerdown( TCc2420 * cc )
 {
-	cc2420->nextstate = CC_STATE_POWERDOWN;
+	cc->nextstate = CC_STATE_POWERDOWN;
 	cc2420_evolve( cc );
 }
 
-void cc2420_activate( TCc2420 * cc )
+void cc2420_powerup( TCc2420 * cc )
 {
-	cc2420->nextstate = CC_STATE_RECVING;
+	cc->nextstate = CC_STATE_IDLE;
+	cc2420_evolve( cc );
+}
+
+void cc2420_sleep( TCc2420 * cc )
+{
+	cc->nextstate = CC_STATE_SLEEP;
+	cc2420_evolve( cc );
+}
+
+void cc2420_wakeup( TCc2420 * cc )
+{
+	cc->nextstate = CC_STATE_IDLE;
 	cc2420_evolve( cc );
 }
 
