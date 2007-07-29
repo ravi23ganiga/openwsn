@@ -155,8 +155,11 @@
 #define CC2420_DEFAULT_ADDRESS  0x1234
 #define CC2420_DEFAULT_CHANNEL  19         
 
+/* cc2420 mode constants */
+enum { CC_MODE_GENERAL=0x00, CC_MODE_SNIFFER=0x01 };
+
 /* cc2420 state constants */
-enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
+enum { CC_STATE_RECVING=0x00, CC_STATE_SENDING=0x01, CC_STATE_POWERDOWN=0x02 };
     
 /* config control code */    
 #define CC2420_CONFIG_PANID 			0x01 
@@ -230,10 +233,9 @@ enum { CC_STATE_IDLE=0, CC_STATE_SLEEP, CC_STATE_POWERDOWN };
  *                  ACK or not. generally you need not use it.
  * receiveOn		is an status flag. used to eliminate un-necessary ON/OFF
  *                  operations. because they are time/energy consuming.
- * 
- * @TODO: whether txbuf and rxbuf should be volatile or not? 
  */ 
 typedef struct{
+  uint8 mode;
   uint8 state;
   uint8 nextstate;
   TSpiDriver * spi; 
@@ -400,6 +402,12 @@ void cc2420_receive_off(TCc2420 * cc);
 
 void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi);
 uint8 cc2420_rssi( TCc2420 * cc );
+
+void cc2420_powerdown( TCc2420 * cc );
+void cc2420_activate( TCc2420 * cc );
+
+void cc2420_disable_interrupt( TCc2420 * cc );
+void cc2420_enable_interrupt( TCc2420 * cc );
 
 #ifdef CONFIG_DEBUG
 void cc2420_dump( TCc2420 * cc );

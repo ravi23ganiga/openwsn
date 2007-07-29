@@ -144,6 +144,7 @@ TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 	if (cc != NULL)
 	{	
 		memset( (char*)cc, 0x00, sizeof(TCc2420) );
+		cc->mode = CC_MODE_GENERAL;
 		cc->state = CC_STATE_POWERDOWN;
 		cc->nextstate = CC_STATE_POWERDOWN;
 		cc->spi = spi;
@@ -541,8 +542,18 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
 	bool ack;
 	int8 count;
 	
+	/* CC_STATE_RECVING is essentially the state wait for sending data
+	 * and receiving data. so if the current state is not CC_STATE_RECVING
+	 * you should return and wait 
+	 */
+	if (cc->state != CC_STATE_RECVING)
+	{
+		return 0;
+	}
+	
 	if (cc->txlen == 0)
 	{
+		cc->state = CC_STATE_SENDING;
 		count = (len-1) & 0x7F;
 		cc->txbuf.length = count;  
 		memmove( (char*)(&cc->txbuf.control), frame+1, 2 );
@@ -567,13 +578,12 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
       		_hardware_sendframe(cc, frame, len, false);
 		}
 		
-		cc->nextstate = CC_STATE_IDLE;
+		cc->state = CC_STATE_RECVING;
 	}
 	else
 		count = 0;
 
 	cc->txlen = 0;
-	//cc2420_evolve( cc );
 	return (int8)(count & 0x7F);
 }
 
@@ -599,12 +609,22 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
 	bool ack;
 	int8 count;
 	
+	/* CC_STATE_RECVING is essentially the state wait for sending data
+	 * and receiving data. so if the current state is not CC_STATE_RECVING
+	 * you should return and wait 
+	 */
+	if (cc->state != CC_STATE_RECVING)
+	{
+		return 0;
+	}
+	
 	/* if there's no more frame to send in TCc2420 object 
 	 * if TCc2420's internal buffer is not empty, then simply return 0.
 	 * return 0 means the TCc2420 object is busy 
 	 */
 	if (cc->txlen == 0)
 	{
+		cc->state = CC_STATE_SENDING;
 		count = frame->length & 0x7F;
 		memmove( (char*)(&cc->txbuf), (char*)frame, count ); 
 		cc->txbuf.length = count;
@@ -617,15 +637,13 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
    		}
     	else{
             _hardware_sendframe(cc, (char*)frame, count, false);
-        }
-        
-		cc->nextstate = CC_STATE_IDLE;
+        }        
+		cc->state = CC_STATE_RECVING;
 	}
 	else
 		count = 0;
 			
 	cc->txlen = 0;
-	//cc2420_evolve( cc );
 	return (int8)(count & 0x7F);	
 }
 
@@ -746,7 +764,8 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     _gwrite( "hardware_sendframe 01\r\n" );
 
     // turn off global interrupts to avoid interference from the SPI interface
-    hal_disable_interrupts();
+	// and the FIFOP interrupt
+    hal_disable_interrupts( cc );
 
     // flush the TX FIFO just in case...
     // @TODO: shall we send two SFFLUSHTX or just one here?
@@ -1058,6 +1077,34 @@ int8 cc2420_evolve( TCc2420 * cc )
 	do{
 		switch (cc->state)
 		{
+		case CC_STATE_RECVING:
+			/* in this state, the cc2420's FIFOP interrupt can occur. in other 
+			 * state, the FIFOP interrupt request will be ignore and lost.
+			 *
+			 * the process has been carried out by other functions, including:
+			 * cc2420_powerdown(), cc2420_read(), cc2420_rawread() */
+			if (cc->nextstate == CC_STATE_POWERDOWN)
+			{
+				cc2420_disable_interrupt();
+				// @TODO: power down the chip
+				cc->state = CC_STATE_POWERDOWN);
+			}
+			break;
+			
+		case CC_STATE_SENDING:
+			/* the process has been carried out by other functions, including:
+			 * cccc2420_write(), cc2420_rawwrite() */
+			//_hardware_sendframe(cc, frame, len, false);
+			break;
+			
+		case CC_STATE_POWERDOWN:
+			if (cc->nextstate == CC_STATE_RECVING)
+			{
+				// @TODO: recover the chip from powerdown state
+				cc2420_enable_interrupt();
+			}
+			break;
+			
 		case CC_STATE_IDLE:
 			/* 请补充
 			if (driver内部有数据要发送)
@@ -1488,6 +1535,34 @@ void cc2420_set_power(TCc2420 * cc,uint8 power)
 uint8 cc2420_rssi( TCc2420 * cc )
 {
 	return cc->rssi;
+}
+
+void cc2420_powerdown( TCc2420 * cc )
+{
+	cc2420->nextstate = CC_STATE_POWERDOWN;
+	cc2420_evolve( cc );
+}
+
+void cc2420_activate( TCc2420 * cc )
+{
+	cc2420->nextstate = CC_STATE_RECVING;
+	cc2420_evolve( cc );
+}
+
+// @TODO 20070728: the following line only adapt to 3.0 hardware now
+/* disable FIFOP interrupt.
+ */
+void cc2420_disable_interrupt( TCc2420 * cc )
+{
+	VICIntEnClr = ~(1 << 16);                       	
+}
+
+// @TODO 20070728: the following line only adapt to 3.0 hardware now
+/* disable FIFOP interrupt(EINT2 in 3.0 hardware).
+ */
+void cc2420_enable_interrupt( TCc2420 * cc )
+{
+	VICIntEnable   = 1 << 16;		                
 }
 
 /*
