@@ -2,7 +2,7 @@
 
 = Introduction =
 
-OpenWSN means Open Wireless Sensor Networks. It's a fundamental platform for WSN research and applications. It is initiated by TongJi University. The current version of OpenWSN hardware is based on LPC213x ARM7 + TI/Chipcon cc2420.
+Open Wireless Sensor Networks for both Research and Industry Applications
 
 = Details =
 
@@ -11,4 +11,4 @@ Add your content here.  Format your content with:
   * Headings, paragraphs, and lists
   * Automatic links to other wiki pages
 
-OpenWSN means Open Wireless Sensor Networks. It's a fundamental platform for WSN research and applications. It is initiated by TongJi University. The current version of OpenWSN hardware is based on LPC213x ARM7 + TI/Chipcon cc2420.
+OpenWSN means Open Wireless Sensor Networks. It's a fundamental platform for WSN research and applications. It was initiated by TongJi University firstly and now we have members from Bradford, SJTU, Beihang, NWPU, etc. The current version of OpenWSN hardware is based on LPC213x/LPC214x ARM7 + TI/Chipcon cc2420. The default configuration is LPC2146.
