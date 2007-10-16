@@ -58,7 +58,7 @@ typedef struct{
   uint8 id;
 }TSpiDriver;
 
-/* global variables defined in global.* */
+/* global variables defined in global.*/
 extern TSpiDriver * g_spi0;
 extern TSpiDriver * g_spi1;
 

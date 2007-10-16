@@ -101,7 +101,7 @@
 
 static void _cc2420_init(TCc2420 * cc);
 static void _cc2420_interrupt_init( void );
-static bool _hardware_sendframe(TCc2420 * cc, char * framex, uint8 len, bool ackrequest);
+static bool _hardware_sendframe(TCc2420 * cc, char * frame, uint8 len, bool ackrequest);
 static void _hardware_recvframe( TCc2420 * cc, char * frame, uint8 capacity );
 static void __irq cc2420_interrupt_service( void );
 
@@ -471,8 +471,12 @@ void cc2420_open( TCc2420 * cc )
 {
     cc2420_receive_on(g_cc2420);  
 
+	// added on 2007.08.15
+	cc->state = CC_STATE_IDLE;
+
     // @TODO: interrupts
     hal_enable_interrupts();
+
 }
 
 /******************************************************************************
@@ -684,13 +688,13 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 
 	if (cc->rxlen > 0)
 	{
-		hal_disable_interrupts();
+		hal_disable_interrupts(); // replace with hal_enter_critical() in the future
 		// increase count by 3 because the additional "length"(1B) and "footer"(2B)
 		// in the TCc2420Frame structure.
 	    count = cc->rxbuf.length + 3;
 	    memmove( (char*)frame, (char*)(&cc->rxbuf), count );
 		cc->rxlen = 0;
-		hal_disable_interrupts();
+		hal_enable_interrupts(); // replace with hal_leave_critical() in the future
 	}
 	else
 		count = 0;
