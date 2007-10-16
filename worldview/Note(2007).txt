@@ -1,7 +1,0 @@
-help wanted:
-anyone can developer a java version worldview for openwsn?
-i hope the java version can be a plugin of Eclipse, so that we can get a rich environment for openwsn based on eclipse's support.
-
-another fastest way is to use gumtree as the default data analyzer for openwsn. thus you should write a driver for gumtree so gumtree can read/write data from/to the openwsn network.
-
-
