@@ -287,7 +287,7 @@ void _cc2420_init( TCc2420 * cc )
     //uint16 rereg;
     uint8 status;
 
-    _gwrite( "cc2420_init...\r\n" );
+   _gwrite( "cc2420_init...\r\n" );
 
 	cc->state = CC_STATE_POWERDOWN;
 	cc->nextstate = CC_STATE_IDLE;
@@ -319,20 +319,18 @@ void _cc2420_init( TCc2420 * cc )
 	hal_disable_interrupts();
 	
     status = cc2420_spi_strobe( cc->spi, CC2420_SXOSCON );
-	while (!(status & 0x40)) 
+	/*while (!(status & 0x40)) 
 	{
 		//uart_putchar( g_uart, status ); 
 		hal_delay( 100 );
 		status = cc2420_spi_strobe( cc->spi,CC2420_SXOSCON );
-	}
+	}*/
     hal_delay(500);
-	 
     //FAST2420_SETREG(CC2420_TXCTRL, 0xA0E3); // To control the output power, added by huanghuan
     FAST2420_SETREG(cc->spi,CC2420_MDMCTRL0, 0x0AF2); // Turn on automatic packet acknowledgment 
     FAST2420_SETREG(cc->spi,CC2420_MDMCTRL1, 0x0500); // Set the correlation threshold = 20
     FAST2420_SETREG(cc->spi,CC2420_IOCFG0, 0x007F);   // Set the FIFOP threshold to maximum
     FAST2420_SETREG(cc->spi,CC2420_SECCTRL0, 0x01C4); // Turn off "Security enable"
-    
     // Set the RF channel
     cc2420_setchannel(cc, cc->channel);
 	
@@ -371,7 +369,6 @@ void _cc2420_init( TCc2420 * cc )
 
     //hal_disable_interrupts();
 	_cc2420_waitfor_crystal_oscillator( cc->spi );
-
     // Write the short address and the PAN ID to the CC2420 RAM (requires that the XOSC is on and stable)
     //hal_enable_interrupts();
 
@@ -380,9 +377,8 @@ void _cc2420_init( TCc2420 * cc )
     //FAST2420_READ_RAM_LE(cc,reram,CC2420RAM_SHORTADDR,2);
     //reram[0]++;
     //reram[1]++;
-
     _cc2420_interrupt_init();
-	
+    
 	cc->state = CC_STATE_IDLE;
 	cc->nextstate = CC_STATE_IDLE;
 }
