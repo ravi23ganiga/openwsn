@@ -1,0 +1,30 @@
+osal ---- Operating System Abstraction Layer
+
+
+
+
+
+12:42 AM 1/12/2008
+first created.
+in the first design of openwsn, the "osal" functions are placed into "service" directory because they're too simple, or use some external embedded OS instead such as uCOS.
+
+actually, "openwsn" adopts static memory allocation so there's no need for dynamic memory management. however, there do need a thread scheduling mechanism in a complicated system. thus the born of "osal" in openwsn project.
+
+the "osal" is designed to include:
+- thread-like scheduling support
+- or event-based scheduling support 
+- timer management 
+- interrupt management
+- debug support (based on hal.uart directly, so every service can use it)
+- memory management (is it mandatory?)
+- sleep/wakeup support (part of the high level power management)
+- mutex and lock
+
+attention: the "osal" only provide the mandatory functionality of an OS that "openwsn" project will needed. it's not a full functional OS kernel. for example,  it needn't provide inter-process communication mechanisms (IPC) such as MailBox and Pipe. i think they're too complicated for an light weight sensor system. 
+
+attention: different to "hal" and "service", the "osal" needn't accord to the OOP programming style. because there will be alway only one OS in the system. 
+
+
+
+
+
