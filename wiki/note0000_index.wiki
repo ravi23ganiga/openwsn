@@ -1,5 +1,4 @@
 #summary One-sentence summary of this page.
-#labels Featured
 
 = Introduction =
 
@@ -13,4 +12,3 @@ Add your content here.  Format your content with:
   * note0051 open sections
   * note1001 gumtree project
   * note1002 tinyos
-
