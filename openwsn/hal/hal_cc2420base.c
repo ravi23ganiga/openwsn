@@ -60,6 +60,42 @@
  *****************************************************************************/
 
 
+void radio_init( TSpi * spi )
+{
+}
+
+void radio_reset( TSpi * spi )
+{
+}
+
+void radio_settxpower( TSpi * spi )
+{
+}
+
+void radio_setchannel( TSpi * spi )
+{
+}
+
+void radio_get_lqi( TSpi * spi, int8 rssidbm, uint8 cor )
+{
+}
+
+void radio_set_panid( TSpi * spi, uint16 panid )
+{
+}
+
+void radio_set_shortaddr( Tspi * spi, uint16 shortaddr )
+{
+}
+
+// Set the IEEE address on the radio.
+// IEEEAddr - pointer to array holding 64 bit IEEE address; array must be little
+//                          endian format (starts with lowest signficant byte)
+void radio_set_ieeeaddr( TSpi * spi, uint8 * addr )
+{
+}
+
+
 /******************************************************************************
  * some utility functions
  *****************************************************************************/

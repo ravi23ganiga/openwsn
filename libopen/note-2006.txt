@@ -1,5 +1,13 @@
-author openwsn on 20061024
+author zhangwei on 20061024
+modified by zhangwei on 20070907
 
+what's libopen?
+==============================================================================
+openwsn project provide "libopen.dll" for the following purpose:
+- simulation. libopen contains a simple network simulation to enable your application developing without real hardware.
+- sensor networks developing interface (WSN-API). it's almost the same as the simulting API
+- some high level functions. some one may think it should be categorized as middleware
+  
 
 For new developers for libopen
 ==============================================================================
