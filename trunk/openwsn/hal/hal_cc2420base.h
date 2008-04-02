@@ -82,6 +82,18 @@
 // Footer
 #define BASIC_RF_CRC_OK_BM              0x80
 
+/******************************************************************************
+ * general utility functions for TCc2420
+ * a lot of them are based on TSpi. 
+ * only some of them are hardware related.
+ *****************************************************************************/
+
+void radio_init( void );
+void radio_reset( void );
+void radio_settxpower( void );
+void radio_setchannel( void );
+void radio_get_lqi( int8 rssidbm, uint8 cor );
+
 
 /******************************************************************************
  * general utility functions for TCc2420

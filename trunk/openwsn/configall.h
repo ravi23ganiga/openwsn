@@ -16,7 +16,7 @@
  * add macros to support different hardware platforms
  * 
  * @modified by zhangwei on 20060510
- * replace TARGET_XXX with CONFIG_TARGET_XXX
+ * replace TARGET_XXX with CONFIG_TARGET_XXX 
  * 
  *****************************************************************************/
 
