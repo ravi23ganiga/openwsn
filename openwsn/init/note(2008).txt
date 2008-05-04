@@ -1,0 +1,1 @@
+this folder contains the initial main() function and the source code to integrate tinyos/ucos-ii and other potential OS-like softwares
