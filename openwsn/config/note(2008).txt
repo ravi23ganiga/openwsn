@@ -1,1 +1,0 @@
-this folder contains the scripts and programs to configure the whole openwsn software. these will help you to establish your own source base in seconds.
