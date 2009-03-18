@@ -1,0 +1,36 @@
+#labels Phase-Deploy
+#支撑环境建设
+
+= Introduction =
+
+如何搭建软硬件开发平台支持后续开发工作
+
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
+
+开源的ARM开发工具
+ARM-Projects by Martin THOMAS，http://www.siwawi.arubi.uni-kl.de/avr_projects/arm_projects/index.html. (大名鼎鼎的WinARM下载)
+Debugging ARM, uCLinux, http://www.ronetix.at/app_notes.html.
+
+
+如何利用Eclipse进行基于ARM的嵌入式系统开发
+
+Google: [ARM Cross Development with Eclispe | http://www.google.com/search?hl=en&newwindow=1&q=ARM+Cross+Development+with+Eclispe&btnG=Search]
+
+Jim Lynch's tutorials for GNU arm， http://gnuarm.alexthegeek.com/.
+Fab@Home:Model 1 Firmware， http://fabathome.org/wiki/index.php?title=Fab%40Home:Model_1_Firmware (提供了WinARM, armlib, Eclipse, OpenOCD安装配置，图文并茂，很好）
+
+第四版ARM Cross Development with Eclipse Tutorial - components download
+http://www.mcu123.net/bbs/dispbbs_28_1448_108_next.html
+http://www.embeddedrelated.com/groups/lpc2000/show/14331.php
+
+µClinux4ARM， http://www.ulrichradig.de/home/index.php/arm/clinux4arm 提供了如下下载
+Philips ARM LPC22xx µClinux Bootloder
+Philips uClinux Patch for Kernel 2.6.5 
+Philips ARM LPC22xx MMC/SD uClinux Treiber
+
