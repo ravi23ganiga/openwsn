@@ -38,21 +38,26 @@ typedef double         FP64;                     /* Double precision floating po
 
 typedef unsigned int   OS_STK;                   /* Each stack entry is 16-bit wide                    */
 
-#define BYTE           INT8S                     /* Define data types for backward compatibility ...   */
-#define UBYTE          INT8U                     /* ... to uC/OS V1.xx.  Not actually needed for ...   */
-#define WORD           INT16S                    /* ... uC/OS-II.                                      */
-#define UWORD          INT16U
-#define LONG           INT32S
-#define ULONG          INT32U
+/* @modified by zhangwei on 200903
+ * zhangwei comment the following definitions because they're obsolete by the author of uC/OS
+ * and they're conflict with our definitions. we usually regard BYTE and WORD are unsigned types.
+ */
 
-/* 
+/* #define BYTE           INT8S  */              /* Define data types for backward compatibility ...   */
+/* #define UBYTE          INT8U  */              /* ... to uC/OS V1.xx.  Not actually needed for ...   */
+/* #define WORD           INT16S */              /* ... uC/OS-II.                                      */
+/* #define UWORD          INT16U */
+/* #define LONG           INT32S */
+/* #define ULONG          INT32U */
+
+/*
 *********************************************************************************************************
 *                              ARM, various architectures
 *
 *********************************************************************************************************
 */
-#define	OS_ENTER_CRITICAL()	ARMDisableInt()
-#define	OS_EXIT_CRITICAL()	ARMEnableInt()
+#define	OS_ENTER_CRITICAL()	ARMDisableInterrupts()
+#define	OS_EXIT_CRITICAL()	ARMEnableInterupts()
 
 /*
  * Definitions specific to ARM/uHAL
