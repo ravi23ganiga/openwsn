@@ -43,6 +43,7 @@
  ****************************************************************************/ 
 
 typedef uint32 version_t;
+#define TiVersion version_t
 
 #define MAKE_VERSION(major,minor,micro) (((major&0x0FF)<<16) | ((minor&0xFF)<<8) | (micro&0xFF))
 #define MAJOR_VERSION(ver) ((ver>>16) & 0xFF)

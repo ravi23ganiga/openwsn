@@ -27,18 +27,18 @@
 * this file might be covered by the GNU General Public License.
 * 
 ****************************************************************************/ 
-#ifndef _TK_BLKALLOC_H_
-#define _TK_BLKALLOC_H_
+#ifndef _RTL_BLKPOOL_8976_
+#define _RTL_BLKPOOL_8976_
 
-#define rtl_block_allocator_t TBlockAllocator 
+#define blockpool_t TBlockPool 
 
 /* this structure should be QWORD alignment to improve efficiency for 32 bit 
- * computers
+ * computers, or DWORD alignment for 16 bit MCUs
  */
 typedef struct{
   uint16 next;
   uint16 index;
-}TBlockAllocatorItem;
+}TiBlockPoolItem;
 
 /* this structure should be QWORD alignment to improve efficiency for 32 bit 
  * computers
@@ -46,13 +46,13 @@ typedef struct{
 typedef struct{
   uint16 emptylist;
   uint16 activelist;
-  TBlockAllocatorItem * blocktable;
+  TiBlockPoolItem * blocktable;
   char * blockdata;
   uint16 chunksize
   uint16 blocksize;
   uint16 blockcapacity;
   uint16 blockcount;
-}TBlockAllocator;  
+}TBlockPool;  
 
 
-#endif /*_TK_BLKALLOC_H_*/
+#endif /*_RTL_BLKPOOL_8976_*/

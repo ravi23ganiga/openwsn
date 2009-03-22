@@ -156,8 +156,8 @@ void DumpRam( uint8 * vpMem, uint32 vCount );
 
 
 
-#define min(a, b)  (((a) < (b)) ? (a) : (b))
-#define max(a, b)  (((a) > (b)) ? (a) : (b))
+//#define min(a, b)  (((a) < (b)) ? (a) : (b))
+//#define max(a, b)  (((a) > (b)) ? (a) : (b))
 
 #define bit_set(token,index) (token |= (1<<index))
 #define bit_get(token,index) ((token >> index) & 1)
