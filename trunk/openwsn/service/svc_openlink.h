@@ -9,19 +9,19 @@ typedef struct{
   uint8 addr[8];
   uint8 linkquality;
   uint8 signalstrength;
-}TOpenNeighbor;
+}TiOpenNeighbor;
 
 typedef struct{
-  TOpenLLC * mac;
-  TOpenNeighbor nodes[CONFIG_MAX_NEIGHBOR_COUNT];
-}TOpenLLC;
+  TiOpenLLC * mac;
+  TiOpenNeighbor nodes[CONFIG_MAX_NEIGHBOR_COUNT];
+}TiOpenLLC;
 
-TOpenLLC * llc_construct( void * buf, uint16 size );
-void llc_destroy( TOpenLLC * llc ) 
-int8 llc_probe( TOpenLLC * mac );
-int8 llc_updatestatistics( TOpenLLC * mac );
-int8 llc_getnode( TOpenLLC * mac, TOpenLLCNode * node );
-int8 llc_getneighbors( TOpenLLC * mac, TOpenAddress * addr[] );
-uint8 llc_getlinkquality( TOpenLLC * mac, TOpenAddress * addr );
-uint8 llc_getsignalstrength( TOpenLLC * mac, TOpenAddress * addr );
+TiOpenLLC * llc_construct( void * buf, uint16 size );
+void llc_destroy( TiOpenLLC * llc ) 
+int8 llc_probe( TiOpenLLC * mac );
+int8 llc_updatestatistics( TiOpenLLC * mac );
+int8 llc_getnode( TiOpenLLC * mac, TiOpenLLCNode * node );
+int8 llc_getneighbors( TiOpenLLC * mac, TiOpenAddress * addr[] );
+uint8 llc_getlinkquality( TiOpenLLC * mac, TiOpenAddress * addr );
+uint8 llc_getsignalstrength( TiOpenLLC * mac, TiOpenAddress * addr );
 

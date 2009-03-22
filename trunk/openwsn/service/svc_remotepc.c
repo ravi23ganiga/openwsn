@@ -14,10 +14,9 @@
 //#include "config.h"
 //#include "includes.h"
 
-/* modified by zhangwei on 2006-08-25 
+/* modified by zhangwei on 2006-08-25
  * replace the old directory settings of uCOS-II */
-#include "foundation.h"
-#include "..\src\config.h"
+#include "svc_remotepc.h"
 
 /*
 *********************************************************************************************************
@@ -45,9 +44,9 @@
 *                                       LOCAL GLOBAL VARIABLES
 *********************************************************************************************************
 */
-             
+
 static INT16U    PC_ElapsedOverhead;
-//static jmp_buf   PC_JumpBuf;          //del by cmj 
+//static jmp_buf   PC_JumpBuf;          //del by cmj
 //static BOOLEAN   PC_ExitFlag;         //del by cmj
 //void           (*PC_TickISR)(void);   //del by cmj
 
@@ -57,17 +56,17 @@ static INT16U    PC_ElapsedOverhead;
 *                           DISPLAY A SINGLE CHARACTER AT 'X' & 'Y' COORDINATE
 *
 * Description : This function writes a single character anywhere on the PC's screen.  This function
-*               writes directly to video RAM instead of using the BIOS for speed reasons.  It assumed 
-*               that the video adapter is VGA compatible.  Video RAM starts at absolute address 
-*               0x000B8000.  Each character on the screen is composed of two bytes: the ASCII character 
-*               to appear on the screen followed by a video attribute.  An attribute of 0x07 displays 
+*               writes directly to video RAM instead of using the BIOS for speed reasons.  It assumed
+*               that the video adapter is VGA compatible.  Video RAM starts at absolute address
+*               0x000B8000.  Each character on the screen is composed of two bytes: the ASCII character
+*               to appear on the screen followed by a video attribute.  An attribute of 0x07 displays
 *               the character in WHITE with a black background.
 *
 * Arguments   : x      corresponds to the desired column on the screen.  Valid columns numbers are from
 *                      0 to 79.  Column 0 corresponds to the leftmost column.
 *               y      corresponds to the desired row on the screen.  Valid row numbers are from 0 to 24.
 *                      Line 0 corresponds to the topmost row.
-*               c      Is the ASCII character to display.  You can also specify a character with a 
+*               c      Is the ASCII character to display.  You can also specify a character with a
 *                      numeric value higher than 128.  In this case, special character based graphics
 *                      will be displayed.
 *               color  specifies the foreground/background color to use (see PC.H for available choices)
@@ -80,20 +79,20 @@ static INT16U    PC_ElapsedOverhead;
 {
     while((U0LSR & 0x00000020) == 0);
     U0THR = data;
-}		
+}
 
 //change by cmj
         void PC_DispChar (INT8U x, INT8U y, INT8U c, INT8U color)
 {
     //OS_ENTER_CRITICAL();
     OSSchedLock();
-    
+
     Uart_SendChar(0xff);
     Uart_SendChar(x);
     Uart_SendChar(y);
     Uart_SendChar(c);
     Uart_SendChar(color);
-  
+
     //OS_EXIT_CRITICAL();
     OSSchedUnlock();
 }
@@ -109,21 +108,21 @@ static INT16U    PC_ElapsedOverhead;
 //    *pscr++ = c;                                           /* Put character in video RAM               */
 //    *pscr   = color;                                       /* Put video attribute in video RAM         */
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                            CLEAR A COLUMN
 *
-* Description : This function clears one of the 80 columns on the PC's screen by directly accessing video 
-*               RAM instead of using the BIOS.  It assumed that the video adapter is VGA compatible.  
-*               Video RAM starts at absolute address 0x000B8000.  Each character on the screen is 
-*               composed of two bytes: the ASCII character to appear on the screen followed by a video 
+* Description : This function clears one of the 80 columns on the PC's screen by directly accessing video
+*               RAM instead of using the BIOS.  It assumed that the video adapter is VGA compatible.
+*               Video RAM starts at absolute address 0x000B8000.  Each character on the screen is
+*               composed of two bytes: the ASCII character to appear on the screen followed by a video
 *               attribute.  An attribute of 0x07 displays the character in WHITE with a black background.
 *
-* Arguments   : x            corresponds to the desired column to clear.  Valid column numbers are from 
+* Arguments   : x            corresponds to the desired column to clear.  Valid column numbers are from
 *                            0 to 79.  Column 0 corresponds to the leftmost column.
 *
-*               color        specifies the foreground/background color combination to use 
+*               color        specifies the foreground/background color combination to use
 *                            (see PC.H for available choices)
 *
 * Returns     : None
@@ -153,21 +152,21 @@ static INT16U    PC_ElapsedOverhead;
 //        pscr    = pscr + DISP_MAX_X * 2;         /* Position on next row                               */
 //    }
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                             CLEAR A ROW
 *
-* Description : This function clears one of the 25 lines on the PC's screen by directly accessing video 
-*               RAM instead of using the BIOS.  It assumed that the video adapter is VGA compatible.  
-*               Video RAM starts at absolute address 0x000B8000.  Each character on the screen is 
-*               composed of two bytes: the ASCII character to appear on the screen followed by a video 
+* Description : This function clears one of the 25 lines on the PC's screen by directly accessing video
+*               RAM instead of using the BIOS.  It assumed that the video adapter is VGA compatible.
+*               Video RAM starts at absolute address 0x000B8000.  Each character on the screen is
+*               composed of two bytes: the ASCII character to appear on the screen followed by a video
 *               attribute.  An attribute of 0x07 displays the character in WHITE with a black background.
 *
-* Arguments   : y            corresponds to the desired row to clear.  Valid row numbers are from 
+* Arguments   : y            corresponds to the desired row to clear.  Valid row numbers are from
 *                            0 to 24.  Row 0 corresponds to the topmost line.
 *
-*               color        specifies the foreground/background color combination to use 
+*               color        specifies the foreground/background color combination to use
 *                            (see PC.H for available choices)
 *
 * Returns     : None
@@ -196,7 +195,7 @@ static INT16U    PC_ElapsedOverhead;
 //        *pscr++ = color;                         /* Put video attribute in video RAM                   */
 //    }
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                              CLEAR SCREEN
@@ -207,7 +206,7 @@ static INT16U    PC_ElapsedOverhead;
 *               the ASCII character to appear on the screen followed by a video attribute.  An attribute
 *               of 0x07 displays the character in WHITE with a black background.
 *
-* Arguments   : color   specifies the foreground/background color combination to use 
+* Arguments   : color   specifies the foreground/background color combination to use
 *                       (see PC.H for available choices)
 *
 * Returns     : None
@@ -239,24 +238,24 @@ static INT16U    PC_ElapsedOverhead;
 //        *pscr++ = color;                              /* Put video attribute in video RAM              */
 //    }
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                 DISPLAY A STRING  AT 'X' & 'Y' COORDINATE
 *
 * Description : This function writes an ASCII string anywhere on the PC's screen.  This function writes
-*               directly to video RAM instead of using the BIOS for speed reasons.  It assumed that the 
-*               video adapter is VGA compatible.  Video RAM starts at absolute address 0x000B8000.  Each 
-*               character on the screen is composed of two bytes: the ASCII character to appear on the 
-*               screen followed by a video attribute.  An attribute of 0x07 displays the character in 
+*               directly to video RAM instead of using the BIOS for speed reasons.  It assumed that the
+*               video adapter is VGA compatible.  Video RAM starts at absolute address 0x000B8000.  Each
+*               character on the screen is composed of two bytes: the ASCII character to appear on the
+*               screen followed by a video attribute.  An attribute of 0x07 displays the character in
 *               WHITE with a black background.
 *
 * Arguments   : x      corresponds to the desired column on the screen.  Valid columns numbers are from
 *                      0 to 79.  Column 0 corresponds to the leftmost column.
 *               y      corresponds to the desired row on the screen.  Valid row numbers are from 0 to 24.
 *                      Line 0 corresponds to the topmost row.
-*               s      Is the ASCII string to display.  You can also specify a string containing 
-*                      characters with numeric values higher than 128.  In this case, special character 
+*               s      Is the ASCII string to display.  You can also specify a string containing
+*                      characters with numeric values higher than 128.  In this case, special character
 *                      based graphics will be displayed.
 *               color  specifies the foreground/background color to use (see PC.H for available choices)
 *                      and whether the characters will blink or not.
@@ -292,15 +291,15 @@ static INT16U    PC_ElapsedOverhead;
 //        *pscr++ = color;                                    /* Put video attribute in video RAM        */
 //    }
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                             RETURN TO DOS
 *
 * Description : This functions returns control back to DOS by doing a 'long jump' back to the saved
 *               location stored in 'PC_JumpBuf'.  The saved location was established by the function
-*               'PC_DOSSaveReturn()'.  After execution of the long jump, execution will resume at the 
-*               line following the 'set jump' back in 'PC_DOSSaveReturn()'.  Setting the flag 
+*               'PC_DOSSaveReturn()'.  After execution of the long jump, execution will resume at the
+*               line following the 'set jump' back in 'PC_DOSSaveReturn()'.  Setting the flag
 *               'PC_ExitFlag' to TRUE ensures that the 'if' statement in 'PC_DOSSaveReturn()' executes.
 *
 * Arguments   : None
@@ -319,7 +318,7 @@ static INT16U    PC_ElapsedOverhead;
 //    PC_ExitFlag = TRUE;                                    /* Indicate we are returning to DOS         */
 //    longjmp(PC_JumpBuf, 1);                                /* Jump back to saved environment           */
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                        SAVE DOS RETURN LOCATION
@@ -343,15 +342,15 @@ void PC_DOSSaveReturn (void)
 //change by cmj
 //#if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
 //    OS_CPU_SR  cpu_sr;
-//#endif    
+//#endif
 
 
 //    PC_ExitFlag  = FALSE;                                  /* Indicate that we are not exiting yet!    */
 //    OSTickDOSCtr =     1;                                  /* Initialize the DOS tick counter          */
 //    PC_TickISR   = PC_VectGet(VECT_TICK);                  /* Get MS-DOS's tick vector                 */
-    
+
 //    PC_VectSet(VECT_DOS_CHAIN, PC_TickISR);                /* Store MS-DOS's tick to chain             */
-    
+
 //    setjmp(PC_JumpBuf);                                    /* Capture where we are in DOS              */
 //    if (PC_ExitFlag == TRUE) {                             /* See if we are exiting back to DOS        */
 //        OS_ENTER_CRITICAL();
@@ -362,7 +361,7 @@ void PC_DOSSaveReturn (void)
 //        exit(0);                                           /* Return to DOS                            */
 //    }
 }
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                       ELAPSED TIME INITIALIZATION
@@ -382,7 +381,7 @@ void PC_ElapsedInit(void)
     PC_ElapsedStart();
     PC_ElapsedOverhead = PC_ElapsedStop();
 }
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                         INITIALIZE PC'S TIMER #2
@@ -405,7 +404,7 @@ void PC_ElapsedInit(void)
 //{
 //#if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
 //    OS_CPU_SR  cpu_sr;
-//#endif    
+//#endif
 //    INT8U      data;
 
 
@@ -420,7 +419,7 @@ void PC_ElapsedInit(void)
 //    outp(0x61, data);
 //    OS_EXIT_CRITICAL();
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                 STOP THE PC'S TIMER #2 AND GET ELAPSED TIME
@@ -447,7 +446,7 @@ void PC_ElapsedInit(void)
 //{
 //#if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
 //    OS_CPU_SR  cpu_sr;
-//#endif    
+//#endif
 //    INT8U      data;
 //    INT8U      low;
 //    INT8U      high;
@@ -465,7 +464,7 @@ void PC_ElapsedInit(void)
 //    OS_EXIT_CRITICAL();
 //    return ((INT16U)((INT32U)cnts * 54926L >> 16) - PC_ElapsedOverhead);
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                       GET THE CURRENT DATE AND TIME
@@ -473,7 +472,7 @@ void PC_ElapsedInit(void)
 * Description: This function obtains the current date and time from the PC.
 *
 * Arguments  : s     is a pointer to where the ASCII string of the current date and time will be stored.
-*                    You must allocate at least 21 bytes (includes the NUL) of storage in the return 
+*                    You must allocate at least 21 bytes (includes the NUL) of storage in the return
 *                    string.  The date and time will be formatted as follows:
 *
 *                        "YYYY-MM-DD  HH:MM:SS"
@@ -485,7 +484,7 @@ void PC_ElapsedInit(void)
         void PC_GetDateTime (char *s)
 {
     INT32U da_year,da_mon,da_day,ti_hour,ti_min,ti_sec;
-    
+
 
     ti_sec = SEC;
     ti_min = MIN;
@@ -514,7 +513,7 @@ void PC_ElapsedInit(void)
 //               now.ti_min,
 //               now.ti_sec);
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                        CHECK AND GET KEYBOARD KEY
@@ -554,7 +553,7 @@ void PC_ElapsedInit(void)
 //        return (FALSE);
 //    }
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                      SET THE PC'S TICK FREQUENCY
@@ -581,26 +580,26 @@ void PC_ElapsedInit(void)
 //{
 //#if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
 //    OS_CPU_SR  cpu_sr;
-//#endif    
+//#endif
 //    INT16U     count;
 
 
 //    if (freq == 18) {                            /* See if we need to restore the DOS frequency        */
 //        count = 0;
-//    } else if (freq > 0) {                        
+//    } else if (freq > 0) {
                                                  /* Compute 8254 counts for desired frequency and ...  */
                                                  /* ... round to nearest count                         */
-//        count = (INT16U)(((INT32U)2386360L / freq + 1) >> 1); 
+//        count = (INT16U)(((INT32U)2386360L / freq + 1) >> 1);
 //    } else {
 //        count = 0;
 //    }
 //    OS_ENTER_CRITICAL();
-//    outp(TICK_T0_8254_CWR,  TICK_T0_8254_CTR0_MODE3); /* Load the 8254 with desired frequency          */  
+//    outp(TICK_T0_8254_CWR,  TICK_T0_8254_CTR0_MODE3); /* Load the 8254 with desired frequency          */
 //    outp(TICK_T0_8254_CTR0, count & 0xFF);            /* Low  byte                                     */
 //    outp(TICK_T0_8254_CTR0, (count >> 8) & 0xFF);     /* High byte                                     */
 //    OS_EXIT_CRITICAL();
 //}
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                        OBTAIN INTERRUPT VECTOR
@@ -617,12 +616,12 @@ void PC_ElapsedInit(void)
 //{
 //#if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
 //    OS_CPU_SR  cpu_sr;
-//#endif    
+//#endif
 //    INT16U    *pvect;
 //    INT16U     off;
 //    INT16U     seg;
-    
-    
+
+
 //    pvect = (INT16U *)MK_FP(0x0000, vect * 4);        /* Point into IVT at desired vector location     */
 //    OS_ENTER_CRITICAL();
 //    off   = *pvect++;                                 /* Obtain the vector's OFFSET                    */
@@ -648,10 +647,10 @@ void PC_ElapsedInit(void)
 //{
 //#if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
 //    OS_CPU_SR  cpu_sr;
-//#endif    
+//#endif
 //    INT16U    *pvect;
-    
-    
+
+
 //    pvect    = (INT16U *)MK_FP(0x0000, vect * 4);     /* Point into IVT at desired vector location     */
 //    OS_ENTER_CRITICAL();
 //    *pvect++ = (INT16U)FP_OFF(isr);                   /* Store ISR offset                              */

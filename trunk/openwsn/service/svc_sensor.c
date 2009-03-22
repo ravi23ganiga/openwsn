@@ -31,22 +31,22 @@
 #include "svc_foundation.h"
 #include "svc_sensor.h"
 
-static int8 sen_timer_callback( TSensorService * sen, TTimer * timer );
+static int8 sen_timer_callback( TiSensorService * sen, TiTimerAdapter * timer );
 
-TSensorService * sen_construct( char * buf, uint16 size )
+TiSensorService * sen_construct( char * buf, uint16 size )
 {
-	//assert( sizeof(TSensorService) <= size );
+	//assert( sizeof(TiSensorService) <= size );
 	memset( buf, 0x00, size );
-	return (TSensorService *)buf; 
+	return (TiSensorService *)buf; 
 }
 
-void sen_destroy( TSensorService * sen )
+void sen_destroy( TiSensorService * sen )
 {
 	sen_stop( sen );
 }
 
-void sen_configure( TSensorService * sen, TTempSensor * temp, TVibrationSensor * vib,
-	TStrainSensor * strain, TTimer * timer )
+void sen_configure( TiSensorService * sen, TiTempSensorAdapter * temp, TiVibSensorAdapter * vib,
+	TiStrainSensorAdapter * strain, TiTimerAdapter * timer )
 {
 	sen->temp = temp;
 	sen->vib = vib;
@@ -63,7 +63,7 @@ void sen_configure( TSensorService * sen, TTempSensor * temp, TVibrationSensor *
  * 	= 0		do nothing
  * 	< 0		failed 
  */
-int8 sen_read( TSensorService * sen, char * buf, uint8 size, uint8 opt )
+int8 sen_read( TiSensorService * sen, char * buf, uint8 size, uint8 opt )
 {
 	switch (opt)
 	{
@@ -87,12 +87,12 @@ int8 sen_read( TSensorService * sen, char * buf, uint8 size, uint8 opt )
 }
 
 /* fill the packet's payload TOpenData buffer with the measured data */
-int8 sen_fillpacket( TSensorService * sen, uint8 type, TOpenPacket * pkt, uint8 size )
+int8 sen_fillpacket( TiSensorService * sen, uint8 type, TiOpenPacket * pkt, uint8 size )
 {
 	int8 ret;
 	char * data = opt_data( (char*)pkt );
 	data[0] = type;
-	ret = sen_read( sen, data+1, sizeof(TOpenData)-1, type );
+	ret = sen_read( sen, data+1, sizeof(TiOpenData)-1, type );
 	pkt->datalen = (uint8)(ret >= 0 ? ret : 0);
 	return ret;
 }
@@ -101,12 +101,12 @@ int8 sen_fillpacket( TSensorService * sen, uint8 type, TOpenPacket * pkt, uint8 
  * [LENGTH 1][CONTROL 2][SEQU 1][PANID 2][NODEFROM 2][NODETO 2] [DATA TYPE 1] [DATA n]
  * this structure is defined in "hal\hal_openframe.h" and also "service\svc_openpacket.h"
  */
-int8 sen_fillframe( TSensorService * sen, uint8 type, TOpenFrame * frame, uint8 size )
+int8 sen_fillframe( TiSensorService * sen, uint8 type, TiOpenFrame * frame, uint8 size )
 {
 	int8 ret;
 	char * data = opt_data( opf_packet((char *)frame) );
 	data[0] = type;
-	ret = sen_read( sen, data+1, sizeof(TOpenData)-1, type );
+	ret = sen_read( sen, data+1, sizeof(TiOpenData)-1, type );
 	data --;
 	*data = (uint8)(ret >= 0 ? ret : 0);
 	frame->length = *data + OPF_HEADER_SIZE + 2;
@@ -118,22 +118,22 @@ int8 sen_fillframe( TSensorService * sen, uint8 type, TOpenFrame * frame, uint8 
  * 
  * @param
  * 	interval	sampling interval between two measurements
- * 	delay		default 0. means the TSensorService start sampling almost at once.
+ * 	delay		default 0. means the TiSensorService start sampling almost at once.
  * 				however, you may need to postphone the sampling for sometime, then 
  * 				you can set the duration of delay through this parameter.
  * 				usually, you can set the same value of "delay" and "interval". 				
  */
-int8 sen_start( TSensorService * sen, uint32 interval, uint32 delay )
+int8 sen_start( TiSensorService * sen, uint32 interval, uint32 delay )
 {
 	return 0;
 }
 
-int8 sen_stop( TSensorService * sen )
+int8 sen_stop( TiSensorService * sen )
 {
 	return 0;
 }
 
-int8 sen_timer_callback( TSensorService * sen, TTimer * timer )
+int8 sen_timer_callback( TiSensorService * sen, TiTimerAdapter * timer )
 {
 	return 0;
 }

@@ -1,19 +1,19 @@
 
+#include "../hal/hal_foundation.h"
 #include "svc_location.h"
 #include <stdlib.h>
-#include "config.h"
-#include "..\hal\hal_led.h"
-#include "..\hal\hal_cc2420.h"
-#include "..\hal\hal_cc2420base.h"
-#include "..\hal\hal_spi.h"
-#include "..\hal\hal.h"
+#include "../hal/hal_led.h"
+#include "../hal/hal_cc2420.h"
+#include "../hal/hal_cc2420base.h"
+#include "../hal/hal_spi.h"
+//#include "../hal/hal.h"
+#include "../global.h"
 #include "start.h"
-#include "..\global.h"
 
 // @TODO: pls move these variables to the object definition
 
-    static TCc2420Frame location_tx_packet;
-    static TCc2420Frame location_rx_packet; 
+    static TiCc2420AdapterFrame location_tx_packet;
+    static TiCc2420AdapterFrame location_rx_packet; 
     
     static int8 length;
     static uint8 n,temp;
@@ -69,23 +69,23 @@ static void _localize( int16 *x,int16 *y,int16 x1,int16 y1,int16 d1,int16 x2,int
         _compute_location(x,y,c2,dis2);
 }
 
-TLocationService * lcs_construct(char * buf, uint16 size)
+TiLocationService * lcs_construct(char * buf, uint16 size)
 {
   	
-  	TLocationService *lo;
+  	TiLocationService *lo;
 	char* out_string = "location service consturct succesful!\n";
 	
 	
-	if (sizeof(TLocationService) > size)
+	if (sizeof(TiLocationService) > size)
 		lo = NULL;
 	else
-		lo = (TLocationService *)buf;
+		lo = (TiLocationService *)buf;
 		
 	
 	if (lo != NULL)
 	{	
 		
-		memset( (char*)lo, 0x00, sizeof(TLocationService) );
+		memset( (char*)lo, 0x00, sizeof(TiLocationService) );
 		lo->state = 0;
 		lo->nodeid= 0;
 		uart_write(g_uart, out_string,38, 0);
@@ -95,12 +95,12 @@ TLocationService * lcs_construct(char * buf, uint16 size)
 	
 }
 
-void lcs_destroy( TLocationService * lcs )
+void lcs_destroy( TiLocationService * lcs )
 {
 	
 }
 
-void lcs_rssi2dist( TLocationService * lcs, uint8 rssi, uint16 * dis )
+void lcs_rssi2dist( TiLocationService * lcs, uint8 rssi, uint16 * dis )
 {
 	if((rssi >= L_1_RSSI) || (rssi < 30))  {*dis = L_1;     return;}
     if(rssi >= L_2_RSSI)                   {*dis = L_2 -  (rssi - L_2_RSSI)   / (L_1_RSSI - L_2_RSSI) * LENGTH_UNIT;   return;}
@@ -134,17 +134,17 @@ void lcs_rssi2dist( TLocationService * lcs, uint8 rssi, uint16 * dis )
     *dis = 50;
 }
 
-int8 lcs_read( TLocationService * lcs, TLocation * loc, uint8 opt )
+int8 lcs_read( TiLocationService * lcs, TiLocation * loc, uint8 opt )
 {
 	return 0;
 }
 
-int8 lcs_write( TLocationService * lcs, TLocation * loc, uint8 opt )
+int8 lcs_write( TiLocationService * lcs, TiLocation * loc, uint8 opt )
 {
 	return 0;
 }
 
-void lcs_init(TLocationService * lcs,TCc2420Driver * cc )
+void lcs_init(TiLocationService * lcs,TiCc2420Adapter * cc )
 {
     location_tx_packet.panid = 0x2420;
     location_rx_packet.panid = 0x2420;
@@ -196,7 +196,7 @@ void lcs_init(TLocationService * lcs,TCc2420Driver * cc )
     IRQEnable();
 }
 
-int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * cc )
+int8 lcs_evolve( TiLocationService * lcs, TiLocation * location, TiCc2420Adapter * cc )
 {
     
     if(!(lcs->state & LOC_TYPE_ARCHOR))  //unknow node

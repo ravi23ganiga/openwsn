@@ -52,20 +52,20 @@
 
 typedef struct{
   uint8 opt;
-  TTempSensor * temp;
-  TVibrationSensor * vib;
-  TStrainSensor * strain;
-  TTimer * timer;
-}TSensorService;
+  TiTempSensorAdapter * temp;
+  TiVibSensorAdapter * vib;
+  TiStrainSensorAdapter * strain;
+  TiTimerAdapter * timer;
+}TiSensorService;
 
-TSensorService * sen_construct( char * buf, uint16 size );
-void sen_destroy( TSensorService * sen );
-void sen_configure( TSensorService * sen, TTempSensor * temp, TVibrationSensor * vib,
-	TStrainSensor * strain, TTimer * timer );
-int8 sen_read( TSensorService * sen, char * buf, uint8 size, uint8 opt );
-int8 sen_fillpacket( TSensorService * sen, uint8 type, TOpenPacket * pkt, uint8 size );  
-int8 sen_fillframe( TSensorService * sen, uint8 type, TOpenFrame * frame, uint8 size );  
-int8 sen_start( TSensorService * sen, uint32 interval, uint32 delay );
-int8 sen_stop( TSensorService * sen );
+TiSensorService * sen_construct( char * buf, uint16 size );
+void sen_destroy( TiSensorService * sen );
+void sen_configure( TiSensorService * sen, TiTempSensorAdapter * temp, TiVibSensorAdapter * vib,
+	TiStrainSensorAdapter * strain, TiTimerAdapter * timer );
+int8 sen_read( TiSensorService * sen, char * buf, uint8 size, uint8 opt );
+int8 sen_fillpacket( TiSensorService * sen, uint8 type, TiOpenPacket * pkt, uint8 size );  
+int8 sen_fillframe( TiSensorService * sen, uint8 type, TiOpenFrame * frame, uint8 size );  
+int8 sen_start( TiSensorService * sen, uint32 interval, uint32 delay );
+int8 sen_stop( TiSensorService * sen );
 
 #endif

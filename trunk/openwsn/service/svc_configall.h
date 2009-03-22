@@ -6,6 +6,6 @@
  * this file contains the configure macros of all the service modules.
  */
 
-
+#include "./configall.h"
 
 #endif

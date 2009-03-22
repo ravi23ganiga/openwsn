@@ -6,12 +6,12 @@
 #include "svc_foundation.h"
 #include "svc_console.h"
 
-TConsole * console_construct( char * buf, uint16 size, TUartDriver * uart )
+TiConsole * console_construct( char * buf, uint16 size, TiUartAdapter * uart )
 {
-	TConsole * con;
+	TiConsole * con;
 	
-	if (sizeof(TConsole) < size)
-		con = (TConsole *)buf;
+	if (sizeof(TiConsole) < size)
+		con = (TiConsole *)buf;
 	else
 		con = NULL;
 		
@@ -23,18 +23,18 @@ TConsole * console_construct( char * buf, uint16 size, TUartDriver * uart )
 	return con;
 }
 
-void console_destroy( TConsole * con )
+void console_destroy( TiConsole * con )
 {
 	assert( con != NULL );
 	uart_destroy( con->uart );
 }
 
-void console_reset( TConsole * con )
+void console_reset( TiConsole * con )
 {
 	uart_reset( con->uart );
 }
 
-char console_getchar( TConsole * con )
+char console_getchar( TiConsole * con )
 {
 	char ch = '\0';
 	while (uart_getchar(con->uart, &ch) != 0)
@@ -43,7 +43,7 @@ char console_getchar( TConsole * con )
 	return ch;
 }
 
-void console_putchar( TConsole * con, char ch )
+void console_putchar( TiConsole * con, char ch )
 {
 	while (uart_putchar(con->uart, ch) != 0)
 		NULL;
@@ -60,7 +60,7 @@ void console_putchar( TConsole * con, char ch )
 // @return
 //	缓冲区字符个数，如果该数值<size，则最后一个字符必然是endinput标志
 //
-uint16 console_read( TConsole * con, char * buf, uint16 size, char endinput )
+uint16 console_read( TiConsole * con, char * buf, uint16 size, char endinput )
 {
 	uint16 count=0;
 	char ch;
@@ -78,7 +78,7 @@ uint16 console_read( TConsole * con, char * buf, uint16 size, char endinput )
 	return count;
 }
 
-void console_write( TConsole * con, char * buf, uint16 len )
+void console_write( TiConsole * con, char * buf, uint16 len )
 {
 	uint16 n;
 	for (n=0; n<len; n++)
@@ -86,7 +86,7 @@ void console_write( TConsole * con, char * buf, uint16 len )
 }
 
 #ifdef CONSOLE_PROMPT_ENABLE
-int16 console_prompt( TConsole * con, char * msg, char * buf, uint16 size )
+int16 console_prompt( TiConsole * con, char * msg, char * buf, uint16 size )
 {
 	console_writestring( con, msg );
 	return console_readline( con, buf, size );
@@ -97,7 +97,7 @@ int16 console_prompt( TConsole * con, char * msg, char * buf, uint16 size )
 // @attention
 // 	不论出现何种条件返回，该函数总是保证buf中返回的是一个合法的以\0结束的标准C字符串
 // 	
-uint16 console_readline( TConsole * con, char * buf, uint16 size )
+uint16 console_readline( TiConsole * con, char * buf, uint16 size )
 {
 	uint16 len;
 	char endflag = CR;
@@ -109,14 +109,14 @@ uint16 console_readline( TConsole * con, char * buf, uint16 size )
 	return len;
 }
 
-void console_writeline( TConsole * con, char * buf )
+void console_writeline( TiConsole * con, char * buf )
 {
 	console_write( con, buf, strlen(buf) );
 	console_putchar( con, LF );
 	console_putchar( con, CR );
 }
 
-int16 console_readstring( TConsole * con, char * buf, uint16 size )
+int16 console_readstring( TiConsole * con, char * buf, uint16 size )
 {
 	uint16 count;
 	count = console_read( con, buf, size, ' ' );
@@ -131,37 +131,37 @@ int16 console_readstring( TConsole * con, char * buf, uint16 size )
 
 #define console_readchar(con) console_getchar(con)
 
-uint8 console_readuint8( TConsole * con )
+uint8 console_readuint8( TiConsole * con )
 {
 	NULL;
 	return 0;
 }
 
-uint16 console_readuint16( TConsole * con )
+uint16 console_readuint16( TiConsole * con )
 {
 	NULL;
 	return 0;
 }
 
-uint32 console_readuint32( TConsole * con )
+uint32 console_readuint32( TiConsole * con )
 {
 	NULL;
 	return 0;
 }
 
-int8 console_readint8( TConsole * con )
+int8 console_readint8( TiConsole * con )
 {
 	NULL;
 	return 0;
 }
 
-int16 console_readint16( TConsole * con )
+int16 console_readint16( TiConsole * con )
 {
 	NULL;
 	return 0;
 }
 
-int32 console_readint32( TConsole * con )
+int32 console_readint32( TiConsole * con )
 {
 	NULL;
 	return 0;
@@ -169,12 +169,12 @@ int32 console_readint32( TConsole * con )
 
 #define console_writechar(con,ch) console_putchar(con,ch)
 
-void console_writestring( TConsole * con, char * str )
+void console_writestring( TiConsole * con, char * str )
 {
 	uart_write( con->uart, str, strlen(str), 0 );
 }
 
-void console_writeuint8( TConsole * con, uint8 value )
+void console_writeuint8( TiConsole * con, uint8 value )
 {
 	char buf[4];
 	
@@ -186,12 +186,12 @@ void console_writeuint8( TConsole * con, uint8 value )
 	console_write( con, &(buf[0]), 4 );
 }
 
-void console_writeuint16( TConsole * con, uint16 value )
+void console_writeuint16( TiConsole * con, uint16 value )
 {
 	NULL;
 }
 
-void console_writeuint32( TConsole * con, uint16 value )
+void console_writeuint32( TiConsole * con, uint16 value )
 {
 	NULL;
 }

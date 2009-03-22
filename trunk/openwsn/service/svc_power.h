@@ -54,10 +54,10 @@
 
 typedef struct{
   
-}TPowerManagement;
+}TiPowerManagement;
 
 void pm_construct( char * buf, uint16 size );
-void pm_free( TPowerManagement * pm );
+void pm_free( TiPowerManagement * pm );
 void pm_setlevel();
 void pm_evolve();
 

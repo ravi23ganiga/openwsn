@@ -48,21 +48,21 @@ static char m_ackframe[7] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static char m_rtsframe[10] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static char m_ctsframe[8] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
 
-TOpenMAC * mac_construct( char * buf, uint16 size )
+TiOpenMAC * mac_construct( char * buf, uint16 size )
 {
-	TOpenMAC * mac = (TOpenMAC *)buf;
-	//assert( sizeof(TOpenMAC) <= size );
-	memset( mac, 0x00, sizeof(TOpenMAC) );
+	TiOpenMAC * mac = (TiOpenMAC *)buf;
+	//assert( sizeof(TiOpenMAC) <= size );
+	memset( mac, 0x00, sizeof(TiOpenMAC) );
 	return mac;
 }
 
-void  mac_destroy( TOpenMAC * mac )
+void  mac_destroy( TiOpenMAC * mac )
 {
 	timer_stop( mac->timer );
 }
 
-void  mac_open( TOpenMAC * mac, TCc2420 * hdl, TActionScheduler * actsche, TTimer * timer, 
-	TOpenAddress * addr )
+void  mac_open( TiOpenMAC * mac, TiCc2420Adapter * hdl, TiActionScheduler * actsche, TiTimerAdapter * timer, 
+	TiOpenAddress * addr )
 {
 	#ifndef GDEBUG
 	char * msg = "mac_open() run...\n";
@@ -91,12 +91,12 @@ void  mac_open( TOpenMAC * mac, TCc2420 * hdl, TActionScheduler * actsche, TTime
 
 }
 
-void  mac_configure( TOpenMAC * mac, uint8 ctrlcode, uint16 value )
+void  mac_configure( TiOpenMAC * mac, uint8 ctrlcode, uint16 value )
 {
 	cc2420_configure( mac->phy, ctrlcode, value, 0);
 }
 
-uint8 mac_read( TOpenMAC * mac, TOpenFrame * frame, uint8 size, uint8 opt )
+uint8 mac_read( TiOpenMAC * mac, TiOpenFrame * frame, uint8 size, uint8 opt )
 {
 	return mac_rawread( mac, (char *)frame, size, opt );
 }
@@ -112,7 +112,7 @@ uint8 mac_read( TOpenMAC * mac, TOpenFrame * frame, uint8 size, uint8 opt )
  * 	> 0		success. the value is the data actually sent. 
  * 	< 0		failed. however, this will never occur in current implementation.
  */
-uint8 mac_rawread( TOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt )
+uint8 mac_rawread( TiOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt )
 {
 	uint8 copied = 0;
 	mac_evolve( mac );
@@ -133,7 +133,7 @@ uint8 mac_rawread( TOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt )
 	return copied;
 }
 
-uint8 mac_write( TOpenMAC * mac, TOpenFrame * frame, uint8 len, uint8 opt )
+uint8 mac_write( TiOpenMAC * mac, TiOpenFrame * frame, uint8 len, uint8 opt )
 {
 	return mac_rawwrite( mac, (char*)frame, len, opt );
 }
@@ -142,7 +142,7 @@ uint8 mac_write( TOpenMAC * mac, TOpenFrame * frame, uint8 len, uint8 opt )
  * 	the framebuffer's len should be less than MAC_FRAMEBUFFER_SIZE, so that 
  * the entire frame can be accept by mac layer. or some of the data will be lost!
  */  
-uint8 mac_rawwrite( TOpenMAC * mac, char * framebuffer, uint8 len, uint8 opt )
+uint8 mac_rawwrite( TiOpenMAC * mac, char * framebuffer, uint8 len, uint8 opt )
 {
 	uint8 copied = 0;
 	
@@ -164,7 +164,7 @@ uint8 mac_rawwrite( TOpenMAC * mac, char * framebuffer, uint8 len, uint8 opt )
  * sometimes, the mac layer cannot go to sleep due to active data, then this 
  * function does nothing.
  */
-uint8 mac_sleep( TOpenMAC * mac )
+uint8 mac_sleep( TiOpenMAC * mac )
 {
 	if ((mac->state == MAC_STATE_IDLE) && (mac->txlen ==0) && (mac->rxlen == 0))
 	{
@@ -175,7 +175,7 @@ uint8 mac_sleep( TOpenMAC * mac )
 }
 
 /* wake up the mac layer if it is in sleep mode */
-uint8 mac_wakeup( TOpenMAC * mac )
+uint8 mac_wakeup( TiOpenMAC * mac )
 {
 	if (mac->state == MAC_STATE_PAUSE)
 	{
@@ -208,7 +208,7 @@ uint8 mac_wakeup( TOpenMAC * mac )
  */
 
 #ifdef CONFIG_OPENMAC_SIMPLE
-int8 mac_evolve( TOpenMAC * mac )
+int8 mac_evolve( TiOpenMAC * mac )
 {
 	boolean done = TRUE;
 	uint16 addr;
@@ -324,7 +324,7 @@ int8 mac_evolve( TOpenMAC * mac )
 #endif
 
 #ifdef CONFIG_OPENMAC_FULL
-int8 mac_evolve( TOpenMAC * mac )
+int8 mac_evolve( TiOpenMAC * mac )
 {
 	boolean done = TRUE;
 	uint16 addr;
@@ -675,13 +675,13 @@ int8 mac_evolve( TOpenMAC * mac )
 }
 #endif
 
-uint8 mac_state( TOpenMAC * mac )
+uint8 mac_state( TiOpenMAC * mac )
 {
 	return mac->state;
 }
 /*
 
-int8 mac_state_machine_evolve( TOpenMAC * mac )
+int8 mac_state_machine_evolve( TiOpenMAC * mac )
 {
 	boolean done = TRUE;
 	int8 ret = 0;
@@ -808,27 +808,27 @@ int8 mac_state_machine_evolve( TOpenMAC * mac )
 }
 */
 
-uint8 mac_setrmtaddress( TOpenMAC * mac, TOpenAddress * addr )
+uint8 mac_setrmtaddress( TiOpenMAC * mac, TiOpenAddress * addr )
 {
 	return 0;
 }
 
-uint8 mac_setlocaladdress( TOpenMAC * mac, TOpenAddress * addr )
+uint8 mac_setlocaladdress( TiOpenMAC * mac, TiOpenAddress * addr )
 {
 	return 0;
 }
 
-uint8 mac_getrmtaddress( TOpenMAC * mac, TOpenAddress * addr )
+uint8 mac_getrmtaddress( TiOpenMAC * mac, TiOpenAddress * addr )
 {
 	return 0;
 }
 
-uint8 mac_getlocaladdress( TOpenMAC * mac, TOpenAddress * addr )
+uint8 mac_getlocaladdress( TiOpenMAC * mac, TiOpenAddress * addr )
 {
 	return 0;
 }
 
-uint8 mac_installnotify( TOpenMAC * mac, TEventHandler * callback, void * owner )
+uint8 mac_installnotify( TiOpenMAC * mac, TEventHandler * callback, void * owner )
 {
 	return 0;
 }

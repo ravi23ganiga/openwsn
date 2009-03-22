@@ -119,19 +119,19 @@
 
 
 typedef struct{
-  TUartDriver * uart;
-}TConsole;
+  TiUartAdapter * uart;
+}TiConsole;
 
-TConsole * console_construct( char * buf, uint16 size, TUartDriver * uart );
-void 	console_destroy( TConsole * con );
-void 	console_reset( TConsole * con );
-char 	console_getchar( TConsole * con );
-void 	console_putchar( TConsole * con, char ch );
-uint16 	console_read( TConsole * con, char * buf, uint16 size, char endinput );
-void 	console_write( TConsole * con, char * buf, uint16 len );
+TiConsole * console_construct( char * buf, uint16 size, TiUartAdapter * uart );
+void 	console_destroy( TiConsole * con );
+void 	console_reset( TiConsole * con );
+char 	console_getchar( TiConsole * con );
+void 	console_putchar( TiConsole * con, char ch );
+uint16 	console_read( TiConsole * con, char * buf, uint16 size, char endinput );
+void 	console_write( TiConsole * con, char * buf, uint16 len );
 
 #ifdef CONSOLE_PROMPT_ENABLE
-int16 	console_prompt( TConsole * con, char * msg, char * buf, uint16 size );
+int16 	console_prompt( TiConsole * con, char * msg, char * buf, uint16 size );
 #endif
 
 // read a line input from the console
@@ -145,26 +145,26 @@ int16 	console_prompt( TConsole * con, char * msg, char * buf, uint16 size );
 // @return
 //	the count of characters returned
 //
-uint16 	console_readline( TConsole * con, char * buf, uint16 size );
+uint16 	console_readline( TiConsole * con, char * buf, uint16 size );
 
 // write a line to the console
 // this function will automatically append a "CR\LF" character to the output
 // stream.
 //
-void 	console_writeline( TConsole * con, char * buf );
+void 	console_writeline( TiConsole * con, char * buf );
 
-int16 	console_readstring( TConsole * con, char * buf, uint16 size );
+int16 	console_readstring( TiConsole * con, char * buf, uint16 size );
 #define console_readchar(con) console_getchar(con)
-uint8 	console_readuint8( TConsole * con );
-uint16 	console_readuint16( TConsole * con );
-uint32 	console_readuint32( TConsole * con );
-int8 	console_readint8( TConsole * con );
-int16 	console_readint16( TConsole * con );
-int32 	console_readint32( TConsole * con );
+uint8 	console_readuint8( TiConsole * con );
+uint16 	console_readuint16( TiConsole * con );
+uint32 	console_readuint32( TiConsole * con );
+int8 	console_readint8( TiConsole * con );
+int16 	console_readint16( TiConsole * con );
+int32 	console_readint32( TiConsole * con );
 #define console_writechar(con,ch) console_putchar(con,ch)
-void 	console_writestring( TConsole * con, char * str );
-void 	console_writeuint8( TConsole * con, uint8 value );
-void 	console_writeuint16( TConsole * con, uint16 value );
-void 	console_writeuint32( TConsole * con, uint16 value );
+void 	console_writestring( TiConsole * con, char * str );
+void 	console_writeuint8( TiConsole * con, uint8 value );
+void 	console_writeuint16( TiConsole * con, uint16 value );
+void 	console_writeuint32( TiConsole * con, uint16 value );
 
 #endif

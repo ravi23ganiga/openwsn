@@ -16,13 +16,13 @@
 #include "svc_foundation.h"
 
 /******************************************************************************
- * TOpenSections
- * a TOpenSections object is essentially a payload of a NET layer packet. It contains
+ * TiOpenSections
+ * a TiOpenSections object is essentially a payload of a NET layer packet. It contains
  * some sections. Each section has its own semantic meaning. However, OpenWSN
  * only regulate the format of the sections, while the application developed by 
  * the user determins the meaning of the section.
  *
- * all REQUEST and ACKNOWLEDGE command are some kind of section of a TOpenSections 
+ * all REQUEST and ACKNOWLEDGE command are some kind of section of a TiOpenSections 
  * object.
  *  
  * {[1B Data Type][1B Data Length][nB DataValue]}
@@ -48,29 +48,29 @@
  * 
  *****************************************************************************/
 
-#define TOpenSection char * 
+#define TiOpenSection char * 
 
 typedef struct{
   char * buf;
   uint8 len;
   uint8 index;
-}TOpenSections;
+}TiOpenSections;
 
-TOpenSections * sec_construct( TOpenSections * buf, uint8 size );
-void sec_destroy( TOpenSections * sec );
-void sec_configure( TOpenSections * sec, char * buf, uint8 len );
+TiOpenSections * sec_construct( TiOpenSections * buf, uint8 size );
+void sec_destroy( TiOpenSections * sec );
+void sec_configure( TiOpenSections * sec, char * buf, uint8 len );
 
-int8   sec_findfirst( TOpenSections * sec, uint8 * id );
-int8   sec_findnext( TOpenSections * sec, uint8 * id );
-void   sec_hasnext( TOpenSections * sec );
-int8   sec_length( TOpenSections * sec, uint8 id );
-int8   sec_write( TOpenSections * sec, uint8 id, char * buf, uint8 len );
-int8   sec_read( TOpenSections * sec, uint8 id, char * buf, uint8 size );
-char * sec_getinside( TOpenSections * sec, uint8 id, uint8 * size );
-uint8  sec_gettype( TOpenSections * sec, uint8 id );
-char * sec_getdata( TOpenSections * sec, uint8 id, uint8 * len );
-char * sec_get( TOpenSections * sec, uint8 id, uint8 * type, uint8 * len );
-int8   sec_set( TOpenSections * sec, uint8 id, uint8 * type, char * buf, uint8 len );
+int8   sec_findfirst( TiOpenSections * sec, uint8 * id );
+int8   sec_findnext( TiOpenSections * sec, uint8 * id );
+void   sec_hasnext( TiOpenSections * sec );
+int8   sec_length( TiOpenSections * sec, uint8 id );
+int8   sec_write( TiOpenSections * sec, uint8 id, char * buf, uint8 len );
+int8   sec_read( TiOpenSections * sec, uint8 id, char * buf, uint8 size );
+char * sec_getinside( TiOpenSections * sec, uint8 id, uint8 * size );
+uint8  sec_gettype( TiOpenSections * sec, uint8 id );
+char * sec_getdata( TiOpenSections * sec, uint8 id, uint8 * len );
+char * sec_get( TiOpenSections * sec, uint8 id, uint8 * type, uint8 * len );
+int8   sec_set( TiOpenSections * sec, uint8 id, uint8 * type, char * buf, uint8 len );
 
 #endif
 

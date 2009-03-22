@@ -11,12 +11,12 @@ typedef struct{
   uint8 seq;
   uint32 timestamp;
   void * payload;
-}TDdInterest;
+}TiDdInterest;
 
 typedef struct{
   TDdInterest[20] interests;
   uint8[20] age; 
-}TDdCache;
+}TiDdCache;
 
 dd_cache_construct
 dd_cache_destroy
