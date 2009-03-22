@@ -55,4 +55,3 @@ int16 splrouter_run( void )
 		
 	return global_destroy();	
 }
-

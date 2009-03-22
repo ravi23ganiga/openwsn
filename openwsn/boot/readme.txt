@@ -1,3 +1,14 @@
+
+2009-01-14
+==================================================================
+merged directory "boot" and "arch"
+the new directory is "boot"
+also delete the "config" directory. the configurations are placed in boot too. it's not necessary to place them in a separate folder.
+
+
+2007-06
+==================================================================
+
 this directory contains target-related booting source code. 
 it responsible for booting the system only. 
 

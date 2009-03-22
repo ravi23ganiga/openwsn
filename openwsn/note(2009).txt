@@ -1,4 +1,19 @@
+Q: how to change the scatter file?
+R: 
+ADS 1.2
+Edit => DebugInFlash Settings => Linker =>ARM Linker => Choose scatter file
+
+
 更新你们的本地代码时请先删除你们的本地代码然后再解压缩，因前后文件名有变动. 以后我们要干干净净的在一个全新的代码基础上开始工作	
+
+
+2009-03-22
+Reorganize the whole source code tree. 
+Eliminate some of the obsolete source code. 
+Compile passed. 
+However, not test it yet.
+Open problems: swifunction and interrupt.s
+
 
 Un-Finished Tasks
 Flash object read and write (hal_flash)

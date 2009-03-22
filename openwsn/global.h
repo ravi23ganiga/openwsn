@@ -10,7 +10,7 @@
  * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * for more details.
+ * for more details. 
  * 
  * You should have received a copy of the GNU General Public License along
  * with eCos; if not, write to the Free Software Foundation, Inc.,
@@ -65,20 +65,20 @@
 #define CONFIG_CONSOLE_ENABLE
 #define CONFIG_DEBUGIO_ENABLE
 
-extern TActionScheduler * 	g_actsche;
-extern TSioComm *			g_sio;
-extern TWirelessComm *		g_wls;
-extern TConsole *			g_console;
-extern TConfigure *			g_config;
+extern TiActionScheduler * 	g_actsche;
+extern TiSioComm *			g_sio;
+extern TiWlsComm *			g_wls;
+extern TiConsole *			g_console;
+extern TiConfigure *		g_config;
 
 #ifdef CONFIG_DEBUGIO_ENABLE
-extern TDebugIo * g_debugio;
+extern TiDebugIo * g_debugio;
 #endif
 
-extern TOpenMAC * 			g_mac;
-extern TOpenNET *			g_net;
-extern TSensorService *		g_sensors;
-extern TLocationService *	g_lcs;
+extern TiOpenMAC * 			g_mac;
+extern TiOpenNET *			g_net;
+extern TiSensorService *	g_sensors;
+extern TiLocationService *	g_lcs;
 
 // construct all the necessary global object instances. The relationship between
 // all these objects are also created.
