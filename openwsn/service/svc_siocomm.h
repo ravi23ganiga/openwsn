@@ -32,14 +32,14 @@
 
 /*******************************************************************************
  * @author zhangwei on 20060813
- * TSioComm
+ * TiSioComm
  * Serial I/O Communication
  * based on TUartDriver
  * 
  * support both the stream interface and frame interface.
  * however, you'd better use one type interface only at the same time. 
  *
- * TUartDriver => TSioComm => TConsole
+ * TUartDriver => TiSioComm => TConsole
  *                            and other applications
  ******************************************************************************/
 
@@ -84,7 +84,7 @@
 #undef  SIO_CONFIG_VERSION_30
 #define SIO_CONFIG_VERSION_30
 
-/* configure TSioComm's internal buffer size
+/* configure TiSioComm's internal buffer size
  * MAX_FRAAME_LENGTH should be less than 0xFF. the maximum value of it is 0xFE
  * the default settings in our application is 0x7E (127). not 0xFF(128)
  */
@@ -119,28 +119,28 @@
 #define SIO_OPTION_REMOTE_CONTROL 0x40
  
 typedef struct{
-  TUartDriver * uart;
+  TiUartAdapter * uart;
   uint8 rxlen;
   uint8 txlen;
   char rxbuf[SIO_RXBUFFER_CAPACITY];
   char txbuf[SIO_TXBUFFER_CAPACITY];  
   uint8 option;
-  TTimer * timer;
+  TiTimerAdapter * timer;
   // the following are to support version 3
   uint8 sof; 
   uint8 fmstate;
   uint8 fmstate_sofcount;
   uint8 fmstart;
   uint8 fmlength;
-}TSioComm;
+}TiSioComm;
 
-TSioComm * sio_construct( char * buf, uint16 size, TUartDriver * uart, uint8 opt );
-void sio_configure( TSioComm * sio, TTimer * timer, uint8 opt, uint8 sof );
-void sio_destroy( TSioComm * sio );
-uint8 sio_read( TSioComm * sio, char * payload, uint8 size, uint8 opt );
-uint8 sio_rawread( TSioComm * sio, char * buf, uint8 size, uint8 opt );
-uint8 sio_write( TSioComm * sio, char * payload, uint8 len, uint8 opt );
-uint8 sio_rawwrite( TSioComm * sio, char * buf, uint8 len, uint8 opt );
-void sio_evolve( TSioComm * sio );
+TiSioComm * sio_construct( char * buf, uint16 size, TiUartAdapter * uart, uint8 opt );
+void sio_configure( TiSioComm * sio, TiTimerAdapter * timer, uint8 opt, uint8 sof );
+void sio_destroy( TiSioComm * sio );
+uint8 sio_read( TiSioComm * sio, char * payload, uint8 size, uint8 opt );
+uint8 sio_rawread( TiSioComm * sio, char * buf, uint8 size, uint8 opt );
+uint8 sio_write( TiSioComm * sio, char * payload, uint8 len, uint8 opt );
+uint8 sio_rawwrite( TiSioComm * sio, char * buf, uint8 len, uint8 opt );
+void sio_evolve( TiSioComm * sio );
 
 #endif

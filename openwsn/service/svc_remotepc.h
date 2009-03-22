@@ -17,7 +17,7 @@
 *
 * Description: These #defines are used in the PC_Disp???() functions.  The 'color' argument in these
 *              function MUST specify a 'foreground' color, a 'background' and whether the display will
-*              blink or not.  If you don't specify a background color, BLACK is assumed.  You would 
+*              blink or not.  If you don't specify a background color, BLACK is assumed.  You would
 *              specify a color combination as follows:
 *
 *              PC_DispChar(0, 0, 'A', DISP_FGND_WHITE + DISP_BGND_BLUE + DISP_BLINK);
@@ -31,7 +31,7 @@
  * @modified by Chen MingQi(ZLG) on 2003
  *   pc.c是移植于μCOS-II的PC服务代码（pc.c）
  *   主要改动：
- * 1、#include "includes.h"改为"config.h"  
+ * 1、#include "includes.h"改为"config.h"
  * 2、在屏幕上显示改为向UART0发送数据，在电脑上显示，影响的函数：
  *    PC_DispChar()、PC_DispClrCol()、PC_DispClrRow()、PC_DispClrScr()和PC_DispStr()
  * 3、获取键值改为从UART0获取，影响的函数：PC_GetKey()
@@ -41,12 +41,16 @@
  * 5、因为定时器不同所作的修改，影响的函数：
  *    PC_ElapsedStart()和PC_ElapsedStop()。
  * 6、因为实时时钟不同所作的修改，影响的函数：PC_GetDateTime()。
- * 
+ *
  * @modified by zhangwei on 2006-08-25
- * zhangwei combine the PC service of uCOS-II into service directory. 
+ * zhangwei combine the PC service of uCOS-II into service directory.
  * but NOT TEST!!!
- * 
+ *
  *****************************************************************************/
+
+#include "svc_foundation.h"
+#define INT16U uint16
+
 #define DISP_FGND_BLACK           0x00
 #define DISP_FGND_BLUE            0x01
 #define DISP_FGND_GREEN           0x02
@@ -75,7 +79,7 @@
 
 #define DISP_BLINK                0x80
 
-/*$PAGE*/
+/*$PAGE*/
 /*
 *********************************************************************************************************
 *                                           FUNCTION PROTOTYPES

@@ -40,31 +40,31 @@
  * @todo
  * - this implementation require you have a correct implementation of hal_enter_critical()
  *  and hal_leave_critical(). however, they two in current release are not correct yet!
- *  so you should be very careful when using TDebugIo object in your program, 
+ *  so you should be very careful when using TiDebugIo object in your program, 
  *  especially when you dealing with interrupt service routines.
  *  
  ****************************************************************************/ 
 
-TDebugIo * debug_construct( char * buf, uint16 size )
+TiDebugIo * debug_construct( char * buf, uint16 size )
 {
-	TDebugIo * db;
+	TiDebugIo * db;
 	
-	db = (sizeof(TDebugIo) <= size) ? (TDebugIo *)buf : NULL;
+	db = (sizeof(TiDebugIo) <= size) ? (TiDebugIo *)buf : NULL;
 	if (db != NULL)
 	{
-		memset( buf, 0x00, sizeof(TDebugIo) );
+		memset( buf, 0x00, sizeof(TiDebugIo) );
 		db->datalen = 0;
 	}
 	
 	return db;
 }
 
-void debug_destroy( TDebugIo * db )
+void debug_destroy( TiDebugIo * db )
 {
 	NULL;
 }
 
-TDebugIo * debug_open( TDebugIo * db, TUartDriver * uart )
+TiDebugIo * debug_open( TiDebugIo * db, TiUartAdapter * uart )
 {
 	if (db != NULL)
 	{
@@ -74,7 +74,7 @@ TDebugIo * debug_open( TDebugIo * db, TUartDriver * uart )
 	return db;
 }
 
-void debug_close( TDebugIo * db )
+void debug_close( TiDebugIo * db )
 {
 	NULL;
 }
@@ -83,7 +83,7 @@ void debug_close( TDebugIo * db )
  * or else all your debug operations only place data in the internal buffer
  * without sending them out.
  */
-void debug_evolve( TDebugIo * db )
+void debug_evolve( TiDebugIo * db )
 {
 	uint16 count;
 	char * buf;
@@ -105,7 +105,7 @@ void debug_evolve( TDebugIo * db )
 	}
 }
 
-uint16 debug_write( TDebugIo * db, char * buf, uint16 size )
+uint16 debug_write( TiDebugIo * db, char * buf, uint16 size )
 {   
 	uint16 copied;
 	uint16 i;

@@ -33,12 +33,12 @@
 
 /*****************************************************************************
  * @author zhangwei on 20061205
- * 	TLocationService
+ * 	TiLocationService
  * 	provide distributed location service in the WSN system.
  * 
  * @modified by huanghuan on 20061206
  * 	moved the location source code from test to this file today.
- * 	developed the TLocationService
+ * 	developed the TiLocationService
  ****************************************************************************/
   
 #include "svc_foundation.h"
@@ -119,15 +119,15 @@ typedef struct {
   int16 x;
   int16 y;
   int16 z;
-} TLocation;
+} TiLocation;
 
 typedef struct {
   uint8 state;
   uint16 nodeid;
-  TLocation location;
-  TOpenMAC * mac;
+  TiLocation location;
+  TiOpenMAC * mac;
   //uint16 neighbors[8];
-} TLocationService;
+} TiLocationService;
 
 /* "loc_read()" and "loc_write()" are used to get and set the location of the
  * node itself.
@@ -136,13 +136,13 @@ typedef struct {
  * one call to "loc_evolve" only performs one time of estimation. you can call
  * it multi times to get a more occurate resullt.
  */
-TLocationService * lcs_construct(char * buf, uint16 size);
-void lcs_destroy( TLocationService * lcs );
-void lcs_init(TLocationService * lcs, TCc2420Driver * cc );
-void lcs_rssi2dist( TLocationService * lcs, uint8 rssi, uint16 * dis );
-int8 lcs_read( TLocationService * lcs, TLocation * loc, uint8 opt );
-int8 lcs_write( TLocationService * lcs, TLocation * loc, uint8 opt );
-int8 lcs_evolve( TLocationService * lcs, TLocation * location, TCc2420Driver * cc );
+TiLocationService * lcs_construct(char * buf, uint16 size);
+void lcs_destroy( TiLocationService * lcs );
+void lcs_init(TiLocationService * lcs, TiCc2420Adapter * cc );
+void lcs_rssi2dist( TiLocationService * lcs, uint8 rssi, uint16 * dis );
+int8 lcs_read( TiLocationService * lcs, TiLocation * loc, uint8 opt );
+int8 lcs_write( TiLocationService * lcs, TiLocation * loc, uint8 opt );
+int8 lcs_evolve( TiLocationService * lcs, TiLocation * location, TiCc2420Adapter * cc );
 
 #endif
 

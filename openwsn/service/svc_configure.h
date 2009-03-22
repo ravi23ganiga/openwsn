@@ -40,22 +40,22 @@ typedef struct{
   uint8 wlschannel;			// wireless channel, to change the frequvency
   uint8 wlspower;			// wireless TX power
   char  owner[64];
-}TConfigStore;
+}TiConfigStore;
 
 typedef struct{
   boolean modified;
-  TConsole * console;
-  TConfigStore data;
-}TConfigure;
+  TiConsole * console;
+  TiConfigStore data;
+}TiConfigure;
 
-TConfigure * config_construct( char * buf, uint16 size, TConsole * con );
-void config_destroy( TConfigure * config );
-void config_save( TConfigure * config, uint32 flashaddr, uint32 flashsize );
-void config_load( TConfigure * config, uint32 flashaddr, uint32 flashsize );
-boolean config_modified( TConfigure * config );
-void config_apply( TConfigure * config );
-void config_getdefault( TConfigStore * configstore );
-void config_restore_default( TConfigure * config );
-int8 config_execute( TConfigure * config );
+TiConfigure * config_construct( char * buf, uint16 size, TiConsole * con );
+void config_destroy( TiConfigure * config );
+void config_save( TiConfigure * config, uint32 flashaddr, uint32 flashsize );
+void config_load( TiConfigure * config, uint32 flashaddr, uint32 flashsize );
+boolean config_modified( TiConfigure * config );
+void config_apply( TiConfigure * config );
+void config_getdefault( TiConfigStore * configstore );
+void config_restore_default( TiConfigure * config );
+int8 config_execute( TiConfigure * config );
 
 #endif

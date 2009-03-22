@@ -37,9 +37,9 @@
 /*****************************************************************************
  * @author zhangwei on 20070131
  * this file defines the format of a Network Layer Packet. the packet is the 
- * payload of a TOpenFrame.
+ * payload of a TiOpenFrame.
  * 
- * attention that TOpenPacket and TOpenData are not a service/class, so you can 
+ * attention that TiOpenPacket and TiOpenData are not a service/class, so you can 
  * NOT add member variables to them! they are BYTE-TO-BYTE mapping to the packets
  * transmitted. the other functions should be considered as util function rather
  * than service member functions.
@@ -93,8 +93,8 @@
 #define ODA_TYPE_LIGHTSENSOR_REQUEST (ODA_TYPE_USER + 3)
 #define ODA_TYPE_LIGHTSENSOR (ODA_TYPE_USER + 8)
 
-/* TOpenData defination. It is often the payload of a TOpenPacket.
- * 	TOpenData == TOpenPacket.data
+/* TiOpenData defination. It is often the payload of a TiOpenPacket.
+ * 	TiOpenData == TiOpenPacket.data
  * they two are often the same. 
  * 
  * @attention
@@ -112,9 +112,9 @@
 typedef __packed struct{
   uint8 type;
   char value[NET_MAX_PAYLOAD_LENGTH-4];
-}TOpenData;
+}TiOpenData;
  
-/* TOpenPacket
+/* TiOpenPacket
  * it represents the packet transmitted on the network layer. 
  * it's structure is visible for upper application developers.
  */
@@ -126,7 +126,7 @@ typedef __packed struct{
   uint16 nodefrom;
   uint8 datalen;
   char data[NET_MAX_PAYLOAD_LENGTH];
-}TOpenPacket;
+}TiOpenPacket;
 
 char * opt_ownerframe( char * packet );
 char * opt_data( char * packet );

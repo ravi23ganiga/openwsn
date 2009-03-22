@@ -63,30 +63,30 @@
 
 typedef struct{
   uint8 state;
-  TOpenMAC * mac;
+  TiOpenMAC * mac;
   uint8 seqid;
   uint16 panid;
   uint16 nodeid;
   TEventHandler * callback;
-}TOpenNET;
+}TiOpenNET;
 
-TOpenNET * net_construct( char * buf, uint16 size );
-void net_destroy( TOpenNET * net );
-void net_init( TOpenNET * net, TOpenMAC * mac, TActionScheduler * actsche );
-void net_configure( TOpenNET * net, uint8 ctrlcode, uint8 value );
-int8 net_setlocaladdress( TOpenNET * net, uint16 pan, uint16 nodeid );
-void net_getrmtaddress( TOpenNET * net, uint16 * pan, uint16 * nodeid );
-int8 net_read( TOpenNET * net, TOpenFrame * frame, uint8 size, uint8 opt );
-int8 net_rawread( TOpenNET * net, char * framebuf, uint8 size, uint8 opt );
-int8 net_write( TOpenNET * net, TOpenFrame * frame, uint8 len, uint8 opt );
-int8 net_rawwrite( TOpenNET * net, char * framebuf, uint8 len, uint8 opt );
-int8 net_forward( TOpenNET * net, TOpenFrame * pkt, uint8 len, uint8 opt );
-int8 net_rawforward( TOpenNET * net, char * framebuf, uint8 size, uint8 opt );
-int8 net_evolve( TOpenNET * net );
+TiOpenNET * net_construct( char * buf, uint16 size );
+void net_destroy( TiOpenNET * net );
+void net_init( TiOpenNET * net, TiOpenMAC * mac, TiActionScheduler * actsche );
+void net_configure( TiOpenNET * net, uint8 ctrlcode, uint8 value );
+int8 net_setlocaladdress( TiOpenNET * net, uint16 pan, uint16 nodeid );
+void net_getrmtaddress( TiOpenNET * net, uint16 * pan, uint16 * nodeid );
+int8 net_read( TiOpenNET * net, TiOpenFrame * frame, uint8 size, uint8 opt );
+int8 net_rawread( TiOpenNET * net, char * framebuf, uint8 size, uint8 opt );
+int8 net_write( TiOpenNET * net, TiOpenFrame * frame, uint8 len, uint8 opt );
+int8 net_rawwrite( TiOpenNET * net, char * framebuf, uint8 len, uint8 opt );
+int8 net_forward( TiOpenNET * net, TiOpenFrame * pkt, uint8 len, uint8 opt );
+int8 net_rawforward( TiOpenNET * net, char * framebuf, uint8 size, uint8 opt );
+int8 net_evolve( TiOpenNET * net );
 
-int8 net_sleep( TOpenNET * net );
-int8 net_wakeup( TOpenNET * net );
-int8 net_installnotify( TOpenNET * net, TEventHandler * callback, void * data );
+int8 net_sleep( TiOpenNET * net );
+int8 net_wakeup( TiOpenNET * net );
+int8 net_installnotify( TiOpenNET * net, TEventHandler * callback, void * data );
 
 
 #endif

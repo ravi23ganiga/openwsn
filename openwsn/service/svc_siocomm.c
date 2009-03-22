@@ -30,7 +30,7 @@
 
 /*******************************************************************************
  * @author zhangwei on 20060813
- * TSioComm
+ * TiSioComm
  * Serial I/O Communication
  * based on TUartDriver
  * 
@@ -42,7 +42,7 @@
  * 内含一个供TUartDriver使用的通信缓冲区
  * 如果主程序来不及读数据，则可能导致该内部通信缓冲区种数据丢失。
  * 
- * TUartDriver => TSioComm => TConsole
+ * TUartDriver => TiSioComm => TConsole
  *                            and other applications
  * 
  * @modified by zhangwei on 20061015
@@ -61,20 +61,20 @@
 #define SIO_STATE_GENERAL 0
 #define SIO_STATE_GETSOF 1
  
-/* TSioComm object
+/* TiSioComm object
  * @param
  * 	sio		the object instance pointer
  * 	uart	on which uart this SioComm object is build
  * 	opt		unused now
  */
-TSioComm * sio_construct( char * buf, uint16 size, TUartDriver * uart, uint8 opt )
+TiSioComm * sio_construct( char * buf, uint16 size, TiUartAdapter * uart, uint8 opt )
 {
-	TSioComm * sio;
+	TiSioComm * sio;
 	
-	if (sizeof(TSioComm) > size)
+	if (sizeof(TiSioComm) > size)
 		sio = NULL;
 	else
-		sio = (TSioComm *)buf;
+		sio = (TiSioComm *)buf;
 	
 	if (sio != NULL)
 	{
@@ -94,7 +94,7 @@ TSioComm * sio_construct( char * buf, uint16 size, TUartDriver * uart, uint8 opt
 	return sio;
 }
 
-void sio_destroy( TSioComm * sio )
+void sio_destroy( TiSioComm * sio )
 {
 	if (sio != NULL)
 	{
@@ -104,7 +104,7 @@ void sio_destroy( TSioComm * sio )
 	}
 }
 
-void sio_configure( TSioComm * sio, TTimer * timer, uint8 opt, uint8 sof )
+void sio_configure( TiSioComm * sio, TiTimerAdapter * timer, uint8 opt, uint8 sof )
 {
 	sio->option = opt;
 	sio->timer = timer;
@@ -117,7 +117,7 @@ void sio_configure( TSioComm * sio, TTimer * timer, uint8 opt, uint8 sof )
  * @return
  * 	the byte count actually put into the buffer;
  */
-uint8 sio_read( TSioComm * sio, char * payload, uint8 size, uint8 opt )
+uint8 sio_read( TiSioComm * sio, char * payload, uint8 size, uint8 opt )
 {
 	char * buf;
 	uint8 avail, count;
@@ -145,7 +145,7 @@ uint8 sio_read( TSioComm * sio, char * payload, uint8 size, uint8 opt )
 #endif
 
 #ifdef SIO_CONFIG_VERSION_30
-uint8 sio_read( TSioComm * sio, char * payload, uint8 size, uint8 opt )
+uint8 sio_read( TiSioComm * sio, char * payload, uint8 size, uint8 opt )
 {
 	uint8 count;
 	
@@ -187,7 +187,7 @@ uint8 sio_read( TSioComm * sio, char * payload, uint8 size, uint8 opt )
  * 本函数则是将一个完整的frame原封不动的放入到frame所指内存空间中。
  * this version is for test only
  */
-uint8 sio_rawread( TSioComm * sio, char * buf, uint8 size, uint8 opt )
+uint8 sio_rawread( TiSioComm * sio, char * buf, uint8 size, uint8 opt )
 {
 	return uart_read( sio->uart, buf, size, opt );
 }
@@ -207,7 +207,7 @@ uint8 sio_rawread( TSioComm * sio, char * buf, uint8 size, uint8 opt )
  * @param
  * 	opt 	0x00, no use now
  */
-uint8 sio_rawread( TSioComm * sio, char * buf, uint8 size, uint8 opt )
+uint8 sio_rawread( TiSioComm * sio, char * buf, uint8 size, uint8 opt )
 {
 	uint8 framelength = 0;
 	
@@ -242,7 +242,7 @@ uint8 sio_rawread( TSioComm * sio, char * buf, uint8 size, uint8 opt )
 #endif
 
 #ifdef SIO_CONFIG_VERSION_10
-/*　write a frame to the TSioComm object.
+/*　write a frame to the TiSioComm object.
  * 
  *　@attention
  * @warning
@@ -253,14 +253,14 @@ uint8 sio_rawread( TSioComm * sio, char * buf, uint8 size, uint8 opt )
  * @return
  * the byte count wrotten successfully. 
  */ 
-uint16 sio_write( TSioComm * sio, char * payload, uint16 len, uint16 opt )
+uint16 sio_write( TiSioComm * sio, char * payload, uint16 len, uint16 opt )
 {
 	return sio_rawwrite( sio, payload, len, opt );
 }
 #endif
 
 #ifdef SIO_CONFIG_VERSION_30
-/* write a frame to the TSioComm object.
+/* write a frame to the TiSioComm object.
  * @attention
  * @warning
  * 	since sio_write() is based on uart_write(), it's behavior is also resemble
@@ -268,7 +268,7 @@ uint16 sio_write( TSioComm * sio, char * payload, uint16 len, uint16 opt )
  * data.
  * 	before really sending to UART, the data may assembled to a frame.
  */
-uint8 sio_write( TSioComm * sio, char * buf, uint8 len, uint8 opt )
+uint8 sio_write( TiSioComm * sio, char * buf, uint8 len, uint8 opt )
 {
 	uint8 count = 0;
 
@@ -293,7 +293,7 @@ uint8 sio_write( TSioComm * sio, char * buf, uint8 len, uint8 opt )
  * @return
  * byte count wrotten successfully to UART.
  */
-uint8 sio_rawwrite( TSioComm * sio, char * buf, uint8 len, uint8 opt )
+uint8 sio_rawwrite( TiSioComm * sio, char * buf, uint8 len, uint8 opt )
 {
 	return uart_write( sio->uart, buf, len, opt );
 }
@@ -307,7 +307,7 @@ uint8 sio_rawwrite( TSioComm * sio, char * buf, uint8 len, uint8 opt )
  * 	construct the frame header (default settings) for the master program.
  * @return
  */
-uint8 sio_rawwrite( TSioComm * sio, char * buf, uint8 len, uint8 opt )
+uint8 sio_rawwrite( TiSioComm * sio, char * buf, uint8 len, uint8 opt )
 {
 	uint8 count=0;
 	
@@ -348,7 +348,7 @@ uint8 sio_rawwrite( TSioComm * sio, char * buf, uint8 len, uint8 opt )
  * better push these frames into a queue so that we can support multiple frames
  * in the future!
  */
-void sio_evolve( TSioComm * sio )
+void sio_evolve( TiSioComm * sio )
 {
 	char ch;
 	uint8 framestart=0, framelength=0, n;

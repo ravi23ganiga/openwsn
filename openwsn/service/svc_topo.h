@@ -5,19 +5,19 @@ typedef struct{
   uint32 id;
   uint8 age;
   uin8 hop;
-}TNetworkNode;
+}TiNetworkNode;
 
 typedef struct{
   uint32 endpoint1;
   uint32 endpoint2;
   uint32 distance;
   uint8 age;
-}TNetworkEdge;
+}TiNetworkEdge;
 
 typedef struct{
   TNetworkNode[20] nodes; 
   TNetworkEdge[100] edges; 
-}TNetworkTopology;
+}TiNetworkTopology;
 
 void topo_construct
 void topo_destroy

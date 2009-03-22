@@ -18,9 +18,9 @@
 #include "svc_actsche.h"
 
 
-static uint8 _acts_allocateitem( TActionScheduler * sche );
-static void  _acts_disposeitem( TActionScheduler * sche, uint8 id );
-static uint8 _acts_insertaction( TActionScheduler * sche, uint8 id, TFunAction action, 
+static uint8 _acts_allocateitem( TiActionScheduler * sche );
+static void  _acts_disposeitem( TiActionScheduler * sche, uint8 id );
+static uint8 _acts_insertaction( TiActionScheduler * sche, uint8 id, TiFunAction action, 
 	void * param, uint32 delay );
 
 //------------------------------------------------------------------------------
@@ -28,15 +28,15 @@ static uint8 _acts_insertaction( TActionScheduler * sche, uint8 id, TFunAction a
 // be created successfully except no enough memory. the scheduler is stoped by 
 // default.
 //------------------------------------------------------------------------------
-TActionScheduler * acts_construct( char * buf, uint16 size )
+TiActionScheduler * acts_construct( char * buf, uint16 size )
 {
-	TActionScheduler * sche;
+	TiActionScheduler * sche;
 	uint8 n;
 	
-	if (sizeof(TActionScheduler) > size)
+	if (sizeof(TiActionScheduler) > size)
 		sche = NULL;
 	else
-		sche = (TActionScheduler *)buf;
+		sche = (TiActionScheduler *)buf;
 		
 	if (sche != NULL)
 	{
@@ -64,7 +64,7 @@ TActionScheduler * acts_construct( char * buf, uint16 size )
 // If an callback function has been assigned to the "timer" object, then detach
 // it from the timer. 
 //------------------------------------------------------------------------------
-void acts_destroy( TActionScheduler * sche )
+void acts_destroy( TiActionScheduler * sche )
 {
 	if ((sche->timer != NULL) && (sche->callback != NULL))
 	{
@@ -80,10 +80,10 @@ void acts_destroy( TActionScheduler * sche )
 // according your hal_timer settings!
 // 
 // @param
-//	timerhandler 	a callback function used by the TTimer object
+//	timerhandler 	a callback function used by the TiTimerAdapter object
 //					this param can be NULL, which will disable the Timer interrupt.
 //	
-void acts_configure( TActionScheduler * sche, TTimer * timer, TEventHandler timerhandler )
+void acts_configure( TiActionScheduler * sche, TiTimerAdapter * timer, TiEventHandler timerhandler )
 {
 	sche->timer = timer;
 	sche->callback = timerhandler;
@@ -94,7 +94,7 @@ void acts_configure( TActionScheduler * sche, TTimer * timer, TEventHandler time
 	}
 }
 
-void acts_begin_duration( TActionScheduler * sche )
+void acts_begin_duration( TiActionScheduler * sche )
 {	
 	if (sche->timer != NULL)
 	{
@@ -105,7 +105,7 @@ void acts_begin_duration( TActionScheduler * sche )
 	sche->state |= ACTSCHE_STATE_DURATION_FLAG;
 }
 
-void acts_end_duration( TActionScheduler * sche )
+void acts_end_duration( TiActionScheduler * sche )
 {
 	sche->state &= (~ACTSCHE_STATE_DURATION_FLAG);
 }
@@ -122,7 +122,7 @@ void acts_end_duration( TActionScheduler * sche )
 //			actions.
 //
 //------------------------------------------------------------------------------
-int8 acts_inputaction( TActionScheduler * sche, TFunAction action, void * param, uint32 delay )
+int8 acts_inputaction( TiActionScheduler * sche, TiFunAction action, void * param, uint32 delay )
 {
 	uint8 id;
 	int8 ret = 0;
@@ -149,9 +149,9 @@ int8 acts_inputaction( TActionScheduler * sche, TFunAction action, void * param,
 //			action in the list.
 //
 //------------------------------------------------------------------------------
-int8 acts_actionprocess( TActionScheduler * sche )
+int8 acts_actionprocess( TiActionScheduler * sche )
 {
-	TActionItem * pitem;
+	TiActionItem * pitem;
 	boolean failed=FALSE;
 	uint8 id, bak;
 	int8 ret=0;
@@ -189,7 +189,7 @@ int8 acts_actionprocess( TActionScheduler * sche )
 //	the time interval between now and the next action to be processed.
 // 	if there are no action actions, then return 0xFFFFFFFF (for 32bit systems)
 //------------------------------------------------------------------------------
-uint32 acts_getnextinterval( TActionScheduler * sche )
+uint32 acts_getnextinterval( TiActionScheduler * sche )
 {
 	uint32 ret = ~0;
 	
@@ -226,7 +226,7 @@ uint32 acts_getnextinterval( TActionScheduler * sche )
 // developer forget or failed to cancel it manually.
 // 
 //------------------------------------------------------------------------------
-int8 acts_expired( TActionScheduler * sche, uint8 actid )
+int8 acts_expired( TiActionScheduler * sche, uint8 actid )
 {
 	uint32 steps;
 	uint8 prev, id;
@@ -287,7 +287,7 @@ int8 acts_expired( TActionScheduler * sche, uint8 actid )
 // this action is expired or not.
 // this is the reverse of inputaction.
 //------------------------------------------------------------------------------
-void acts_cancelaction( TActionScheduler * sche, uint8 actid )
+void acts_cancelaction( TiActionScheduler * sche, uint8 actid )
 {
 	uint8 prev, id;
 	boolean found;
@@ -350,7 +350,7 @@ void acts_cancelaction( TActionScheduler * sche, uint8 actid )
 // this function will place all the action into activelist and wait actionprocess()
 // to process them.
 //
-void acts_forward( TActionScheduler * sche, uint32 steps )
+void acts_forward( TiActionScheduler * sche, uint32 steps )
 {
 	uint8 id, tail;
 	
@@ -457,7 +457,7 @@ void acts_forward( TActionScheduler * sche, uint32 steps )
 // @return 
 //	the same as acts_actionprocess(...)
 //------------------------------------------------------------------------------
-int8 acts_evolve( TActionScheduler * sche, uint32 steps )
+int8 acts_evolve( TiActionScheduler * sche, uint32 steps )
 {
 	acts_forward( sche, steps );
 	return acts_actionprocess( sche );
@@ -468,7 +468,7 @@ int8 acts_evolve( TActionScheduler * sche, uint32 steps )
 // is used to simulate the hardware's clock to trigger the scheduler's evolve()
 // function.
 //------------------------------------------------------------------------------
-int8 acts_softdrive_start( TActionScheduler * sche, uint32 period )
+int8 acts_softdrive_start( TiActionScheduler * sche, uint32 period )
 {
 	sche->state &= (~ACTSCHE_STATE_SOFTDRIVE_FLAG);
 	while (TRUE)
@@ -493,7 +493,7 @@ int8 acts_softdrive_start( TActionScheduler * sche, uint32 period )
 // set the STOP flag bit of the scheduler's state to indicate the scheduler's
 // loop stop.
 //------------------------------------------------------------------------------ 
-int8 acts_softdrive_stop( TActionScheduler * sche )
+int8 acts_softdrive_stop( TiActionScheduler * sche )
 {
 	sche->state |= ACTSCHE_STATE_SOFTDRIVE_FLAG;
 	return 0;
@@ -501,9 +501,9 @@ int8 acts_softdrive_stop( TActionScheduler * sche )
 #endif
 
 #ifdef ACTSCHE_SOFTDRIVE_ENABLE
-int8 acts_querydrive_start( TActionScheduler * sche, uint32 period )
+int8 acts_querydrive_start( TiActionScheduler * sche, uint32 period )
 {
-	TTimer * tm = sche->timer;
+	TiTimerAdapter * tm = sche->timer;
 	uint32 interval;
 
 	assert( tm != NULL );
@@ -537,7 +537,7 @@ int8 acts_querydrive_start( TActionScheduler * sche, uint32 period )
 #endif
 
 #ifdef ACTSCHE_QUERYDRIVE_ENABLE
-int8 acts_querydrive_stop( TActionScheduler * sche )
+int8 acts_querydrive_stop( TiActionScheduler * sche )
 {
 	sche->state |= ACTSCHE_STATE_SOFTDRIVE_FLAG;
 	return 0;
@@ -546,9 +546,9 @@ int8 acts_querydrive_stop( TActionScheduler * sche )
 
 #ifdef ACTSCHE_QUERYDRIVE_ENABLE
 // Hard Drive mode is essentially drived by timer interrupts. 
-int8 acts_harddrive_start( TActionScheduler * sche )
+int8 acts_harddrive_start( TiActionScheduler * sche )
 {
-	TTimer * tm = sche->timer;
+	TiTimerAdapter * tm = sche->timer;
 
 	assert( tm != NULL );
 	timer_stop( tm );
@@ -560,7 +560,7 @@ int8 acts_harddrive_start( TActionScheduler * sche )
 #endif
 
 #ifdef ACTSCHE_QUERYDRIVE_ENABLE
-int8 acts_harddrive_stop( TActionScheduler * sche )
+int8 acts_harddrive_stop( TiActionScheduler * sche )
 {
 	timer_stop( sche->timer );
 	timer_configure( sche->timer, NULL, NULL, 0 );
@@ -572,16 +572,16 @@ int8 acts_harddrive_stop( TActionScheduler * sche )
 #ifdef ACTSCHE_HARDDRIVE_ENABLE
 //------------------------------------------------------------------------------ 
 // if you DON'T want to introduce a infinite loop in your application and to 
-// to call acts_evolve() frequently, you can let the "TTimer" hardware object 
+// to call acts_evolve() frequently, you can let the "TiTimerAdapter" hardware object 
 // do it for you. In this case you should configure the "ActionScheduler" object 
 // with this timer's callback function. 
 //------------------------------------------------------------------------------ 
 int8 acts_harddrive_default_timer_callback( void * param )
 {
-	TActionScheduler * sche;
+	TiActionScheduler * sche;
 	int8 ret;
 	
-	sche = (TActionScheduler *)param;
+	sche = (TiActionScheduler *)param;
 	ret = acts_evolve( sche, timer_elapsed(sche->timer) );
 	timer_restart( sche->timer,acts_getnextinterval(sche), 0 );
 	return 0;
@@ -600,7 +600,7 @@ int8 acts_harddrive_default_timer_callback( void * param )
 //	the id of item. which is essentially the item index in the item array.
 //  return ACTSCHE_LIST_NULL when there's no free item to be allocated. 
 //------------------------------------------------------------------------------
-uint8 _acts_allocateitem( TActionScheduler * sche )
+uint8 _acts_allocateitem( TiActionScheduler * sche )
 {
 	uint8 id;
 	
@@ -619,7 +619,7 @@ uint8 _acts_allocateitem( TActionScheduler * sche )
 // return the item into the empty list
 // @return (null)
 //------------------------------------------------------------------------------
-void _acts_disposeitem( TActionScheduler * sche, uint8 id )
+void _acts_disposeitem( TiActionScheduler * sche, uint8 id )
 {
 	if (id != ACTSCHE_LIST_NULL)
 	{
@@ -644,7 +644,7 @@ void _acts_disposeitem( TActionScheduler * sche, uint8 id )
 //	0		success
 //	ACTSCHE_LIST_NULL when failed
 //------------------------------------------------------------------------------
-uint8 _acts_insertaction( TActionScheduler * sche, uint8 id, TFunAction action, void * param, uint32 delay )
+uint8 _acts_insertaction( TiActionScheduler * sche, uint8 id, TiFunAction action, void * param, uint32 delay )
 {
 	uint8 prev, cur;
 	uint32 curtime, elapsed_time;

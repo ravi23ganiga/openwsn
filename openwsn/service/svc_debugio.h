@@ -38,7 +38,7 @@
  * @todo
  * - this implementation require you have a correct implementation of hal_enter_critical()
  *  and hal_leave_critical(). however, they two in current release are not correct yet!
- *  so you should be very careful when using TDebugIo object in your program, 
+ *  so you should be very careful when using TiDebugIo object in your program, 
  *  especially when you dealing with interrupt service routines.
  *  
  ****************************************************************************/ 
@@ -46,22 +46,22 @@
 #define CONFIG_DEBUGIO_BUFFER_CAPACITY 127
 
 typedef struct{
-  TUartDriver * uart;
+  TiUartAdapter * uart;
   uint16 datalen;
   char buf[CONFIG_DEBUGIO_BUFFER_CAPACITY]; 
-}TDebugIo;
+}TiDebugIo;
 
-TDebugIo * debug_construct( char * buf, uint16 size );
-void debug_destroy( TDebugIo * db );
-TDebugIo * debug_open( TDebugIo * db, TUartDriver * uart );
-void debug_close( TDebugIo * db );
+TiDebugIo * debug_construct( char * buf, uint16 size );
+void debug_destroy( TiDebugIo * db );
+TiDebugIo * debug_open( TiDebugIo * db, TiUartAdapter * uart );
+void debug_close( TiDebugIo * db );
 
 /* this function should be called frequvently to send data to UART
  * or else all your debug operations only place data in the internal buffer
  * without sending them out.
  */
 #define debug_backgnd_sending(db) debug_evolve(db)
-void debug_evolve( TDebugIo * db );
+void debug_evolve( TiDebugIo * db );
 
 #define debug_putchar(db,c) uart_putchar(db->uart,c)
 #define debug_getchar(db,pc) uart_getchar(db->uart,pc)
@@ -75,6 +75,6 @@ void debug_evolve( TDebugIo * db );
 #define debug_writeuint32(db,n) debug_write(db,&n,4)
 #define debug_writestring(db,pc) debug_write(db,pc,strlen(pc))
 
-uint16 debug_write( TDebugIo * db, char * buf, uint16 size );
+uint16 debug_write( TiDebugIo * db, char * buf, uint16 size );
 
 #endif

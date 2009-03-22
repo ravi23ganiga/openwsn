@@ -102,19 +102,21 @@
  * 状态。这种情况要在实际中避免。
  ******************************************************************************/
 
-struct _TActionItem;
-struct _TActionScheduler;
-typedef TEventHandler TFunAction;
+struct _TiActionItem;
+struct _TiActionScheduler;
 
-struct _TActionItem{
+typedef void (* TiEventHandler)(int e);
+typedef TiEventHandler TiFunAction;
+
+struct _TiActionItem{
   uint8 id;
   uint32 delay;
-  TFunAction function;
+  TiFunAction function;
   void * param;
   uint8 next;
 };
 
-/* _TActionScheduler
+/* _TiActionScheduler
  *  state			each bit represent a state of the object.
  * 					bit 0: duration enable bit
  * 					bit 1: stop flag bit. this bit indicate the infinite loop 
@@ -122,13 +124,13 @@ struct _TActionItem{
  * 	clock			soft clock, it is also the timestamp mapping of the hardware timer.
  * 	                thus to support duration mechanism.
  * 	durationstart	the time that duration begins
- * 	callback		callback function used by the TTimer object
+ * 	callback		callback function used by the TiTimerAdapter object
  */
  
 #define ACTSCHE_STATE_DURATION_FLAG 0x01
 #define ACTSCHE_STATE_SOFTDRIVE_FLAG 0x02 
  
-struct _TActionScheduler{
+struct _TiActionScheduler{
   uint32 clock;
   uint32 durationstart;
   uint8 state;
@@ -136,40 +138,40 @@ struct _TActionScheduler{
   uint8 sleeplist;  
   uint8 emptylist;
   //uint8 lastactive;
-  TTimer * timer;
-  TEventHandler callback;
-  struct _TActionItem items[ACTSCHE_MAX_ACTION_COUNT];
+  TiTimerAdapter * timer;
+  TiEventHandler callback;
+  struct _TiActionItem items[ACTSCHE_MAX_ACTION_COUNT];
 };
 
-typedef struct _TActionItem TActionItem;
-typedef struct _TActionScheduler TActionScheduler;
+typedef struct _TiActionItem TiActionItem;
+typedef struct _TiActionScheduler TiActionScheduler;
   
   
-TActionScheduler * acts_construct( char * buf, uint16 size );
-void acts_destroy( TActionScheduler * sche );
+TiActionScheduler * acts_construct( char * buf, uint16 size );
+void acts_destroy( TiActionScheduler * sche );
 
-void acts_configure( TActionScheduler * sche, TTimer * timer, TEventHandler timerhandler );
-void acts_begin_duration( TActionScheduler * sche );
-void acts_end_duration( TActionScheduler * sche );
-int8 acts_inputaction( TActionScheduler * sche, TFunAction action, void * param, uint32 delay );
-int8 acts_actionprocess( TActionScheduler * sche );
-uint32 acts_getnextinterval( TActionScheduler * sche );
-int8 acts_expired( TActionScheduler * sche, uint8 actid );
-void acts_cancelaction( TActionScheduler * sche, uint8 actid );
-void acts_forward( TActionScheduler * sche, uint32 steps );
-int8 acts_evolve( TActionScheduler * sche, uint32 steps );
+void acts_configure( TiActionScheduler * sche, TiTimerAdapter * timer, TiEventHandler timerhandler );
+void acts_begin_duration( TiActionScheduler * sche );
+void acts_end_duration( TiActionScheduler * sche );
+int8 acts_inputaction( TiActionScheduler * sche, TiFunAction action, void * param, uint32 delay );
+int8 acts_actionprocess( TiActionScheduler * sche );
+uint32 acts_getnextinterval( TiActionScheduler * sche );
+int8 acts_expired( TiActionScheduler * sche, uint8 actid );
+void acts_cancelaction( TiActionScheduler * sche, uint8 actid );
+void acts_forward( TiActionScheduler * sche, uint32 steps );
+int8 acts_evolve( TiActionScheduler * sche, uint32 steps );
 
 #ifdef ACTSCHE_SOFTDRIVE_ENABLE
-int8 acts_softdrive_start( TActionScheduler * sche, uint32 period );
-int8 acts_softdrive_stop( TActionScheduler * sche );
+int8 acts_softdrive_start( TiActionScheduler * sche, uint32 period );
+int8 acts_softdrive_stop( TiActionScheduler * sche );
 #endif
 #ifdef ACTSCHE_QUERYDRIVE_ENABLE
-int8 acts_querydrive_start( TActionScheduler * sche, uint32 period );
-int8 acts_querydrive_stop( TActionScheduler * sche );
+int8 acts_querydrive_start( TiActionScheduler * sche, uint32 period );
+int8 acts_querydrive_stop( TiActionScheduler * sche );
 #endif
 #ifdef ACTSCHE_HARDDRIVE_ENABLE
-int8 acts_harddrive_start( TActionScheduler * sche );
-int8 acts_harddrive_stop( TActionScheduler * sche );
+int8 acts_harddrive_start( TiActionScheduler * sche );
+int8 acts_harddrive_stop( TiActionScheduler * sche );
 int8 acts_harddrive_default_timer_callback( void * param );
 #endif
 

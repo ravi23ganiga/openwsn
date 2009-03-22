@@ -104,30 +104,30 @@ typedef struct{
 }TRouteTableItem;
 
 TRouteTableItem g_routetable[ NET_ROUTE_TABLE_SIZE ];
-TOpenNET g_opennet;
+TiOpenNET g_opennet;
 
-TOpenNET * net_construct( char * buf, uint16 size )
+TiOpenNET * net_construct( char * buf, uint16 size )
 {
-	//assert( sizeof(TOpenNET) <= size );
+	//assert( sizeof(TiOpenNET) <= size );
 	memset( buf, 0x00, size );
-	return (TOpenNET *)buf;
+	return (TiOpenNET *)buf;
 }
 
-void net_destroy( TOpenNET * net )
+void net_destroy( TiOpenNET * net )
 {
 	return;
 }
 
-void net_init( TOpenNET * net, TOpenMAC * mac, TActionScheduler * actsche )
+void net_init( TiOpenNET * net, TiOpenMAC * mac, TActionScheduler * actsche )
 {
 	net->mac = mac;
 }
 
-void net_configure( TOpenNET * net, uint8 ctrlcode, uint8 value )
+void net_configure( TiOpenNET * net, uint8 ctrlcode, uint8 value )
 {
 }
 
-int8 net_setlocaladdress( TOpenNET * net, uint16 pan, uint16 nodeid )
+int8 net_setlocaladdress( TiOpenNET * net, uint16 pan, uint16 nodeid )
 {
 	mac_configure( net->mac, MAC_CONFIG_PANID, pan);
 	mac_configure( net->mac, MAC_CONFIG_LOCALADDRESS, nodeid);
@@ -135,62 +135,62 @@ int8 net_setlocaladdress( TOpenNET * net, uint16 pan, uint16 nodeid )
 	return 0;
 }
 
-void net_getrmtaddress( TOpenNET * net, uint16 * pan, uint16 * nodeid )
+void net_getrmtaddress( TiOpenNET * net, uint16 * pan, uint16 * nodeid )
 {
 	*pan = net->panid;
 	*nodeid = net->nodeid;
 }
 
-int8 net_read( TOpenNET * net, TOpenFrame * frame, uint8 size, uint8 opt )
+int8 net_read( TiOpenNET * net, TiOpenFrame * frame, uint8 size, uint8 opt )
 {
 	return mac_read( net->mac, frame, size, opt );
 }
 
-int8 net_rawread( TOpenNET * net, char * framebuf, uint8 size, uint8 opt )
+int8 net_rawread( TiOpenNET * net, char * framebuf, uint8 size, uint8 opt )
 {
 	return mac_rawread( net->mac, framebuf, size, opt );
 }
 
-int8 net_write( TOpenNET * net, TOpenFrame * frame, uint8 len, uint8 opt )
+int8 net_write( TiOpenNET * net, TiOpenFrame * frame, uint8 len, uint8 opt )
 {
 	return mac_write( net->mac, frame, len, opt );
 }
 
-int8 net_rawwrite( TOpenNET * net, char * framebuf, uint8 len, uint8 opt )
+int8 net_rawwrite( TiOpenNET * net, char * framebuf, uint8 len, uint8 opt )
 {
 	return mac_rawwrite( net->mac, framebuf, len, opt );
 }
 
-int8 net_forward( TOpenNET * net, TOpenFrame * frame, uint8 len, uint8 opt )
+int8 net_forward( TiOpenNET * net, TiOpenFrame * frame, uint8 len, uint8 opt )
 {
 	//return mac_forward( net->mac, frame, size, opt );
 	return 0;
 }
 
-int8 net_rawforward( TOpenNET * net, char * framebuf, uint8 size, uint8 opt )
+int8 net_rawforward( TiOpenNET * net, char * framebuf, uint8 size, uint8 opt )
 {
 	return 0;
 }
 
-int8 net_evolve( TOpenNET * net )
+int8 net_evolve( TiOpenNET * net )
 {
 	mac_evolve( net->mac );
 	return 0;
 }
 
-int8 net_sleep( TOpenNET * net )
+int8 net_sleep( TiOpenNET * net )
 {
 	mac_sleep( net->mac );
 	return 0;
 }
 
-int8 net_wakeup( TOpenNET * net )
+int8 net_wakeup( TiOpenNET * net )
 {
 	mac_wakeup( net->mac );
 	return 0;
 }
 
-int8 net_installnotify( TOpenNET * net, TEventHandler * callback, void * data )
+int8 net_installnotify( TiOpenNET * net, TEventHandler * callback, void * data )
 {
 	return 0;
 }

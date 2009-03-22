@@ -119,11 +119,11 @@
 
 typedef struct{
   uint8 state;
-  TOpenAddress addr;
+  TiOpenAddress addr;
   uint8 linkquality;
   uint8 signalstrength;
   uint32 distance;  
-}TOpenMACNode;
+}TiOpenMACNode;
 
 #define MAC_CONFIG_PANID 			0x01 
 #define MAC_CONFIG_LOCALADDRESS		0x02 
@@ -140,10 +140,10 @@ typedef struct{
 typedef struct{
   uint8 	state;
   uint8 	event;
-  THdlDriver * phy;
+  TiCc2420Adapter * phy;
   uint8 	retry;  
   uint8 	seqno; 
-  TTimer *  timer; 
+  TiTimerAdapter *  timer; 
   uint8 	txlen;
   uint8 	rxlen;
   char * 	txframe;
@@ -152,45 +152,45 @@ typedef struct{
   uint8 	backoff;
   uint8 	backoff_rule;
   uint8 	sleepduration;
-  TOpenAddress localaddr;
-  TOpenAddress rmtaddr;
+  TiOpenAddress localaddr;
+  TiOpenAddress rmtaddr;
   char 		txbuf[OPF_FRAME_SIZE];
   char 		rxbuf[OPF_FRAME_SIZE];
   char 		rxheader[7];
   #ifdef CONFIG_OPENMAC_EXTENSION_ENABLE  
-  //TOpenMACNode ;?
+  //TiOpenMACNode ;?
   #endif
-}TOpenMAC;  
+}TiOpenMAC;  
 
-TOpenMAC * mac_construct( char * buf, uint16 size );
-void  mac_destroy( TOpenMAC * mac );
-void  mac_open( TOpenMAC * mac, TCc2420 * hdl, TActionScheduler * actsche, TTimer * timer, TOpenAddress * addr ); 
-void  mac_close( TOpenMAC * mac );
-void  mac_init( TOpenMAC * mac, THdlDriver * phy, TTimer * timer );
-void  mac_configure( TOpenMAC * mac, uint8 ctrlcode, uint16 value );
+TiOpenMAC * mac_construct( char * buf, uint16 size );
+void  mac_destroy( TiOpenMAC * mac );
+void  mac_open( TiOpenMAC * mac, TiCc2420Adapter * hdl, TiActionScheduler * actsche, TiTimerAdapter * timer, TiOpenAddress * addr ); 
+void  mac_close( TiOpenMAC * mac );
+void  mac_init( TiOpenMAC * mac, TiCc2420Adapter * phy, TiTimerAdapter * timer );
+void  mac_configure( TiOpenMAC * mac, uint8 ctrlcode, uint16 value );
 
-uint8 mac_read( TOpenMAC * mac, TOpenFrame * frame, uint8 size, uint8 opt );
-uint8 mac_rawread( TOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt );
-uint8 mac_write( TOpenMAC * mac, TOpenFrame * frame, uint8 len, uint8 opt );
-uint8 mac_rawwrite( TOpenMAC * mac, char * framebuffer, uint8 len, uint8 opt );
-uint8 mac_state( TOpenMAC * mac );
-int8  mac_evolve( TOpenMAC * mac );
-uint8 mac_sleep( TOpenMAC * mac );
-uint8 mac_wakeup( TOpenMAC * mac );
+uint8 mac_read( TiOpenMAC * mac, TiOpenFrame * frame, uint8 size, uint8 opt );
+uint8 mac_rawread( TiOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt );
+uint8 mac_write( TiOpenMAC * mac, TiOpenFrame * frame, uint8 len, uint8 opt );
+uint8 mac_rawwrite( TiOpenMAC * mac, char * framebuffer, uint8 len, uint8 opt );
+uint8 mac_state( TiOpenMAC * mac );
+int8  mac_evolve( TiOpenMAC * mac );
+uint8 mac_sleep( TiOpenMAC * mac );
+uint8 mac_wakeup( TiOpenMAC * mac );
 
-uint8 mac_setrmtaddress( TOpenMAC * mac, TOpenAddress * addr );
-uint8 mac_setlocaladdress( TOpenMAC * mac, TOpenAddress * addr );
-uint8 mac_getrmtaddress( TOpenMAC * mac, TOpenAddress * addr );
-uint8 mac_getlocaladdress( TOpenMAC * mac, TOpenAddress * addr );
-uint8 mac_installnotify( TOpenMAC * mac, TEventHandler * callback, void * owner );
+uint8 mac_setrmtaddress( TiOpenMAC * mac, TiOpenAddress * addr );
+uint8 mac_setlocaladdress( TiOpenMAC * mac, TiOpenAddress * addr );
+uint8 mac_getrmtaddress( TiOpenMAC * mac, TiOpenAddress * addr );
+uint8 mac_getlocaladdress( TiOpenMAC * mac, TiOpenAddress * addr );
+uint8 mac_installnotify( TiOpenMAC * mac, TEventHandler * callback, void * owner );
 
 #ifdef CONFIG_OPENMAC_EXTENSION_ENABLE
-int8 mac_probe( TOpenMAC * mac );
-int8 mac_updatestatistics( TOpenMAC * mac );
-int8 mac_getnode( TOpenMAC * mac, TOpenMACNode * node );
-int8 mac_getneighbors( TOpenMAC * mac, TOpenAddress * addr[] );
-uint8 mac_getlinkquality( TOpenMAC * mac, TOpenAddress * addr );
-uint8 mac_getsignalstrength( TOpenMAC * mac, TOpenAddress * addr );
+int8 mac_probe( TiOpenMAC * mac );
+int8 mac_updatestatistics( TiOpenMAC * mac );
+int8 mac_getnode( TiOpenMAC * mac, TiOpenMACNode * node );
+int8 mac_getneighbors( TiOpenMAC * mac, TiOpenAddress * addr[] );
+uint8 mac_getlinkquality( TiOpenMAC * mac, TiOpenAddress * addr );
+uint8 mac_getsignalstrength( TiOpenMAC * mac, TiOpenAddress * addr );
 #endif
 
 #endif
