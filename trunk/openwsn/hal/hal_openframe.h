@@ -71,9 +71,9 @@
  * 
  *****************************************************************************/
 
-/* the header size of a TOpenFrame
+/* the header size of a TiOpenFrame
  * note that this header is start from the length byte to nodeid byte
- * it is 8  byte. = sizeof(TOpenFrame) - payload size
+ * it is 8  byte. = sizeof(TiOpenFrame) - payload size
  */
 #define OPF_HEADER_SIZE 8
 
@@ -91,12 +91,12 @@
 typedef struct{
   uint8 len;
   char value[20];
-}TOpenAddress;
+}TiOpenAddress;
 
-uint16 mac_getshortpan( TOpenAddress * addr );
-uint16 mac_getshortid( TOpenAddress * addr );
-void   mac_setshortpan( TOpenAddress * addr, uint16 pan );
-void   mac_setshortid( TOpenAddress * addr, uint16 id );
+uint16 mac_getshortpan( TiOpenAddress * addr );
+uint16 mac_getshortid( TiOpenAddress * addr );
+void   mac_setshortpan( TiOpenAddress * addr, uint16 pan );
+void   mac_setshortid( TiOpenAddress * addr, uint16 id );
 
 /* the maximum frame length according to IEEE 802.15.4 specification
  */  
@@ -121,9 +121,9 @@ typedef struct{
     uint16 	nodefrom;
     uint8  	payload[OPF_PAYLOAD_SIZE];
     uint16  footer;
-}TOpenFrame;
+}TiOpenFrame;
 
-TOpenFrame * opf_init( char * buf, uint8 size );
+TiOpenFrame * opf_init( char * buf, uint8 size );
 uint8  opf_type( char * buf );
 uint8  opf_length( char * buf );
 uint16 opf_control( char * buf );

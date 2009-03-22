@@ -40,27 +40,49 @@
   #define CONFIG_OS_DEFAULT
 #endif  
 
-void hal_enable_interrupts()
+uint8 g_atomic_level;
+
+void _hal_enable_interrupts()
 {
 #ifdef CONFIG_OS_UCOSII
 	IRQEnable();
 #endif
 
 #ifdef CONFIG_OS_DEFAULT
-	hal_irq_enable();
+	_hal_irq_enable();
 #endif
 }
 
-void hal_disable_interrupts()
+void _hal_disable_interrupts()
 {
 #ifdef CONFIG_OS_UCOSII
 	IRQDisable();
 #endif
 
 #ifdef CONFIG_OS_DEFAULT
-	hal_irq_disable();
+	_hal_irq_disable();
 #endif
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* removed from this project since 200812 */
 
 /* @modified by zhangwei on 20070425
  * enble irq and fiq of arm

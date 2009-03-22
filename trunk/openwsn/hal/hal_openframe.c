@@ -41,25 +41,25 @@
  * use 4 byte address in current implementation (20070130)  
  ****************************************************************************/ 
 
-uint16 mac_getshortpan( TOpenAddress * addr )
+uint16 mac_getshortpan( TiOpenAddress * addr )
 {
 	uint16 * mem = (uint16 *)addr;
 	return (* mem);
 }
 
-uint16 mac_getshortid( TOpenAddress * addr )
+uint16 mac_getshortid( TiOpenAddress * addr )
 {
 	uint16 * mem = (uint16 *)((char*)addr+2);
 	return (* mem);
 }
 
-void  mac_setshortpan( TOpenAddress * addr, uint16 pan )
+void  mac_setshortpan( TiOpenAddress * addr, uint16 pan )
 {
 	uint16 * mem = (uint16 *)addr;
 	*mem = pan;
 }
 
-void  mac_setshortid( TOpenAddress * addr, uint16 id )
+void  mac_setshortid( TiOpenAddress * addr, uint16 id )
 {
 	uint16 * mem = (uint16 *)((char*)addr+2);
 	*mem = id;
@@ -70,11 +70,11 @@ void  mac_setshortid( TOpenAddress * addr, uint16 id )
  * assume 802.15.4 specification frame.
  ****************************************************************************/
  
-TOpenFrame * opf_init( char * buf, uint8 size )
+TiOpenFrame * opf_init( char * buf, uint8 size )
 {
-	TOpenFrame * opf;
+	TiOpenFrame * opf;
 	//assert( size <= OPF_FRAME_SIZE );
-	opf = (TOpenFrame *)buf;
+	opf = (TiOpenFrame *)buf;
 	//opf->length = 0x7F & size;
 	return opf;
 }

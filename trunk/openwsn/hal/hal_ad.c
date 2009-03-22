@@ -36,22 +36,22 @@
 
 
 /* id的最低一位代表通道，再高一位为ad的选者，如14 则为ad1的四通道 */
-TAdConversion * ad_construct( uint8 id, char * buf, uint8 size )
+TiAdConversion * ad_construct( uint8 id, char * buf, uint8 size )
 {  
 	
-	TAdConversion *ad;
+	TiAdConversion *ad;
 	
 	char* out_string = "ad consturct succesful!\n";
    	
-   	if (sizeof(TAdConversion) > size)
+   	if (sizeof(TiAdConversion) > size)
 		ad = NULL;
 	else
 		
-		ad = (TAdConversion *)buf;
+		ad = (TiAdConversion *)buf;
 		
 	if (ad != NULL)
 	{
-		memset( (char*)ad, 0x00, sizeof(TAdConversion) );
+		memset( (char*)ad, 0x00, sizeof(TiAdConversion) );
 	 	
 		ad->id = id;
 		switch(id)
@@ -94,7 +94,7 @@ TAdConversion * ad_construct( uint8 id, char * buf, uint8 size )
 	return ad ; 
 }
 
-void ad_configutre(TAdConversion * ad)
+void ad_configutre(TiAdConversion * ad)
 {
 	//ad->id = 0;
 	AD0CR = (1 << 3)						|	// SEL=8,选择通道3
@@ -107,7 +107,7 @@ void ad_configutre(TAdConversion * ad)
 			(0 << 27);						 	// 直接启动ADC转换时，此位无效
 }
 
-void ad_destroy( TAdConversion * ad )
+void ad_destroy( TiAdConversion * ad )
 {
 	if (ad)
 	{
@@ -116,13 +116,13 @@ void ad_destroy( TAdConversion * ad )
 }
 
 // not used now.
-void ad_start( TAdConversion * ad, TEventHandler callback, void * owner )
+void ad_start( TiAdConversion * ad, TEventHandler callback, void * owner )
 {
 	//ad->callback = callback;
 	//ad->callback_owner = owner;
 }
 
-uint16 ad_read( TAdConversion * ad, char * buf, uint8 size, uint8 opt )
+uint16 ad_read( TiAdConversion * ad, char * buf, uint8 size, uint8 opt )
 {      
        
        uint32  temp;

@@ -39,7 +39,7 @@
  * @author zhangwei, tangwen on 2006-08-02
  * Timer hardware encapsulation
  * 
- * you can reference "test\timer.*" to see how to use the TTimer object.
+ * you can reference "test\timer.*" to see how to use the TiTimerAdapter object.
  * 
  * @history
  * @modified by zhangwei on 20060802
@@ -58,7 +58,7 @@
 static void __irq timer_interrupt( void );
 
 
-// construct a TTimer object in the memory
+// construct a TiTimerAdapter object in the memory
 //
 // @param
 //	id 			timer id. now it can be 0 or 1
@@ -72,21 +72,21 @@ static void __irq timer_interrupt( void );
 //	data		the parameter to be passed to the callback function.
 //	priority	the interrupt priority level. 0 is the highest and 15 is the lowest.
 //
-TTimer * timer_construct( char * buf, uint8 size )
+TiTimerAdapter * timer_construct( char * buf, uint8 size )
 {
-	TTimer * timer;
+	TiTimerAdapter * timer;
 	
-	if (sizeof(TTimer) > size)
+	if (sizeof(TiTimerAdapter) > size)
 	{
 		timer = NULL;
 	}
 	else{
-		timer = (TTimer *)buf;
+		timer = (TiTimerAdapter *)buf;
 	}	
 	if (timer != NULL)
 	{
 		
-		memset( buf, 0x00, sizeof(TTimer) );
+		memset( buf, 0x00, sizeof(TiTimerAdapter) );
 	}
 	
 	return timer;
@@ -95,7 +95,7 @@ TTimer * timer_construct( char * buf, uint8 size )
 // to be finished:
 // should disconnect the interrupt here
 // modified by shanlei
-void timer_destroy( TTimer * timer )
+void timer_destroy( TiTimerAdapter * timer )
 {
 	timer_disable( timer );
 	if (timer->state & TIMER_STATE_INTERRUPT)
@@ -105,11 +105,11 @@ void timer_destroy( TTimer * timer )
 	timer = NULL;
 }
 
-void timer_init( TTimer * timer, uint8 id, uint8 channel )
+void timer_init( TiTimerAdapter * timer, uint8 id, uint8 channel )
 {
 	if (timer != NULL)
 	{
-		memset( timer, 0x00, sizeof(TTimer) );
+		memset( timer, 0x00, sizeof(TiTimerAdapter) );
 		timer->id =  ((id & 0x0F) << 4 | (channel & 0x0F));
 		timer->state = 0;
 		timer->interval = 0;
@@ -126,7 +126,7 @@ void timer_init( TTimer * timer, uint8 id, uint8 channel )
 // 	priority	中断优先级，0最高，15最低。如果超出此范围，默认为最高级。
 //  modified by shanlei 
 //  the use of priority : 中断优先级，0最高，15最低。如果大于15，表示不使用中断。默认为最高级
-void timer_configure( TTimer * timer, TEventHandler callback, void * data, uint8 priority )
+void timer_configure( TiTimerAdapter * timer, TEventHandler callback, void * data, uint8 priority )
 {
 	timer->priority = priority;
 	timer->data = data;
@@ -149,7 +149,7 @@ void timer_configure( TTimer * timer, TEventHandler callback, void * data, uint8
 
 // set the timestamp of the timer 
 // this will affect the hardware
-void timer_setvalue( TTimer * timer, uint32 value )
+void timer_setvalue( TiTimerAdapter * timer, uint32 value )
 {	
     NULL;
 
@@ -158,7 +158,7 @@ void timer_setvalue( TTimer * timer, uint32 value )
 // get the current timestamp of the timer
 // this value is read from the timer hardware
 // complete by shanlei 06-11-14 just get the current TC value
-uint32 timer_getvalue( TTimer * timer )
+uint32 timer_getvalue( TiTimerAdapter * timer )
 {
 	uint8 checkid;
 	uint32 timervalue;
@@ -194,7 +194,7 @@ uint32 timer_getvalue( TTimer * timer )
 //				TRUE/1   period triggering
 //				FALSE/0  trigger only once
 //
-void timer_setinterval( TTimer * timer, uint32 interval, uint8 repeat )
+void timer_setinterval( TiTimerAdapter * timer, uint32 interval, uint8 repeat )
 {
 	//uint8 checkid;
 	
@@ -270,7 +270,7 @@ void timer_setinterval( TTimer * timer, uint32 interval, uint8 repeat )
  * 	- capture interrupt enable/disable
  * 	- capture condition 
  */
-void timer_setcapture( TTimer * timer, uint8 opt )
+void timer_setcapture( TiTimerAdapter * timer, uint8 opt )
 {
 	// @TODO: time capture features
 	NULL;
@@ -280,7 +280,7 @@ void timer_setcapture( TTimer * timer, uint8 opt )
 //	start timer 0 or timer 1. now this function only support two timer hardware.
 //  modified by shanlei 06-11-14 
 //  it will enable the VIC according to the timer->state
-void timer_start( TTimer * timer )
+void timer_start( TiTimerAdapter * timer )
 {
 	uint8 checkid;
 	checkid = timer->id & 0xF0;
@@ -304,7 +304,7 @@ void timer_start( TTimer * timer )
 
 //  modified by shanlei 06-11-14
 //  it will disable the VIC according to the timer->state
-void timer_stop( TTimer * timer )
+void timer_stop( TiTimerAdapter * timer )
 {
 	uint8 checkid;
 	checkid = timer->id & 0xF0;
@@ -327,7 +327,7 @@ void timer_stop( TTimer * timer )
 
 // restart the timer again. all the old settings are used, for example, the 
 // interval and interrupt settings.
-void timer_restart( TTimer * timer, uint32 interval, uint8 repeat )
+void timer_restart( TiTimerAdapter * timer, uint32 interval, uint8 repeat )
 {
 	timer_stop( timer );
 	// timer_setinterval( timer, timer->interval, timer->state & TIMER_STATE_INTERRUPT );
@@ -345,7 +345,7 @@ void timer_restart( TTimer * timer, uint32 interval, uint8 repeat )
  */
  // complete by shanlei 06-11-15
  // 如果不使用中断，则检查T0IR(TIMER0)或T1IR(timer1)是否为1
-boolean timer_expired( TTimer * timer )
+boolean timer_expired( TiTimerAdapter * timer )
 {
 	boolean expired;
 	uint8 checkperiod;
@@ -444,7 +444,7 @@ boolean timer_expired( TTimer * timer )
  * 	the returned value maybe incorrect if the time duration is too long when it
  * is exceed the maximum limit of an uint32 integer.
  */
-uint32 timer_elapsed( TTimer * timer )
+uint32 timer_elapsed( TiTimerAdapter * timer )
 {
 	uint32 curtime, ret;
 	
@@ -467,7 +467,7 @@ uint32 timer_elapsed( TTimer * timer )
  */
  
 //add by shanlei 
-void timer_VICinit( TTimer * timer )
+void timer_VICinit( TiTimerAdapter * timer )
 {
 	uint8 checkid;
 	VICIntSelect = 0x00;				/* 所有中断通道设置为IRQ中断			*/
@@ -655,7 +655,7 @@ void timer_VICinit( TTimer * timer )
 }
 
 //add by shanlei
-void timer_VICenable( TTimer * timer)
+void timer_VICenable( TiTimerAdapter * timer)
 {
     uint8 checkid;
     checkid = timer->id & 0xF0;
@@ -671,7 +671,7 @@ void timer_VICenable( TTimer * timer)
  }    
 
 //add by shanlei    
-void timer_VICdisable( TTimer * timer)
+void timer_VICdisable( TiTimerAdapter * timer)
 {
     uint8 checkid;
     checkid = timer->id & 0xF0;
@@ -689,7 +689,7 @@ void timer_VICdisable( TTimer * timer)
 
 //modified by shanlei 06-11-16 
 //now the timer_enable function just enable the comparason interrupt of each channel
-void   timer_enable( TTimer * timer )
+void   timer_enable( TiTimerAdapter * timer )
 {
 	switch (timer->id)
 	{
@@ -724,7 +724,7 @@ void   timer_enable( TTimer * timer )
 
 //modified by shanlei 06-11-16 
 //now the timer_disable function just disable the comparason interrupt of each channel
-void timer_disable( TTimer * timer )
+void timer_disable( TiTimerAdapter * timer )
 {	
 	switch (timer->id)
 	{
@@ -757,7 +757,7 @@ void timer_disable( TTimer * timer )
 	}      	
 }
 
-uint32 timer_clocksperms( TTimer * timer )
+uint32 timer_clocksperms( TiTimerAdapter * timer )
 {
 	return TIMER_CLOCKS_PER_MILLISECOND;
 }
@@ -770,7 +770,7 @@ uint32 timer_clocksperms( TTimer * timer )
 void __irq timer_interrupt( void )
 {
 	
-	TTimer * timer = NULL;
+	TiTimerAdapter * timer = NULL;
 	uint8 VICcheck;
 	uint8 checkperiod;
 	
@@ -882,7 +882,7 @@ void __irq timer_interrupt( void )
 
 void __irq Timer0_Int (void)
 {
-    TTimer * timer = g_timer0;
+    TiTimerAdapter * timer = g_timer0;
 
 	uint8 checkperiod;
 	
@@ -945,7 +945,7 @@ void __irq Timer0_Int (void)
 
 void __irq Timer1_Int (void)
 {
-    TTimer * timer = g_timer1;
+    TiTimerAdapter * timer = g_timer1;
 
 	uint8 checkperiod;
 	

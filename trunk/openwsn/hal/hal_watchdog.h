@@ -32,9 +32,9 @@
 
 /******************************************************************************
  * @author zhangwei on 2006-08-13
- * TWatchdog 
+ * TiWatchdogAdapter 
  * 
- * This module contains a TWatchdog object. This is an software abstraction of 
+ * This module contains a TiWatchdogAdapter object. This is an software abstraction of 
  * the hardware watchdog. 
  * 
  * @attention: There's usually only one watchdog hardware in the MCU. however, 
@@ -46,19 +46,19 @@
 typedef struct{
   uint32 interval;
   uint8 state;
-}TWatchdog;
+}TiWatchdogAdapter;
 
-/* construct a global TWatchdog object. You can reference this object by global
+/* construct a global TiWatchdogAdapter object. You can reference this object by global
  * variable "g_watchdog". Note that the watchdog only start by calling enable()
  * function.
  *
  * This implementation only allows one watchdog object exists in the system.
  */
-TWatchdog * watchdog_construct( char * buf, uint16 size, uint32 interval );
-void watchdog_destroy( TWatchdog * wdg );
-void watchdog_configure( TWatchdog * wdg, uint8 opt );
-void watchdog_enable( TWatchdog * wdg );
-void watchdog_disable( TWatchdog * wdg );
-void watchdog_feed( TWatchdog * wdg );
+TiWatchdogAdapter * watchdog_construct( char * buf, uint16 size, uint32 interval );
+void watchdog_destroy( TiWatchdogAdapter * wdg );
+void watchdog_configure( TiWatchdogAdapter * wdg, uint8 opt );
+void watchdog_enable( TiWatchdogAdapter * wdg );
+void watchdog_disable( TiWatchdogAdapter * wdg );
+void watchdog_feed( TiWatchdogAdapter * wdg );
 
 #endif
