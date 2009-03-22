@@ -49,26 +49,26 @@
 #include "foundation.h"
 #include "global.h"
 
-static TSioComm 			m_sio;
+static TiSioComm 			m_sio;
 //static TWirelessComm 		m_wireless;
-static TConsole 			m_console;
+static TiConsole 			m_console;
 //static TConfigure 		m_configure;
 //static TActionScheduler  	m_actsche;
 
 #ifdef CONFIG_DEBUGIO_ENABLE
-static TDebugIo m_debugio;
+static TiDebugIo m_debugio;
 #endif
 
-TActionScheduler *			g_actsche = NULL;
-TSioComm *					g_sio = NULL;
-TWirelessComm *				g_wls = NULL;
-TConsole *					g_console = NULL;
-TConfigure * 				g_config = NULL;
-TDebugIo * 					g_debugio = NULL;
-TOpenMAC * 					g_mac = NULL;
-TOpenNET *					g_net = NULL;
-TSensorService *			g_sensors = NULL;
-TLocationService *			g_lcs = NULL;
+TiActionScheduler *			g_actsche = NULL;
+TiSioComm *					g_sio = NULL;
+TiWlsComm *					g_wls = NULL;
+TiConsole *					g_console = NULL;
+TiConfigure * 				g_config = NULL;
+TiDebugIo * 				g_debugio = NULL;
+TiOpenMAC * 				g_mac = NULL;
+TiOpenNET *					g_net = NULL;
+TiSensorService *			g_sensors = NULL;
+TiLocationService *			g_lcs = NULL;
 
 
 // an global variable to record whether the system is successfully initialized.

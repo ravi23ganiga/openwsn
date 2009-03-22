@@ -46,7 +46,7 @@
 #define REMOTE_NODE 0x1234
 #define LOCAL_NODE 0x5678
 
-static TCc2420Frame g_frame;
+static TiCc2420AdapterFrame g_frame;
 static uint8 g_buf[0xFF];
 
 int cc2420rx_test (void) 

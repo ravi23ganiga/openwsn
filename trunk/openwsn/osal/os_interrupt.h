@@ -48,7 +48,17 @@
  
  #include "os_foundation.h"
 
-void os_attach( uint8 num, TOsInterruptHandler handler, uint8 prior );
+/* when there's a multiple interrupt managment module (such as VIC) in the system, 
+ * this module can be simplified as a group of macros based on VIC interface. But
+ * if there's no VIC such as NIOS MCU in FPGA, then this module support simulate
+ * multiple interrupts and the whole system can continue running smoothly.
+ *
+ * since this module will keep a interrupt service handler table in the RAM, it
+ * consume nearly 100 Bytes. you can choose to use VIC directly or give up this 
+ * module if the RAM space is very valuable. 
+ */
+
+void os_attach( uint8 num, TOsInterruptHandler handler, void * owner, uint8 prior );
 void os_detach( uint8 num );
 void os_enable( uint8 num );
 void os_disable( uint8 num ); 

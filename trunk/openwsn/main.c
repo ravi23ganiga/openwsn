@@ -29,11 +29,12 @@
  ****************************************************************************/ 
  
 #include <stdlib.h>
+#include "configall.h"
 #include "foundation.h"
-#include ".\src\config.h"
-#include ".\hal\hal.h"
+#include "./hal/hal_foundation.h"
+#include "./hal/hal.h"
 #ifdef CONFIG_OS_UCOSII
-#include ".\test\ucos_test.h"
+#include "./test/ucos_test.h"
 #endif
 #include "start.h"
 
