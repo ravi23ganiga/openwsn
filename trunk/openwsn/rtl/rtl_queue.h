@@ -31,15 +31,15 @@
 #define _TK_QUEUE_H_
 
 
-#define TRtlQueueItem rtl_queue_item_t
-#define TRtlQueue rtl_queue_t
+#define TRtlQueueItem TiQueueItem
+#define TRtlQueue TiQueue
 
 typedef struct{
   void * data;
   uint16 datalen;
   uint8 prev;
   uint8 next;
-}rtl_queue_item_t;
+}TiQueueItem;
 
 typedef struct{
   uint8 head;
@@ -47,7 +47,7 @@ typedef struct{
   uint8 capacity;
   uint8 count;
   uint16 datasize;
-  rtl_queue_item_t * itemtable;
-}rtl_queue_t; 
+  TiQueueItem * itemtable;
+}TiQueue; 
 
 #endif /*_TK_QUEUE_H_*/

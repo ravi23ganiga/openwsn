@@ -32,15 +32,15 @@
 #define KQUEUE_MAX_CAPACITY_LIMIT (0xFFFF-1)
 
 #define RTL_QUEUE_INVALID_ID 0xFFFF
-#define TRtlQueueItem rtl_queue_item_t
-#define TRtlQueue rtl_queue_t
+#define TRtlQueueItem TiQueueItem
+#define TRtlQueue TiQueue
 
 typedef struct{
   void * data;
   uint16 datalen;
   uint8 prev;
   uint8 next;
-}rtl_queue_item_t;
+}TiQueueItem;
 
 typedef struct{
   uint8 head;
@@ -48,18 +48,18 @@ typedef struct{
   uint8 capacity;
   uint8 count;
   uint16 datasize;
-  rtl_queue_item_t * itemtable;
-}rtl_queue_t; 
+  TiQueueItem * itemtable;
+}TiQueue; 
 
 que_attachbuffer
 
-rtl_queue_t * que_construct( char * buf, uint16 size, uint16 datasize )
+TiQueue * que_construct( char * buf, uint16 size, uint16 datasize )
 {
-	rtl_queue_t * que;
+	TiQueue * que;
 	char * expandbuf;
 	uint8 adjust;
 
-	que = (rtl_queue_t *)buf;
+	que = (TiQueue *)buf;
 	if (que != NULL)
 	{
 		memset( buf, 0x00, size );
@@ -68,7 +68,7 @@ rtl_queue_t * que_construct( char * buf, uint16 size, uint16 datasize )
 		que->capacity = 0;
 		que->count = 0;
 		que->datasize = datasize;
-		expandbuf = (char*)(buf) + sizeof(rtl_queue_t);
+		expandbuf = (char*)(buf) + sizeof(TiQueue);
 		adjust = (uint8) & 0x03;
 		if (adjust > 0)
 			expandbuf += (4 - adjust);
@@ -81,28 +81,28 @@ rtl_queue_t * que_construct( char * buf, uint16 size, uint16 datasize )
 	return que;
 }
 
-void que_destroy( rtl_queue_t * que )
+void que_destroy( TiQueue * que )
 {
 	que->head = 0;
 	que->tail = 0;
 	que->count = 0;
 }
 
-uint8 void que_attachbuffer( rtl_queue_t * que, char * buf, uint16 size, uint16 datasize )
+uint8 void que_attachbuffer( TiQueue * que, char * buf, uint16 size, uint16 datasize )
 {
-	rtl_queue_item_t * item;
+	TiQueueItem * item;
 
 	if (datasize == 0)
 	{
-		que->capacity = size / sizeof(rtl_queue_item_t);
+		que->capacity = size / sizeof(TiQueueItem);
 		que->datasize = 0;
 	}
 	else{
-		que->capacity = size / (size(rtl_queue_item_t) + datasize);
+		que->capacity = size / (size(TiQueueItem) + datasize);
 		que->datasize = datasize;
 	}
 
-	que->item = (rtl_queue_item_t *)buf;
+	que->item = (TiQueueItem *)buf;
 	memset( buf, 0x00, size );
 	item = que->item;
 	item[0]->prev = RTL_QUEUE_INVALID_ID;
@@ -118,7 +118,7 @@ uint8 void que_attachbuffer( rtl_queue_t * que, char * buf, uint16 size, uint16 
 	
 	if (datasize > 0)
 	{
-		buf = buf + sizeof(rtl_queue_item_t) * que->capacity;
+		buf = buf + sizeof(TiQueueItem) * que->capacity;
 		for (n=0; n < que->capacity; n++)
 		{
 			item[n]->data = buf;
@@ -134,27 +134,27 @@ uint8 void que_attachbuffer( rtl_queue_t * que, char * buf, uint16 size, uint16 
 #define que_head(q) que_first(q)
 #define que_tail(q) que_tail(q)
 
-uint8 que_first( rtl_queue_t * que )
+uint8 que_first( TiQueue * que )
 {
 	return (count>0) ? que->head : RTL_QUEUE_INVALID_ID;
 }
 
-uint8 que_next( rtl_queue_t * que )
+uint8 que_next( TiQueue * que )
 {
 	return (count>0) ? que->itemtable[que->head].next : RTL_QUEUE_INVALID_ID;
 }
 
-uint8 que_last( rtl_queue_t * que )
+uint8 que_last( TiQueue * que )
 {
 	return (count>0) ? que->tail : RTL_QUEUE_INVALID_ID;
 }
 
-uint8 que_prev( rtl_queue_t * que )
+uint8 que_prev( TiQueue * que )
 {
 	return (count>0) ? que->itemtable[que->tail].prev : RTL_QUEUE_INVALID_ID;
 }
 
-boolean que_pophead( rtl_queue_t * que )
+boolean que_pophead( TiQueue * que )
 {
 	boolean ret;
 	
@@ -171,7 +171,7 @@ boolean que_pophead( rtl_queue_t * que )
 	return ret;
 }
 
-uint8 que_pushtail( rtl_queue_t * que )
+uint8 que_pushtail( TiQueue * que )
 {
 	uint8 ret;
 	
@@ -195,7 +195,7 @@ uint8 que_pushtail( rtl_queue_t * que )
 	return ret;	
 }
 
-boolean que_poptail( rtl_queue_t * que )
+boolean que_poptail( TiQueue * que )
 {
 	boolean ret;
 	
@@ -215,7 +215,7 @@ boolean que_poptail( rtl_queue_t * que )
 	return ret;
 }
 
-uint8 que_pushhead( rtl_queue_t * que )
+uint8 que_pushhead( TiQueue * que )
 {
 	uint8 ret;
 	
@@ -234,15 +234,15 @@ uint8 que_pushhead( rtl_queue_t * que )
 	return ret;
 }
 
-uint8 que_insert( rtl_queue_t * que, uint8 index )
+uint8 que_insert( TiQueue * que, uint8 index )
 {
 	// @TODO que_insert
 	return RTL_QUEUE_INVALID_ID;
 }
 
-uint16 que_get( rtl_queue_t * que, uint8 id, char * buf, uint16 capacity )
+uint16 que_get( TiQueue * que, uint8 id, char * buf, uint16 capacity )
 {
-	rtl_queue_item_t * item;
+	TiQueueItem * item;
 	uint16 ret;
 	
 	assert( id != RTL_QUEUE_INVALID_ID );
@@ -258,9 +258,9 @@ uint16 que_get( rtl_queue_t * que, uint8 id, char * buf, uint16 capacity )
 	return ret;
 }
 
-void * que_getdatabuf( rtl_queue_t * que, uint8 id, uint16 * len )
+void * que_getdatabuf( TiQueue * que, uint8 id, uint16 * len )
 {
-	rtl_queue_item_t * item;
+	TiQueueItem * item;
 	void * ret;
 	
 	assert( id != RTL_QUEUE_INVALID_ID );
@@ -278,9 +278,9 @@ void * que_getdatabuf( rtl_queue_t * que, uint8 id, uint16 * len )
 	
 }
 
-void que_set( rtl_queue_t * que, uint8 id, char * buf, uint16 datalen )
+void que_set( TiQueue * que, uint8 id, char * buf, uint16 datalen )
 {
-	rtl_queue_item_t * item;
+	TiQueueItem * item;
 	
 	assert( id != RTL_QUEUE_INVALID_ID );
 	item = &( que->itemtable[id] );
@@ -292,9 +292,9 @@ void que_set( rtl_queue_t * que, uint8 id, char * buf, uint16 datalen )
 /* different to function "set", "put" will copy the input data into queue's internal 
  * buffer. while, "set" function will only change the value of the queue item member
  */
-void que_put( rtl_queue_t * que, uint8 id, char * buf, uint16 datalen )
+void que_put( TiQueue * que, uint8 id, char * buf, uint16 datalen )
 {
-	rtl_queue_item_t * item;
+	TiQueueItem * item;
 	
 	assert( id != RTL_QUEUE_INVALID_ID );
 	item = &( que->itemtable[id] );

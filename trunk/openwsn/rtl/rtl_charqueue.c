@@ -31,7 +31,7 @@
 #include "tk_charqueue.h"
 
 #define KCHARQUEUE_MAX_CAPACITY_LIMIT (0xFFFF-1)
-#define kcharqueue_t TKCharQueue
+#define kcharqueue_t TiCharQueue
 
 typedef struct{
   uint16 count;
@@ -39,7 +39,7 @@ typedef struct{
   uint16 head;
   uint16 tail;
   char * datatable;
-}TKCharQueue; 
+}TiCharQueue; 
 
 
 /* construct a queue object in a memory area
@@ -61,9 +61,9 @@ typedef struct{
  * 	an pointer to the KQueue object if success
  * 	NULL when failed
  */
-TKCharQueue * cque_construct( void * buf, uint16 size, uint16 capacity )
+TiCharQueue * cque_construct( void * buf, uint16 size, uint16 capacity )
 {
-	TKCharQueue * que = (TKCharQueue *)buf;
+	TiCharQueue * que = (TiCharQueue *)buf;
 	uint16 n;	
 	
 	if (sizeof(TCharKQueue) + capacity > size)
@@ -76,13 +76,13 @@ TKCharQueue * cque_construct( void * buf, uint16 size, uint16 capacity )
 		que->capacity = capacity;
 		que->head = 0; 
 		que->tail = 0;
-		que->datatable = (char *)buf + sizeof(TKCharQueue);
+		que->datatable = (char *)buf + sizeof(TiCharQueue);
 	}
 	
 	return que;
 }
 
-void cque_destroy( TKCharQueue * que )
+void cque_destroy( TiCharQueue * que )
 {
 	if (que != NULL)
 	{
@@ -96,7 +96,7 @@ void cque_destroy( TKCharQueue * que )
 
 #define cque_isfull(que) (que->count >= que->capacity)
 
-boolean cque_push( TKCharQueue * que, char ch )
+boolean cque_push( TiCharQueue * que, char ch )
 {
 	boolean ret;
 	
@@ -123,7 +123,7 @@ boolean cque_push( TKCharQueue * que, char ch )
 	return ret;
 }
 
-boolean cque_pop( TKCharQueue * que, char * ch )
+boolean cque_pop( TiCharQueue * que, char * ch )
 {
 	boolean ret;
 	
@@ -142,7 +142,7 @@ boolean cque_pop( TKCharQueue * que, char * ch )
 	return ret;
 }
 
-boolean cque_feed( TKCharQueue * que, char ch )
+boolean cque_feed( TiCharQueue * que, char ch )
 {
 	boolean ret;
 	

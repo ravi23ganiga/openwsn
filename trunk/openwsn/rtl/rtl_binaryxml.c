@@ -54,18 +54,18 @@
  * 
  *****************************************************************************/
 
-/* construct a TBinaryXml object on the specified buffer
+/* construct a TiBinaryXml object on the specified buffer
  * attention the construct() function will automatically create the root 
  * node on the buffer. it will occupy 4 bytes. the root node holds the 
  * information of the total length of the xml.
  * 
  * @param
- * 	xml			point to an TBinaryXml varaible not initilized
+ * 	xml			point to an TiBinaryXml varaible not initilized
  * 	xmldata		databuffer to hold the binary xml data. 
  * 				it is often the address point to the payload of the packet.
  * 	size		xml data buffer size
  */
-TBinaryXml * xml_construct( TBinaryXml * xml, char * xmldata, uint8 size )
+TiBinaryXml * xml_construct( TiBinaryXml * xml, char * xmldata, uint8 size )
 {
 	xml->buf = xmldata;
 	xml->capacity = size;
@@ -79,14 +79,14 @@ TBinaryXml * xml_construct( TBinaryXml * xml, char * xmldata, uint8 size )
 	return xml;
 }
 
-void xml_destroy( TBinaryXml * xml )
+void xml_destroy( TiBinaryXml * xml )
 {
 	NULL;
 }
 
-/* attach the TBinaryXml buffer to an exist buffer. the data in the buffer will 
+/* attach the TiBinaryXml buffer to an exist buffer. the data in the buffer will 
  * not changed */
-void  xml_attach( TBinaryXml * xml, char * xmldata, uint8 len )
+void  xml_attach( TiBinaryXml * xml, char * xmldata, uint8 len )
 {
 	xml->buf = xmldata;
 	xml->capacity = len;
@@ -102,7 +102,7 @@ void  xml_attach( TBinaryXml * xml, char * xmldata, uint8 len )
  * 		in the buffer. so the implementation of xml_read/xml_write is highly 
  * 		efficient.
  */
-uint8 xml_newnode( TBinaryXml * xml, uint8 request_size )
+uint8 xml_newnode( TiBinaryXml * xml, uint8 request_size )
 {
 	uint8 id;
 	
@@ -120,7 +120,7 @@ uint8 xml_newnode( TBinaryXml * xml, uint8 request_size )
 
 /* append a node in the buffer 
  */
-uint8 xml_append( TBinaryXml * xml, uint8 parid, uint8 property, char * data, uint8 datalen )
+uint8 xml_append( TiBinaryXml * xml, uint8 parid, uint8 property, char * data, uint8 datalen )
 {
 	uint8 id = xml_newnode( xml, datalen );
 	if (id > 0)
@@ -137,7 +137,7 @@ uint8 xml_append( TBinaryXml * xml, uint8 parid, uint8 property, char * data, ui
  * @return
  * the bytes successfully wroten
  */
-uint8 xml_write( TBinaryXml * xml, uint8 id, uint8 parid, uint8 property, char * data, uint8 datalen )
+uint8 xml_write( TiBinaryXml * xml, uint8 id, uint8 parid, uint8 property, char * data, uint8 datalen )
 {
 	xml->buf[id] = datalen;
 	xml->buf[id+1] = parid;
@@ -149,7 +149,7 @@ uint8 xml_write( TBinaryXml * xml, uint8 id, uint8 parid, uint8 property, char *
 /* @return
  * the bytes successfully read
  */
-uint8 xml_read( TBinaryXml * xml, uint8 id, uint8 * parid, uint8 * property, char * data, uint8 size )
+uint8 xml_read( TiBinaryXml * xml, uint8 id, uint8 * parid, uint8 * property, char * data, uint8 size )
 {
 	*parid = xml->buf[id+1];
 	*property = xml->buf[id+2];
@@ -162,14 +162,14 @@ uint8 xml_read( TBinaryXml * xml, uint8 id, uint8 * parid, uint8 * property, cha
  * i think it is not necessary for such embedded systems. but i still keep this 
  * interface here for future use.
  */
-void xml_remove( TBinaryXml * xml, uint8 id )
+void xml_remove( TiBinaryXml * xml, uint8 id )
 {
 	NULL;
 	return;
 }
 
 /* find the id of parent node */
-uint8 xml_findparent( TBinaryXml * xml, uint8 id )
+uint8 xml_findparent( TiBinaryXml * xml, uint8 id )
 {
 	return xml->buf[id+1];
 }
@@ -177,7 +177,7 @@ uint8 xml_findparent( TBinaryXml * xml, uint8 id )
 /* find the id of the first child
  * assume the child node must occur after its parent node 
  */
-uint8 xml_findchild( TBinaryXml * xml, uint8 id )
+uint8 xml_findchild( TiBinaryXml * xml, uint8 id )
 {
 	uint8 child = id + xml->buf[id];
 
@@ -196,7 +196,7 @@ uint8 xml_findchild( TBinaryXml * xml, uint8 id )
  * xml_findprev() is not so efficient as xml_findnext(). so you'd better avoid
  * to use it.
  */
-uint8 xml_findprev( TBinaryXml * xml, uint8 id )
+uint8 xml_findprev( TiBinaryXml * xml, uint8 id )
 {
 	bool found = false;
 	uint8 lastid = 0, curid = 0;
@@ -219,7 +219,7 @@ uint8 xml_findprev( TBinaryXml * xml, uint8 id )
 
 
 /* find the id of the next brother node */
-uint8 xml_findnext( TBinaryXml * xml, uint8 id )
+uint8 xml_findnext( TiBinaryXml * xml, uint8 id )
 {
 	uint8 parid = xml->buf[id+1];
 	uint8 lastid, curid = id;
