@@ -33,7 +33,7 @@
 
 /****************************************************************************** 
  * @author zhangwei on 2006-07-20
- * TUartDriver object
+ * TiUartAdapter object
  * Essentially, this is the software mapping of the UART hardware 
  * 
  * @modified by zhangwei on 2006-07-20
@@ -73,13 +73,13 @@ typedef struct{
   uint8 stopbits;
   uint8 parity;
   uint32 baudrate;
-}TUartDriver;
+}TiUartAdapter;
 
-TUartDriver * uart_construct( uint8 id, char * buf, uint16 size );
-void uart_destroy( TUartDriver * uart );
-int16 uart_configure (TUartDriver * uart,uint32 baudrate, uint8 databits, uint8 stopbits, 
+TiUartAdapter * uart_construct( uint8 id, char * buf, uint16 size );
+void uart_destroy( TiUartAdapter * uart );
+int16 uart_configure (TiUartAdapter * uart,uint32 baudrate, uint8 databits, uint8 stopbits, 
 	uint8 parity, uint8 optflag );
-void uart_reset( TUartDriver * uart );
+void uart_reset( TiUartAdapter * uart );
 
 /******************************************************************************
  * read data from UART driver. you can consider the UART's input as an continuous 
@@ -98,7 +98,7 @@ void uart_reset( TUartDriver * uart );
  * 	the data length actually returned in the buffer.
  *****************************************************************************/ 
 #ifdef CONFIG_UART_READ_ENABLE
-uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt );
+uint16 uart_read( TiUartAdapter * uart, char * buf, uint16 size, uint16 opt );
 #endif
 
 /******************************************************************************
@@ -110,7 +110,7 @@ uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt );
  * to the UART.
  *****************************************************************************/ 
 #ifdef CONFIG_UART_WRITE_ENABLE
-uint16 uart_write( TUartDriver * uart, char * buf, uint16 len, uint16 opt ); 
+uint16 uart_write( TiUartAdapter * uart, char * buf, uint16 len, uint16 opt ); 
 #endif
 
 /******************************************************************************
@@ -119,7 +119,7 @@ uint16 uart_write( TUartDriver * uart, char * buf, uint16 len, uint16 opt );
  * 	0		success, and "*pc" is the character received.
  * 	-1		failed
  *****************************************************************************/ 
-int16 uart_getchar( TUartDriver * uart, char * pc );
+int16 uart_getchar( TiUartAdapter * uart, char * pc );
 
 /******************************************************************************
  * put one character to the UART output stream
@@ -127,7 +127,7 @@ int16 uart_getchar( TUartDriver * uart, char * pc );
  * 	0		success
  * 	-1		failed.
  *****************************************************************************/ 
-int16 uart_putchar( TUartDriver * uart, char ch );
+int16 uart_putchar( TiUartAdapter * uart, char ch );
 
 #endif
 

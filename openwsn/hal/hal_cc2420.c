@@ -47,7 +47,7 @@
 
 /******************************************************************************
  * @author zhangwei on 2006-07-20
- * TCc2420Driver
+ * TiCc2420Adapter
  * This is an software abstraction of the cc2420 transceiver hardware. you can 
  * fully manipulate the cc2420 hardware through this object.
  * 
@@ -59,11 +59,11 @@
  * eliminate some un-necessary variables.
  * 
  * @modified by zhangwei on 20070608
- * eliminate volatile TCc2420Frame pRxInfo;
+ * eliminate volatile TiCc2420AdapterFrame pRxInfo;
  *
  * @modified by zhangwei on 20070728
  * - add new version _hardware_recvframe. it's essentially the interrupt service routine triggered
- * by external interrupt request. in this driver, it is triggered by "cc2420" transceiver.
+ * by external interrupt request. in this adapter, it is triggered by "cc2420" transceiver.
  * - correct the fault in "_cc2420_interrupt_init()". in the past, the code will cause the system
  * to be reboot again and correct in the second time. now corrected.
  *  
@@ -99,14 +99,14 @@
 #define RSSI_2_ED(rssi)   ((rssi) < RSSI_OFFSET ? 0 : ((rssi) - (RSSI_OFFSET)))
 #define ED_2_LQI(ed) (((ed) > 63 ? 255 : ((ed) << 2)))
 
-static void _cc2420_init(TCc2420 * cc);
+static void _cc2420_init(TiCc2420Adapter * cc);
 static void _cc2420_interrupt_init( void );
-static bool _hardware_sendframe(TCc2420 * cc, char * frame, uint8 len, bool ackrequest);
-static void _hardware_recvframe( TCc2420 * cc, char * frame, uint8 capacity );
+static bool _hardware_sendframe(TiCc2420Adapter * cc, char * frame, uint8 len, bool ackrequest);
+static void _hardware_recvframe( TiCc2420Adapter * cc, char * frame, uint8 capacity );
 static void __irq cc2420_interrupt_service( void );
 
 /******************************************************************************
- * construct a TCc2420 object
+ * construct a TiCc2420Adapter object
  * usually, you should always call configure() after construct the object in the 
  * memory.
  * 
@@ -116,10 +116,10 @@ static void __irq cc2420_interrupt_service( void );
  * 	buf			memory started address
  * 	size		memory size allocated for this object. this size must be large
  * 				or equal to the object size. 
- * 	spi			TSpiDriver object. the MCU uses this driver to communicate with 
+ * 	spi			TiSpiAdapter object. the MCU uses this adapter to communicate with 
  * 				"cc2420" hardware chip.
  * example: 
- * 	TCc2420 *cc, buf;
+ * 	TiCc2420Adapter *cc, buf;
  * 	cc = cc2420_construct( buf, ...);
  * 	cc2420_configure( cc, CC2420_CONFIG_PANID, (void*)&panid );
  * 	cc2420_configure( cc, CC2420_CONFIG_NODEADDRESS, (void*)&nodeaddress );
@@ -128,20 +128,20 @@ static void __irq cc2420_interrupt_service( void );
  *   cc2420_configure( cc, CC2420_CONFIG_APPLY, NULL );
  * 
  *****************************************************************************/
-TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
+TiCc2420Adapter * cc2420_construct( char * buf, uint16 size, TiSpiAdapter * spi )
 {
 	               
-	TCc2420 *cc;
+	TiCc2420Adapter *cc;
 	char * msg = "cc2420 construct succesful!\n";
 	
-	if (sizeof(TCc2420) > size)
+	if (sizeof(TiCc2420Adapter) > size)
 		cc = NULL;
 	else
-		cc = (TCc2420 *)buf;
+		cc = (TiCc2420Adapter *)buf;
 	
 	if (cc != NULL)
 	{	
-		memset( (char*)cc, 0x00, sizeof(TCc2420) );
+		memset( (char*)cc, 0x00, sizeof(TiCc2420Adapter) );
 		cc->mode = CC_MODE_GENERAL;
 		cc->state = CC_STATE_POWERDOWN;
 		cc->nextstate = CC_STATE_IDLE;
@@ -166,10 +166,10 @@ TCc2420 * cc2420_construct( char * buf, uint16 size, TSpiDriver * spi )
 }
 
 /******************************************************************************
- * destroy a TCc2420 object 
+ * destroy a TiCc2420Adapter object 
  * release all necessary resouces.
  *****************************************************************************/ 
-void cc2420_destroy( TCc2420 * cc )
+void cc2420_destroy( TiCc2420Adapter * cc )
 {
 	if (cc != NULL)
 	{
@@ -179,7 +179,7 @@ void cc2420_destroy( TCc2420 * cc )
 	}
 }
 
-void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
+void cc2420_configure( TiCc2420Adapter * cc, uint8 ctrlcode, uint16 value, uint8 size )
 {
 	switch (ctrlcode)
 	{
@@ -261,7 +261,7 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
  * recognition). Note that the crystal oscillator will remain on (forever).
  * 
  * @attention
- *  you must construct a "TSpi" object successfully and initialize TCc2420 with it before you call
+ *  you must construct a "TSpi" object successfully and initialize TiCc2420Adapter with it before you call
  * cc2420_init(). 
  *  
  *****************************************************************************/
@@ -282,7 +282,7 @@ void cc2420_configure( TCc2420 * cc, uint8 ctrlcode, uint16 value, uint8 size )
 //			unique 32-bit identifier to avoid addressing conflicts. Normally, in a //802.15.4 network, the
 //			short address will be given to associated nodes by the PAN coordinator.
 //----------------------------------------------------------------------------
-void _cc2420_init( TCc2420 * cc ) 
+void _cc2420_init( TiCc2420Adapter * cc ) 
 {
     //uint16 rereg;
     uint8 status;
@@ -461,9 +461,9 @@ void basicRfInit(BASIC_RF_RX_INFO *pRRI, UINT8 channel, WORD panId, WORD myAddr)
 /******************************************************************************
  * open the driver for read and write
  * the open process will also configure the cc2420 transceiver according to 
- * last configurations. the confiugration values are kept in the TCc2420 object.  
+ * last configurations. the confiugration values are kept in the TiCc2420Adapter object.  
  *****************************************************************************/
-void cc2420_open( TCc2420 * cc )
+void cc2420_open( TiCc2420Adapter * cc )
 {
     cc2420_receive_on(g_cc2420);  
 
@@ -480,13 +480,13 @@ void cc2420_open( TCc2420 * cc )
  * this function will cause the driver and transceiver work in POWERDOWN mode. 
  * you must call open() again to enable read/write()
  *****************************************************************************/
-void cc2420_close( TCc2420 * cc ) 
+void cc2420_close( TiCc2420Adapter * cc ) 
 {
     // disable cc2420 interrupt
     //hal_disable_interrupts();
 }
 
-uint8 cc2420_state( TCc2420 * cc )
+uint8 cc2420_state( TiCc2420Adapter * cc )
 {
 	return cc->state;
 }
@@ -498,7 +498,7 @@ uint8 cc2420_state( TCc2420 * cc )
  * Though this function gives you the ability to check the state of this module, 
  * we hope you do not use this function. 
  */
-uint8 cc2420_ioresult( TCc2420 * cc )
+uint8 cc2420_ioresult( TiCc2420Adapter * cc )
 {
 	uint8 ioresult = 0x00;
 	
@@ -512,7 +512,7 @@ uint8 cc2420_ioresult( TCc2420 * cc )
 
 /*****************************************************************************
  * @param
- *   frame        point to an TCc2420Frame
+ *   frame        point to an TiCc2420AdapterFrame
  *   opt          default to 0x00
  * 
  * @attention
@@ -528,7 +528,7 @@ uint8 cc2420_ioresult( TCc2420 * cc )
  * you can NOT disable interrupt in "cc2420_write()". because _hardware_sendframe()
  * need the interrupt service routine to modify some flags.
  ****************************************************************************/
-int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
+int8 cc2420_write( TiCc2420Adapter * cc, TiCc2420AdapterFrame * frame, uint8 opt)
 {
 	bool ack;
 	int8 count=0;
@@ -554,9 +554,9 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
 	
 	return count;
 	
-	/* if there's no more frame to send in TCc2420 object 
-	 * if TCc2420's internal buffer is not empty, then simply return 0.
-	 * return 0 means the TCc2420 object is busy 
+	/* if there's no more frame to send in TiCc2420Adapter object 
+	 * if TiCc2420Adapter's internal buffer is not empty, then simply return 0.
+	 * return 0 means the TiCc2420Adapter object is busy 
 	 */
 	if (cc->txlen == 0)
 	{
@@ -600,18 +600,18 @@ int8 cc2420_write( TCc2420 * cc, TCc2420Frame * frame, uint8 opt)
  * or you may encounter unexpected errors.
  *
  * @parameter
- *  frame		point to an TCc2420Frame structure in the memory
+ *  frame		point to an TiCc2420AdapterFrame structure in the memory
  *  len         the data length in the memory buffer. 
  *              len - 1 is the MAC layer frame length handed to hardware.
  *              "1" means the "length" byte.
  *
  * @return
- *  how many bytes sucessfully wroten to the TCc2420 object. 
+ *  how many bytes sucessfully wroten to the TiCc2420Adapter object. 
  *  attention the value is usually less than the data length sent by the hardware.
  *  generally, it equals to the parameter "len"
  *
  *****************************************************************************/ 
-int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
+int8 cc2420_rawwrite( TiCc2420Adapter * cc, char * frame, uint8 len, uint8 opt )
 {
 	bool ack;
 	int8 count;
@@ -676,7 +676,7 @@ int8 cc2420_rawwrite( TCc2420 * cc, char * frame, uint8 len, uint8 opt )
  * frame or else some data may lost!!! the buffer capacity is indicated by 
  * parameter "size".
  *****************************************************************************/ 
-int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
+int8 cc2420_read( TiCc2420Adapter * cc,TiCc2420AdapterFrame * frame, uint8 opt)
 {
 	uint8 count;
 	
@@ -686,7 +686,7 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 	{
 		hal_disable_interrupts(); // replace with hal_enter_critical() in the future
 		// increase count by 3 because the additional "length"(1B) and "footer"(2B)
-		// in the TCc2420Frame structure.
+		// in the TiCc2420AdapterFrame structure.
 	    count = cc->rxbuf.length + 3;
 	    memmove( (char*)frame, (char*)(&cc->rxbuf), count );
 		cc->rxlen = 0;
@@ -698,7 +698,7 @@ int8 cc2420_read( TCc2420 * cc,TCc2420Frame * frame, uint8 opt)
 	return (int8)(count & 0x7F);
 }
 
-int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
+int8 cc2420_rawread( TiCc2420Adapter * cc, char * frame, uint8 capacity, uint8 opt )
 {
 	uint8 count;
 	
@@ -736,7 +736,7 @@ int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
 	return (int8)(count & 0x7F);
 }
 
-/* evolve the state machine of "TCc2420".
+/* evolve the state machine of "TiCc2420Adapter".
  * This evoluation function will be called when the you try to switch the current 
  * state to a new one and when you stay in some long time states. There are four
  * state in the CC driver now:
@@ -757,7 +757,7 @@ int8 cc2420_rawread( TCc2420 * cc, char * frame, uint8 capacity, uint8 opt )
  * often require low transmission latency and you'd better turn on the transceiver
  * all the time! 
  */
-int8 cc2420_evolve( TCc2420 * cc )
+int8 cc2420_evolve( TiCc2420Adapter * cc )
 {
 	BOOL done = TRUE;
 	
@@ -765,7 +765,7 @@ int8 cc2420_evolve( TCc2420 * cc )
 		switch (cc->state)
 		{
 		case CC_STATE_IDLE:
-			/* generally, the TCc2420 object will stay in this state and wait 
+			/* generally, the TiCc2420Adapter object will stay in this state and wait 
 			 * for wireless frames. the cc2420 transceiver will inform ARM through
 			 * the FIFOP interrupt when a new frame arrived. The ARM and OpenWSN
 			 * software should run fast enough to catch every frames or else the incomming 
@@ -854,8 +854,8 @@ int8 cc2420_evolve( TCc2420 * cc )
 */
 /* send a frame out. this function will start the sending process immediately.
  * @param
- *  cc       an pointer to the TCc2420 object
- *  frame  an frame to be sent in the memory. it's a standard TCc2420Frame format. so the first byte in the buffer
+ *  cc       an pointer to the TiCc2420Adapter object
+ *  frame  an frame to be sent in the memory. it's a standard TiCc2420AdapterFrame format. so the first byte in the buffer
  *              is essentially the length byte.
  *  len       the data length in the buffer. 
  *  ackrequest
@@ -869,12 +869,12 @@ int8 cc2420_evolve( TCc2420 * cc )
  * 	this function will affect the interrupt status. after execution, the global
  * interrupt control bit will be enabled.
  */
-bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackrequest ) 
+bool _hardware_sendframe( TiCc2420Adapter * cc, char * framex, uint8 len, bool ackrequest ) 
 {
     uint16 framecontrol;
     uint8 framelength;
     bool success;
-    BYTE spiStatusByte;
+    uint8 spiStatusByte;
 
     _gwrite( "->sendframe 01\r\n" );
 
@@ -942,16 +942,16 @@ bool _hardware_sendframe( TCc2420 * cc, char * framex, uint8 len, bool ackreques
     framecontrol = ackrequest ? BASIC_RF_FCF_ACK : BASIC_RF_FCF_NOACK;
 
 	// @TODO: you can arrage these data in the buffer and send them one time 
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&framelength, 1);               // frame length
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&framecontrol, 2);         // frame control field
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->seqid, 1);    // sequence number
+    FAST2420_WRITE_FIFO(cc->spi,(uint8*)&framelength, 1);               // frame length
+    FAST2420_WRITE_FIFO(cc->spi,(uint8*)&framecontrol, 2);         // frame control field
+    FAST2420_WRITE_FIFO(cc->spi,(uint8*)&cc->seqid, 1);    // sequence number
     
 	cc->txbuf.panid = cc->panid;
 	cc->txbuf.nodefrom = cc->address;
 
     // @TODO: or use cc->panid directly? i think this is better
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuf.panid, 2);
-    FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuf.nodeto, 2);
+    FAST2420_WRITE_FIFO(cc->spi,(uint8*)&cc->txbuf.panid, 2);
+    FAST2420_WRITE_FIFO(cc->spi,(uint8*)&cc->txbuf.nodeto, 2);
 
     // @TODO: or use cc->nodefrom directly? i think this is better
     FAST2420_WRITE_FIFO(cc->spi,(BYTE*)&cc->txbuf.nodefrom, 2);         // Source address
@@ -1156,7 +1156,7 @@ BOOL basicRfSendPacket(BASIC_RF_TX_INFO *pRTI) {
  *			generally speaking, this function rarely return -1.
  */
 //此函数无需返回接收到的长度，而应该返回一个包。长度存在于cc->receive_len中，cc->receive_len在接收中断中赋值
-/*TCc2420Frame* _hardware_recvframe(TCc2420 * cc,TCc2420Frame *pRRI) 
+/*TiCc2420AdapterFrame* _hardware_recvframe(TiCc2420Adapter * cc,TiCc2420AdapterFrame *pRRI) 
 {
     cc->rxbuf = *pRRI;
     //cc->rssi        = cc->rfSettings.rssi;
@@ -1175,15 +1175,15 @@ BOOL basicRfSendPacket(BASIC_RF_TX_INFO *pRTI) {
  * the previous solution is recommended.
  * 
  * @parameter
- * 	cc			indicate which "TCc2420" should respond to the interrupt.
- * 				so that this handler function can be shared by serveral TCc2420
+ * 	cc			indicate which "TiCc2420Adapter" should respond to the interrupt.
+ * 				so that this handler function can be shared by serveral TiCc2420Adapter
  * 				object.
  */
-void _hardware_recvframe( TCc2420 * cc, char * frame, uint8 capacity )
+void _hardware_recvframe( TiCc2420Adapter * cc, char * frame, uint8 capacity )
 {
-	WORD framecontrol;
-	UINT8 length;
-	BYTE footer[2];
+	uint16 framecontrol;
+	uint8 length;
+	uint8 footer[2];
 	uint8 ack;
 	static rx_seqid = 0;
 
@@ -1261,7 +1261,7 @@ void _hardware_recvframe( TCc2420 * cc, char * frame, uint8 capacity )
 			cc->rxlen = length+3; 
 
 			// @TODO
-			// if the TCc2420 object running in sniffer mode, you should update 
+			// if the TiCc2420Adapter object running in sniffer mode, you should update 
 			// cc->rxlen to indicate a new frame received. now the frame is ACK/NAK
 			// frame. or else you can simply leave cc->rxlen unchanged. 
 			//
@@ -1308,8 +1308,8 @@ void _hardware_recvframe( TCc2420 * cc, char * frame, uint8 capacity )
 			{
 				cc->rxbuf.length = length;
                             // old _hardware_recvframe
-				 //_hardware_recvframe(cc,(TCc2420Frame *)(&cc->rxbuf));
-				 //cc->pRxInfo = *(_hardware_recvframe(cc,(TCc2420Frame *)(&cc->pRxInfo)));
+				 //_hardware_recvframe(cc,(TiCc2420AdapterFrame *)(&cc->rxbuf));
+				 //cc->pRxInfo = *(_hardware_recvframe(cc,(TiCc2420AdapterFrame *)(&cc->pRxInfo)));
 			}
 			cc->rxbuf.length = length; // @modified by zhangwei on 20070610. added this new line
 			cc->rxlen = length+3;  // @TODO?? shall we update it so early? and here?
@@ -1326,7 +1326,7 @@ void _hardware_recvframe( TCc2420 * cc, char * frame, uint8 capacity )
  * you must implement an FIFOP interrupt service routine is you want to receive
  * frames 
  ****************************************************************************/
-void cc2420_receive_on(TCc2420 * cc) 
+void cc2420_receive_on(TiCc2420Adapter * cc) 
 {
 	cc->receiveOn = TRUE;
 	FAST2420_STROBE(cc->spi,CC2420_SRXON);
@@ -1349,7 +1349,7 @@ void cc2420_receive_on(TCc2420 * cc)
  * state conflication. (i'm not sure about this, maybe the transceiver cc2420
  * can deal with this.)
  ****************************************************************************/
-void cc2420_receive_off(TCc2420 * cc) 
+void cc2420_receive_off(TiCc2420Adapter * cc) 
 {
 	cc->receiveOn = FALSE;
 	FAST2420_STROBE(cc->spi,CC2420_SRFOFF);
@@ -1397,7 +1397,7 @@ void cc2420_receive_off(TCc2420 * cc)
  * the valid channel value varies from 11 to 26.
  * while, the frequvency f = 2405 + 5*(channel - 11) MHz
  */
-void cc2420_setchannel( TCc2420 * cc, uint8 channel )
+void cc2420_setchannel( TiCc2420Adapter * cc, uint8 channel )
 {
 	uint16 f;
 
@@ -1495,7 +1495,7 @@ void __irq cc2420_interrupt_service( void )
 	//
 	//g_cc2420->nextstate = CC_STATE_RECVING;
 	
-	_hardware_recvframe( g_cc2420, (char*)&(g_cc2420->rxbuf), sizeof(TOpenFrame) );
+	_hardware_recvframe( g_cc2420, (char*)&(g_cc2420->rxbuf), sizeof(TiOpenFrame) );
 
     /* clear the external interrupt request/pending flag */   
 	#ifdef CONFIG_TARGET_OPENNODE_10
@@ -1535,7 +1535,7 @@ void __irq cc2420_interrupt_service( void )
 //      function call. Also note that global interrupts will always be enabled when this function 
 //      returns.
 //-------------------------------------------------------------------------------------------------------
-void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi) 
+void _cc2420_waitfor_crystal_oscillator(TiSpiAdapter * spi) 
 {
 	static uint8 status;
 
@@ -1550,7 +1550,7 @@ void _cc2420_waitfor_crystal_oscillator(TSpiDriver * spi)
 // set the RF power. this will affect the distance.
 // refer to cc2420 datasheet page 52 value-dbm table for the setting values
 //
-void cc2420_set_power(TCc2420 * cc,uint8 power)
+void cc2420_set_power(TiCc2420Adapter * cc,uint8 power)
 {
     uint16 power_register;
     
@@ -1570,30 +1570,30 @@ void cc2420_set_power(TCc2420 * cc,uint8 power)
     FAST2420_SETREG(cc->spi,CC2420_TXCTRL, power_register);     
 }
 
-uint8 cc2420_rssi( TCc2420 * cc )
+uint8 cc2420_rssi( TiCc2420Adapter * cc )
 {
 	return cc->rssi;
 }
 
-void cc2420_powerdown( TCc2420 * cc )
+void cc2420_powerdown( TiCc2420Adapter * cc )
 {
 	cc->nextstate = CC_STATE_POWERDOWN;
 	cc2420_evolve( cc );
 }
 
-void cc2420_powerup( TCc2420 * cc )
+void cc2420_powerup( TiCc2420Adapter * cc )
 {
 	cc->nextstate = CC_STATE_IDLE;
 	cc2420_evolve( cc );
 }
 
-void cc2420_sleep( TCc2420 * cc )
+void cc2420_sleep( TiCc2420Adapter * cc )
 {
 	cc->nextstate = CC_STATE_SLEEP;
 	cc2420_evolve( cc );
 }
 
-void cc2420_wakeup( TCc2420 * cc )
+void cc2420_wakeup( TiCc2420Adapter * cc )
 {
 	cc->nextstate = CC_STATE_IDLE;
 	cc2420_evolve( cc );
@@ -1602,7 +1602,7 @@ void cc2420_wakeup( TCc2420 * cc )
 // @TODO 20070728: the following line only adapt to 3.0 hardware now
 /* disable FIFOP interrupt.
  */
-void cc2420_disable_interrupt( TCc2420 * cc )
+void cc2420_disable_interrupt( TiCc2420Adapter * cc )
 {
 	VICIntEnClr = ~(1 << 16);                       	
 }
@@ -1610,7 +1610,7 @@ void cc2420_disable_interrupt( TCc2420 * cc )
 // @TODO 20070728: the following line only adapt to 3.0 hardware now
 /* disable FIFOP interrupt(EINT2 in 3.0 hardware).
  */
-void cc2420_enable_interrupt( TCc2420 * cc )
+void cc2420_enable_interrupt( TiCc2420Adapter * cc )
 {
 	VICIntEnable   = 1 << 16;		                
 }

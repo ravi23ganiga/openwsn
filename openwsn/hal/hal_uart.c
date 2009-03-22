@@ -38,7 +38,7 @@
 
 /****************************************************************************** 
  * @author zhangwei on 2006-07-20
- * TUartDriver object
+ * TiUartAdapter object
  * Essentially, this is the software mapping of the UART hardware 
  * 
  * @modified by zhangwei on 2006-07-20
@@ -82,13 +82,13 @@
   #undef UART485
 #endif  
 
-extern TUartDriver * g_uart0;
-extern TUartDriver * g_uart1;
+extern TiUartAdapter * g_uart0;
+extern TiUartAdapter * g_uart1;
 
 //void __irq uart_interrupt0( void );
 //void __irq uart_interrupt1( void );
 static void __irq uart_interrupt( void );
-static void uart_interrupt_init( TUartDriver * uart );
+static void uart_interrupt_init( TiUartAdapter * uart );
 
 /****************************************************************************** 
  * initialze the UART hardware and object
@@ -104,20 +104,20 @@ static void uart_interrupt_init( TUartDriver * uart );
  * zhangwei kept the old declaration of the function in order to keep other modules 
  * running. you should call uart_configure() after uart_construct()
  *****************************************************************************/
-TUartDriver * uart_construct( uint8 id, char * buf, uint16 size )
+TiUartAdapter * uart_construct( uint8 id, char * buf, uint16 size )
 {
-	TUartDriver * uart;
+	TiUartAdapter * uart;
      
         
-	if (sizeof(TUartDriver) > size)
+	if (sizeof(TiUartAdapter) > size)
 		uart = NULL;
 	else 
-		uart = (TUartDriver *)buf;
+		uart = (TiUartAdapter *)buf;
 	
 		
 	if (uart != NULL)
 	{
-		memset( (char*)uart, 0x00, sizeof(TUartDriver) );
+		memset( (char*)uart, 0x00, sizeof(TiUartAdapter) );
 		//led_on(LED_GREEN);
 		uart->id = id;
 		
@@ -162,7 +162,7 @@ TUartDriver * uart_construct( uint8 id, char * buf, uint16 size )
 	return uart;
 }
 
-void uart_destroy( TUartDriver * uart )
+void uart_destroy( TiUartAdapter * uart )
 {
 	NULL;
 }
@@ -172,7 +172,7 @@ void uart_destroy( TUartDriver * uart )
  * @TODO 20061013
  * you should enable the interrupt in configure function
  *****************************************************************************/
-int16 uart_configure (TUartDriver * uart,uint32 baudrate, uint8 databits, uint8 stopbits, 
+int16 uart_configure (TiUartAdapter * uart,uint32 baudrate, uint8 databits, uint8 stopbits, 
 	uint8 parity, uint8 optflag )
 {
 	uint32 bak;
@@ -255,9 +255,9 @@ int16 uart_configure (TUartDriver * uart,uint32 baudrate, uint8 databits, uint8 
 }
 
 /****************************************************************************** 
- * clear the TUartDriver internal buffer
+ * clear the TiUartAdapter internal buffer
  *****************************************************************************/
-void uart_reset( TUartDriver * uart )
+void uart_reset( TiUartAdapter * uart )
 {
 	hal_enter_critical();
 	uart->txlen = 0;
@@ -267,12 +267,12 @@ void uart_reset( TUartDriver * uart )
 
 /* @modified by zhangwei on 20061014
  * 新增函数，在这里完成ISR初始化工作 */
-void uart_interrupt_init( TUartDriver * uart )
+void uart_interrupt_init( TiUartAdapter * uart )
 {
 }
 
 /****************************************************************************** 
- * read data out from the TUartDriver's internal buffer. 
+ * read data out from the TiUartAdapter's internal buffer. 
  * this is a non-block operation. it will return 0 if no data received.
  * 
  * @attention
@@ -284,10 +284,10 @@ void uart_interrupt_init( TUartDriver * uart )
  * 	size	the capacity of the buffer
  * @return
  * 	the character count wroten to the buf
- * 	return 0 means there's no data in the TUartDriver buffer. i.e. no data received.
+ * 	return 0 means there's no data in the TiUartAdapter buffer. i.e. no data received.
  *****************************************************************************/
 #ifdef CONFIG_UART_READ_ENABLE
-uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt )
+uint16 uart_read( TiUartAdapter * uart, char * buf, uint16 size, uint16 opt )
 {
 	uint16 copied;
 	
@@ -317,7 +317,7 @@ uint16 uart_read( TUartDriver * uart, char * buf, uint16 size, uint16 opt )
  * 	the count of characters actually sent
  *****************************************************************************/
 #ifdef CONFIG_UART_WRITE_ENABLE
-uint16 uart_write( TUartDriver * uart, char * buf, uint16 len, uint16 opt )
+uint16 uart_write( TiUartAdapter * uart, char * buf, uint16 len, uint16 opt )
 {
 	int16 count = 0;
 	while (count < len)
@@ -339,7 +339,7 @@ uint16 uart_write( TUartDriver * uart, char * buf, uint16 len, uint16 opt )
  * 	0		success, *ch is char just read from UART
  *  -1		failed
  *****************************************************************************/
-int16 uart_getchar( TUartDriver * uart, char * pc )
+int16 uart_getchar( TiUartAdapter * uart, char * pc )
 {
 	int16 ret;
 	
@@ -356,7 +356,7 @@ int16 uart_getchar( TUartDriver * uart, char * pc )
 	return ret;
 }
 
-int16 uart_putchar( TUartDriver * uart, char ch )
+int16 uart_putchar( TiUartAdapter * uart, char ch )
 {
 	if(!(uart->id))
 	{

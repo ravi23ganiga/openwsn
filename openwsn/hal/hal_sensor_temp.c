@@ -1,5 +1,5 @@
 
-#include "..\src\config.h"
+#include "hal_foundation.h"
 #include "hal_sensor_temp.h"
 
 

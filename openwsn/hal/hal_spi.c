@@ -43,7 +43,7 @@
 
 /***************************************************************************** 
  * @author zhangwei on 2006-07-20
- * TSPIDriver 
+ * TiSpiAdapter 
  *
  * @modified by zhangwei on 20061010
  * revision
@@ -86,12 +86,12 @@
 #define CSN            21   
 #endif
 
-TSpiDriver * spi_construct( uint8 id, char * buf, uint8 size )
+TiSpiAdapter * spi_construct( uint8 id, char * buf, uint8 size )
 {
-	TSpiDriver * spi;
+	TiSpiAdapter * spi;
 	
-	if (sizeof(TSpiDriver) <= size)
-		spi = (TSpiDriver *)buf;
+	if (sizeof(TiSpiAdapter) <= size)
+		spi = (TiSpiAdapter *)buf;
 	else
 		spi = NULL;
 		
@@ -104,14 +104,14 @@ TSpiDriver * spi_construct( uint8 id, char * buf, uint8 size )
 	return spi;
 }
 
-void spi_destroy( TSpiDriver * spi )
+void spi_destroy( TiSpiAdapter * spi )
 {
 	NULL;
 }
 
 /* configure the SPI here. for example, the interrupt settings 
  */
-void spi_configure( TSpiDriver * spi )
+void spi_configure( TiSpiAdapter * spi )
 {
 	if (spi->id == 0)
     {
@@ -167,7 +167,7 @@ void spi_configure( TSpiDriver * spi )
  * spi_open() and spi_close() originally known as spi_enable() and spi_disable()
  * in module "cc2420rf"
  */
-void spi_open( TSpiDriver * spi, uint8 devid )
+void spi_open( TiSpiAdapter * spi, uint8 devid )
 {
     uint16 i = 0;
       
@@ -203,7 +203,7 @@ void spi_open( TSpiDriver * spi, uint8 devid )
     	i++;    
 }
 
-void spi_close( TSpiDriver * spi )
+void spi_close( TiSpiAdapter * spi )
 {
 	uint16 i = 0;
         
@@ -234,9 +234,9 @@ void spi_close( TSpiDriver * spi )
     #endif
 }
 
-uint8 spi_read(TSpiDriver * spi, char * buf, uint8 capacity, uint8 opt )
+uint8 spi_read(TiSpiAdapter * spi, char * buf, uint8 capacity, uint8 opt )
 {
-	UINT8 n = 0;
+	uint8 n = 0;
         
     for (n = 0; n < capacity; n++) 
 	{ 
@@ -246,7 +246,7 @@ uint8 spi_read(TSpiDriver * spi, char * buf, uint8 capacity, uint8 opt )
     return 0;
 }
 
-uint8 spi_write(TSpiDriver * spi,  char * buf, uint8 len, uint8 opt )
+uint8 spi_write(TiSpiAdapter * spi,  char * buf, uint8 len, uint8 opt )
 {
 	uint8 n = 0;
     for (n = 0; n < len; n++) 
@@ -257,7 +257,7 @@ uint8 spi_write(TSpiDriver * spi,  char * buf, uint8 len, uint8 opt )
     return 0;
 }
 
-uint8 spi_put(TSpiDriver * spi, char ch )
+uint8 spi_put(TiSpiAdapter * spi, char ch )
 {
 	uint8 ret = 0;
 	
@@ -282,7 +282,7 @@ uint8 spi_put(TSpiDriver * spi, char ch )
 	return ret;
 }
 
-int8 spi_get(TSpiDriver * spi, char * pc )
+int8 spi_get(TiSpiAdapter * spi, char * pc )
 {
     if(spi->id == 0)
     {
@@ -300,7 +300,7 @@ int8 spi_get(TSpiDriver * spi, char * pc )
     return 0;
 }
 
-uint8 spi_status( TSpiDriver * spi )
+uint8 spi_status( TiSpiAdapter * spi )
 {
 	if (spi->id == 0)
 	{
@@ -310,7 +310,7 @@ uint8 spi_status( TSpiDriver * spi )
 	return 0x00;
 }
 
-void spi_wait(TSpiDriver * spi) 
+void spi_wait(TiSpiAdapter * spi) 
 { 
 	#ifdef GDEBUG
 	uint8 status;
@@ -358,20 +358,20 @@ void spi_wait(TSpiDriver * spi)
 // obsolete functions
 // will be eliminated soon
 //
-void FASTSPI_TX_WORD_LE(TSpiDriver * spi, uint16 x) 
+void FASTSPI_TX_WORD_LE(TiSpiAdapter * spi, uint16 x) 
     { 
         spi_put(spi,x); 
         spi_put(spi,(x) >> 8); 
     }
     
-void FASTSPI_TX_WORD(TSpiDriver * spi, uint16 x) 
+void FASTSPI_TX_WORD(TiSpiAdapter * spi, uint16 x) 
     { 
         spi_put(spi,(x) >> 8); 
         spi_put(spi,(BYTE)(x)); 
     }
     
 
-void FASTSPI_RX_WORD_LE(TSpiDriver * spi, uint16 *x) 
+void FASTSPI_RX_WORD_LE(TiSpiAdapter * spi, uint16 *x) 
     { 
     	char temp;
     	spi_get(spi,&temp);
@@ -384,7 +384,7 @@ void FASTSPI_RX_WORD_LE(TSpiDriver * spi, uint16 *x)
         //*x |= ((WORD)(SPI_SPDR)) << 8; 
     } 
 
-void FASTSPI_RX_WORD(TSpiDriver * spi,uint16 *x) 
+void FASTSPI_RX_WORD(TiSpiAdapter * spi,uint16 *x) 
     { 
         char temp;
     	spi_get( spi, &temp );

@@ -34,8 +34,8 @@
  * @author zhangwei on 2006-08-11
  * Timer 
  * This object is the software mapping of MCU's hardware timer object.
- * attention that TTimer is not the 1:1 mapping of hardware timer. actually, one 
- * TTimer object corrspond to 1 separate channel of hardware timer.
+ * attention that TiTimerAdapter is not the 1:1 mapping of hardware timer. actually, one 
+ * TiTimerAdapter object corrspond to 1 separate channel of hardware timer.
  * 
  * @history
  * @modified by zhangwei 2006-09-05
@@ -73,7 +73,7 @@
  
 #include "hal_foundation.h"
 
-/* TTimer Object
+/* TiTimerAdapter Object
  *  id		timer hardware id. usually it is 0, 1, 2. it depends on hardware
  *  channel	each sub-timer in timer hardware. usually 0-3
  *	state	bit 7 - bit 0
@@ -101,14 +101,14 @@ typedef struct{
   uint16 ctrl;
   uint16 init;
   void (* hhcallback)(void *);
-}TTimer;
+}TiTimerAdapter;
 
 /* global variables define in "hal_global.c". They will be initialized in  
  * hal_global_construct(). */
 
-extern TTimer * g_timer0;
-extern TTimer * g_timer1;
-extern TTimer * g_timer2;
+extern TiTimerAdapter * g_timer0;
+extern TiTimerAdapter * g_timer1;
+extern TiTimerAdapter * g_timer2;
 
 /* This macro defines how many clocks the Timer run in one milli-seconds.
  * since we often use milli-seconds when dealing with scheduling and communication
@@ -118,25 +118,25 @@ extern TTimer * g_timer2;
 #define timer_msecof(clocks) (clocks/TIMER_CLOCKS_PER_MILLISECOND)
 #define timer_clocksof(ms) (ms*TIMER_CLOCKS_PER_MILLISECOND)
 
-TTimer* timer_construct( char * buf, uint8 size );
-void   timer_destroy( TTimer * timer );
-void   timer_init( TTimer * timer, uint8 id, uint8 channel );
-void   timer_configure( TTimer * timer, TEventHandler callback, void * data, uint8 priority );
-void   timer_setvalue( TTimer * timer, uint32 value );
-uint32 timer_getvalue( TTimer * timer );
-void   timer_setinterval( TTimer * timer, uint32 interval, uint8 repeat );
-void   timer_setcapture( TTimer * timer, uint8 opt );
-void   timer_start( TTimer * timer );
-void   timer_stop( TTimer * timer );
-void   timer_restart( TTimer * timer, uint32 interval, uint8 repeat );
-boolean timer_expired( TTimer * timer );
-uint32 timer_elapsed( TTimer * timer );
-void   timer_enable( TTimer * timer );
-void   timer_disable( TTimer * timer );
-uint32 timer_clocksperms( TTimer * timer );
-void   timer_VICinit( TTimer * timer );
-void   timer_VICenable( TTimer * timer);
-void   timer_VICdisable( TTimer * timer);
+TiTimerAdapter* timer_construct( char * buf, uint8 size );
+void   timer_destroy( TiTimerAdapter * timer );
+void   timer_init( TiTimerAdapter * timer, uint8 id, uint8 channel );
+void   timer_configure( TiTimerAdapter * timer, TEventHandler callback, void * data, uint8 priority );
+void   timer_setvalue( TiTimerAdapter * timer, uint32 value );
+uint32 timer_getvalue( TiTimerAdapter * timer );
+void   timer_setinterval( TiTimerAdapter * timer, uint32 interval, uint8 repeat );
+void   timer_setcapture( TiTimerAdapter * timer, uint8 opt );
+void   timer_start( TiTimerAdapter * timer );
+void   timer_stop( TiTimerAdapter * timer );
+void   timer_restart( TiTimerAdapter * timer, uint32 interval, uint8 repeat );
+boolean timer_expired( TiTimerAdapter * timer );
+uint32 timer_elapsed( TiTimerAdapter * timer );
+void   timer_enable( TiTimerAdapter * timer );
+void   timer_disable( TiTimerAdapter * timer );
+uint32 timer_clocksperms( TiTimerAdapter * timer );
+void   timer_VICinit( TiTimerAdapter * timer );
+void   timer_VICenable( TiTimerAdapter * timer);
+void   timer_VICdisable( TiTimerAdapter * timer);
 
 void __irq Timer0_Int (void);
 void __irq Timer1_Int (void);
@@ -186,9 +186,9 @@ void INTERRUPT_LPC_TIMER0_CAPT(void);
 void LPC_TIMER0_STOP(void);
 void LPC_TIMER0_START(void);
 void LPC_TIMER0_INIT(void);
-void LPC_TIMER0_SET_T0MR0_VALUE(DWORD value);
-void LPC_TIMER0_SET_T0MR1_VALUE(DWORD value);
-void LPC_TIMER0_SET_T0MR2_VALUE(DWORD value);
+void LPC_TIMER0_SET_T0MR0_VALUE(uint32 value);
+void LPC_TIMER0_SET_T0MR1_VALUE(uint32 value);
+void LPC_TIMER0_SET_T0MR2_VALUE(uint32 value);
 void LPC_TIMER0_CLEAR_T0MR0(void);
 void LPC_TIMER0_CLEAR_T0MR1(void);
 void LPC_TIMER0_CLEAR_T0MR2(void);

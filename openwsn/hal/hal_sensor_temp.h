@@ -6,7 +6,7 @@
 
 typedef struct{
 	uint8 id;
-}TTempSensor;
+}TiTempSensorAdapter;
 
 void delay(int time);
 

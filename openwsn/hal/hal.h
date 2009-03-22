@@ -61,7 +61,6 @@
 #include "hal_eeprom.h"
 #include "hal_key.h"
 #include "hal_watchdog.h"
-#include "hal_global.h"
 #include "hal_mcp6s.h"
 #include "hal_ad.h"
 #include "hal_sensor_strain.h"
@@ -69,5 +68,6 @@
 #include "hal_uniqueid.h"
 #include "hal_sensor_switch.h"
 #include "hal_openframe.h"
+#include "hal_global.h"
 
 #endif

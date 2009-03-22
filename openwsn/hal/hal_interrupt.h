@@ -31,53 +31,90 @@
 #ifndef _HAL_INTERRUPT_H_4788_
 #define _HAL_INTERRUPT_H_4788_
 
+/* hal_interrupt
+ * Interrupt Hardware Abstraction. This module is used to control the global 
+ * interrupt flag in the CPU only.
+ *
+ * you SHOULD always perfer to use hal_enter_atomic() instead of hal_enable_interrupts()
+ * and hal_leave_atomic() instead of hal_disable_interrupts(). the reason is that 
+ * hal_leave_atomic() can leave the global interrupt flag unchanged, while the 
+ * disable()/enable() pair will leave the flag enabled!!! this is sometimes unwanted!
+ *
+ * Q: what's the difference between hal_enter_atomic()/hal_leave_atomic() and 
+ * hal_enable_interrupts(), hal_disable_interrupts()?
+ * R: 
+ * hal_enable_interrupts()
+ * hal_disable_interrupts()
+ * direct control of the global interrupt flag inside CPU. this interrupt flag 
+ * is usually a bit in CPU status register. If is was disabled, then CPU cann't
+ * response to any external interrupts. These two functions are always effective 
+ * no matter there's an RTOS or not.
+ * 
+ * hal_enter_atomic()
+ * hal_leave_atomic()
+ * atomic is an source code block that must be executed as a whole without any 
+ * interruption. It's quite similar to the "critical section" supported by OS. 
+ * however, the implementation of critical section is much more complex than a 
+ * simple atomic block, because the critical section is usually related to the 
+ * scheduling mechanism of OS. It may need to switch the context of the thread/process
+ * while hal_enter_atomic()/hal_leave_atomic() doesn't do so. These two functions
+ * are also supported no matter there's a RTOS or not.
+ *
+ * @attention
+ * - when the system started, it should enable_interrupts() before using the following 
+ * two atomic functions.
+ * - this module should be OS independent. namely, these functions are existed 
+ * no matter there's an RTOS or not.
+ *
+ * @author zhangwei on 2006-07-20
+ *	first version.
+ * @modified by zhangwei on 2007-07-21
+ *  add two functions hal_enter_critical()/hal_leave_critical()
+ * @modified by zhangwei on 2008-12-18
+ *  remove two functions hal_enter_critical()/hal_leave_critical()
+ *  they should be part of the OS layer. maybe os_enter_critical() in the future.
+ *  add two functions hal_enter_atomic()/hal_leave_atomic()
+ */
+
 #include "hal_foundation.h"
-#include "..\src\target.h"
+#include "./arch/arch_target.h"
 
 #ifdef CONFIG_OS_UCOSII
-#include "..\arm\os_cpu.h"
+#include "./arch/os_cpu.h"
 #endif
 
-/* enable/disable the global interrupt control flag in CPU's flag register
- * for ARM CPU. it support fast interrupt FIQ. in openwsn, we don't use it. so
- * in most cases, FIQ are diabled.
- */
-#define hal_irq_enable() SwiHandle1(1)
-#define hal_irq_disable() SwiHandle1(0)
-#define hal_fiq_disable() SwiHandle1(2)
-#define hal_fiq_enable() SwiHandle1(3)
 
-/* @author zhangwei on 2006-07-20
- * @attention
- * you SHOULD always perfer to use enter_critical() instead of enable_interrupts()
- * and better leave_critical() than disable_interrupts(). the reason is that xxx_critical()
- * will leave the global interrupt flag unchanged, while the disable() enable() pair will
- * leave the flag enabled!!! this is sometimes unwanted!
+/* for ARM MCU, you should disable FIQ because FIQ isn't used in the system */
+
+void _hal_enable_interrupts( void );
+void _hal_disable_interrupts( void );
+/*
+#define hal_enable_interrupts() _hal_enable_interrupts()
+#define hal_disable_interrupts() _hal_disable_interrupts()
+*/
+#define hal_enable_interrupts() {_hal_irq_enable();}
+#define hal_disable_interrupts() {_hal_irq_disable();}
+
+
+extern uint8 g_atomic_level;
+
+/* when the whole system startup, the global interrupt flag should be disabled 
+ * before using the following two functions. and the global variable g_atomic_level
+ * should be reset to 0. So the global interrupt flag must be disabled when 
+ * g_atomic_level is larger than 1. that's why you needn't to call disable interrupts 
+ * when g_atomic_level is larger than 1.
  */
-void hal_enable_interrupts( void );
-void hal_disable_interrupts( void );
+#define hal_enter_atomic() {g_atomic_level++; if (g_atomic_level==1) hal_disable_interrupts();}
+#define hal_leave_atomic() {g_atomic_level--; if (g_atomic_level==0) hal_enable_interrupts();}
+
+
+
+
+
+
+/* removed function since 20081218
+ */
 void hal_enter_critical( void );
 void hal_leave_critical( void );
-
-/*
-enable global interrupt control bit flag and also the VIC
-void hal_enable_with_vic();
-void hal_disable_with_vic();
-void hal_clear_with_vic();
-
-// opt = 0x00 default
-//   [b7,..,b0]
-//  b0 = 0 general interrupt, 1 FIQ interrupt (ARM only)
-//	b1 = 0 voltage trigger, 1 pulse trigger
-//   
-void hal_vic_init()
-void hal_vic_attach( uint8 num, TInterruptHandler isr, uint8 prior, uint8 opt );
-void hal_vic_detach uint8 num );
-void hal_vic_trigger( uint8 num );
-void hal_vic_enable( uint8 num );
-void hal_vic_disable( uint8 num );
-uint8 hal_vic_state( uint8 num );  // has request? in servicing? masked?
-void hal_vic_clearrequest( uint8 num );
-*/
 
 #endif

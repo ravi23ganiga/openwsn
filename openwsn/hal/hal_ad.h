@@ -18,12 +18,12 @@ typedef struct{
   uint8 id;
   //TEventHandler callback;
   //void * callback_owner;
-}TAdConversion;
+}TiAdConversion;
 
-TAdConversion * ad_construct( uint8 id, char * buf, uint8 size );
-void ad_configutre(TAdConversion * ad);
-void ad_destroy( TAdConversion *ad );
-void ad_start( TAdConversion * ad, TEventHandler callback, void * owner );
-uint16 ad_read(TAdConversion * ad, char * buf, uint8 size, uint8 opt );
+TiAdConversion * ad_construct( uint8 id, char * buf, uint8 size );
+void ad_configutre(TiAdConversion * ad);
+void ad_destroy( TiAdConversion *ad );
+void ad_start( TiAdConversion * ad, TEventHandler callback, void * owner );
+uint16 ad_read(TiAdConversion * ad, char * buf, uint8 size, uint8 opt );
 
 #endif
