@@ -84,8 +84,8 @@ extern "C" {
  *
  *****************************************************************************/
 	
-typedef uint8_t os_atomic_t;
-typedef void (* os_task_t)(void);
+typedef uint8_t nos_atomic_t;
+typedef void (* nos_task_t)(void);
 
 /* the nano os is built based on the hardware abstraction layer. the "hal" layer
  * must provide the following function. the nano os will call this function in its
@@ -106,9 +106,9 @@ typedef void (* os_task_t)(void);
  * two functions. 
  */
 
-os_atomic_t os_atomic_start(void);
-void os_atomic_end(os_atomic_t state);
-void os_atomic_enable_interrupt(void);
+nos_atomic_t nos_atomic_start(void);
+void nos_atomic_end(nos_atomic_t state);
+void nos_atomic_enable_interrupt(void);
 
 /* os_init
  * this function must be called before you call os_post() function. 
@@ -121,15 +121,15 @@ void os_atomic_enable_interrupt(void);
  * create a task 
  */
  
-void os_init(void);
-void os_sleep(void);
-void os_run_task(void);
-bool os_post(void (*tp)(void));
+void nos_init(void);
+void nos_sleep(void);
+void nos_run_task(void);
+bool nos_post(void (*tp)(void));
 
 void nos_listener( void * object, TiEvent * e);
 
 #ifdef OS_NANO_TEST
-void os_test();
+void nos_test();
 #endif
 
 #ifdef __cplusplus

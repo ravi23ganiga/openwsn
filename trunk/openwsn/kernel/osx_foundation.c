@@ -5,14 +5,3 @@
 #include "../rtl/rtl_ringqueue.h"
 #include "osx_foundation.h"
 
-#define TiOsxTimer TiTimerAdapter
-
-void systimer_configure()
-{
-}
-
-void systimer_interrupt_handler()
-{
-	
-}
-

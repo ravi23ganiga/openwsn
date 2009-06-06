@@ -25,6 +25,7 @@
 #include "osx_foundation.h"
 #include "../hal/hal_assert.h"
 #include "osx_kernel.h"
+#include "../rtl/rtl_dispatcher.h"
 
 
 #define OSX_STATE_INITIAL		0x00
