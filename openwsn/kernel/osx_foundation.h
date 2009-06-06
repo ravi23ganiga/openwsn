@@ -6,6 +6,8 @@
  * @author zhangwei on 200610
  * @author zhangwei on 200904
  *	- revision
+ * @author zhangwei on 200906
+ *	- add osx timer
  *****************************************************************************/
 
 /* fundamental declarations for the kernel
@@ -31,9 +33,7 @@
 #include "osx_configall.h"
 #include "../rtl/rtl_foundation.h"
 #include "../hal/hal_foundation.h"
-#include "../hal/hal_timer.h"
-
-//#define TiFunDispatchHandler TiFunEventHandler
+#include "../hal/hal_systimer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,27 +58,20 @@ extern "C" {
  * varies from chip suppliers. however, the OS core only needs a relatively simple
  * timer. it should be lightweight and efficient.
  *
- * the default "osx" system timer is the timer 0 in "hal" layer.
- *
  * for some MCU such as the ARM Cortex M3, the MCU core has already provide a
  * hardware SysTimer to help implement a OS core.
  *****************************************************************************/
 
-/* if we use g_timer0 as our osx system timer */
+#define osxtm_construct(buf,size)           {g_systimer=systm_construct(buf,size);}
+#define osxtm_destroy()                     systm_destroy(g_systimer)
+#define osxtm_setinterval(interval,repeat)  systm_setinterval(g_systimer,,interval,repeat)
+#define osxtm_start()                       systm_start(g_systimer,)
+#define osxtm_stop()                        systm_stop(g_systimer,)
 
-/*
-#define osx_systm_gettime()
-#define osx_systm_settime()
-#define osx_systm_elapsed()
-#define osx_systm_restart()
-#define osx_systm_configure()
-#define osx_systm_expired()
-#define osx_systm_handler()
-
-#define osx_systimer_attach
-#define osx_systimer_detach
-#define osx_systimer_handler()
-*/
+#define osxtm_enable()                      systm_enable(g_systimer,)
+#define osxtm_disable()                     systm_disable(g_systimer,)
+#define osxtm_setlistener(listener,object)  systm_setlistener(g_systimer,,listener,object)
+#define osxtm_expired()                     systm_expired(g_systimer,)
 
 #ifdef __cplusplus
 }

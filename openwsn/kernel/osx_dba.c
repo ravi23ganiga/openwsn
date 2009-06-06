@@ -82,8 +82,8 @@ void dba_detach( TiDebugAgent * dba )
  */
 void dba_evolve( TiDebugAgent * dba, TiEvent * e )
 {
-	uintx count, available;
-	char * buf;
+	//uintx count, available;
+	//char * buf;
 
 	/* if there're data pending in the internal buffer, then try to send them out */
 	if (dba->txlen > 0)
