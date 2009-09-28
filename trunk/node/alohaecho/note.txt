@@ -1,0 +1,5 @@
+aloha_echo
+will send whatever the frame received back to the sender
+
+aloha_send
+send frame periodically, and then switch to receive mode in order to receive the echo frame. it will also send the frame to computer through UART.
