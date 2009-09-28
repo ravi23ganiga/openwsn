@@ -1,0 +1,14 @@
+Q: How to test ALOHA MAC?
+R: 
+3 nodes:
+one for sender, one for receiver and one for noise.
+
+
+
+aloha protocol introduction
+======================================================
+
+
+
+aloha protocol design
+======================================================

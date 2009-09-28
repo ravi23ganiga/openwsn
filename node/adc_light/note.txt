@@ -1,0 +1,5 @@
+light_adc
+演示如何通过TiAdcAdapter/TiLightSensor读取光敏电阻的值，并且通过USART发送给计算机。
+
+
+
