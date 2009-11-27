@@ -1,0 +1,3 @@
+this is a very simple frame sending test program. it will periodically sending frames.
+
+mainly used for demonstration and testing.
