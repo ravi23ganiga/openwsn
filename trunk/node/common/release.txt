@@ -1,0 +1,35 @@
+current version features
+
+Atmega Version
+
+2009.08
+- cc2420_read/cc2420_write已经修改为cc2420_recv/cc2420_send
+但是原cc2420_read/cc2420_write仍然通过MACRO定义保持与过去代码的兼容性
+
+
+
+
+ARM version
+
+- add support opennode-3.0 hardware. and now 3.0 hardware is the default supporting now.
+- revision on TCc2420's interface, and correct some errors found in it (hal_cc2420.*)
+- add OpenMAC support (svc_openmac.*)
+- support TUart (hal_uart.*)
+- support TTimer (hal_timer.*)
+- support TDebugIo (hal_debugio.*)
+- support TLed (hal_led.*)
+- improved booting module 
+- support "assert" mechanism (hal_assert.h)
+- improved interrupt utility functions (hal_interrupt.h)
+- support TSpi (hal_spi.*)
+- support TSioComm which is based on TUart HAL object (svc_siocomm.*)
+- support blink test (test/blink.*)
+- support cc2420 RX/TX test (test/cc2420rx.*, test/cc2420tx.*)
+- support led test (test/led.*)
+- support rssi test(test/rssi.*)
+- support timer test(test/time_led_*.*)
+- support uart test (test/uartecho.*)
+- support unique id test (uniqueid_test.*) (the current unique id test is only working with opennode-2.0 hardware. for opennoe-3.0, the unique id generating mechanism has been changed)
+- support siniffer (test/sniffer.*) (still in testing...)
+
+

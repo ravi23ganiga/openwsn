@@ -1,0 +1,1 @@
+<AVRWorkspace><IOSettings><CurrentRegisters/></IOSettings><part name="ATMEGA128"/><Files><File00000 Name="D:\dev\openwsn\source\tongjiwsn\hal_uartecho\uartecho.c" Position="220 96 997 453" LineCol="120 0" State="Maximized"/><File00001 Name="D:\dev\openwsn\source\tongjiwsn\common\hal\hal_uart.c" Position="216 71 1129 575" LineCol="498 9" State="Maximized"/></Files></AVRWorkspace>

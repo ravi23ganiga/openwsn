@@ -1,0 +1,5 @@
+<<<<<<< .mine
+<AVRWorkspace><IOSettings><CurrentRegisters/></IOSettings><part name="ATMEGA128"/><Files><File00000 Name="D:\dev\openwsn\source\tongjiwsn\common\svc\svc_datatree.c" Position="246 96 1020 422" LineCol="733 15" State="Maximized"/><File00001 Name="D:\dev\openwsn\source\tongjiwsn\datatree\node.c" Position="242 71 1152 544" LineCol="176 22" State="Maximized"/><File00002 Name="D:\dev\openwsn\source\tongjiwsn\common\rtl\rtl_cache.c" Position="290 144 1060 444" LineCol="39 18" State="Maximized"/><File00003 Name="D:\dev\openwsn\source\tongjiwsn\common\hal\hal_debugio.c" Position="312 168 1082 468" LineCol="121 11" State="Maximized"/></Files></AVRWorkspace>
+=======
+<AVRWorkspace><IOSettings><CurrentRegisters/></IOSettings><part name="ATMEGA128"/><Files><File00000 Name="D:\dev\openwsn\source\tongjiwsn\common\svc\svc_datatree.c" Position="225 118 980 291" LineCol="835 0" State="Maximized"/><File00001 Name="D:\dev\openwsn\source\tongjiwsn\datatree\node.c" Position="194 67 1030 379" LineCol="178 0" State="Maximized"/></Files></AVRWorkspace>
+>>>>>>> .r623
