@@ -38,11 +38,11 @@
 #endif
 
 #define CONFIG_ACK_ENABLE
-#undef  CONFIG_ACK_ENABLE
+//#undef  CONFIG_ACK_ENABLE
 
 #define PANID				0x0001
-#define LOCAL_ADDRESS		0x0001   
-#define REMOTE_ADDRESS		0x0002
+#define LOCAL_ADDRESS		0x0002   
+#define REMOTE_ADDRESS		0x0001
 #define BUF_SIZE			128
 #define DEFAULT_CHANNEL     11
 
@@ -69,7 +69,7 @@ void sendnode(void)
     uint16 fcf;
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 	led_open();
 	led_on( LED_RED );
@@ -114,7 +114,7 @@ void sendnode(void)
 		opf_set_shortaddrto( opf, REMOTE_ADDRESS );
 		opf_set_panfrom( opf, PANID );
 		opf_set_shortaddrfrom( opf, LOCAL_ADDRESS );
-		for (i=0; i<opf->datalen; i++)
+		for (i=0; i<opf->msdu_len; i++)
 			opf->msdu[i] = i;
 
 		#ifdef CONFIG_ACK_ENABLE
@@ -138,7 +138,8 @@ void sendnode(void)
             }
             hal_delay(10);
         }
-		
+
+
 		// try receive the frame replied from the echo node
 		while (1)
         {

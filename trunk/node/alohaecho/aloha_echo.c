@@ -12,6 +12,9 @@
  * @modified by zhangwei on 20090802
  *	- revisioin. compile passed.
  * @tested by ShiMiaojing on 20090804 
+ * @ modified by Shimiaojing on 20091103/04 test ok works well.
+ * about frame structure : source addr & destination may be defined different with 
+ * cc2420 protocal. 
  *****************************************************************************/
 
 #include "../common/hal/hal_configall.h"
@@ -29,7 +32,7 @@
 #include "../common/rtl/rtl_openframe.h"
 #include "../common/svc/svc_aloha.h"
 
-//#define CONFIG_TEST_ADDRESSRECOGNITION
+#define CONFIG_TEST_ADDRESSRECOGNITION
 //#define CONFIG_TEST_ACK
 
 #define LOCAL_ADDRESS		        0x02
@@ -56,14 +59,14 @@ void echonode(void)
     TiAloha * mac;
 	TiOpenFrame * opf;
 	TiTimerAdapter   *timer;
-	char * msg = "welcome...";
+	char * msg = "welcome to aloha_echo-RX";
 	uint8 len;
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 	dbo_open( 0, 38400 );
-
+    dbo_putchar('1');
 	led_open();
 	led_on( LED_RED );
 	hal_delay( 1000 );
@@ -76,10 +79,11 @@ void echonode(void)
     
 	uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	uart_write( uart, msg, strlen(msg), 0x00 );
-
+    cc2420_open(cc, 0, NULL, NULL, 0x00 );
 	mac = aloha_open( mac, cc, CONFIG_ALOHA_DEFAULT_CHANNEL, CONFIG_ALOHA_DEFAULT_PANID, LOCAL_ADDRESS, timer,NULL, NULL,0x00);
-
-	#ifdef CONFIG_TEST_ADDRESSRECOGNITION
+    dbo_putchar('3');
+	
+    #ifdef CONFIG_TEST_ADDRESSRECOGNITION
     cc2420_enable_addrdecode( cc );					//使能地址译码
 	#endif
 	
@@ -87,26 +91,30 @@ void echonode(void)
 	cc2420_enable_autoack( cc );
 	#endif
 
-    opf = opf_construct( (void *)(&g_rxbufmem), sizeof(g_rxbufmem) );
-    opf_open( opf, 0x00 );
-	hal_enable_interrupts();	
+    opf = opf_open( (void *)(&g_rxbufmem), sizeof(g_rxbufmem), OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
+    opf = opf_open( (void *)(&g_rxbufmem), sizeof(g_rxbufmem), OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
+	hal_enable_interrupts();
+	
     //led_toggle( LED_RED );
 	while(1)
 	{
-		aloha_evolve( mac, NULL );
+		//aloha_evolve( mac, NULL );
+
 		len = aloha_recv( mac, opf, 0x00 );
 		if (len > 0)
 		{    
 			dbo_putchar( 'R' );
-			_output_openframe( opf, uart );
-			
+			_output_openframe(opf,uart);
 			opf_swapaddress( opf );
-
-			hal_assert( opf_type(opf) == FCF_FRAMETYPE_DATA );
-            while (aloha_send(mac, opf, 0x00) == 0) {};
+			//hal_assert( opf_type(opf) == FCF_FRAMETYPE_DATA );
+		
+            // todo 200911
+            // Shimiaojing: 如下两种情况：要求ACK和不要求ACK都要测试通过才行
+			//while (aloha_send(mac,opf,0x01)==0){}
+			while (aloha_send(mac,opf,0x00)==0){}
 			dbo_putchar( 'S' );
 			led_off( LED_RED );
-
+            
 			/* warning: You shouldn't wait too long in the while loop, or else 
 			 * you may encounter cc2420 RXFIFO overflow and frame loss. However, 
 			 * the program should still work properly even the delay time is an 
@@ -115,36 +123,30 @@ void echonode(void)
 			hal_delay( 500 );
 			led_on( LED_RED );
 			hal_delay( 500 );
-		}
+			//break;
+			}
+		
 	}		
 }	 
 
 void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart )
 {
-	dbo_putchar( '>' );
-    dbo_n8toa( opf->len );
-    dbo_putchar( 'H' );
-	dbo_putchar( ':' );
-
-	if (opf->len > 0)
+	if (opf->datalen > 0)
 	{
-		// if parse successfully, then output the entire frame to the computer
-		// through UART. If failed, then output all the data received to the computer
-		// instead.
-		//
-		if (opf_parse(opf))
+		dbo_putchar( '>' );
+	 	dbo_n8toa( opf->datalen );
+
+		if (!opf_parse(opf, 0))
 		{
-			uart_write( uart, (char*)&(opf->buf[0]), opf->buf[0], 0x01 );
+	        dbo_n8toa( *opf->sequence );
+			dbo_putchar( ':' );
+			dbo_write( (char*)&(opf->buf[0]), opf->buf[0] );
 		}
-		else{		
-			uart_write( uart, (char*)&(opf->buf[0]), opf->len, 0x01 );
-
-			// This should never happen. You can only ignore it if it really happens
-			hal_assert( false ); 
+		else{
+	        dbo_putchar( 'X' );
+			dbo_putchar( ':' );
+			dbo_write( (char*)&(opf->buf[0]), opf->datalen );
 		}
-
-		uart_putchar( &g_uart, '\n' );
+		dbo_putchar( '\n' );
 	}
 }
-
-

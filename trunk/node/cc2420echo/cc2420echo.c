@@ -16,7 +16,7 @@
 
 
 #define CONFIG_ACK_ENABLE
-#undef  CONFIG_ACK_ENABLE
+//#undef  CONFIG_ACK_ENABLE
 
 #define PANID				0x0001
 #define LOCAL_ADDRESS		0x0002   
@@ -57,7 +57,7 @@ void echonode(void)
     //uint16 fcf;
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 	led_open();
 	led_on( LED_RED );
@@ -70,9 +70,8 @@ void echonode(void)
 	uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	uart_write( uart, msg, strlen(msg), 0x00 );
 
-    opf = opf_construct( (void *)(&opfmem), sizeof(opfmem) );
-    opf_open( opf, OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
-
+    opf = opf_construct( (void *)(&opfmem), sizeof(opfmem), OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
+    opf_open( (void *)(&opfmem), sizeof(opfmem), OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
 
 	cc2420_open( cc, 0, NULL, NULL, 0x00 );
 	cc2420_setchannel( cc, DEFAULT_CHANNEL );
@@ -94,6 +93,13 @@ void echonode(void)
             len = cc2420_recv(cc, (char*)(opf_buffer(opf)), 127, 0x00 );
 			if (len > 0)
             {
+				if (!opf_parse(opf, len))
+				{
+					// the incoming frame is invalid
+					dbo_putchar( 'F' );
+					continue;
+				}
+
 				led_on( LED_YELLOW );
 				hal_delay( 500 );               
 				led_off( LED_YELLOW );
@@ -103,16 +109,14 @@ void echonode(void)
             }
             hal_delay(10);
         }
-
-		if (!opf_parse(opf, len))
-		{
-			// the incoming frame is invalid
-			dbo_putchar( 'F' );
-			continue;
-		}
+	
 
 		// swap the sender and receiver pan id and address.
 		opf_swapaddress( opf );
+
+		//if (opf->shortaddrto != NULL){
+		//dbo_putchar(0x99);}
+
 
 		#ifdef CONFIG_ACK_ENABLE
 		option = 0x01;
@@ -123,7 +127,7 @@ void echonode(void)
 		// try send the frame back to its original sender
 		while (1)
         {
-            len = cc2420_send(cc, (char*)(opf_buffer(opf)), opf_datalen(opf), option);
+            len = cc2420_send(cc, (char*)(opf_buffer(opf)), opf_datalen(opf)-1, option);
 			if (len > 0)
             {
 				led_on( LED_RED );
@@ -144,6 +148,8 @@ void echonode(void)
         // you can decrease this value and eliminate all other hal_delay().
 		hal_delay( 500 );
 	}
+
+
 }
 
 void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart )
@@ -179,7 +185,7 @@ void echonodetx(void)
     uint8 len,j;
 
     target_init();
-    OS_SET_PIN_DIRECTIONS();
+    HAL_SET_PIN_DIRECTIONS();
     wdt_disable();
 
 	dbo_open(0, 38400);
@@ -319,7 +325,7 @@ void echonoderx(void)
 
 
     target_init();
-    OS_SET_PIN_DIRECTIONS();
+    HAL_SET_PIN_DIRECTIONS();
     wdt_disable();
 
     led_open();

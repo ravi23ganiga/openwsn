@@ -13,7 +13,9 @@
  *  - some wrong with assert.h  so  interupt is wrong.
  * @modified by zhangwei on 20090804
  *	- revisioin. compile passed.
- *modified  by ShMiaojing test ok
+ *modified  by ShMiaojing
+ *modified by ShimMiaojing  test ok add cc2420_open and modifeid output_openframe 
+ *but about macro define-config_test_listenner may be somewhat wrong but both two way works
  *****************************************************************************/
 
 #include "../common/hal/hal_configall.h"
@@ -29,9 +31,10 @@
 #include "../common/hal/hal_cc2420.h"
 #include "../common/hal/hal_target.h"
 #include "../common/rtl/rtl_openframe.h"
+#include "../common/hal/hal_debugio.h"
 #include "../common/svc/svc_aloha.h"
 
-//#define CONFIG_TEST_LISTENER  
+#define CONFIG_TEST_LISTENER  
 #define CONFIG_TEST_ADDRESSRECOGNITION
 #define CONFIG_TEST_ACK
 
@@ -49,7 +52,7 @@ static TiTimerAdapter               m_timer;
 uint8   chn=11;
 uint16  panid=0x0001; 
 uint16  address=0x01;
-
+  uint8 len;
 
 #ifdef CONFIG_TEST_LISTENER
 static void _aloha_listener( void * ccptr, TiEvent * e );
@@ -72,11 +75,11 @@ void recvnode(void)
 	TiTimerAdapter   *timer;
 	char * msg = "welcome to aloha recv test...";
     #ifndef CONFIG_TEST_LISTENER
-    uint8 len;
+  
     #endif
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 
 	led_open();
@@ -92,16 +95,23 @@ void recvnode(void)
 
 	uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	uart_write( uart, msg, strlen(msg), 0x00 );
+	//#ifdef CONFIG_TSET_LISTENER
+	cc = cc2420_open( cc, 0, _aloha_listener, NULL, 0x00 );
+//	#else
+  //  cc = cc2420_open( cc, 0, NULL, NULL, 0x00 );
+//	#endif
 
-    opf = opf_construct( (void *)(&m_rxbufmem), sizeof(m_rxbufmem) );
-    opf_open( opf, 0x00 );
+	
 
-	#ifdef CONFIG_TEST_LISTENER
+
+//mac = aloha_open( mac, cc,chn,panid,address,timer,NULL, NULL,0x00 );
+    mac = aloha_open( mac, cc,chn,panid,address,timer, _aloha_listener, NULL,0x00 );
+/*	#ifdef CONFIG_TEST_LISTENER
 	mac = aloha_open( mac, cc,chn,panid,address,timer, _aloha_listener, NULL,0x00 );
 	#else
 	mac = aloha_open( mac, cc,chn,panid,address,timer,NULL, NULL,0x00 );
-	#endif
-    
+	#endif*/
+ 
 	//aloha_setchannel( mac, DEFAULT_CHANNEL );
 	//aloha_setpanid( mac, PANID );				 //网络标识, seems no use in sniffer mode
 	//aloha_setlocaladdress( mac, LOCAL_ADDRESS );	 //网内标识, seems no use in sniffer mode
@@ -115,10 +125,14 @@ void recvnode(void)
 	#ifdef CONFIG_TEST_ACK
 	cc2420_enable_autoack( cc );
 	#endif
-
-	opf = opf_construct( (void *)(&m_rxbufmem), sizeof(m_rxbufmem) );
-    opf_open( opf, 0x00 );
-
+ 
+	#ifdef CONFIG_TEST_ACK
+    opf = opf_open( (void *)(&m_rxbufmem), sizeof(m_rxbufmem), OPF_DEF_FRAMECONTROL_DATA_ACK, 
+        OPF_DEF_OPTION );
+	#else
+    opf = opf_open( (void *)(&m_rxbufmem), sizeof(m_rxbufmem), OPF_DEF_FRAMECONTROL_DATA_NOACK, 
+        OPF_DEF_OPTION );
+	#endif
     hal_enable_interrupts();
 
 	/* Wait for listener action. The listener function will be called by the TiCc2420Adapter
@@ -131,11 +145,12 @@ void recvnode(void)
 	#ifndef CONFIG_TEST_LISTENER
 	while(1) 
 	{
+	
        	len = aloha_recv( mac, opf, 0x00 );
 		if (len > 0)
 		{   
 			//dbo_putchar(0x88);
-			_output_openframe( opf, uart );
+			_output_openframe( opf,&m_uart);
 			led_off( LED_RED );
 
 			/* warning: You shouldn't wait too long in the while loop, or else 
@@ -143,9 +158,9 @@ void recvnode(void)
 			 * work properly even the delay time is an arbitrary value. No error 
 			 * are allowed in this case. 
 			 */
-			hal_delay( 500 );
-			led_on( LED_RED );
-			hal_delay( 500 );
+			//hal_delay( 500 );
+			led_toggle( LED_RED );
+			//hal_delay( 500 );
         }
 
 		//aloha_evolve(mac,NULL );
@@ -159,15 +174,14 @@ void _aloha_listener( void * owner, TiEvent * e )
 {
 	TiAloha * mac = &m_aloha;
     TiOpenFrame * opf = (TiOpenFrame *)m_rxbufmem;
-    
 	uart_putchar( &m_uart, 0x77 );
 	led_toggle( LED_RED );
 	while (1)
 	{
        	len = aloha_recv( mac, opf, 0x00 );
 		if (len > 0)
-		{   
-			_output_openframe( opf, uart );
+		{    
+			_output_openframe( opf, &m_uart);
 			led_toggle( LED_RED );
 
 			/* warning: You cannot wait too long in the listener. Because in the 
@@ -188,25 +202,24 @@ void _aloha_listener( void * owner, TiEvent * e )
 
 void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart )
 {
-	uart_putchar( uart, 0x66 );
-	uart_putchar( uart, opf->len );
-	uart_putchar( uart, 0x77);
-      dbo_open(0,38400);
+	if (opf->datalen > 0)
+	{   
+		dbo_putchar( '>' );
+	 	dbo_n8toa( opf->datalen );
 
-
-	if (opf->len > 0)
-	{
-		if (!opf_parse(opf))
+		if (!opf_parse(opf, 0))
 		{
-			uart_putchar( uart, 0x55 );
-            dbo_putchar (*opf->sequence);
-
-			//uart_write( uart, (char*)&(opf->buf[0]), opf->buf[0], 0x01 );
+	        dbo_n8toa( *opf->sequence );
+			dbo_putchar( ':' );
+			dbo_write( (char*)&(opf->buf[0]), opf->buf[0] );
 		}
-		else
-			//uart_write( uart, (char*)&(opf->buf[0]), opf->len, 0x01 );
-		uart_putchar( &m_uart, '\n' );
-		dbo_putchar (*opf->sequence);
+		else{
+	
+	        dbo_putchar( 'X' );
+			dbo_putchar( ':' );
+			dbo_write( (char*)&(opf->buf[0]), opf->datalen );
+		}
+		dbo_putchar( '\n' );
 	}
 }
 
