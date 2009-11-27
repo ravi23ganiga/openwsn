@@ -1,25 +1,34 @@
-#include <../configall.h>
-#include <../foundation.h>
-#include <../global.h>
-#include <../service/svc_debugio.h>
-#include "debugio.h"
+
+#include <string.h>
+#include "../common/hal/hal_configall.h"
+#include "../common/hal/hal_foundation.h"
+#include "../common/hal/hal_target.h"
+#include "../common/hal/hal_cpu.h"
+#include "../common/hal/hal_debugio.h"
+#include "../common/hal/hal_led.h"
+#include "../common/hal/hal_assert.h"
+
+
+static void debugio_test( void );
+
+int main(void)
+{
+    debugio_test();
+    return 0;
+}
 
 void debugio_test( void )
 {
-	char * buf = "debug uart output! \r\n";
-	
-	global_construct();
-	uart_configure( g_uart, CONFIG_UART_BAUDRATE, 0, 0, 0, 0 );
-	debug_open( g_debugio, g_uart );
-	while (1) 
-	{       
-		debug_write( g_debugio, buf, strlen(buf));
-		debug_write( g_debugio, buf, strlen(buf) );
-		debug_evolve( g_debugio );
-		uart_write(g_uart, "uartecho run3.", 15, 0 );
-	}
-	
-	debug_close( g_debugio );	
-	global_destroy();
-}
+	char * msg = "debugio_test output! \r\n";
 
+	target_init();
+
+	led_open();
+	led_on( LED_ALL );
+	hal_delay( 500 );
+	led_off( LED_ALL );
+
+	dbo_open(0, 38400);
+	dbo_write( msg, strlen(msg) );
+    while (1) {};
+}
