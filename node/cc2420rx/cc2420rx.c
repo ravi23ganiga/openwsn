@@ -62,8 +62,8 @@
 
 
 #define PANID				0x0001
-#define LOCAL_ADDRESS		0x0002
-#define REMOTE_ADDRESS		0x0001
+#define LOCAL_ADDRESS		0x02
+#define REMOTE_ADDRESS		0x01
 #define BUF_SIZE			128
 #define DEFAULT_CHANNEL     11
 
@@ -101,7 +101,7 @@ void recvnode1(void)
 	uint8 len;
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 
 	led_open();
@@ -118,9 +118,10 @@ void recvnode1(void)
 	
 	cc2420_setchannel( cc, DEFAULT_CHANNEL );
 	cc2420_setrxmode( cc );							//Enable RX
-	cc2420_enable_addrdecode( cc );					//使能地址译码
+	//cc2420_enable_addrdecode( cc );					//使能地址译码
+	cc2420_disable_addrdecode(cc);
 	#ifdef TEST_ACK
-	cc2420_enable_autoack(cc);
+	//cc2420_enable_autoack(cc);
 	#endif
 
 	cc2420_setpanid( cc, PANID );					//网络标识
@@ -155,7 +156,7 @@ void recvnode2(void)
 	char * msg = "welcome to recvnode...";
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 
 	led_open();
@@ -172,7 +173,7 @@ void recvnode2(void)
 	
 	cc2420_setchannel( cc, DEFAULT_CHANNEL );
 	cc2420_setrxmode( cc );							//Enable RX
-	cc2420_enable_addrdecode( cc );					//使能地址译码
+	cc2420_disable_addrdecode( cc );					//使能地址译码
 	cc2420_setpanid( cc, PANID );					//网络标识
 	cc2420_setshortaddress( cc, LOCAL_ADDRESS );	//网内标识
 	#ifdef TEST_ACK
@@ -190,17 +191,16 @@ void _cc2420_listener( void * owner, TiEvent * e )
 	TiCc2420Adapter * cc = &g_cc;
 	char buf[BUF_SIZE];
     uint8 len=0;
-	dbo_putchar( '>' );
 	led_toggle( LED_RED );
 	while (1)
 	{
 		len = cc2420_read(cc, &buf[0], BUF_SIZE, 0x00);
-		dbo_putchar( '>' );
+		dbo_putchar( 0x22 );
+		dbo_putchar( len );
 		if (len> 0)
 		{
-			dbo_n8toa( len );
-			//for(int i=0;i<len;i++)
-			//	dbo_putchar( buf[i] );
+			for(int i=1;i<=len;i++)
+				dbo_putchar( buf[i] );
 		}
 		else 
 			break;

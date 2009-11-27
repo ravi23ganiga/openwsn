@@ -8,6 +8,7 @@
  *	- revision. compile passed.
  * @modified by Shi-Miaojing on 20090731
  *	- tested  ok
+ * @modified by Shimiaojing on 20091103/1104  test ok.
  *****************************************************************************/
 
 #include "../common/hal/hal_configall.h"
@@ -40,15 +41,19 @@ static TiCc2420Adapter		m_cc;
 static TiAloha              m_aloha;
 static TiUartAdapter		m_uart;
 static TiTimerAdapter       m_timer;
+
 uint8   chn=11;
 uint16  panid=0x0001; 
-uint16  address=0x00;
+uint16  address=0x01;
+uint16 len;
 
-void aloha_sendnode(void);
+static void aloha_sendnode(void);
+static void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart );
 
 int main(void)
 {
 	aloha_sendnode();
+    return 0;
 }
 
 void aloha_sendnode(void)
@@ -66,7 +71,7 @@ void aloha_sendnode(void)
     uint16 fcf, count;
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 
 	led_open();
@@ -83,23 +88,21 @@ void aloha_sendnode(void)
     	
 	uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	uart_write( uart, msg, strlen(msg), 0x00 );
-
-	aloha_open( mac,cc,chn,panid,address,timer, NULL, NULL,0x01);
+    cc2420_open(cc,panid,NULL,NULL,0x00);
+	aloha_open( mac,cc,chn,panid,address,timer, NULL, NULL,0x00);
 
 	//aloha_setchannel( mac, CONFIG_ALOHA_DEFAULT_CHANNEL );
 	//aloha_setpanid( mac, CONFIG_ALOHA_DEFAULT_PANID );					//网络标识
 	//aloha_setlocaladdr( mac, CONFIG_ALOHA_DEFAULT_LOCAL_ADDRESS );		//网内标识
 
-    opf = opf_construct( (void *)(&opfmem), sizeof(opfmem) );
-    opf_open( opf, 0x00 );
+    opf = opf_open( (void *)(&opfmem), sizeof(opfmem), OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
 
 	hal_enable_interrupts();
 
 	while(1) 
 	{
-        fcf = OPF_FRAMECONTROL_DATA_NOACK;     // 0x8801;     // = 0x8841;
-		total_length = 30;					   // equal to frame length + 1 due to the first byte 
-		                                       // in the buffer is the length byte. 
+        fcf = OPF_DEF_FRAMECONTROL_DATA_NOACK;    // 0x8801;     // = 0x8841;
+		total_length = 30;					      // frame length
 		opf_cast( opf, total_length, fcf );
 
         opf_set_sequence( opf, seqid ++ );
@@ -109,55 +112,74 @@ void aloha_sendnode(void)
 		opf_set_shortaddrfrom( opf, LOCAL_ADDRESS );
 
 		for (i=0; i<opf->datalen; i++)
-			opf->data[i] = i;
+			opf->msdu[i] = i;
+	
 
-		//#ifdef TEST_ACK_REQUEST
+		option = 0x00;		// ACK request
 
-		option = 0x01;
-
-		//#else
-		//option = 0x00;
-		//#endif
-
-        count = 0;
-        while (count < MAX_RETRY_COUNT)
+	    len = aloha_send( mac, opf, option );  
+        // if aloha send failed
+        if (len <= 0)
         {
-            if (aloha_send(mac, opf, option) > 0)
-            {
-                dbo_led( 0x01 );
-                dbo_putchar( 'S' );
-                dbo_n8toa( seqid );
-                break;
-            }
-            count ++;
+			dbo_putchar( 'F' );
+            hal_delay( 200 );
+            continue;            
         }
-        if (count == MAX_RETRY_COUNT)
-            dbo_putchar( 'F' );
 
-        if (count < MAX_RETRY_COUNT)
+        // if aloha send successfully
         {
+            dbo_led( 0x01 );
+            dbo_putchar( 'S' );
+            dbo_n8toa( seqid );
+	        //_output_openframe( opf, uart );
+
+            // try to receive the frame replied by the echo node. attention we should 
+            // wait long enough in order not to miss the response frame.
             count = 0;
-		    while (count < MAX_RETRY_COUNT)
-		    {
+            while (count < 1000)
+            {
                 if (aloha_recv(mac, opf, option) > 0)
                 {
-                    dbo_led( 0x02 );
+                    //dbo_led( 0x02 );
+				    led_toggle(LED_GREEN);
                     dbo_putchar( 'R' );
                     dbo_n8toa( seqid );
+				    //_output_openframe( opf, uart );
                     break;
                 }
                 count ++;
             }
-            if (count == MAX_RETRY_COUNT)
-                dbo_putchar( 'G' );
+
         }
-		
-		//aloha_evolve( mac, NULL );
+	
+		aloha_evolve( mac, NULL );
 
         // controls the sending rate. if you want to test the RXFIFO overflow processing
         // you can decrease this value. 
 		hal_delay(1000);
 
 		//break;
+	}
+}
+
+void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart )
+{
+	if (opf->datalen > 0)
+	{
+		dbo_putchar( '>' );
+	 	dbo_n8toa( opf->datalen );
+
+		if (!opf_parse(opf, 0))
+		{
+	        dbo_n8toa( *opf->sequence );
+			dbo_putchar( ':' );
+			dbo_write( (char*)&(opf->buf[0]), opf->buf[0] );
+		}
+		else{
+	        dbo_putchar( 'X' );
+			dbo_putchar( ':' );
+			dbo_write( (char*)&(opf->buf[0]), opf->datalen );
+		}
+		dbo_putchar( '\n' );
 	}
 }

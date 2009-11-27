@@ -34,7 +34,7 @@ void echonode(void)
 	uint8 len;
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 
 	led_open();

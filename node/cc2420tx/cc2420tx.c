@@ -69,7 +69,7 @@ void sendnode1(void)
     uint16 fcf;
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 	led_open();
 	led_off( LED_ALL );
@@ -82,8 +82,12 @@ void sendnode1(void)
 	uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	uart_write( uart, msg, strlen(msg), 0x00 );
 
-    opf = opf_construct( (void *)(&opfmem), sizeof(opfmem) );
-    opf_open( opf, OPF_DEF_FRAMECONTROL_DATA_NOACK, OPF_DEF_OPTION );
+    //opf = opf_construct(  );
+	#ifdef TEST_ACK_REQUEST
+    opf = opf_open( (void *)(&opfmem), sizeof(opfmem), OPF_DEF_FRAMECONTROL_DATA_ACK, OPF_DEF_OPTION );
+	#else
+    opf = opf_open( (void *)(&opfmem), sizeof(opfmem), OPF_DEF_FRAMECONTROL_DATA_NOACK, OPF_DEF_OPTION );
+	#endif
 
 	cc2420_open( cc, 0, NULL, NULL, 0x00 );
 	cc2420_setchannel( cc, DEFAULT_CHANNEL );
@@ -92,17 +96,18 @@ void sendnode1(void)
 	cc2420_setpanid( cc, PANID );					//网络标识
 	cc2420_setshortaddress( cc, LOCAL_ADDRESS );	//网内标识
 
+	#ifdef TEST_ACK_REQUEST
+	cc2420_enable_autoack( cc );
+    fcf = OPF_DEF_FRAMECONTROL_DATA_ACK;             // 0x8821;    
+	#else
+	cc2420_disable_autoack( cc );
+    fcf = OPF_DEF_FRAMECONTROL_DATA_NOACK;			// 0x8801;  
+	#endif
+
 	hal_enable_interrupts();
 
 	while(1)  
 	{
-
-		#ifdef TEST_ACK_REQUEST
-        fcf = OPF_DEF_FRAMECONTROL_DATA;             // 0x8821;    
-		#else
-        fcf = OPF_DEF_FRAMECONTROL_DATA_NOACK;       // 0x8801;  
-		#endif
-
 		total_length = 30;					     
 		opf_cast( opf, total_length, fcf );
 
@@ -111,19 +116,19 @@ void sendnode1(void)
 		opf_set_shortaddrto( opf, REMOTE_ADDRESS );
 		opf_set_panfrom( opf, PANID );
 		opf_set_shortaddrfrom( opf, LOCAL_ADDRESS );
-		for (i=0; i<opf->datalen; i++)
+
+		/* datalen should be opf->msdu_len */
+		for (i=0; i<opf->msdu_len; i++)
 			opf->msdu[i] = i;
 
-		/*
-		dbo_putchar(opf->datalen);
-		dbo_putchar(opf->len);
-		dbo_putchar(0x88);
+		
+		/*dbo_putchar(0x88);
 
-		for (i=0; i<opf->len; i++)
+		for (i=0; i<opf->buf[0]; i++)
 		{
 			dbo_putchar(opf->buf[i]);
-		}
-		*/
+		}*/
+		
 
 		#ifdef TEST_ACK_REQUEST
 		option = 0x01;
@@ -131,7 +136,6 @@ void sendnode1(void)
 		option = 0x00;
 		#endif
 
-		dbo_putchar( '>' );
 		while (1)
         {
             if ((len=cc2420_write(cc, (char*)(opf_buffer(opf)), opf_datalen(opf), option)) > 0)
@@ -142,18 +146,16 @@ void sendnode1(void)
 				hal_delay( 500 );               
 	 			// uart_putchar( &g_uart, len );
                 // uart_putchar( &g_uart, seqid );
-				dbo_n8toa( len );
-				dbo_n8toa( opf_sequence(opf) );
+				//dbo_n8toa( len );
+				//dbo_n8toa( opf_sequence(opf) );
                 break;
             }
-            hal_delay(100);
         }
 		
-		cc2420_evolve( cc );
+		//cc2420_evolve( cc );
 
         // controls the sending rate. if you want to test the RXFIFO overflow processing
         // you can decrease this value. 
-		hal_delay( 500 );
 	}
 }
 
@@ -170,7 +172,7 @@ void sendnode2(void)
     #endif
 
     target_init();
-    OS_SET_PIN_DIRECTIONS();
+    HAL_SET_PIN_DIRECTIONS();
     wdt_disable();
 
     led_open();

@@ -8,6 +8,8 @@
  *	- revision. compile passed.
  * @modified by Shi-Miaojing on 20090731
  *	- tested  ok
+ *@ modifeied by Shimiaojing on 20091031  match the style of MAC frame and add cc2420_open 
+ *tesk ok both ACK and non-ACK works
  *****************************************************************************/
 
 #include "../common/hal/hal_configall.h"
@@ -38,10 +40,10 @@
 #define DEFAULT_CHANNEL     11*/
 
 
-//#define CONFIG_ALOHA_DEFAULT_PANID				0x0001
-//#define CONFIG_ALOHA_DEFAULT_LOCAL_ADDRESS		0x00
-//#define CONFIG_ALOHA_DEFAULT_REMOTE_ADDRESS		0x01
-//#define CONFIG_ALOHA_DEFAULT_CHANNEL            11
+#define CONFIG_ALOHA_DEFAULT_PANID				0x0001
+#define CONFIG_ALOHA_DEFAULT_LOCAL_ADDRESS		0x01
+#define CONFIG_ALOHA_DEFAULT_REMOTE_ADDRESS		0x02
+#define CONFIG_ALOHA_DEFAULT_CHANNEL            11
 
 static TiCc2420Adapter		m_cc;
 static TiAloha              m_aloha;
@@ -50,7 +52,7 @@ static TiTimerAdapter       m_timer;
 uint8   chn=11;
 uint16  panid=0x0001; 
 uint16  address=0x00;
-
+uint16  len;
 void aloha_sendnode(void);
 
 int main(void)
@@ -73,7 +75,7 @@ void aloha_sendnode(void)
     uint16 fcf;
 
 	target_init();
-	OS_SET_PIN_DIRECTIONS();
+	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 
 	led_open();
@@ -88,10 +90,11 @@ void aloha_sendnode(void)
 	uart = uart_construct( (void *)(&m_uart), sizeof(TiUartAdapter) );
     timer= timer_construct(( char *)(&m_timer),sizeof(TiTimerAdapter));
     	
-	//dbo_putchar('a');
+
 
 	uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	uart_write( uart, msg, strlen(msg), 0x00 );
+	cc2420_open(cc, 0, NULL, NULL, 0x00 );//it is necessary since we have pick it outside from aloha_open 
 
 	aloha_open( mac,cc,chn,panid,address,timer, NULL, NULL,0x01);
 
@@ -99,18 +102,17 @@ void aloha_sendnode(void)
 	//aloha_setpanid( mac, CONFIG_ALOHA_DEFAULT_PANID );					//网络标识
 	//aloha_setlocaladdr( mac, CONFIG_ALOHA_DEFAULT_LOCAL_ADDRESS );		//网内标识
 
-    opf = opf_construct( (void *)(&opfmem), sizeof(opfmem) );
-    opf_open( opf, 0x00 );
+    opf = opf_open( (void *)(&opfmem[0]), sizeof(opfmem), OPF_DEF_FRAMECONTROL_DATA_ACK, OPF_DEF_OPTION );
 
 	hal_enable_interrupts();
 
 	while(1) 
 	{
-        fcf = 0x8801;     // = 0x8841;
-		total_length = 30;					   // equal to frame length + 1 due to the first byte 
-		                                       // in the buffer is the length byte. 
-
+        fcf = OPF_DEF_FRAMECONTROL_DATA; 
+		total_length = 50;					   // frame length, which is equal the length of PSDU
+		                                       // plus addtional 1.
 		opf_cast( opf, total_length, fcf );
+        
 
         opf_set_sequence( opf, seqid ++ );
 		opf_set_panto( opf, CONFIG_ALOHA_DEFAULT_PANID );
@@ -118,32 +120,29 @@ void aloha_sendnode(void)
 		opf_set_panfrom( opf, CONFIG_ALOHA_DEFAULT_PANID);
 		opf_set_shortaddrfrom( opf, CONFIG_ALOHA_DEFAULT_LOCAL_ADDRESS );
 
-		for (i=0; i<opf->datalen; i++)
-			opf->data[i] = i;
+           
 
-		for (i=0; i<opf->len; i++)
+		for (i=0; i<opf->msdu_len; i++)
+			opf->msdu[i] = i; // msdu is just is signal nothing with the  data frame 
+
+		/*for (i=0; i<opf->msdu_len; i++)
 		{
-			//dbo_putchar(opf->buf[i]);
-		}
-
-		//#ifdef TEST_ACK_REQUEST
+			dbo_putchar(opf->buf[i]);
+		}*/
 
 		option = 0x01;
 
-		//#else
-		//option = 0x00;
-		//#endif
-
         while (1)
         {
+		 
             if (aloha_send(mac, opf, option) > 0)
-            {
-                led_toggle( LED_RED );
+            {			
+                led_toggle( LED_YELLOW );
                 dbo_putchar( 0x11);
                 dbo_putchar( seqid );
                 break;
-            }else 
-			{
+            }
+			else{
 				dbo_putchar(0x22);
                 dbo_putchar( seqid );
 			}
