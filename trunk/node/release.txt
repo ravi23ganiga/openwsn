@@ -1,3 +1,11 @@
+2009-11-28
+=============================================================
+
+openwsn-1.0rc for gainz released
+this's a release candidate version. 
+the formal version will be released after serveral more month testing.
+
+
 2009-10-19
 =============================================================
 这几天将OS_宏替换为HAL_宏
