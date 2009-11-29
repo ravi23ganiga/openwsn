@@ -181,47 +181,12 @@ enum  {
   NUM_TIMERS = 2
 };
 
-/*
-enum  {
-  LedsC_RED_BIT = 1, 
-  LedsC_GREEN_BIT = 2, 
-  LedsC_YELLOW_BIT = 4
-};
-*/
 enum  {
   Timer0_maxTimerInterval = 230
 };
- 
- /*
-typedef struct _demo_addressfield
-{
-  uint16_t destination_pan;
-  uint16_t destination_address;
-  uint16_t source_pan;
-  uint16_t source_address;
-} demo_addressfield;
-
-typedef struct _demo_datapacket
-{
-  uint8_t length;
-  uint16_t fcf;
-  uint8_t dsn;
-  demo_addressfield address;
-  uint16_t  payload;
- } demo_datapacket;
-
- */
-
-// uint8_t des_address;
 
 
 #define MAX_RFD_DEVICE     5
-
-//typedef unsigned char BYTE;
-//typedef unsigned char UINT8;
-//typedef unsigned char MAC_ENUM;
-//typedef unsigned short int WORD;
-//typedef unsigned long DWORD;
 
 typedef union _BYTE_VAL
 {
@@ -276,13 +241,6 @@ typedef union _DWORD_VAL
 #define LOWER_MSB(a)    ((a).v[1])
 #define UPPER_LSB(a)    ((a).v[2])
 #define UPPER_MSB(a)    ((a).v[3])
-
-/*
-typedef struct _QWORD
-  {
-     BYTE v[8];
-}QWORD;
-*/
 
 #ifdef __cplusplus
 }

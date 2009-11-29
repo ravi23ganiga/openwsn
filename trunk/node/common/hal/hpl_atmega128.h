@@ -181,13 +181,13 @@ uint8_t rcombine4(uint8_t r1, uint8_t r2, uint8_t r3, uint8_t r4);
  
 void HAL_SET_PIN_DIRECTIONS(void);
 //---------------------------------------------------------------------------
+/*
 
 
 #define HAL_CYCLE_TIME_NS 136
 
 // each nop is 1 clock cycle
 // 1 clock cycle on mica2 == 136ns
-
 
 
 enum {
@@ -209,6 +209,7 @@ enum
   TOS_ADC_BANDGAP_PORT = 10,
   TOS_ADC_GND_PORT     = 11
 };
+*/
 
 #ifdef __cplusplus
 }
