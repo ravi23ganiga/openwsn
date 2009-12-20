@@ -90,6 +90,91 @@ TiAdcAdapter * adc_open( TiAdcAdapter * adc, uint8 id, TiFunEventHandler listene
 		HAL_MAKE_INT1_OUTPUT();
 		HAL_SET_INT1_PIN();
 		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x01;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 2:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x02;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 3:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x03;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 4:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x04;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 5:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x05;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 6:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x06;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 7:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x07;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
 		break;
 	}
 

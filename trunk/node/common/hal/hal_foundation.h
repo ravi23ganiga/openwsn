@@ -185,7 +185,6 @@ enum  {
   Timer0_maxTimerInterval = 230
 };
 
-
 #define MAX_RFD_DEVICE     5
 
 typedef union _BYTE_VAL
@@ -241,6 +240,7 @@ typedef union _DWORD_VAL
 #define LOWER_MSB(a)    ((a).v[1])
 #define UPPER_LSB(a)    ((a).v[2])
 #define UPPER_MSB(a)    ((a).v[3])
+
 
 #ifdef __cplusplus
 }

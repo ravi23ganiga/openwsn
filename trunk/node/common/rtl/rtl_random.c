@@ -32,7 +32,7 @@
 #include "rtl_random.h"
 
 const uint16 RAND_MAX16 = 0x7FFF;
-static uint16 m_rand_next = 0;
+static uint16 m_rand_next = RANDOM_INITIAL_SEED;
 
 /******************************************************************************
  * basic random generator functions

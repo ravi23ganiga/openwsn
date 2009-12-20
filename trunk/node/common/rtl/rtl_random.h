@@ -20,6 +20,9 @@
 #include "rtl_foundation.h"
 #include <stdlib.h>
 
+/* this is the default initial seed. You can change it by calling rand_init(newseed)  */
+#define RANDOM_INITIAL_SEED 0xB6A3
+
 /* attention:
  * assume the target device supports 16-bit operations.
  */

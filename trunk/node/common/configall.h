@@ -54,10 +54,10 @@
  * User Changable Configurations
  *****************************************************************************/
 
-#define OPENWSN_MAJOR_VERSION 0
-#define OPENWSN_MINOR_VERSION 8
+#define OPENWSN_MAJOR_VERSION 1
+#define OPENWSN_MINOR_VERSION 0
 #define OPENWSN_MICRO_VERSION 0
-#define OPENWSN_BUILD_VERSION 1
+#define OPENWSN_BUILD_VERSION 365
 
 /* a macro to enable the debug source code
  * for release version, you should undef this macro

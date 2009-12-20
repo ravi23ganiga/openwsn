@@ -106,7 +106,7 @@ int main(void)
 	lum             = lum_construct( (void *)&m_lum, sizeof(TiLumSensor) );
 
 	cc              = cc2420_open(cc, 0, NULL, NULL, 0x00 );
-	cc				= cc2420_settxpower( cc, CC2420_POWER_8);
+	//cc				= cc2420_settxpower( cc, CC2420_POWER_8);
 	mac             = aloha_open( mac, cc, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,hwtimer0, NULL, NULL,0x01);
 	uart            = uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	rxbuf           = opf_open( &m_opfmem[0], sizeof(m_opfmem), OPF_FRAMECONTROL_UNKNOWN, 0x00 );
@@ -125,6 +125,7 @@ int main(void)
 	//ledtimer        = vti_open( ledtimer, NULL, NULL );
 	//ledtune         = ledtune_construct( (void*)(&m_ledtune), sizeof(m_ledtune), ledtimer );
 	//ledtune         = ledtune_open( ledtune );
+	cc				= cc2420_settxpower( cc, CC2420_POWER_8);
 
 	dbo_write( msg, strlen(msg) );
 	hal_enable_interrupts();
