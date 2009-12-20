@@ -7,7 +7,7 @@
  * driven delay in the future!!
  *
  * you may need to add seqid management in MAC layer!
- *
+ * 
  * @status
  *	- in testing
  *
@@ -38,6 +38,10 @@
 #define CONFIG_ALOHA_MAX_RETRY                  3
 #define CONFIG_ALOHA_ACK_RESPONSE_TIME          10
 
+/* initial backoff time if encountered confliction */
+
+#define CONFIG_ALOHA_BACKOFF                    10
+
 #include "svc_configall.h"
 #include "../hal/hal_foundation.h"
 #include "../hal/hal_timer.h"
@@ -59,6 +63,7 @@ typedef struct{
 	uint8 rxlen;
 	char rxbuf[CC2420_RXBUFFER_SIZE];
     uint8 retry;
+	uint16 backoff;
     TiFunEventHandler listener;
     void * lisowner;
 	uint8 option;

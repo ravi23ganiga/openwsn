@@ -46,13 +46,15 @@ int main(void)
 
 	adc = adc_construct( (void *)&g_adc, sizeof(TiAdcAdapter) );
 	light = light_construct( (void *)&g_light, sizeof(TiLightSensor) );
-	uart = uart_construct( (void *)&g_uart, sizeof(TiAdcAdapter) );
+	uart = uart_construct( (void *)&g_uart, sizeof(TiUartAdapter) );
 
-	adc_open( adc, 0, NULL, NULL, 0 );
+	// xiao-yuezhang changed the second parameter from 5 to 0
+	//adc_open( adc, 0, NULL, NULL, 0 );
+	adc_open( adc, 5, NULL, NULL, 0 );
 	light_open( light, 0, adc );
 	uart_open( uart, 0, 38400, 8, 1, 0 );
     uart_write( uart, welcome, sizeof(welcome), 0x00 );
-	uart_putchar( ':' );
+
 
 	while (1)
 	{

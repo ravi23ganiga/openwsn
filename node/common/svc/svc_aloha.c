@@ -34,10 +34,14 @@
  *  - correct bug in _aloha_recv(). The former byte order to create the frame control
  *    word is wrong. 
  * @modified by Shimiaojing on 20091025
- *-add macro_alohachannelclear(mac) HAL_READ_CC_CCA_PIN()and delete line141 142 and match the frame construct of 
+ *  -add macro_alohachannelclear(mac) HAL_READ_CC_CCA_PIN()and delete line141 142 and match the frame construct of 
  * MAC opf_buffer &opf_datalen id different
  * line 89 147 291 who modified it  
  *  solved ok    2009 .11.17
+ * 
+ * @modified by zhangwei on 20091201
+ *	- add random backoff time support to delay if confliction encountered.
+ *
  *****************************************************************************/
 
 #include "svc_configall.h"
@@ -47,6 +51,9 @@
 #include "../hal/hal_cc2420.h"
 #include "../hal/hal_cpu.h"
 #include "../rtl/rtl_openframe.h"
+
+/* todo
+ * please change TiTimerAdapter to TiTimer */
 
 #define aloha_ischannelclear(mac) cc2420_ischannelclear(mac->tranceiver)
 
@@ -79,6 +86,7 @@ TiAloha * aloha_open( TiAloha * mac, TiCc2420Adapter * transceiver, uint8 chn, u
 	mac->lisowner = lisowner;
 	mac->rxlen = 0;
 	mac->retry = 0;
+	mac->backoff = CONFIG_ALOHA_BACKOFF;
 	mac->option = option;
 
 	// timer_open( timer, 0, NULL, NULL, 0x00 );
@@ -178,7 +186,9 @@ uintx _aloha_send( TiAloha * mac, char * buf, uint8 len, uint8 option )
 		 * However, it's not easy to implement the random delay in a simple method. So
 		 * we simply wait 300 milli-seconds here.
 		 */
-		hal_delay( 300 );
+
+		mac->backoff = rand_uint8( mac->backoff << 1 );
+		hal_delay( mac->backoff );
 		mac->retry++;
 	}
 
