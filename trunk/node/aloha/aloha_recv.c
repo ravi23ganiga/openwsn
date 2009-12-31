@@ -1,3 +1,28 @@
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
 /******************************************************************************
  * aloha_recv
  * The receiving test program based on ALOHA medium access control. It will try 
@@ -48,10 +73,10 @@ static  TiCc2420Adapter             m_cc;
 static  TiUartAdapter	            m_uart;
 static  TiAloha						m_aloha;
 static  char                        m_rxbufmem[OPF_SUGGEST_SIZE];
-static TiTimerAdapter               m_timer;
+static 	TiTimerAdapter               m_timer;
 uint8   chn=11;
 uint16  panid=0x0001; 
-uint16  address=0x01;
+uint16  address=0x02;
   uint8 len;
 
 #ifdef CONFIG_TEST_LISTENER
@@ -95,22 +120,20 @@ void recvnode(void)
 
 	uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	uart_write( uart, msg, strlen(msg), 0x00 );
-	//#ifdef CONFIG_TSET_LISTENER
+	#ifdef CONFIG_TSET_LISTENER
 	cc = cc2420_open( cc, 0, _aloha_listener, NULL, 0x00 );
-//	#else
-  //  cc = cc2420_open( cc, 0, NULL, NULL, 0x00 );
-//	#endif
+	#else
+    cc = cc2420_open( cc, 0, NULL, NULL, 0x00 );
+	#endif
 
 	
 
 
-//mac = aloha_open( mac, cc,chn,panid,address,timer,NULL, NULL,0x00 );
-    mac = aloha_open( mac, cc,chn,panid,address,timer, _aloha_listener, NULL,0x00 );
-/*	#ifdef CONFIG_TEST_LISTENER
+	#ifdef CONFIG_TEST_LISTENER
 	mac = aloha_open( mac, cc,chn,panid,address,timer, _aloha_listener, NULL,0x00 );
 	#else
 	mac = aloha_open( mac, cc,chn,panid,address,timer,NULL, NULL,0x00 );
-	#endif*/
+	#endif
  
 	//aloha_setchannel( mac, DEFAULT_CHANNEL );
 	//aloha_setpanid( mac, PANID );				 //ÍøÂç±êÊ¶, seems no use in sniffer mode
@@ -118,7 +141,7 @@ void recvnode(void)
 	
 	#ifdef CONFIG_TEST_ADDRESSRECOGNITION
 	cc2420_enable_addrdecode( cc );
-	#else
+	#else	
 	cc2420_disable_addrdecode( cc );
 	#endif
 

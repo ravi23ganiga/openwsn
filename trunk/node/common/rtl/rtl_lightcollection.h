@@ -1,5 +1,35 @@
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
 #ifndef _RTL_vexTORX_H_1869_
 #define _RTL_vexTORX_H_1869_
+
+/*
+attention
+this module is upgraded as TiLightCollection now  lwt_collection
+*/
 
 /* rtl_vectorx
  * an extension of the standard vector (TiVector).
@@ -42,35 +72,35 @@ extern "C" {
  * 数据结构的实现
  */
 typedef struct{
-	uintx size;
-	uintx itemlen;
-	uintx capacity;
-	uintx count;
-	uintx offset;
+	uint16 size;
+	uint16 itemlen;
+	uint16 capacity;
+	uint16 count;
+	uint16 offset;
 }TiVectorX;
 
-TiVectorX *	vex_construct( void * buf, uintx size, uintx itemlen );
+TiVectorX *	vex_construct( void * buf, uint16 size, uint16 itemlen );
 void        vex_destroy( TiVectorX * vex );
 
-uintx       vex_capacity( TiVectorX * vex );
-uintx       vex_count( TiVectorX * vex );
+uint16       vex_capacity( TiVectorX * vex );
+uint16       vex_count( TiVectorX * vex );
 bool        vex_empty( TiVectorX * vex );
 bool        vex_full( TiVectorX * vex );
 
-bool        vex_apply( TiVectorX * vex, uintx * idx );
-void        vex_release( TiVectorX * vex, uintx idx );
-bool        vex_isavailable( TiVectorX * vex, uintx idx );	
+bool        vex_apply( TiVectorX * vex, uint16 * idx );
+void        vex_release( TiVectorX * vex, uint16 idx );
+bool        vex_isavailable( TiVectorX * vex, uint16 idx );	
 
 //uint8 *     vex_states( TiVectorX * vex );
-uint8       vex_states( TiVectorX * vex, uintx idx );
+uint8       vex_states( TiVectorX * vex, uint16 idx );
 void *      vex_items( TiVectorX * vex );
-void *      vex_getbuf( TiVectorX * vex, uintx idx );
-bool        vex_get( TiVectorX * vex, uintx idx, void * buf );
-bool        vex_set( TiVectorX * vex, uintx idx, void * item );
+void *      vex_getbuf( TiVectorX * vex, uint16 idx );
+bool        vex_get( TiVectorX * vex, uint16 idx, void * buf );
+bool        vex_set( TiVectorX * vex, uint16 idx, void * item );
 bool        vex_put( TiVectorX * vex, void * item );
-bool        vex_remove( TiVectorX * vex, uintx idx );
+bool        vex_remove( TiVectorX * vex, uint16 idx );
 void        vex_clear( TiVectorX * vex );
-void        vex_swap( TiVectorX * vex, uintx i, uintx j );
+void        vex_swap( TiVectorX * vex, uint16 i, uint16 j );
 
 #ifdef __cplusplus
 }

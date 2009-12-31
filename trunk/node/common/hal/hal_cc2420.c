@@ -1,3 +1,29 @@
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
+
 /******************************************************************************
  * hal_cc2420.c
  * This module implements a cc2420 adapter service. It's an simple wrapper of the
@@ -22,6 +48,7 @@
  *  - add cc2420_sfd_handler(). not tested.
  * @modified by zhangwei(TongJi University) on 20090919
  *	- add cc2420_rssi() and cc2420_lqi(). not tested.
+ * @modified by zhangwei, yanshixing cc2420_recv add crc校验
  *
  *****************************************************************************/
 
@@ -38,6 +65,7 @@
 #include "hal_cc2420const.h"
 #include "hal_cc2420.h"
 #include "hal_debugio.h"
+#include "hal_cc2420inc.h"
 
 /* @attention
  * If you want to disable all the assertions in this macro, you should undef CONFIG_DEBUG.
@@ -55,7 +83,6 @@
 
 
 static inline int8 _cc2420_pin_init( TiCc2420Adapter * cc );
-static inline int8 _cc2420_spi_init( TiCc2420Adapter * cc );
 static inline int8 _cc2420_reg_init( TiCc2420Adapter * cc );
 static inline bool _cc2420_setreg( TiCc2420Adapter * cc );
 void _cc2420_waitfor_crystal_oscillator( TiCc2420Adapter * cc );
@@ -98,7 +125,7 @@ TiCc2420Adapter * cc2420_open( TiCc2420Adapter * cc, uint8 id, TiFunEventHandler
 	cc->rxlen = 0;
 
 	_cc2420_pin_init( cc );
-	_cc2420_spi_init( cc );
+	_cc2420_spi_open();
 
 	// enable the cc2420's internal voltage regulator through the VREG_EN pin of cc2420.
 	// assert( the voltage regulation work correctly ). 
@@ -228,165 +255,6 @@ inline int8 _cc2420_pin_init( TiCc2420Adapter * cc )
     return 0;
 }
 
-/*
-
-USIGN8 CC2420_Init()
-{
-USIGN8 status;
-// 初始化相关引脚
-SPIInit();
-...
-_cc2420_pin_init
-...
-MAKE_CC_CS_HIGH();
-// 对CC2420上电进行初始化
-MAKE_CC_VREN_HIGH();
-_delay_us(600);
-MAKE_CC_RSTN_LOW();
-_delay_us(1);
-MAKE_CC_RSTN_HIGH();
-_delay_us(1);
-// 打开晶振并等待其稳定
-//while (!((CC2420_StrobCmd(CC2420_SXOSCON)) & 0x40));
-status = CC2420_StrobCmd(CC2420_SXOSCON);
-
-while (!(status & 0x40))
-{
-  //CC2420_StrobCmd(CC2420_SXOSCOFF);
-  status = CC2420_StrobCmd(CC2420_SXOSCON);
-}
-
-return status;
-}
-*/
-
-/* 
-另外一个老版本
-void _cc2420_init( TiCc2420Adapter * cc ) 
-{
-    //uint16 rereg;
-    uint8 status;
-
-   _gwrite( "cc2420_init...\r\n" );
-
-	cc->state = CC_STATE_POWERDOWN;
-	cc->nextstate = CC_STATE_IDLE;
-	cc->panid = CC2420_DEFAULT_PANID; 
-	cc->address = CC2420_DEFAULT_ADDRESS; 
-	cc->channel = CC2420_DEFAULT_CHANNEL; 
-	cc->txlen = 0;
-	cc->rxlen = 0;
-	cc->power = 1;
-	cc->ackrequest = 0;
-	cc->sleeprequest = FALSE;
-
-	spi_open( cc->spi, 0 );
-	spi_configure( cc->spi );
-
-    // Make sure that the voltage regulator is on, and reset the transceiver.
-	// finally it will set the reset pin to inactive
-	//
-    SET_VREG_ACTIVE();
-    hal_delay(1000); 	//at least delay_us(600);
-    SET_RESET_ACTIVE();
-    hal_delay(10); 		// at least delay_us(1). low voltage is effective
-    SET_RESET_INACTIVE();
-    hal_delay(50); 		// at least dela_us(1) 
-
-	// assert: FIFOP interrupt pin is selected and enabled
-
-    // Turn off all interrupts while we're accessing the CC2420 registers
-	hal_disable_interrupts();
-	
-    status = cc2420_spi_strobe( cc->spi, CC2420_SXOSCON );
-	/ * while (!(status & 0x40)) 
-	{
-		//uart_putchar( g_uart, status ); 
-		hal_delay( 100 );
-		status = cc2420_spi_strobe( cc->spi,CC2420_SXOSCON );
-	} * /
-    hal_delay(500);
-    //FAST2420_SETREG(CC2420_TXCTRL, 0xA0E3); // To control the output power, added by huanghuan
-    FAST2420_SETREG(cc->spi,CC2420_MDMCTRL0, 0x0AF2); // Turn on automatic packet acknowledgment 
-    FAST2420_SETREG(cc->spi,CC2420_MDMCTRL1, 0x0500); // Set the correlation threshold = 20
-    FAST2420_SETREG(cc->spi,CC2420_IOCFG0, 0x007F);   // Set the FIFOP threshold to maximum
-    FAST2420_SETREG(cc->spi,CC2420_SECCTRL0, 0x01C4); // Turn off "Security enable"
-    // Set the RF channel
-    cc2420_setchannel(cc, cc->channel);
-	
-	#ifdef GDEBUG
-    //led_twinkle(LED_RED,1);
-	#endif
- 
-    // the following sections are used for debugging only. it will dump serveral 
-    // important registers to uart. so you can see them on the host computer.
-    / *
-	#ifdef GDEBUG
-    //while(1){
-    FAST2420_GETREG(cc->spi,CC2420_MDMCTRL0, &rereg);   
-    uart_putchar(g_uart,(char)rereg);
-    uart_putchar(g_uart,(char)(rereg>>8));
-    
-    FAST2420_GETREG(cc->spi,CC2420_MDMCTRL1, &rereg);    
-    uart_putchar(g_uart,(char)rereg);
-    uart_putchar(g_uart,(char)(rereg>>8));
-    
-    FAST2420_GETREG(cc->spi,CC2420_IOCFG0, &rereg);    
-    uart_putchar(g_uart,(char)rereg);
-    uart_putchar(g_uart,(char)(rereg>>8));
-    //FAST2420_GETREG(cc,CC2420_SECCTRL0, &rereg); 
-    //}
-    #endif
-    * /
-    
-    cc->seqid = 0;
-    cc->receiveOn = FALSE;
-    cc->ack_response = FALSE;
-    
-    //FAST2420_UPD_STATUS(cc->spi, (uint8*)(&rereg) );
-    //uart_putchar(g_uart,(char)rereg);
-	// Wait for the crystal oscillator to become stable
-
-    //hal_disable_interrupts();
-	_cc2420_waitfor_crystal_oscillator( cc->spi );
-    // Write the short address and the PAN ID to the CC2420 RAM (requires that the XOSC is on and stable)
-    //hal_enable_interrupts();
-
-    FAST2420_WRITE_RAM_LE(cc->spi,&(cc->address), CC2420RAM_SHORTADDR, 2);
-    FAST2420_WRITE_RAM_LE(cc->spi,&(cc->panid), CC2420RAM_PANID, 2);
-    //FAST2420_READ_RAM_LE(cc,reram,CC2420RAM_SHORTADDR,2);
-    //reram[0]++;
-    //reram[1]++;
-    _cc2420_interrupt_init();
-    
-	cc->state = CC_STATE_IDLE;
-	cc->nextstate = CC_STATE_IDLE;
-}
-*/
-
-/* _cc2420_spi_init()
- * Initialize the MCU's SPI serial communication module. The software will use this
- * module to communicate with cc2420 transceiver.
- */
-inline static int8 _cc2420_spi_init( TiCc2420Adapter * cc )
-{
-	cpu_atomic_t state;
-	
-	state = _cpu_atomic_begin();
-	HAL_MAKE_SPI_SCK_OUTPUT();
-	HAL_MAKE_MISO_INPUT();
-	HAL_MAKE_MOSI_OUTPUT();
-	SPSR |= 1 << 0;			
-	SPCR |= 1 << 4;
-	SPCR &= ~(1 << 3);
-	SPCR &= ~(1 << 2);
-	SPCR &= ~(1 << 1);
-	SPCR &= ~(1 << 0);
-	SPCR |= 1 << 6;
-    _cpu_atomic_end(state); 
-
-	return 0;
-}
 
 inline static int8 _cc2420_reg_init( TiCc2420Adapter * cc )
 {
@@ -574,6 +442,25 @@ inline bool _cc2420_setreg( TiCc2420Adapter * cc )
 	return true;
 }
 
+/*void cc2420_restart( TiCc2420Adapter * cc )
+{
+	uint8 status;
+
+	status = cc2420_sendcmd( cc, CC2420_SXOSCON );
+	while (!(status & 0x40))
+	{
+		//CC2420_StrobCmd(CC2420_SXOSCOFF);
+		status = CC2420_StrobCmd( CC2420_SXOSCON );
+	}
+
+	status = cc2420_sendcmd( cc, CC2420_SRXON );
+	CC_CLR_CS_PIN();
+	_cc2420_spi_put( CC2420_SFLUSHRX );
+	_cc2420_spi_put( CC2420_SFLUSHRX );
+	CC_SET_CS_PIN();
+}*/
+
+
 /******************************************************************************
  * cc2420 service input/output 
  * _cc2420_writetxfifo(), _cc2420_readrxfifo(), cc2420_recv(), cc2420_send()
@@ -624,17 +511,13 @@ uint8 _cc2420_writetxfifo( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 op
 		// - the crystal oscillator must be running for writing the TXFIFO(0x3E) 
 		// - reading TXFIFO is only possible using RAM read (according to cc2420 datasheet)
 
-		SPDR = CC2420_TXFIFO;
-		while (!(SPSR & 0x80)) {};
-		cc->spistatus = SPDR;
+		cc->spistatus = _cc2420_spi_put( CC2420_TXFIFO );
 
-		SPDR = len-1;
-		while (!(SPSR & 0x80)) {};
+		_cc2420_spi_put( len-1 );
 
 		for (i=1; i<len; i++) 
 		{
-			SPDR = buf[i];
-			while (!(SPSR & 0x80)) {};
+			_cc2420_spi_put( buf[i] );
 		}
 		
 		HAL_SET_CC_CS_PIN();
@@ -682,9 +565,33 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 	cpu_atomic_t cpu_status;
 	uint8 i, len, count=0;
 
+	// if the oscillator isn't stable, then restart the transceiver chip
+/*
+	status = cc2420_sendcmd( CC2420_SNOP );
+	if (status < 0x40)
+	{
+		cc2420_restart( cc );
+		return 0;
+	}
+*/
+
+	/* todo since the readrxfifo is called in both non-interrupt mode and interrupt
+	 * node, I suggest to develope two version of readrxfifo to satisfy different
+	 * contexts.
+	 *
+	 * modified by zhangwei on 200912
+	 *	- Bug fix. Since the execution of this function maybe intervened by the interrupts, 
+	 * so we should place _cpu_atomic_begin() at the very begging of the implementation.
+	 */
+	cpu_status = _cpu_atomic_begin();
 	_cc2420_waitfor_crystal_oscillator( cc );
 
-	cpu_status = _cpu_atomic_begin();
+	uint8 status;
+
+	do{	   
+		status = cc2420_sendcmd( cc, CC2420_SNOP );
+	}while (!(status & (1 << CC2420_XOSC16M_STABLE)));
+
 	{
 		HAL_CLR_CC_CS_PIN();
 		// attention: the crystal oscillator must be running for access the RXFIFO(0x3F) 
@@ -694,17 +601,20 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 		// the SPI status register with SPIF set, then accessing the SPI data register.
 		// reference: SPSR register in atmega128L datasheet. 
 
-		SPDR = CC2420_RXFIFO | 0x40;	// read RXFIFO register
-		while (!(SPSR & 0x80)) {};
-		cc->spistatus = SPDR;					
+		cc->spistatus = _cc2420_spi_put( CC2420_RXFIFO | 0x40 );	// read RXFIFO register					
 
-		SPDR = 0;						// clear the SPIF bit in SPSR register before reading data
-		while (!(SPSR & 0x80)) {};
-		len = SPDR;						// also read the length byte from cc2420
-		                                // the length byte doesn't include itself. 
-		
-		//assert: the frame length is less than 128 and doesn't exceed the maximum 
-		// capacity of the buffer. 
+		/* Read the length byte from cc2420 transceiver. Attention the value of the 
+		 * length byte doesn't include itself. */
+		len = _cc2420_spi_get();						
+	                             
+		/* modified by zhangwei on 200909
+		 *	- Bug fix. You cannot enable the following assertion in real applications. 
+		 * If two frames encounter collision during their transmission, the len byte 
+		 * read out may longer than size. This is the feature of wireless communication
+		 * and not our own fault. 
+		 * 
+		 * hal_assert( len < size );
+		 */
 
 		/* @attention
 		 * Though cc2420 datasheet tells us this transceiver supports frames longer
@@ -716,12 +626,14 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 		 */
 		if (len < CC2420_MIN_FRAME_LENGTH)
 		{
-			for (i=0; i<len; i++);
-			{
-				SPDR = 0;
-				while (!(SPSR & 0x80)) {};
-				SPDR;
-			}
+			//for (i=0; i<len; i++);
+			//{
+			//	_cc2420_spi_get();
+			//}
+			cc2420_sendcmd( cc, 0x08 );
+			hal_delayus(5);
+			cc2420_sendcmd( cc, 0x08 );
+			hal_delayus(5);
 			count=0;
 		}
 		else if (len > 127)
@@ -731,6 +643,10 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 			cc2420_sendcmd( cc, 0x08 );
 			cc2420_sendcmd( cc, 0x08 );
 			count=0;
+
+			// todo
+			// However, the cc2420 transceiver support frames longer than 127. So
+			// you should consider the logic in this case.
 		}
 		else{
 			// len &= 0x7F;
@@ -742,16 +658,37 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 			// you must manually send RXFIFO FLUSH command to 2420 to restart it if overflow
 			// really occurs.
 
-			// hal_assert( len+1 <= size );
-			count = min( len, size );
+			hal_assert( len+1 <= size );
+
+			if (len < size)
+			{
+				buf[0] = len;
+				for (i=1; i<=len; i++)
+				{
+					buf[i] = _cc2420_spi_get();
+				}
+				count = len+1;
+			}
+			else{
+				cc2420_sendcmd( cc, 0x08 );
+				cc2420_sendcmd( cc, 0x08 );
+				count = 0;
+			}
+
+/*			count = min( len, size );
 			buf[0] = len;
 			for (i=1; i<=count; i++)
 			{
-				SPDR = 0;
-				while (!(SPSR & 0x80)) {};
-				buf[i] = SPDR;
+
+				buf[i] = _cc2420_spi_get();
 			}
-/*
+
+			if (len >= size)
+			{
+			cc2420_sendcmd( cc, 0x08 );
+			cc2420_sendcmd( cc, 0x08 );
+			}
+
 			// todo 
 			// If the input buffer cannot hold the entire frame, we still need to read all 
 			// the left data in cc2420's RXFIFO. Or else these data will lead to unexpected
@@ -940,7 +877,7 @@ inline uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 opt
  * when the ACK REQUEST bit in the frame control field is set. However, currently, 
  * the cc2420 transceiver is set to AUTO ACK mode, so the software part is simplified.
  */
-inline uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
+uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 {
 	cpu_atomic_t cpu_status;
 	uint8 ret = 0;
@@ -1016,11 +953,23 @@ inline uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 				 * be an invalid frame, and it should be discarded. 
 				 * attention cc->rxlen includes the first length byte.
 				 */
-				if (cc->rxlen > CC2420_MIN_FRAME_LENGTH)
+				hal_assert( (cc->rxlen == 0) || (cc->rxlen >= CC2420_MIN_FRAME_LENGTH) );
+				if (cc->rxlen >= CC2420_MIN_FRAME_LENGTH)
 				{
 					cc->rssi = cc->rxbuf[cc->rxlen-2];
 					cc->lqi = cc->rxbuf[cc->rxlen-1];
+
+					// If the crc checksum failed, then simply drop this frame.
+					if(((cc->lqi>>7)==0x00))
+					{
+						cc->rxlen = 0;
+					}
 				}
+			}
+			else{
+				// todo: clear cc2420 rxbuf?
+				//cc2420_sendcmd( cc, 0x08 );
+				//cc2420_sendcmd( cc, 0x08 );
 			}
 		}
 
@@ -1048,14 +997,23 @@ inline uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 				/* attention here ret value should be large enough or else this frame must 
 				 * be an invalid frame, and it should be discarded. 
 				 */
-				if (ret > CC2420_MIN_FRAME_LENGTH)
+				hal_assert( (ret == 0) || (ret >= CC2420_MIN_FRAME_LENGTH) );
+				if (ret >= CC2420_MIN_FRAME_LENGTH)
 				{
-					cc->rssi = cc->rxbuf[cc->rxlen-2];
-					cc->lqi = cc->rxbuf[cc->rxlen-1];
+					cc->rssi = buf[ret-2];
+					cc->lqi = buf[ret-1];
+
+					// If the crc checksum failed, then simply drop this frame.
+					if(((cc->lqi>>7)==0x00))
+					{
+						ret = 0;
+					}
 				}
-				else{
-					ret = 0;
-				}
+			}
+			else{
+				// todo: clear cc2420 rxbuf?
+				//cc2420_sendcmd( cc, 0x08 );
+				//cc2420_sendcmd( cc, 0x08 );
 			}
 		}
 	}
@@ -1175,9 +1133,7 @@ uint8 cc2420_sendcmd( TiCc2420Adapter * cc, uint8 addr )
 
 	cpu_atomic_t cpu_status = _cpu_atomic_begin();
 	HAL_CLR_CC_CS_PIN(); 
-	SPDR = addr;
-    while (!(SPSR & 0x80)) {};
-	status = SPDR;
+	status = _cc2420_spi_put( addr );
     HAL_SET_CC_CS_PIN();
     _cpu_atomic_end(cpu_status); 
 	
@@ -1332,15 +1288,11 @@ uint8 cc2420_writeregister( TiCc2420Adapter * cc, uint8 addr, uint16 data)
 	cpu_atomic_t cpu_status = _cpu_atomic_begin();
 
 	HAL_CLR_CC_CS_PIN();
-	SPDR = addr;
-    while (!(SPSR & 0x80)) {};
-	status = SPDR;
+	status = _cc2420_spi_put( addr );
 	if (addr > 0x0E) 
 	{
-		SPDR = data >> 8;
-        while (!(SPSR & 0x80)) {};
-		SPDR = (uint8)(data & 0xff);
-		while (!(SPSR & 0x80)) {};
+		_cc2420_spi_put( data >> 8 );
+		_cc2420_spi_put((uint8)(data & 0xff));
 	}
 	_cpu_atomic_end(cpu_status); 
 	HAL_SET_CC_CS_PIN();
@@ -1357,16 +1309,10 @@ uint16 cc2420_readregister( TiCc2420Adapter * cc, uint8 addr )
 	cpu_atomic_t cpu_status = _cpu_atomic_begin();
 
 	HAL_CLR_CC_CS_PIN();
-	SPDR = addr | 0x40;
-	while (!(SPSR & 0x80)) {};
-	status = SPDR;
-	SPDR = 0;
-	while (!(SPSR & 0x80)) {};
-	data = SPDR;
-    SPDR = 0;
-	while (!(SPSR & 0x80)) {};
+	status = _cc2420_spi_put( addr | 0x40 );
+	data = _cc2420_spi_put( 0 );
 
-	data = (data << 8) | SPDR;
+	data = (data << 8) | (_cc2420_spi_put( 0 ));
 	HAL_SET_CC_CS_PIN();
 
 	_cpu_atomic_end(cpu_status); 
@@ -1382,20 +1328,13 @@ uint8 cc2420_readlargeram( TiCc2420Adapter * cc, uint16 addr, uint8 length, uint
 
 	HAL_CLR_CC_CS_PIN();
 		  
-	SPDR = (addr & 0x7F) | 0x80;
-	while (!(SPSR & 0x80)) {};
-	status = SPDR;
+	status =  _cc2420_spi_put((addr & 0x7F) | 0x80);
        
-    SPDR = (addr >> 1) & 0xe0;
-    while (!(SPSR & 0x80)) ;
-	status=SPDR;
-    SPDR=0;
-	
+    status = _cc2420_spi_put((addr >> 1) & 0xe0);
+    
 	for (i = 0; i < length; i++) 
 	{
-		while (!(SPSR & 0x80)) {}
-		buffer[i]=SPDR;
-		SPDR=0;
+		buffer[i]=_cc2420_spi_get();
     }
 	
 	HAL_SET_CC_CS_PIN();
@@ -1413,18 +1352,14 @@ uint8 cc2420_writelargeram( TiCc2420Adapter * cc, uint16 addr, uint8 length, uin
 	cpu_atomic_t cpu_status = _cpu_atomic_begin();
 
 	HAL_CLR_CC_CS_PIN();
-	SPDR = (addr & 0x7F) | 0x80;
-	while (!(SPSR & 0x80)) {};
-
-	status = SPDR;
-	SPDR = (addr >> 1) & 0xC0;
-	while (!(SPSR & 0x80)) {};
-	status = SPDR;
+	
+	status = _cc2420_spi_put((addr & 0x7F) | 0x80);
+	
+	status = _cc2420_spi_put((addr >> 1) & 0xC0)	;
 
 	for (i = 0; i < length; i++) 
 	{
-		SPDR = buffer[i];
-		while (!(SPSR & 0x80)) {};
+		_cc2420_spi_put(buffer[i]);
 	}
 
 	HAL_SET_CC_CS_PIN();
@@ -1564,39 +1499,6 @@ inline uint8 cc2420_settxpower( TiCc2420Adapter * cc, uint8 power )
     return cc2420_writeregister(cc, CC2420_TXCTRL, ctrl);     
 }
 
-/*
-void cc2420_flushFlushRxFIFO()
-{
-MAKE_CC_CS_LOW();
-SPIPut(CC2420_RXFIFO | 0x40);
-SPIGet();
-MAKE_CC_CS_HIGH();
-MAKE_CC_CS_LOW();
-SPIPut(CC2420_SFLUSHRX);
-    SPIPut(CC2420_SFLUSHRX);
-MAKE_CC_CS_HIGH();
-}
-*/
-
-/*
-void cc2420_restart( TiCc2420Adapter * cc )
-{
-	uint8 status;
-
-USIGN8 status;
-status = CC2420_StrobCmd(CC2420_SXOSCON);
-while (!(status & 0x40))
-{
-  //CC2420_StrobCmd(CC2420_SXOSCOFF);
-  status = CC2420_StrobCmd(CC2420_SXOSCON);
-}
-status = CC2420_StrobCmd(CC2420_SRXON);
-MAKE_CC_CS_LOW();
-SPIPut(CC2420_SFLUSHRX);
-SPIPut(CC2420_SFLUSHRX);
-MAKE_CC_CS_HIGH();
-}
-*/
 
 
 
@@ -1636,7 +1538,7 @@ uint8 cc2420_lqi( TiCc2420Adapter * cc )
 
 bool cc2420_crctest( TiCc2420Adapter * cc )
 {
-	return (cc->lqi >> 7) == 1;
+	return ((cc->lqi >> 7) == 1);
 }
 
 /******************************************************************************
@@ -1842,9 +1744,9 @@ void _cc2420_fifop_handler( void * ccptr, TiEvent * e )
 
 		cc2420_sendcmd( cc, 0x08 );
 		cc2420_sendcmd( cc, 0x08 );
+		// hal_delayus( 10 );
 		// hal_assert( HAL_READ_CC_FIFO_PIN() == 0 );
 		// hal_assert( HAL_READ_CC_SFD_PIN() == 0 );
-		//return SUCCESS;
         return;
     }
     

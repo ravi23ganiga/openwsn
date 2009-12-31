@@ -1,32 +1,28 @@
-/*****************************************************************************
- * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
- * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
- * 
- * OpenWSN is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 or (at your option) any later version.
- * 
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
  * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * for more details.
- * 
- * You should have received a copy of the GNU General Public License along
- * with eCos; if not, write to the Free Software Foundation, Inc.,
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
- * 
- * As a special exception, if other files instantiate templates or use macros
- * or inline functions from this file, or you compile this file and link it
- * with other works to produce a work based on this file, this file does not
- * by itself cause the resulting work to be covered by the GNU General Public
- * License. However the source code for this file must still be made available
- * in accordance with section (3) of the GNU General Public License.
- * 
- * This exception does not invalidate any other reasons why a work based on
- * this file might be covered by the GNU General Public License.
- * 
- ****************************************************************************/ 
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
 
 /*****************************************************************************
  * @attention
@@ -118,7 +114,8 @@ void recvnode1(void)
 	
 	cc2420_setchannel( cc, DEFAULT_CHANNEL );
 	cc2420_setrxmode( cc );							//Enable RX
-	cc2420_enable_addrdecode( cc );					//使能地址译码
+	//cc2420_enable_addrdecode( cc );					//使能地址译码
+	cc2420_disable_addrdecode(cc);
 	#ifdef TEST_ACK
 	cc2420_enable_autoack(cc);
 	#endif
@@ -172,7 +169,7 @@ void recvnode2(void)
 	
 	cc2420_setchannel( cc, DEFAULT_CHANNEL );
 	cc2420_setrxmode( cc );							//Enable RX
-	cc2420_enable_addrdecode( cc );					//使能地址译码
+	cc2420_disable_addrdecode( cc );					//使能地址译码
 	cc2420_setpanid( cc, PANID );					//网络标识
 	cc2420_setshortaddress( cc, LOCAL_ADDRESS );	//网内标识
 	#ifdef TEST_ACK
@@ -191,13 +188,14 @@ void _cc2420_listener( void * owner, TiEvent * e )
 	char buf[BUF_SIZE];
     uint8 len=0;
 	led_toggle( LED_RED );
-	dbo_putchar(0x22);
 	while (1)
 	{
 		len = cc2420_read(cc, &buf[0], BUF_SIZE, 0x00);
+		dbo_putchar( 0x22 );
+		dbo_putchar( len );
 		if (len> 0)
 		{
-			for(int i=0;i<=len;i++)
+			for(int i=1;i<=len;i++)
 				dbo_putchar( buf[i] );
 		}
 		else 

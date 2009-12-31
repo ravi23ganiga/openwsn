@@ -1,4 +1,30 @@
 /*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
+
+/*******************************************************************************
  * wireless sensor node (wlssensor, S nodes)
  *
  * This demonstration/testing program will accept DTP_DATA_REQUEST frames from the gateway
@@ -34,7 +60,7 @@
 #include "output_frame.h"
 
 #define CONFIG_NODE_PANID                0x01
-#define CONFIG_NODE_ADDRESS              0x05
+#define CONFIG_NODE_ADDRESS              0x03
 #define CONFIG_NODE_CHANNEL              11
 
 #undef  CONFIG_DEBUG
@@ -63,7 +89,7 @@ static char                 			 m_opfmem[ OPF_SUGGEST_SIZE ];
 static TiDataTreeNetwork                 m_dtp;
 static TiAdcAdapter                      m_adc;
 static TiLumSensor                       m_lum;
-static TiLedTune                         m_ledtune;
+//static TiLedTune                         m_ledtune;
 
 
 int main(void)
@@ -86,7 +112,7 @@ int main(void)
 	TiDataTreeNetwork * dtp;
 	TiOpenFrame * rxbuf;
 	TiOpenFrame * txbuf;
-	TiLedTune * ledtune;
+//	TiLedTune * ledtune;
 
 	target_init();
 
@@ -114,7 +140,6 @@ int main(void)
 	timeradapter   = timer_open( timeradapter, 0, vtm_inputevent, vtm, 0x01 ); 
 	vtm            = vtm_open( vtm, timeradapter, CONFIG_VTM_RESOLUTION );
 	cc             = cc2420_open(cc, 0, NULL, NULL, 0x00 );
-	cc			   = cc2420_settxpower( cc, CC2420_POWER_5);
 	mac            = aloha_open( mac, cc, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,
 		             NULL, NULL, NULL,0x01);
 	adc            = adc_open( adc, 0, NULL, NULL, 0 );
@@ -122,8 +147,10 @@ int main(void)
 	rxbuf          = opf_open( &m_opfmem[0], sizeof(m_opfmem), OPF_FRAMECONTROL_UNKNOWN, 0x00 );
 	txbuf          = rxbuf;
 	uart           = uart_open( uart, 0, 38400, 8, 1, 0x00 );
-	dtp            = dtp_open( dtp, mac, CONFIG_NODE_ADDRESS, NULL, NULL );
+	dtp            = dtp_open( dtp, mac, CONFIG_NODE_ADDRESS, NULL, NULL, 0x00 );
 	rxbuf          = opf_open( &m_opfmem[0], sizeof(m_opfmem), OPF_FRAMECONTROL_UNKNOWN, 0x00 );
+	cc2420_settxpower( cc, CC2420_POWER_2);
+	cc2420_enable_autoack( cc );
 
 	vti            = vtm_apply( vtm );
 	vti            = vti_open( vti, NULL, NULL );
@@ -175,9 +202,21 @@ int main(void)
 
 				value = lum_value( lum ); 
 				payload = DTP_PAYLOAD_PTR(response);
-				payload[0] = LOWBYTE( value );
-				payload[1] = HIGHBYTE( value );
+				payload[0] = 0x13;
+				payload[1] = 0x14;
 
+				/* call dtp_send_response() to send the data in txbuf out.
+				 * 
+				 * modified by zhangwei on 20091230
+				 *	- Bug fix. In the past, there's no delay between two adjacent 
+				 * dtp_send_response() calls. This policy is too ambitious and this
+				 * node will occupy the whole time so that the other nodes will lost 
+				 * chances to send, or encounter much higher frame collision probabilities. 
+				 * so I add a little time delay here. 
+				 *    Attention the delay time here shouldn't be too large because
+				 * we don't want the hal_delay() to occupy all the CPU time. If this 
+				 * occurs, it may lead to unnecessary frame lossing. 
+				 */
 				// try some times until the RESPONSE is successfully sent
 
                 for (count=0; count<1000; count++)
@@ -186,6 +225,7 @@ int main(void)
                     {  
 						break;
                     }
+					hal_delay( 5 );
 				}
 				break;
 
