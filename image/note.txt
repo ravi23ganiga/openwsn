@@ -1,4 +1,0 @@
-this folder contains the images files for testing and demonstration. you can directly download them into the opennode hardware.
-
-hw30-led
-the demonstration hex to test led. the led will flash after you download the images into the chip.
