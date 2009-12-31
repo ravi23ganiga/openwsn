@@ -1,3 +1,29 @@
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
+
 #ifndef _SVC_DATATREE_H_4576_
 #define _SVC_DATATREE_H_4576_
 /******************************************************************************
@@ -112,6 +138,7 @@
 #define DTP_DATA_REQUEST                0x02 
 #define DTP_DATA_RESPONSE               0x03
 
+#define DTP_MAX_TX_TRYTIME              0x1FF
 
 #define DTP_HEADER_SIZE(maxhopcount) (9+(maxhopcount-1)*2)
 #define DTP_MAKEWORD(high,low) (((uint16)high<<8) | ((uint8)low))
@@ -139,10 +166,19 @@
 #define DTP_CMDTYPE(pkt) (pkt[0] & 0x03)
 #define DTP_SET_CMDTYPE(pkt,newtype) (pkt[0] = (pkt[0] & 0xFC) | (newtype))
 
-#define DTP_STATE_IDLE 0
-#define DTP_STATE_WAITFOR_TXREPLY 1
-#define DTP_STATE_RECVING 1
-#define DTP_STATE_SENDING 2
+/* DTP protocol state
+ * STARTUP state: when the node first powered on, it's in STARTUP state. In this state, 
+ *		it will inspect the incoming frames unless it can find an MAINTAIN_REQUEST
+ *		frame. All other frames will be ignored. After it received the MAINTAIN_REQUEST 
+ *      frame, it will join the network and set appropriate parent node, and switch 
+ *      to IDLE state.
+ */
+#define DTP_STATE_STARTUP 1
+#define DTP_STATE_SHUTDOWN 2
+#define DTP_STATE_IDLE 3
+#define DTP_STATE_WAITFOR_TXREPLY 4
+#define DTP_STATE_RECVING 5
+#define DTP_STATE_SENDING 6
 
 
 #define TiDTP TiDataTreeNetwork
@@ -180,9 +216,15 @@
  *
  *  response_id         ??? 
  *                      Currently, This member is used to save the request id just received.
+ *
+ *  txtrytime           how many times we had wait to send the current frame. 
+ *                      Since the current data tree doesn't use timer object, we use
+ *                      counter variable to simulate it. when txtrytime == 0, then the
+ *                      frame inside txbuf will be cleared even though it's failed sending.
  */
 typedef struct{
 	uint8               state;
+	uint8               option;
 	uint16              pan;
 	uint16              root;
 	uint16		        parent;
@@ -192,6 +234,7 @@ typedef struct{
 //	uint16				panto;
 //	uint16				panfrom;
 	TiAloha *			mac;
+	uint16              txtrytime;
 	TiOpenFrame * 		txque;
 	TiOpenFrame *		rxque;
 	TiOpenFrame *       rxbuf;
@@ -207,11 +250,15 @@ typedef struct{
 	char                cachemem[ CACHE_HOPESIZE(DTP_HEADER_SIZE(CONFIG_DTP_DEF_MAX_HOPCOUNT), CONFIG_DTP_CACHE_CAPACITY) ];
 }TiDataTreeNetwork;
 
-
+/* dtp_open()
+ *	option: to control whether the current node should be initialized as general 
+ * sensor node or gateway node. The default settings is 0x00 which means the DTP
+ * will be initialized as sensor mode.
+ */
 TiDataTreeNetwork * dtp_construct( void * mem, uint16 size );
 void dtp_destroy( TiDataTreeNetwork * net );
 TiDataTreeNetwork * dtp_open( TiDataTreeNetwork * net, TiAloha * mac, uint16 localaddress, 
-	TiFunEventHandler listener, void * lisowner );
+	TiFunEventHandler listener, void * lisowner, uint8 option );
 void dtp_close( TiDataTreeNetwork * net );
 
 
@@ -276,6 +323,8 @@ uint8 dtp_maintain( TiDataTreeNetwork * net, uint8 max_hopcount );
 /* This function receive event from other services/objects and drive the evolution 
  * of the TiDataTreeNetwork service. 
  */
+void dtp_evolve_node( void * dtptr, TiEvent * e );
+void dtp_evolve_sink( void * dtptr, TiEvent * e );
 void dtp_evolve( void * dtptr, TiEvent * e );
 
 #endif /* _SVC_DATATREE_H_4576_ */

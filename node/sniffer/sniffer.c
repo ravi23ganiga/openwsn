@@ -1,32 +1,29 @@
 /*******************************************************************************
- * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
- * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
  * 
- * OpenWSN is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 or (at your option) any later version.
+ * OpenWSN is a free software; you can redistribute it and/or modify it under 
+ * the terms of the GNU General Public License as published by the Free Software 
+ * Foundation; either version 2 or (at your option) any later version.
  * 
  * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * for more details.
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License along
- * with eCos; if not, write to the Free Software Foundation, Inc.,
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
  * 
- * As a special exception, if other files instantiate templates or use macros
- * or inline functions from this file, or you compile this file and link it
- * with other works to produce a work based on this file, this file does not
- * by itself cause the resulting work to be covered by the GNU General Public
- * License. However the source code for this file must still be made available
- * in accordance with section (3) of the GNU General Public License.
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
  * 
- * This exception does not invalidate any other reasons why a work based on
- * this file might be covered by the GNU General Public License.
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi 
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  * 
  ******************************************************************************/ 
+
 
 /*******************************************************************************
  * @attention
@@ -132,7 +129,7 @@ void sniffer(void)
 
 	cc = cc2420_construct( (void *)(&g_cc), sizeof(TiCc2420Adapter) );
 	#ifdef CONFIG_LISTENER
-	cc = cc2420_open( cc, 0, _cc2420_listener, NULL, 0x00 );
+	cc = cc2420_open( cc, 0, _cc2420_listener, cc, 0x00 );
 	#else
     cc = cc2420_open( cc, 0, NULL, NULL, 0x00 );
 	#endif
@@ -142,9 +139,9 @@ void sniffer(void)
 	cc2420_setpanid( cc, PANID );					// network identifier, seems no use in sniffer mode
 	cc2420_setshortaddress( cc, LOCAL_ADDRESS );	// in network address, seems no use in sniffer mode
 	cc2420_disable_addrdecode( cc );				// disable address decoding
-
+	cc2420_disable_autoack( cc );
     opf = opf_open( (void *)(&g_rxbufmem), sizeof(g_rxbufmem), OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
-    //opf = opf_open( (void *)(&g_rxbufmem), sizeof(g_rxbufmem), OPF_DEF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
+    // opf = opf_open( (void *)(&g_rxbufmem), sizeof(g_rxbufmem), OPF_DEF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
 
 	hal_enable_interrupts();
  
@@ -171,13 +168,24 @@ void sniffer(void)
 	#endif
 }
 
-// todo: replace output codes with _output_openframe
+/* _cc2420_listener
+ * This is a callback function handler of the TiCc2420Adapter. It will be called 
+ * each time a new frame received by the cc2420 adapter. 
+ * 
+ * @attention
+ *	Since the frame maybe queued inside cc2420 adapter, an "while" loop must be 
+ * issued here to guarantee all the frames are read out from the adapter. 
+ */
 #ifdef CONFIG_LISTENER
 void _cc2420_listener( void * owner, TiEvent * e )
 {
-	TiCc2420Adapter * cc = &g_cc;
-    TiOpenFrame * opf = (TiOpenFrame *)(&g_rxbufmem);
-
+	TiCc2420Adapter * cc = (TiCc2420Adapter *)(owner);
+    TiOpenFrame * opf;
+	// todo
+	// must we call opf_open() every time here? attention we had already opened it 
+	// during the initialization. can we open the opf structure for only 1 time 
+	// and reuse it in the future?
+	opf = opf_open( (void *)(&g_rxbufmem), sizeof(g_rxbufmem), OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
 	while (1)
 	{
 		len = cc2420_read( cc, opf_buffer(opf), opf_size(opf), 0x00 );

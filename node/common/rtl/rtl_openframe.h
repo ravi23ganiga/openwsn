@@ -1,7 +1,32 @@
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
 /******************************************************************************
  * rtl_openframe
  * this module implements an openframe object to help manipulating the IEEE 802.15.4 frame 
- * buffer.
+ * buffer. 
  * 
  * architecture
  * char * buf => TiOpenFrame => TiOpenPacket => TiOpenData (which includes serveral TiOpenSection)
@@ -461,14 +486,12 @@ inline void opf_swapaddress( TiOpenFrame * opf )
 	{
 		_opf_swapbyte( opf->panto, opf->panfrom );
 		_opf_swapbyte( opf->panto+1, opf->panfrom+1 );
-		dbo_putchar(0x99);
 	}
 
 	if ((opf->shortaddrto != NULL) && (opf->shortaddrfrom != NULL))
 	{
 		_opf_swapbyte( opf->shortaddrto, opf->shortaddrfrom );
 		_opf_swapbyte( opf->shortaddrto+1, opf->shortaddrfrom+1 );
-				dbo_putchar('b');
 
 	}
 
@@ -482,7 +505,6 @@ inline void opf_swapaddress( TiOpenFrame * opf )
 		_opf_swapbyte( opf->longaddrto+5, opf->longaddrfrom+5 );
 		_opf_swapbyte( opf->longaddrto+6, opf->longaddrfrom+6 );
 		_opf_swapbyte( opf->longaddrto+7, opf->longaddrfrom+7 );
-				dbo_putchar('c');
 
 	}
 }

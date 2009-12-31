@@ -1,3 +1,28 @@
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
 /*
 *****************************************************************************
  * 
@@ -115,7 +140,7 @@ void aloha_sendnode(void)
 			opf->msdu[i] = i;
 	
 
-		option = 0x00;		// ACK request
+		option = 0x01;		// ACK request
 
 	    len = aloha_send( mac, opf, option );  
         // if aloha send failed
@@ -128,7 +153,7 @@ void aloha_sendnode(void)
 
         // if aloha send successfully
         {
-            dbo_led( 0x01 );
+            //dbo_led( 0x01 );
             dbo_putchar( 'S' );
             dbo_n8toa( seqid );
 	        //_output_openframe( opf, uart );
@@ -138,13 +163,14 @@ void aloha_sendnode(void)
             count = 0;
             while (count < 1000)
             {
-                if (aloha_recv(mac, opf, option) > 0)
+                if ((len=aloha_recv(mac, opf, option)) > 0)
                 {
                     //dbo_led( 0x02 );
 				    led_toggle(LED_GREEN);
                     dbo_putchar( 'R' );
                     dbo_n8toa( seqid );
-				    //_output_openframe( opf, uart );
+					opf_set_datalen( opf, len );
+				    _output_openframe( opf, uart );
                     break;
                 }
                 count ++;
@@ -164,22 +190,32 @@ void aloha_sendnode(void)
 
 void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart )
 {
-	if (opf->datalen > 0)
-	{
+	//uint8 i;
+
+    // if the opf structure contains an frame, then output it.
+	if (opf_datalen(opf) > 0)
+	{   
 		dbo_putchar( '>' );
 	 	dbo_n8toa( opf->datalen );
 
-		if (!opf_parse(opf, 0))
+		if (opf_parse(opf, 0))
 		{
+            // if the frame parsing succeed, then output the whole frame.
 	        dbo_n8toa( *opf->sequence );
 			dbo_putchar( ':' );
-			dbo_write( (char*)&(opf->buf[0]), opf->buf[0] );
+			_dbo_write_n8toa( (char*)&(opf->buf[0]), opf->buf[0]+1 );
 		}
 		else{
 	        dbo_putchar( 'X' );
 			dbo_putchar( ':' );
-			dbo_write( (char*)&(opf->buf[0]), opf->datalen );
+			_dbo_write_n8toa( (char*)&(opf->buf[0]), opf->datalen );
 		}
+		dbo_putchar( '\r' );
 		dbo_putchar( '\n' );
 	}
+    else{
+        // If the opf structure doesn't contain frames, then output a '.' to indicate 
+        // the call of this function. However, this case rarely happens.
+        dbo_putchar( '.' );
+    }
 }

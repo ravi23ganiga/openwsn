@@ -1,4 +1,29 @@
 /*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
+/*******************************************************************************
  * gateway node (gateway, G nodes)
  * This demonstration/testing program will send frames from the gateway
  * node and then wait for the feedback. 
@@ -8,10 +33,6 @@
  ******************************************************************************/
 
 #include "../common/hal/hal_configall.h"  
-#include "../common/svc/svc_configall.h"  
-#include "../common/rtl/rtl_foundation.h"
-#include "../common/rtl/rtl_iobuf.h"
-#include "../common/rtl/rtl_openframe.h"
 #include "../common/hal/hal_foundation.h"
 #include "../common/hal/hal_cpu.h"
 #include "../common/hal/hal_timer.h"
@@ -20,20 +41,24 @@
 #include "../common/hal/hal_led.h"
 #include "../common/hal/hal_luminance.h"
 #include "../common/hal/hal_assert.h"
+#include "../common/hal/hal_adc.h"
+#include "../common/hal/hal_luminance.h"
+#include "../common/rtl/rtl_foundation.h"
+#include "../common/rtl/rtl_iobuf.h"
+#include "../common/rtl/rtl_openframe.h"
+#include "../common/svc/svc_configall.h"  
 #include "../common/svc/svc_foundation.h"
 #include "../common/svc/svc_aloha.h"
 #include "../common/svc/svc_timer.h"
 #include "../common/svc/svc_datatree.h"
-#include "../common/hal/hal_adc.h"
-#include "../common/hal/hal_luminance.h"
 #include "../common/svc/svc_datatree.h"
 #include "ledtune.h"
 #include "output_frame.h"
 
 
+#define CONFIG_NODE_CHANNEL             11
 #define CONFIG_NODE_ADDRESS             0x0001
 #define CONFIG_NODE_PANID               0x0001
-#define CONFIG_NODE_CHANNEL             11
 #define CONFIG_REMOTE_PANID				0x0002
 #define CONFIG_REMOTE_ADDR				0x0001
 
@@ -59,7 +84,7 @@ static TiDataTreeNetwork    m_dtp;
 static char                 m_opfmem[ OPF_SUGGEST_SIZE ];	
 static TiAdcAdapter         m_adc;
 static TiLumSensor          m_lum;
-static TiLedTune            m_ledtune;
+//static TiLedTune            m_ledtune;
 
 void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart );
 
@@ -68,13 +93,15 @@ int main(void)
 {
 	uint8 len, i, count=0;
 	char * msg = "welcome to gateway node...";
-	char * request, * response, * payload;
+	char * request;
+	//char * response;
+    char * payload;
 	uint16 value;
 
 	TiTimerAdapter * hwtimer0;
 	TiTimerManager * vtm;
 	TiTimer * vti;
-	TiTimer * ledtimer;
+	//TiTimer * ledtimer;
 	TiCc2420Adapter * cc;
     TiAloha * mac;
 	TiUartAdapter * uart;
@@ -83,7 +110,7 @@ int main(void)
 	TiDataTreeNetwork * dtp;
 	TiAdcAdapter * adc;
 	TiLumSensor * lum;
-	TiLedTune * ledtune;
+	//TiLedTune * ledtune;
 
 	target_init();
 	wdt_disable();
@@ -106,7 +133,6 @@ int main(void)
 	lum             = lum_construct( (void *)&m_lum, sizeof(TiLumSensor) );
 
 	cc              = cc2420_open(cc, 0, NULL, NULL, 0x00 );
-	//cc				= cc2420_settxpower( cc, CC2420_POWER_8);
 	mac             = aloha_open( mac, cc, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,hwtimer0, NULL, NULL,0x01);
 	uart            = uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	rxbuf           = opf_open( &m_opfmem[0], sizeof(m_opfmem), OPF_FRAMECONTROL_UNKNOWN, 0x00 );
@@ -118,15 +144,16 @@ int main(void)
 	vti             = vtm_apply( vtm );
 	vti             = vti_open( vti, NULL, NULL );
 	dtp             = dtp_construct( (void *)(&m_dtp), sizeof(m_dtp) );
-	dtp             = dtp_open( dtp, mac, CONFIG_NODE_ADDRESS, NULL, NULL );
+	dtp             = dtp_open( dtp, mac, CONFIG_NODE_ADDRESS, NULL, NULL, 0x01 );
 	adc             = adc_open( adc, 0, NULL, NULL, 0 );
 	lum             = lum_open( lum, 0, adc );
 	//ledtimer        = vtm_apply( vtm );
 	//ledtimer        = vti_open( ledtimer, NULL, NULL );
 	//ledtune         = ledtune_construct( (void*)(&m_ledtune), sizeof(m_ledtune), ledtimer );
 	//ledtune         = ledtune_open( ledtune );
-	cc				= cc2420_settxpower( cc, CC2420_POWER_8);
-
+	
+	cc2420_settxpower( cc, CC2420_POWER_2);
+	cc2420_enable_autoack( cc );
 	dbo_write( msg, strlen(msg) );
 	hal_enable_interrupts();
 
@@ -181,8 +208,8 @@ int main(void)
 			len = dtp_recv( dtp, rxbuf, 0x00 );
 			if (len > 0)
 			{	
-				response = opf_msdu( rxbuf );
-				payload = DTP_PAYLOAD_PTR(response);
+				//response = opf_msdu( rxbuf );
+				//payload = DTP_PAYLOAD_PTR(response);
 				//ledtune_write( ledtune, MAKE_WORD(payload[1], payload[0]) );
 				output_openframe( rxbuf, uart );
 				led_toggle( LED_GREEN );
@@ -190,7 +217,17 @@ int main(void)
 		}
 		
 		dtp_evolve(dtp, NULL);
-		hal_delay(500);
+
+		/* modified by zhangwei on 20091230
+		 * - bug fix.
+		 * - Zhangwei comment the following hal_delay(). I know the programmar wants
+		 * to add some delay here, but we shouldn't call hal_delay() here, because 
+		 * hal_delay() will occupy the entire processing time of the CPU. This will
+		 * cause the main program haven't chances to call dop_recv(). So the incoming
+		 * packets may lost. 
+		 */
+		/* hal_delay(500); */
+
 		count ++;
 	} /* while (1) */
 

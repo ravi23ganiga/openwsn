@@ -1,32 +1,29 @@
-/*****************************************************************************
- * This file is part of OpenWSN, the Open Wireless Sensor Network System.
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
- * Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
- * 
- * OpenWSN is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 or (at your option) any later version.
- * 
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
  * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * for more details.
- * 
- * You should have received a copy of the GNU General Public License along
- * with eCos; if not, write to the Free Software Foundation, Inc.,
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
- * 
- * As a special exception, if other files instantiate templates or use macros
- * or inline functions from this file, or you compile this file and link it
- * with other works to produce a work based on this file, this file does not
- * by itself cause the resulting work to be covered by the GNU General Public
- * License. However t#include "hal_openframe.h"he source code for this file must still be made available
- * in accordance with section (3) of the GNU General Public License.
- * 
- * This exception does not invalidate any other reasons why a work based on
- * this file might be covered by the GNU General Public License.
- * 
- ****************************************************************************/ 
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
+
 
 #include "hal_configall.h"
 #include <string.h>
@@ -470,8 +467,8 @@ void timer_enable( TiTimerAdapter * timer )
 			//TIMSK = (1 << TOIE0); 
 
 			/* for output compare match mode */
-			
 			TIFR = (1 << OCF0);
+
 			// enable timer0 compare match mode 
 			TIMSK = (1 << OCIE0);
 			

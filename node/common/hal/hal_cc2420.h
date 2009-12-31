@@ -1,5 +1,33 @@
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
+
 #ifndef _CC2420_H_4892_
 #define _CC2420_H_4892_
+
+
 /*******************************************************************************
  * cc2420 adapter
  * simple wraper of cc2420 low power wireless transceiver. it helps to implement 
@@ -128,6 +156,12 @@ enum{
 #define ED_2_LQI(ed) (((ed) > 63 ? 255 : ((ed) << 2)))
 
 
+
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 /* TiCc2420Adapter
  * is a lightweight wrapper of TI/Chipcon's cc2420 2.4G transceiver. 
  * design principle: lightweight, fast, simple, easy for portable
@@ -190,6 +224,7 @@ void cc2420_close( TiCc2420Adapter * cc );
  ******************************************************************************/
 
 uint8 cc2420_state( TiCc2420Adapter * cc );
+void cc2420_restart( TiCc2420Adapter * cc );
 
 #define cc2420_write(cc,buf,len,option) cc2420_send(cc,buf,len,option)
 #define cc2420_read(cc,buf,len,option) cc2420_recv(cc,buf,len,option)
@@ -311,5 +346,7 @@ void cc2420_disable_sfd( TiCc2420Adapter * cc );
 //void cc2420_set_sfd_listener( TiCc2420Adapter * cc, TiFunEventHandler sfd_listener, void * owner );
 
 void cc2420_default_listener( void * ccptr, TiEvent * e ); 
-
+#ifdef __cplusplus
+}
+#endif
 #endif  /* _CC2420_H_4892_ */
