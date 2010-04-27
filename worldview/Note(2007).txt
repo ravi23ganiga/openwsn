@@ -1,7 +1,0 @@
-help wanted:
-anyone can develope a java version worldview for openwsn?we need a cross-platform solution for it.
-
-
-i had thought to use gumtree as the default data analyzer for openwsn. thus you should write a driver for gumtree so gumtree can read/write data from/to the openwsn network. this is quite similar to NI labView + LabView Driver + MicaZ solution.
-
-
