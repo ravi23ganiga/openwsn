@@ -38,16 +38,24 @@
 
 #include "rtl_configall.h"
 #include "rtl_foundation.h"
+#include "rtl_iobuf.h"
+/* CONFIG_TEXTCODEC_TEST
+ * testing the codec. the input will be directly copied to the output.
+ */
+
+#undef  CONFIG_TEXTCODEC_TEST
+//#define CONFIG_TEXTCODEC_TEST
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-uint16 text_encode( char * input, uint16 len_in, char * output, uint16 len_out );//数据编码
+uint16 text_encode( TiIoBuf * input, TiIoBuf * output );//数据编码
 // 成功时返回output缓冲区中数据长度，失败返回0
 
-uint16 text_decode( char * input, uint16 len_in, char * output, uint16 len_out );//数据解码
+uint16 text_decode( TiIoBuf * input, TiIoBuf * output );//数据解码
 // 成功时返回output缓冲区中数据长度，失败返回0
+
 
 #ifdef __cplusplus
 }

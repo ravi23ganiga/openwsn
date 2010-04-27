@@ -57,6 +57,7 @@ TiSioComm * sio_open( TiSioComm * sio, TiUartAdapter * uart, TiTextSpliter * spl
 	sio->spliter = spliter;
 	sio->txbuf = iobuf_construct( &sio->txmem[0], sizeof(sio->txmem) );
 	sio->rxbuf = iobuf_construct( &sio->rxmem[0], sizeof(sio->rxmem) );
+	sio->rxque = iobuf_construct( &sio->quemem[0], sizeof(sio->quemem) );
 	return sio;
 
 }
@@ -83,90 +84,75 @@ void sio_configure( TiSioComm * sio, TiTimerAdapter * timer, uint8 opt )
 /* Read a packet from TiSioComm service. */
 uint8 sio_read( TiSioComm * sio, TiIoBuf * iobuf )
 {
-	
+	uintx available, count;
+	char * pkt;
+	uint8 i, len;
+	TiIoBuf * tmp_iobuf;
+	char * tmp_buf[ IOBUF_HOPESIZE(0x7F) ];
+	tmp_iobuf = iobuf_construct( tmp_buf, sizeof(tmp_buf) );
 
-	uint8 count;
-	char tempbuf[SIO_RXBUFFER_CAPACITY];
-	// If the internal byte buffer still has some empty space, then call uart_read()
-	// to read data and put them into the byte buffer. 
-	//貌似没有必要，因为这个byte buffer在textspliter中已经做了。
-	//available = iobuf_available(sio->rxbuf);
-	count = uart_read( sio->uart, tempbuf, SIO_RXBUFFER_CAPACITY, 0x00 );
+	available = iobuf_available(sio->rxbuf);
+	count = uart_read( sio->uart, iobuf_endptr(sio->rxbuf), available, 0x00 );
+
+	if (count > 0)
+	{
+		iobuf_setlength( sio->rxbuf, iobuf_length(sio->rxbuf)+count );
+	}
+	/*dbo_putchar(0x11);
+	dbo_putchar(count);
+	uint8 len=iobuf_length(sio->rxbuf);
+	if(len>0)
+	{
+		char * pkt=iobuf_data(sio->rxbuf);
+		for(uint8 i=0;i<len;i++)
+		{
+			dbo_putchar(pkt[i]);
+		}
+	}*/
 
 	// If uart_read() got some data and the sio->rxque is empty, then scan 
 	// the frame flag bytes in the cache and perform frame spliting. If it founds an 
-	// entire frame, then move this frame into sio->rxbuf
+	// entire frame, then move this frame into sio->rxque
 	//
-	if ((count > 0) && (iobuf_empty(sio->rxbuf)) )
+	if (!iobuf_empty(sio->rxbuf) && (iobuf_empty(sio->rxque)))
 	{
-		//scan packet start and stop characters;
-		count = tspl_read( sio->spliter, tempbuf, count, 
-			tempbuf, SIO_RXBUFFER_CAPACITY );
+		// scan the data stream in "sio->rxbuf" for packet according to start and stop characters.
+		// if found entire packet, then move it into "sio->rxque".
+	
+		count = tspl_rxhandle( sio->spliter, sio->rxbuf, tmp_iobuf );
+		text_decode(tmp_iobuf, sio->rxque);
+
 		if (count > 0)
 		{
-			count = text_decode( tempbuf, count, iobuf_ptr(sio->rxbuf), 
-				iobuf_size(sio->rxbuf) );
-			iobuf_setlength( sio->rxbuf, count );
+			iobuf_popfront( sio->rxbuf, count );
 		}
 	}
 
 	// if the sio->rxque has an entire frame
 	//
-	if (!iobuf_empty(sio->rxbuf))
+	if (!iobuf_empty(sio->rxque))
 	{
-		iobuf_copyto( sio->rxbuf, iobuf );
-		iobuf_clear( sio->rxbuf );
-		iobuf_setlength( iobuf, count );
+		iobuf_copyto( sio->rxque, iobuf );
+		iobuf_clear( sio->rxque );
 		return iobuf_length( iobuf );
 	}
 	else
 		return 0;
-
 }
 
 
 /* Write a packet into TiSioComm. The packet will be sent out through UART interface */
 uint8 sio_write( TiSioComm * sio, TiIoBuf * iobuf )
 {
-	/*uint16 count=0;
+	uint16 count=0, result=0;
+
+	assert( !iobuf_empty(iobuf) );
 
 	if (iobuf_empty(sio->txbuf))
 	{
-		iobuf_pushbyte( sio->txbuf, SIO_START );
-		count = text_encode( iobuf_ptr(iobuf), iobuf_length(iobuf), iobuf_endptr(sio->txbuf), 
-			iobuf_available(sio->txbuf) );
-		iobuf_setlength( sio->txbuf, ++count );
-		iobuf_pushbyte( sio->txbuf, SIO_END );
-		result = iobuf_length(iobuf);
+		result = text_encode( iobuf, sio->txbuf );
+		result = tspl_txhandle( sio->spliter, sio->txbuf, sio->txbuf );
 	}
-
-	if (!iobuf_empty(sio->txbuf)
-	{
-		count = uart_write( sio->uart, iobuf_ptr(sio->txbuf), iobuf_length(sio->txbuf) );
-		if (count > 0)
-		{
-			iobuf_popfront(count);
-		}
-	}
-
-	return result;
-*/
-	uint16 count = 0;
-	uint16 result = 0;
-	
-	char tempbuf[SIO_TXBUFFER_CAPACITY];
-
-	count = text_encode( iobuf_ptr(iobuf), iobuf_length(iobuf), 
-		tempbuf, SIO_RXBUFFER_CAPACITY );
-	
-	iobuf_pushbyte( sio->txbuf, SIO_START );
-
-	iobuf_pushback( sio->txbuf, tempbuf, count );
-
-	iobuf_pushbyte( sio->txbuf, SIO_END );
-
-	result = iobuf_length(iobuf);
-
 
 	if (!iobuf_empty(sio->txbuf))
 	{
@@ -176,31 +162,8 @@ uint8 sio_write( TiSioComm * sio, TiIoBuf * iobuf )
 			iobuf_popfront(sio->txbuf, count);
 		}
 	}
-
-	return result;
-
-/*	if (sio->txbuf has enough free spaces)
-	{
-		put an SIO_START byte into sio->txbuf;
-		put the data inside iobuf into sio->txbuf;
-		put an SIO_STOP byte into sio->txbuf;
-	}
-
-	if (sio->txbuf has data)
-	{
-		try send the data inside txbuf;
-		count = uart_write( sio->uart, sio->txbuf, sio->txlen );
-		if (count > 0)
-		{
-			delete the first count bytes inside txbuf because they have been sent.
-			and keep the left bytes still in the txbuf
-		}
-	}
-	*/
-
-	//return count;
 	
-
+	return result;
 }
 /* Evolve the TiSioComm object */
 void sio_evolve( TiSioComm * sio, TiEvent * e )

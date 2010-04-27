@@ -24,8 +24,8 @@
  *
  ******************************************************************************/
 
-#ifndef _CONFIGALL_H_4651_
-#define _CONFIGALL_H_4651_
+#ifndef _SVC_CONFIGALL_H_4651_
+#define _SVC_CONFIGALL_H_4651_
 
 /* @author zhangwei on 2006-07-20
  * configall.h

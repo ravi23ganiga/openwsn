@@ -1,0 +1,3 @@
+this contains an implementation of ALOHA protocol
+
+ALOHAnet, http://en.wikipedia.org/wiki/Aloha_protocol#The_ALOHA_protocol

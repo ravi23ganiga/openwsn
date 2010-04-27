@@ -48,9 +48,11 @@
 typedef struct{
   char txmem[ IOBUF_HOPESIZE(0x7F) ];
   char rxmem[ IOBUF_HOPESIZE(0x7F) ];
+  char quemem[ IOBUF_HOPESIZE(0x7F) ];
 
   TiIoBuf * txbuf;
   TiIoBuf * rxbuf;
+  TiIoBuf * rxque;
 
   TiUartAdapter * uart;
   TiTextSpliter * spliter;

@@ -1,0 +1,4 @@
+/* libwsn */
+
+int main(void)
+{}

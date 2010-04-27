@@ -1,5 +1,31 @@
 #ifndef _HAL_FOUNDATION_H_3721_
 #define _HAL_FOUNDATION_H_3721_
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
+
 /******************************************************************************
  * @author zhangwei on 20060906
  * foundation.h
@@ -167,7 +193,7 @@ defined in hal_timer
 //--------------------------------------------------------------------
 // obsolete functions
 // will be eliminated in the future
-
+/*
 typedef int (*_compar_fn_t)(const void *, const void *);
 
 enum  {
@@ -181,48 +207,12 @@ enum  {
   NUM_TIMERS = 2
 };
 
-/*
-enum  {
-  LedsC_RED_BIT = 1, 
-  LedsC_GREEN_BIT = 2, 
-  LedsC_YELLOW_BIT = 4
-};
-*/
 enum  {
   Timer0_maxTimerInterval = 230
 };
- 
- /*
-typedef struct _demo_addressfield
-{
-  uint16_t destination_pan;
-  uint16_t destination_address;
-  uint16_t source_pan;
-  uint16_t source_address;
-} demo_addressfield;
-
-typedef struct _demo_datapacket
-{
-  uint8_t length;
-  uint16_t fcf;
-  uint8_t dsn;
-  demo_addressfield address;
-  uint16_t  payload;
- } demo_datapacket;
-
- */
-
-// uint8_t des_address;
-
 
 #define MAX_RFD_DEVICE     5
-
-//typedef unsigned char BYTE;
-//typedef unsigned char UINT8;
-//typedef unsigned char MAC_ENUM;
-//typedef unsigned short int WORD;
-//typedef unsigned long DWORD;
-
+*/
 typedef union _BYTE_VAL
 {
     struct
@@ -277,12 +267,6 @@ typedef union _DWORD_VAL
 #define UPPER_LSB(a)    ((a).v[2])
 #define UPPER_MSB(a)    ((a).v[3])
 
-/*
-typedef struct _QWORD
-  {
-     BYTE v[8];
-}QWORD;
-*/
 
 #ifdef __cplusplus
 }

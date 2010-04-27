@@ -23,13 +23,13 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-#include "../common/hal/hal_configall.h"
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_target.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_debugio.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+
+
+
+
 
 /* @todo
  * hello.c should use TiUartAdapter instead of "dbo_"

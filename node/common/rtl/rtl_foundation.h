@@ -1,3 +1,5 @@
+#ifndef _RTL_FOUNDATION_H_7689_
+#define _RTL_FOUNDATION_H_7689_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -23,9 +25,6 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-
-#ifndef _RTL_FOUNDATION_H_7689_
-#define _RTL_FOUNDATION_H_7689_
 
 /*****************************************************************************
  * @name rtl_foundation.h

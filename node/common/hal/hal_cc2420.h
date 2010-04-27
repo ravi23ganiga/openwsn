@@ -45,6 +45,8 @@
  * @modified by zhangwei on 20090927
  *	- revision. divide all the interface functions into serveral group according 
  *    to their functions.
+ *	@modified by yanshixing on 20100409
+ *	¡¡- and #define SUCCESS 0
  *
  ******************************************************************************/
 
@@ -72,6 +74,7 @@
 //#undef CONFIG_DEBUG
 #endif
 
+#define SUCCESS 0
 #define CC2420_DEF_PANID                0x0001
 #define CC2420_DEF_LOCAL_ADDRESS        0x0001   
 #define CC2420_DEF_REMOTE_ADDRESS       0x0002

@@ -32,7 +32,7 @@
 
 #include "hal_configall.h"
 #include "hal_foundation.h"
-#include "hal_targetboard.h"
+#include "hal_targetinit.h"
 //#include "hpl_atmega128.c" 
 
 void target_init( void )

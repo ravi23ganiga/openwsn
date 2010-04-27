@@ -35,15 +35,15 @@
  *  - revision. 
  ******************************************************************************/ 
 
-#include "../common/svc/svc_configall.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_timer.h"
-#include "../common/hal/hal_debugio.h"
-#include "../common/hal/hal_uart.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/svc/svc_foundation.h"
-#include "../common/svc/svc_timer.h"
+#include "../../common/svc/svc_configall.h"
+#include "../../common/hal/hal_cpu.h"
+#include "../../common/hal/hal_timer.h"
+#include "../../common/hal/hal_debugio.h"
+#include "../../common/hal/hal_uart.h"
+#include "../../common/hal/hal_led.h"
+#include "../../common/hal/hal_assert.h"
+#include "../../common/svc/svc_foundation.h"
+#include "../../common/svc/svc_timer.h"
 
 #define VTM_RESOLUTION 7
 

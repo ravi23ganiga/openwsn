@@ -23,10 +23,10 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-#include "../common/hal/hal_timer.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_timer.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
 
 static TiTimerAdapter g_timer;
 static volatile uint8 g_count = 0;

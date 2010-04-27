@@ -1,3 +1,5 @@
+#ifndef _HAL_FOUNDATION_H_3721_
+#define _HAL_FOUNDATION_H_3721_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -24,8 +26,6 @@
  *
  ******************************************************************************/
 
-#ifndef _HAL_FOUNDATION_H_3721_
-#define _HAL_FOUNDATION_H_3721_
 /******************************************************************************
  * @author zhangwei on 20060906
  * foundation.h
@@ -193,7 +193,7 @@ defined in hal_timer
 //--------------------------------------------------------------------
 // obsolete functions
 // will be eliminated in the future
-
+/*
 typedef int (*_compar_fn_t)(const void *, const void *);
 
 enum  {
@@ -212,7 +212,7 @@ enum  {
 };
 
 #define MAX_RFD_DEVICE     5
-
+*/
 typedef union _BYTE_VAL
 {
     struct

@@ -1,3 +1,5 @@
+#ifndef _HAL_CONFIGALL_H_4237_
+#define _HAL_CONFIGALL_H_4237_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -23,9 +25,6 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-
-#ifndef _HAL_CONFIGALL_H_4237_
-#define _HAL_CONFIGALL_H_4237_
 
 /******************************************************************************
  * @author zhangwei on 2006-07-20

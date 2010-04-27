@@ -1,8 +1,34 @@
-#ifndef _CC2420_BASE_H_7887_
-#define _CC2420_BASE_H_7887_
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
+
+#ifndef _CC2420_INC_H_7887_
+#define _CC2420_INC_H_7887_
 
 /*******************************************************************************
- * hal_cc2420base
+ * hal_cc2420inc
  * This module contains the most fundamental definitions for the cc2420 module. 
  * The motivation of this module is to organize those platform-dependent source
  * code into one file. So if you want to port the cc2420 module to a new hardware
@@ -19,15 +45,25 @@
  * porting to other platforms are kept. 
  ******************************************************************************/
 
-// todo: hal_cc2420中最基础的底层操作函数特别是spi操作和几根pin的读写将转移到该模块中，如果移植，则只要移植该模块即可
+/* Q: Why introduce hal_cc2420inc.h into the system?
+ * R: This file is expected to includes all hardware related functions including: 
+ *   - SPI interface manipulations
+ *   - Pin manipulations
+ * If you want to port the cc2420 module to a new MCU chip, then you only need to
+ * port this file.
+ */
 
 #include "hal_configall.h"
 #include "hal_foundation.h"
 #include "hal_target.h"
 #include "hal_cc2420const.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 /*******************************************************************************
- * cc2420 PIN manipulations
+ * cc2420 PIN initialization and manipulations
  * SPI Pin(MISO, MOSI, SCK), CS, RSTN, VERN, FIFOP, FIFO, CCA, SFD
  ******************************************************************************/
 
@@ -53,14 +89,8 @@
 //#define CC_READ_FIFOP_PIN()         HAL_READ_CC_FIFOP_PIN()
 #define CC_READ_FIFO_PIN()          HAL_READ_CC_FIFO_PIN()
 
+// todo: the following macro should return 0 or 1 instead of true or false
 #define CC_READ_FIFOP_PIN()         (PINE&(1<<6))? (true):(false)
-
-
-
-/*******************************************************************************
- * cc2420 pin initialization
- ******************************************************************************/
-
 
 
 /*******************************************************************************
@@ -105,5 +135,7 @@ inline uint8 _cc2420_spi_get()
 	while (!(SPSR & 0x80)) {};
 	return SPDR;
 }
-
+#ifdef __cplusplus
+}
+#endif
 #endif

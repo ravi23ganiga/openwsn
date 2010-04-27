@@ -88,8 +88,8 @@ static TiTextSpliter		m_spliter;
 //static TiLedTune          m_ledtune;
 static char                 m_txbuf[ IOBUF_HOPESIZE(0x7F) ];
 static char                 m_rxbuf[ IOBUF_HOPESIZE(0x7F) ];
-static char                 m_txque[ LIGHTQUEUE_HOPESIZE(sizeof(TiIoBuf), 3) ];
-static char                 m_rxque[ LIGHTQUEUE_HOPESIZE(sizeof(TiIoBuf), 3) ];
+static char                 m_txque[ LIGHTQUEUE_HOPESIZE(sizeof(m_txbuf), 3) ];
+static char                 m_rxque[ LIGHTQUEUE_HOPESIZE(sizeof(m_rxbuf), 3) ];
 
 /* output the TiIoBuf content throught UART by default */
 int8 _interpret( char * cmd, uint8 len );
@@ -184,7 +184,7 @@ void _gatwsink()
 			if( count > 0 )
 			{
 				pkt = (char *)iobuf_ptr( txbuf );
-				_output_iobuf( txbuf, uart );
+				//_output_iobuf( txbuf, uart );
 
 				// packet format
 				// Packet := [Length 2B] [Packet Control 2B] [Destination Node Identifier 8B]
@@ -213,8 +213,10 @@ void _gatwsink()
 		if (!lwque_empty(txque))
 		{
 			// get the first packet in the queue
-			txbuf = lwque_front(txque);
-			pkt = iobuf_ptr( txbuf );
+			pkt = (char *)(lwque_front(txque));
+			txbuf = iobuf_parse( txbuf, pkt );
+
+
 			_output_iobuf( txbuf, uart );
 
 			pkt[21] = 0x01;              // request type
@@ -225,7 +227,6 @@ void _gatwsink()
 										// set source address, 
 			//request[4] = (char)(CONFIG_NODE_ADDRESS & 0xFF);   
 										// namely local address
-			//iobuf_setlength( txbuf, 25 );
 
 			len = one2many_broadcast( o2m, txbuf, 0x00 );
 			iobuf_clear( txbuf );

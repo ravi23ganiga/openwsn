@@ -1,3 +1,5 @@
+#ifndef _RTL_TEXTSPLITER_H_2857_
+#define _RTL_TEXTSPLITER_H_2857_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -23,8 +25,19 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-#ifndef _RTL_IOBUF_H_2857_
-#define _RTL_IOBUF_H_2857_
+
+
+/* attention
+ * This module reconized the following macros:
+ *
+ * CONFIG_DYNA_MEMORY
+ * If this macro defines, then iobuf_create() and iobuf_free() will be enabled.
+ */
+
+#include "rtl_configall.h"
+#include <string.h>
+#include "rtl_foundation.h"
+#include "rtl_iobuf.h"
 
 /* attention
  * - avoid the very long packet lead to deadlock in this object. The reason is:
@@ -35,28 +48,56 @@
 
 //模块名称：rtl_textspliter(ANSI C, no depends)
 
-#define CONFIG_SPLIT_BUFFER_SIZE 500
+#undef  TSPL_VERSION10
+#undef  TSPL_VERSION20
+#define TSPL_VERSION30
+
+#define CONFIG_TSPL_PACKET_SIZE 255
+#define TSPL_HOPESIZE(size) (sizeof(TiTextSpliter)+size)
+#define TSPL_RXBUF_SIZE (CONFIG_TSPL_PACKET_SIZE*2 + 4)
 
 #define PAC_START_FLAG 0x01
-#define PAC_END_FLAG 0x99
+#define PAC_END_FLAG 0x02
 
 #define SPLITER_STATE_WAITFOR_START 0x01
 #define SPLITER_STATE_WAITFOR_END 0x02
+
+#define SPLITER_STATE_1 0x01
+#define SPLITER_STATE_2 0x02
+#define SPLITER_STATE_3 0x03
+#define SPLITER_STATE_4 0x04
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifdef TSPL_VERSION20
 typedef struct{
-	char  buf[CONFIG_SPLIT_BUFFER_SIZE];
+	unsigned char buf[TSPL_RXBUF_SIZE];
 	uint8 state;
-	uint8 tmphead;
-	uint8 tmprear;
+	uint16 tmphead;
+	uint16 tmprear;
+	uint16 count;
 }TiTextSpliter;
+#endif
+
+#ifdef TSPL_VERSION30
+typedef struct{
+	TiIoBuf * buf;
+	uint8 state;
+	uint16 exp_len;
+}TiTextSpliter;
+#endif
+
+#ifdef CONFIG_DYNA_MEMORY
+TiTextSpliter * tspl_create( uintx pktsize );
+void tspl_free( TiTextSpliter * split );
+#endif
 
 TiTextSpliter * tspl_construct( void * mem, uint16 size );
-TiTextSpliter * tspl_destroy( TiTextSpliter * split );
+void tspl_destroy( TiTextSpliter * split );
 
+void tspl_clear( TiTextSpliter * split );
 
 // RX stream spliting.
 // server（socket server or uart server）只要收到数据，
@@ -67,13 +108,32 @@ TiTextSpliter * tspl_destroy( TiTextSpliter * split );
 // output:	完整的packet, 已经剔出Packet的START和END字符
 // size: 	输出缓冲区大小，output buffer必须大到可以放下最长的packet
 // return:	0 when not found a packet; >0 data length inside output buffer
-uint16 tspl_read( TiTextSpliter * split, char * input, uint8 len, char * output, uint16 size );
+#ifdef TSPL_VERSION10
+uint16 tspl_rxhandle( TiTextSpliter * split, char * input, uint8 len, char * output, uint16 size );
+#endif
 
+#ifdef TSPL_VERSION20
+uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output );
+#endif
+
+#ifdef TSPL_VERSION30
+uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output );
+#endif
 // TX stream assemble
 // Parameter-
 // input: 传入的packet，应是一个完整的packet
 // output: 加装了START/END标记字符之后的packet
-uint16 tspl_write( TiTextSpliter * split, char * input, uint16 len, char * output, uint16 size );
+#ifdef TSPL_VERSION10
+uint16 tspl_txhandle( TiTextSpliter * split, char * input, uint16 len, char * output, uint16 size );
+#endif
+
+#ifdef TSPL_VERSION20
+uint16 tspl_txhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output );
+#endif
+
+#ifdef TSPL_VERSION30
+uint16 tspl_txhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output );
+#endif
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,9 @@
  * You can regard the adapter as the PHY layer in layered communication architecture.
  * However. cc2420 provides more functions than a simple PHY.
  * 
+ * Reference
+ * - cc2420's startup and initialization, http://blog.sina.com.cn/s/blog_5e194f5e0100heex.html;
+ * 
  * @state
  *	tested
  * 
