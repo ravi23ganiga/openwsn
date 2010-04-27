@@ -1,7 +1,29 @@
+2010-04-06
+=============================================================
+- Re-organize the whole source code tree. Plan to support multiple developing environment in the future. 
+- all the shared source files are placed in folder "common"
+- the example file folders are named by the following rule: 
+	<target board name>-<compiler name>
+such as
+	gainz-winavr
+
+if the compiler name are duplication, then use:
+	<target board name>-<developing ide>
+
+if there're multiple choices
+	<target board name>/<compiler name or developing ide name>
+
+
+2010-11-31
+=============================================================
+openwsn-1.0.0 released 
+this version can run directly on GAINZ platform
+
+
 2009-11-28
 =============================================================
 
-openwsn-1.0rc for gainz released
+openwsn-1.0.0rc for gainz released
 this's a release candidate version. 
 the formal version will be released after serveral more month testing.
 

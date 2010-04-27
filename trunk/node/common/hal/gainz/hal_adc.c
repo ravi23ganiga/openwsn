@@ -1,32 +1,28 @@
-/*****************************************************************************
-* This file is part of OpenWSN, the Open Wireless Sensor Network System.
-*
-* Copyright (C) 2005,2006,2007 zhangwei (openwsn@gmail.com)
-* 
-* OpenWSN is free software; you can redistribute it and/or modify it under
-* the terms of the GNU General Public License as published by the Free
-* Software Foundation; either version 2 or (at your option) any later version.
-* 
-* OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-* for more details.
-* 
-* You should have received a copy of the GNU General Public License along
-* with eCos; if not, write to the Free Software Foundation, Inc.,
-* 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-* 
-* As a special exception, if other files instantiate templates or use macros
-* or inline functions from this file, or you compile this file and link it
-* with other works to produce a work based on this file, this file does not
-* by itself cause the resulting work to be covered by the GNU General Public
-* License. However the source code for this file must still be made available
-* in accordance with section (3) of the GNU General Public License.
-* 
-* This exception does not invalidate any other reasons why a work based on
-* this file might be covered by the GNU General Public License.
-* 
-****************************************************************************/ 
+/*******************************************************************************
+ * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
+ *
+ * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ *
+ * OpenWSN is a free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 or (at your option) any later version.
+ *
+ * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * For non-opensource or commercial applications, please choose commercial license.
+ * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
+ *
+ * For other questions, you can contact the author through email openwsn#gmail.com
+ * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
+ * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
+ *
+ ******************************************************************************/
 #include "hal_foundation.h"
 #include <stdlib.h>
 //#include <power.h>
@@ -90,6 +86,91 @@ TiAdcAdapter * adc_open( TiAdcAdapter * adc, uint8 id, TiFunEventHandler listene
 		HAL_MAKE_INT1_OUTPUT();
 		HAL_SET_INT1_PIN();
 		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x01;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 2:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x02;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 3:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x03;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 4:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x04;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 5:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x05;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 6:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x06;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
+		break;
+
+	case 7:
+		HAL_MAKE_INT1_OUTPUT();
+		HAL_SET_INT1_PIN();
+		//power_adcb_enable();
+		// clear the ADIE and ADSC bit in ADCSRA
+		ADCSRA &= 0x86;
+
+		// set referene voltage. use default settings. 
+		ADMUX = 0x07;
+
+		hal_attachhandler( INTNUM_ADC_COMPLETE, _adc_interrupt_handler, adc );
 		break;
 	}
 
@@ -121,6 +202,8 @@ void adc_start( TiAdcAdapter * adc )
 	{
 	case 0:
 		// set ADMUX
+		// Notice: this is to set the channel to be 1 not 0, so this logic
+		// might lead to some problem --Yan
 		ADMUX = 0x01;
 
 		// enable A/D. start it
@@ -183,10 +266,10 @@ uint16 adc_read(TiAdcAdapter * adc, char * buf, uint8 size, uint8 opt )
 
 		// todo: 请在这里while中查询ADC状态寄存器以判断ADC是否结束
         // todo the old source code here has the while loop
-		// while (g_adc_interrupt_flag = 0)
-		{
-			(ADCSRA & 0x10);
-		}
+		//while (g_adc_interrupt_flag = 0)
+		
+		//while(!(ADCSRA & 0x10));
+		
         hal_delay( 10 );
 
 		buf[0] = ADCL;

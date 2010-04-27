@@ -1,3 +1,5 @@
+#ifndef _RTL_CONFIGALL_H_
+#define _RTL_CONFIGALL_H_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -23,10 +25,6 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-
-
-#ifndef _RTL_CONFIGALL_H_
-#define _RTL_CONFIGALL_H_
 
 /*****************************************************************************
  * @name rtl_configall.h
