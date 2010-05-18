@@ -6,7 +6,7 @@
 PROJECT = hello
 MCU = atmega128
 TARGET = hello.elf
-CC = avr-gcc.exe
+CC = avr-gcc
 
 ## Options common to compile, link and assembly rules
 COMMON = -mmcu=$(MCU)
@@ -27,12 +27,15 @@ LDFLAGS +=  -Wl,-Map=hello.map
 
 
 ## Intel Hex file production flags
-HEX_FLASH_FLAGS = -R .eeprom
+HEX_FLASH_FLAGS = -R .eeprom -R .fuse -R .lock -R .signature
 
 HEX_EEPROM_FLAGS = -j .eeprom
 HEX_EEPROM_FLAGS += --set-section-flags=.eeprom="alloc,load"
 HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
+
+## Library Directories
+LIBDIRS = -L"D:\dev\openwsn\source\node\gainz-winavr\lib" 
 
 ## Libraries
 LIBS = -lprintf_min -lwsn 

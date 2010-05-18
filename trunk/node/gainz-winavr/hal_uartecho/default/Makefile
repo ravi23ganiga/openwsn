@@ -34,8 +34,11 @@ HEX_EEPROM_FLAGS += --set-section-flags=.eeprom="alloc,load"
 HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
+## Libraries
+LIBS = -lwsn 
+
 ## Objects that must be built in order to link
-OBJECTS = uartecho.o hal_assert.o hal_cpu.o hal_foundation.o hal_interrupt.o hal_led.o hal_target.o hal_uart.o hpl_atmega128.o hal_debugio.o 
+OBJECTS = uartecho.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
@@ -43,33 +46,6 @@ LINKONLYOBJECTS =
 ## Build
 all: $(TARGET) uartecho.hex uartecho.eep uartecho.lss## Compile
 uartecho.o: ../uartecho.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-hal_assert.o: ../../../common/hal/hal_assert.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-hal_cpu.o: ../../../common/hal/hal_cpu.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-hal_foundation.o: ../../../common/hal/hal_foundation.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-hal_interrupt.o: ../../../common/hal/hal_interrupt.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-hal_led.o: ../../../common/hal/hal_led.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-hal_target.o: ../../../common/hal/hal_target.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-hal_uart.o: ../../../common/hal/hal_uart.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-hpl_atmega128.o: ../../../common/hal/hpl_atmega128.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-hal_debugio.o: ../../../common/hal/hal_debugio.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link

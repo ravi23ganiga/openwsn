@@ -6,6 +6,11 @@ By using library, our testing projects management can be simplified.
 The file extension of a library in AVR is .a.
 
 
+status
+================================================================
+compiled ok with AVR Studio and Portable WinAVR 2009.03.13
+
+
 Q: How to generate libwsn.a?
 ================================================================
 We use the project "libwsn" in path "dev\openwsn\source\node\gainz-winavr\libwsn\" to generate the library.

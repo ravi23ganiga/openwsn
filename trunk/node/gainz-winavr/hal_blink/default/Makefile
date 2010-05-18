@@ -35,7 +35,7 @@ HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
 ## Objects that must be built in order to link
-OBJECTS = blink_avrstudio4.o ledtest.o hal_cpu.o hal_foundation.o hal_interrupt.o hal_led.o hal_target.o hpl_atmega128.o hal_assert.o hal_debugio.o 
+OBJECTS = blink_avrstudio4.o ledtest.o hal_assert.o hal_cpu.o hal_debugio.o hal_foundation.o hal_interrupt.o hal_led.o hpl_atmega128.o hal_targetinit.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
@@ -48,28 +48,28 @@ blink_avrstudio4.o: ../blink_avrstudio4.c
 ledtest.o: ../ledtest.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_cpu.o: ../../common/hal/hal_cpu.c
+hal_assert.o: ../../../common/openwsn/hal/gainz/hal_assert.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_foundation.o: ../../common/hal/hal_foundation.c
+hal_cpu.o: ../../../common/openwsn/hal/gainz/hal_cpu.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_interrupt.o: ../../common/hal/hal_interrupt.c
+hal_debugio.o: ../../../common/openwsn/hal/gainz/hal_debugio.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_led.o: ../../common/hal/hal_led.c
+hal_foundation.o: ../../../common/openwsn/hal/gainz/hal_foundation.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_target.o: ../../common/hal/hal_target.c
+hal_interrupt.o: ../../../common/openwsn/hal/gainz/hal_interrupt.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hpl_atmega128.o: ../../common/hal/hpl_atmega128.c
+hal_led.o: ../../../common/openwsn/hal/gainz/hal_led.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_assert.o: ../../common/hal/hal_assert.c
+hpl_atmega128.o: ../../../common/openwsn/hal/gainz/hpl_atmega128.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_debugio.o: ../../common/hal/hal_debugio.c
+hal_targetinit.o: ../../../common/openwsn/hal/gainz/hal_targetinit.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link

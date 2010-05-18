@@ -27,14 +27,14 @@
 #define UARTECHO_INTERRUPT
 #undef  UARTECHO_INTERRUPT
 
-#include "../../common/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_configall.h"
 #include <avr/wdt.h>
 #include <string.h>
-#include "../../common/hal/hal_foundation.h"
-#include "../../common/hal/hal_uart.h"
-#include "../../common/hal/hal_led.h"
-#include "../../common/hal/hal_cpu.h"
-#include "../../common/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_target.h"
 
 #define BUF_SIZE 128
 
