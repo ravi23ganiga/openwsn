@@ -1,0 +1,1 @@
+should add a example to show the function of hal_assert()

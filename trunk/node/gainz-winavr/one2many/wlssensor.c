@@ -33,24 +33,25 @@
  *	- first created
  ******************************************************************************/
 
-#include "../common/hal/hal_configall.h"  
-#include "../common/svc/svc_configall.h"  
-#include "../common/rtl/rtl_foundation.h"
-#include "../common/rtl/rtl_iobuf.h"
-#include "../common/rtl/rtl_openframe.h"
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_timer.h"
-#include "../common/hal/hal_debugio.h"
-#include "../common/hal/hal_uart.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/svc/svc_foundation.h"
-#include "../common/svc/svc_aloha.h"
-#include "../common/svc/svc_timer.h"
-#include "svc_one2many.h"
-#include "../common/hal/hal_adc.h"
-#include "../common/hal/hal_luminance.h"
+#include "../../common/openwsn/hal/hal_configall.h"  
+#include "../../common/openwsn/svc/svc_configall.h"  
+#include "../../common/openwsn/rtl/rtl_foundation.h"
+#include "../../common/openwsn/rtl/rtl_iobuf.h"
+#include "../../common/openwsn/rtl/rtl_openframe.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_timer.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_adc.h"
+#include "../../common/openwsn/hal/hal_luminance.h"
+#include "../../common/openwsn/svc/svc_foundation.h"
+#include "../../common/openwsn/svc/svc_aloha.h"
+#include "../../common/openwsn/svc/svc_timer.h"
+#include "../../common/openwsn/svc/svc_one2many.h"
+
 
 
 #define CONFIG_NODE_ADDRESS 0x02
