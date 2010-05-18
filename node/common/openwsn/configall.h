@@ -118,6 +118,13 @@
 #undef  CONFIG_TARGET_GAINZ
 #define CONFIG_TARGET_GAINZ
 
+#define CONFIG_TARGET_CC2520DK
+#undef  CONFIG_TARGET_CC2520DK
+
+#define CONFIG_TARGET_CC2430DK
+#undef  CONFIG_TARGET_CC2430DK
+
+
 /* Compiler used to Compile the Source code
  * CONFIG_COMPILER_GNU
  * should be defined when using GNU c/c++ compiler. this includes:
