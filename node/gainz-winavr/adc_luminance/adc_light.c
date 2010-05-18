@@ -33,18 +33,18 @@
  *
  ******************************************************************************/
 
-#include "../common/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_configall.h"
 #include <stdlib.h>
 #include <string.h>
 #include <avr/wdt.h>
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_light.h"
-#include "../common/hal/hal_uart.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_interrupt.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/hal/hal_target.h"
-#include "../common/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_interrupt.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_luminance.h"
 
 TiAdcAdapter  g_adc;
 TiLightSensor g_light;
