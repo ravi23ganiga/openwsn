@@ -24,6 +24,9 @@
  *
  ******************************************************************************/
 
+#ifndef _SVC_STANDALOHA_H_4829_
+#define _SVC_STANDALOHA_H_4829_
+
 /****************************************************************************** 
  * svc_aloha.c
  * ALOHA medium access control (MAC) protocol 
@@ -36,11 +39,15 @@
  * 
  * @status
  *	- in testing
+ * 
+ * @modified by zhangwei on 2010.05.10
+ *  - the original aloha module was divided into two branches: simple aloha and 
+ *    standard aloha. the simple aloha doesn't use timer so it's easy for demonstration. 
+ *    and the standard aloha use timer to control the delay time and waiting time,
+ *    thus it's more reasonable and practical. 
+ *  - simple aloha and standard aloha are designed to share the same interface.
  *
  *****************************************************************************/  
-
-#ifndef _SVC_ALOHA_H_4829_
-#define _SVC_ALOHA_H_4829_
 
 #define CONFIG_ALOHA_BASED_ON_CC2420
 
@@ -140,4 +147,5 @@ inline void aloha_ischannelclear( TiAloha * mac )
 }
 #endif
 
-#endif
+#endif /* _SVC_STANDALOHA_H_4829_ */
+
