@@ -24,61 +24,21 @@
  *
  ******************************************************************************/
 
-#ifndef _RTL_BITS_H_4252_
-#define _RTL_BITS_H_4252_
+#ifndef _RTL_INT2STR_H_4236_
+#define _RTL_INT2STR_H_4236_
 
 /*****************************************************************************
- * @name rtl_bits.h
- * @author zhangwei on 20070331
+ * @name int2str
+ * @author zhangwei on 20070410
  * 
- * bit manipulation macros in runtime library(RTL)
+ * conversion between integer value and string value
  * 
  * @history
  * @modified by xxx on 200704
- * @modified by zhangwei on 200905
- *	- revision
  * 
  ****************************************************************************/ 
-
-/* reference
- * - BV operation, http://linux.die.net/man/3/_bv
- */
-
-#define BM(n) (1 << (n))
-#define BF(x,b,s) (((x) & (b)) >> (s))
-
-#ifndef _BV
-#define _BV(index) (1 << (index)) 
-#endif
-
-//#define bit_is_set(sfr, bit) (_SFR_BYTE(sfr) & _BV(bit))
-//#define bit_is_clear(sfr, bit) (!(_SFR_BYTE(sfr) & _BV(bit)))
-//#define loop_until_bit_is_set(sfr, bit) do { } while (bit_is_clear(sfr, bit))
-//#define loop_until_bit_is_clear(sfr, bit) do { } while (bit_is_set(sfr, bit)) 
-
-#define bit_set(token,index) ((token) |= _BV(index))
-#define bit_get(token,index) ((token) & _BV(index))
-#define bit_clr(token,index) ((token) &= (~_BV(index))
-
-#ifndef sbi
-  #define sbi(port,index) ((port) |= _BV(index))
-#endif
-
-#ifndef cbi
-  #define cbi(port,index) ((port) &= (~_BV(index))
-#endif
-
-
-// #define bit_range
-
-/* using macro, please
-bit_rshift
-bit_lshift
-bit_rrotate
-bit_lrotate
-bit_bic
-bit_rmw
-*/
-
-#endif
-
+ 
+int str2int(char * str);
+void int2str(int n, char str[]);
+ 
+#endif 

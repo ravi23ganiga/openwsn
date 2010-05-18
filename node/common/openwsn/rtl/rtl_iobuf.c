@@ -7,8 +7,15 @@
  */
 #include "rtl_configall.h"
 #include "rtl_foundation.h"
+
+#ifdef CONFIG_DEBUG
+#include <stdio.h>
+#include <assert.h>
+#endif
+
 #include "rtl_assert.h"
 #include "rtl_iobuf.h"
+
 
 #ifdef CONFIG_DYNA_MEMORY
 TiIoBuf * iobuf_create( uintx size )
@@ -166,7 +173,7 @@ inline void iobuf_popfront( TiIoBuf * iobuf, uintx count )
 
 inline bool iobuf_set( TiIoBuf * iobuf, uintx idx, char c )
 {
-	assert( idx < iobuf_size(iobuf) );
+	// assert( idx < iobuf_size(iobuf) );
 	if (idx < iobuf_size(iobuf))
 	{
 		iobuf_ptr(iobuf)[idx] = c;
@@ -178,7 +185,7 @@ inline bool iobuf_set( TiIoBuf * iobuf, uintx idx, char c )
 
 inline bool iobuf_get( TiIoBuf * iobuf, uintx idx, char * c )
 {
-	assert( idx < iobuf_length(iobuf) );
+	// assert( idx < iobuf_length(iobuf) );
 	if (idx < iobuf_length(iobuf))
 	{
 		*c = iobuf_ptr(iobuf)[idx];
@@ -188,7 +195,7 @@ inline bool iobuf_get( TiIoBuf * iobuf, uintx idx, char * c )
 		return false;
 }
 
-inline uintx iobuf_copyfrom( TiIoBuf * iobuf1, TiIoBuf * iobuf2 )
+uintx iobuf_copyfrom( TiIoBuf * iobuf1, TiIoBuf * iobuf2 )
 {
 	uintx count = min( iobuf_size(iobuf1), iobuf_length(iobuf2) );
 	memmove( iobuf_ptr(iobuf1), iobuf_data(iobuf2), count );
@@ -196,7 +203,7 @@ inline uintx iobuf_copyfrom( TiIoBuf * iobuf1, TiIoBuf * iobuf2 )
 	return count;
 }
 
-inline uintx iobuf_copyto( TiIoBuf * iobuf1, TiIoBuf * iobuf2 )
+uintx iobuf_copyto( TiIoBuf * iobuf1, TiIoBuf * iobuf2 )
 {
 	uintx count = min( iobuf_size(iobuf2), iobuf_length(iobuf1) );
 	memmove( iobuf_ptr(iobuf2), iobuf_data(iobuf1), count );
@@ -245,14 +252,14 @@ inline void	iobuf_setlength( TiIoBuf * buf, uintx count )
 	buf->length = count;
 }
 
-void iobuf_adjustlength( TiIoBuf * buf, int delta )
+inline void iobuf_adjustlength( TiIoBuf * buf, int delta )
 {
 	buf->length += delta;
 }
 
 #ifdef CONFIG_DEBUG
 void iobuf_dump( TiIoBuf * buf )
-{
+{/*
 	int i;
 	char * pc;
 	printf("dump iobuf: memsize=%d, size=%d, length=%d\n", buf->memsize, buf->size, buf->length );
@@ -260,10 +267,10 @@ void iobuf_dump( TiIoBuf * buf )
 	{
 		putchar('=');
 		putchar('>');
-		pc = iobuf_ptr(buf);
+		pc = (char*)iobuf_ptr(buf);
 		for (i=0; i<buf->length; i++)
 			putchar(pc[i]);
 		putchar('\n');
-	}
+	}*/
 }
 #endif
