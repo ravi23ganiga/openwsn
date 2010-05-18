@@ -23,62 +23,26 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
+/******************************************************************************
+ * rtl_stochastic
+ * This module realizes some statistic functions.
+ *
+ * @author sunqiang(TongJi University) on 20091123
+ *	- first created.
+ *****************************************************************************/ 
+#ifndef _RTL_RANDOM_H_3425_
+#define _RTL_RANDOM_H_3425_
 
-#ifndef _RTL_BITS_H_4252_
-#define _RTL_BITS_H_4252_
+#include "rtl_foundation.h"
+#include <stdlib.h>
 
-/*****************************************************************************
- * @name rtl_bits.h
- * @author zhangwei on 20070331
- * 
- * bit manipulation macros in runtime library(RTL)
- * 
- * @history
- * @modified by xxx on 200704
- * @modified by zhangwei on 200905
- *	- revision
- * 
- ****************************************************************************/ 
+/***************************************************************************** 
+ * Higher-level functions of statistic
+ *****************************************************************************/
 
-/* reference
- * - BV operation, http://linux.die.net/man/3/_bv
- */
-
-#define BM(n) (1 << (n))
-#define BF(x,b,s) (((x) & (b)) >> (s))
-
-#ifndef _BV
-#define _BV(index) (1 << (index)) 
-#endif
-
-//#define bit_is_set(sfr, bit) (_SFR_BYTE(sfr) & _BV(bit))
-//#define bit_is_clear(sfr, bit) (!(_SFR_BYTE(sfr) & _BV(bit)))
-//#define loop_until_bit_is_set(sfr, bit) do { } while (bit_is_clear(sfr, bit))
-//#define loop_until_bit_is_clear(sfr, bit) do { } while (bit_is_set(sfr, bit)) 
-
-#define bit_set(token,index) ((token) |= _BV(index))
-#define bit_get(token,index) ((token) & _BV(index))
-#define bit_clr(token,index) ((token) &= (~_BV(index))
-
-#ifndef sbi
-  #define sbi(port,index) ((port) |= _BV(index))
-#endif
-
-#ifndef cbi
-  #define cbi(port,index) ((port) &= (~_BV(index))
-#endif
-
-
-// #define bit_range
-
-/* using macro, please
-bit_rshift
-bit_lshift
-bit_rrotate
-bit_lrotate
-bit_bic
-bit_rmw
-*/
+double rand_uniform(double x1, double x2);
+double rand_normal(double avg, double sigma);
+int rand_poisson(double lamda);
+double rand_triangle(double a, double b);
 
 #endif
-

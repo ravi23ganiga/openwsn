@@ -24,61 +24,47 @@
  *
  ******************************************************************************/
 
-#ifndef _RTL_BITS_H_4252_
-#define _RTL_BITS_H_4252_
+#include "rtl_configall.h"
+#include "rtl_foundation.h"
+#include "rtl_int2str.h"
 
-/*****************************************************************************
- * @name rtl_bits.h
- * @author zhangwei on 20070331
- * 
- * bit manipulation macros in runtime library(RTL)
- * 
- * @history
- * @modified by xxx on 200704
- * @modified by zhangwei on 200905
- *	- revision
- * 
- ****************************************************************************/ 
+//#define _isnumber(ch) ((ch)>='0' && (ch)<='9')
 
-/* reference
- * - BV operation, http://linux.die.net/man/3/_bv
+//static int _strlen( char * str );
+
+int str2int(char * str)
+{
+   	int result = 0;
+   	for (int i=0; _isnumber(str[i]); i++)
+   	{
+    	result = result*10;
+       	result += str[i] - '0';
+   	}
+   	return result;
+}
+
+/* @warning
+ *	the buffer should large enough to hold the string or else unstable error occured!
  */
+void int2str(int n, char str[])
+{
+ 	int high=n/10;
+   	if (high!=0)
+       	int2str(high,str);
+   	else
+       	str[0]='\0';
+   int low=n%10;
+   int len=strlen(str);
+   str[len] = '0' + low;
+   str[len+1] = '\0';
+}
 
-#define BM(n) (1 << (n))
-#define BF(x,b,s) (((x) & (b)) >> (s))
-
-#ifndef _BV
-#define _BV(index) (1 << (index)) 
-#endif
-
-//#define bit_is_set(sfr, bit) (_SFR_BYTE(sfr) & _BV(bit))
-//#define bit_is_clear(sfr, bit) (!(_SFR_BYTE(sfr) & _BV(bit)))
-//#define loop_until_bit_is_set(sfr, bit) do { } while (bit_is_clear(sfr, bit))
-//#define loop_until_bit_is_clear(sfr, bit) do { } while (bit_is_set(sfr, bit)) 
-
-#define bit_set(token,index) ((token) |= _BV(index))
-#define bit_get(token,index) ((token) & _BV(index))
-#define bit_clr(token,index) ((token) &= (~_BV(index))
-
-#ifndef sbi
-  #define sbi(port,index) ((port) |= _BV(index))
-#endif
-
-#ifndef cbi
-  #define cbi(port,index) ((port) &= (~_BV(index))
-#endif
-
-
-// #define bit_range
-
-/* using macro, please
-bit_rshift
-bit_lshift
-bit_rrotate
-bit_lrotate
-bit_bic
-bit_rmw
-*/
-
-#endif
+int _strlen( char * str )
+{
+	for(i=1; str[i]!='\0'; i++)
+   	{
+		;
+	}
+	return i;
+}
 

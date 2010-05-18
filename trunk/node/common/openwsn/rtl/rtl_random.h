@@ -23,6 +23,9 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
+#ifndef _RTL_RANDOM_H_3425_
+#define _RTL_RANDOM_H_3425_
+
 /******************************************************************************
  * rtl_random
  * This module implements a random generator.
@@ -39,9 +42,6 @@
  *  - remove higer statistic functions to new module rtl_stochastic
  *
  *****************************************************************************/ 
-#ifndef _RTL_RANDOM_H_3425_
-#define _RTL_RANDOM_H_3425_
-
 #include "rtl_foundation.h"
 #include <stdlib.h>
 
