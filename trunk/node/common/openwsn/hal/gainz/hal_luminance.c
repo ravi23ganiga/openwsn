@@ -29,14 +29,16 @@
  * @author zhangwei on 200907xx
  * @modified by xuxizhou in 200908xx
  *	- tested ok
+ * @modified by YanShixing in 20100410
+ 	- change #include "hal_light.h" to #include "hal_luminance.h"
  *****************************************************************************/
 
-#include "hal_configall.h"
+#include "../hal_configall.h"
 #include <string.h>
-#include "hal_foundation.h"
-#include "hal_uart.h"
-#include "hal_led.h"
-#include "hal_light.h"
+#include "../hal_foundation.h"
+#include "../hal_uart.h"
+#include "../hal_led.h"
+#include "../hal_luminance.h"
 
 /* Construct a empty TiLightSensor object in the memory */
 TiLightSensor * light_construct( char * buf, uint16 size )

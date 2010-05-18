@@ -1,3 +1,5 @@
+#ifndef _HAL_TARGETINIT_H_7483_
+#define _HAL_TARGETINIT_H_7483_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -24,25 +26,28 @@
  *
  ******************************************************************************/
 
-#ifndef _HAL_TARGET_H_7483_
-#define _HAL_TARGET_H_7483_
-
 /* Hardware Platform Layer
  * including CPU/MCU specific source codes
  * 
  * Reference 
  * Hardware Abstraction Architecture, http://www.tinyos.net/tinyos-2.x/doc/html/tep2.html
  */ 
- 
+
+#ifdef CONFIG_TARGET_GAINZ
 //#include "hal_configall.h"
-#include "hpl_atmega128.h" 
-#include "hpl_gainz.h"
+#include "./gainz/hpl_atmega128.h" 
+#include "./gainz/hpl_gainz.h"
+#endif
+
+#ifdef CONFIG_TARGET_CC2520DK
+#include "./cc2520dk/hpl_msp430f2618.h" 
+#include "./cc2520dk/hpl_cc2520dk.h"
+#endif
 
 void target_init( void );
 void target_reset( void );
 
-#endif
-
+#endif /* _HAL_TARGETINIT_H_7483_ */
 
 
 

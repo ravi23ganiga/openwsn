@@ -22,6 +22,8 @@
  * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
+ * @modified by Yan Shixing
+ 		add #define FAIL 1
  ******************************************************************************/
 
 #ifndef _HPL_ATMEGA128_H_4282_
@@ -80,6 +82,9 @@ extern "C" {
 	__t;								\
  })
 #endif /* __inw */
+
+
+#define FAIL 1
 
 /* macros help to set the MCU's PIN directions, state, read and write */
 

@@ -24,16 +24,38 @@
  *
  ******************************************************************************/
 
-#include "../hal_cpu.h"
-/*
-inline cpu_atomic_t _cpu_atomic_start(void )
+#include "hal_configall.h"
+#include "hal_foundation.h"
+#include "hal_key.h"
+
+void key_init( void )
 {
-	cpu_atomic_t result = * (volatile unsigned char *)(unsigned int )& * (volatile unsigned char *)(0x3F + 0x20);
-	__asm volatile ("cli");
-	return result;
 }
-*/
 
-
-
-   
+/* @TODO 20061015
+ * you should read the hardware state to decide whether the key's status 
+ * is on or not. 
+ */
+uint8 key( uint8 idx )
+{
+	uint8 state;
+	
+	switch (idx)
+	{
+	case KEY_RESET: 
+		state = KEY_OFF;
+		break;
+		
+	case KEY_CONFIG:
+		state = KEY_OFF;
+		break;
+		
+	case KEY_TEST:
+		state = KEY_ON;
+		break;
+		
+	default:
+		state = KEY_OFF;
+	}
+	return state;
+}

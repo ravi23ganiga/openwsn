@@ -27,7 +27,7 @@
 #define _HAL_TARGET_H_7483_
 
 
-/* please uses hal_targetinit.h intead */
+/* please uses hal_targetinit.h and hal_targetboard.h intead */
 
 /* Hardware Platform Layer
  * including CPU/MCU specific source codes
@@ -37,8 +37,8 @@
  */ 
  
 //#include "hal_configall.h"
-#include "hpl_atmega128.h" 
-#include "hpl_gainz.h"
+#include "./gainz/hpl_atmega128.h" 
+#include "./gainz/hpl_gainz.h"
 
 void target_init( void );
 void target_reset( void );

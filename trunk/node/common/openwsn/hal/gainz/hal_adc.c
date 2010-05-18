@@ -23,17 +23,17 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-#include "hal_foundation.h"
+#include "../hal_foundation.h"
 #include <stdlib.h>
 //#include <power.h>
 #include <string.h>
 #include <avr/io.h>
-#include "hal_cpu.h"
-#include "hal_interrupt.h"
-#include "hal_adc.h"
-#include "hal_uart.h"
-#include "hal_led.h"
-#include "hal_debugio.h"
+#include "../hal_cpu.h"
+#include "../hal_interrupt.h"
+#include "../hal_adc.h"
+#include "../hal_uart.h"
+#include "../hal_led.h"
+#include "../hal_debugio.h"
 
 static void _adc_interrupt_handler( void * adcptr, TiEvent * e );
 

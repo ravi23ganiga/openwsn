@@ -63,13 +63,13 @@
  *   http://hi.baidu.com/tao_%CC%CE/blog/item/7441e9eee32c0bf3b3fb9545.html
  */
 
-#include "hal_configall.h" 
+#include "../hal_configall.h" 
 #include <avr/interrupt.h>
-#include "hal_foundation.h" 
-#include "hal_interrupt.h"
-#include "hal_cpu.h"
-#include "hal_led.h"
-#include "hal_assert.h"
+#include "../hal_foundation.h" 
+#include "../hal_interrupt.h"
+#include "../hal_cpu.h"
+#include "../hal_led.h"
+#include "../hal_assert.h"
 
 
 #ifdef __cplusplus

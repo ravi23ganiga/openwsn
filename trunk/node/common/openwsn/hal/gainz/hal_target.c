@@ -27,12 +27,13 @@
 #ifndef _HAL_TARGET_C_7483_
 #define _HAL_TARGET_C_7483_
 
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 /* please uses hal_targetinit.h intead */
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#include "hal_configall.h"
-#include "hal_foundation.h"
-#include "hal_target.h"
-//#include "hpl_atmega128.c" 
+#include "../hal_configall.h"
+#include "../hal_foundation.h"
+#include "../hal_target.h"
 
 void target_init( void )
 {
