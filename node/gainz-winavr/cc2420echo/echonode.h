@@ -3,9 +3,9 @@
 
 #define CONFIG_DEBUG
 
-#include "../common/hal/hal_configall.h"
-#include "../common/hal/hal_foundation.h"
-#include "../common/rtl/rtl_openframe.h"
+#include "../../common/openwsn/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/rtl/rtl_openframe.h"
 
 
 void echonode(void);
