@@ -24,11 +24,11 @@
  *
  ******************************************************************************/
 
-#include "hal_configall.h"
+#include "../hal_configall.h"
 #include <string.h>
 #include <avr/io.h> 
-#include "hal_foundation.h"
-#include "hal_debugio.h"
+#include "../hal_foundation.h"
+#include "../hal_debugio.h"
 
 #ifdef CONFIG_DEBUG
 

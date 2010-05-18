@@ -24,14 +24,14 @@
  *
  ******************************************************************************/
 
-#include "hal_configall.h"
+#include "../hal_configall.h"
 #include <string.h>
-#include "hal_foundation.h"
-#include "hal_target.h"
-#include "hal_assert.h"
-#include "hal_target.h"
-#include "hal_interrupt.h"
-#include "hal_systimer.h"
+#include "../hal_foundation.h"
+#include "../hal_target.h"
+#include "../hal_assert.h"
+#include "../hal_target.h"
+#include "../hal_interrupt.h"
+#include "../hal_systimer.h"
 
 /* Q: Actually, we can use TiTimerAdapter directly intead of TiSysTimer. Why still
  * introducing a separate TiSysTimer?

@@ -44,9 +44,9 @@
  *	- revison
  *  
  *****************************************************************************/ 
-#include "hal_configall.h"
+#include "../hal_configall.h"
 #include <string.h>
-#include "hal_foundation.h"
+#include "../hal_foundation.h"
 
 uint8 g_atomic_level = 0;
 TiFunEventHandler m_listener = NULL;

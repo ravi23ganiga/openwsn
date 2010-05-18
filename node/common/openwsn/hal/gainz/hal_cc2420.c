@@ -55,20 +55,20 @@
  *
  *****************************************************************************/
 
-#include "hal_configall.h"
+#include "../hal_configall.h"
 #include <string.h>
 #include <stdio.h>
-#include "hal_foundation.h"
-#include "hal_cpu.h"
-#include "hal_interrupt.h"
-#include "hal_assert.h"
-#include "hal_target.h"
-#include "hal_led.h"
-#include "hal_uart.h"
-#include "hal_cc2420const.h"
-#include "hal_cc2420.h"
-#include "hal_debugio.h"
-#include "hal_cc2420inc.h"
+#include "../hal_foundation.h"
+#include "../hal_cpu.h"
+#include "../hal_interrupt.h"
+#include "../hal_assert.h"
+#include "../hal_target.h"
+#include "../hal_led.h"
+#include "../hal_uart.h"
+#include "../hal_cc2420const.h"
+#include "../hal_cc2420.h"
+#include "../hal_debugio.h"
+#include "../hal_cc2420inc.h"
 
 /* @attention
  * If you want to disable all the assertions in this macro, you should undef CONFIG_DEBUG.
@@ -82,7 +82,7 @@
  * If you want to port hal_cc2420 to other platforms, you can simply revise the 
  * hal_cc2420inc.h. The other part inside hal_cc2420.h can keep unchanged.
  */
-#include "hal_cc2420inc.h"
+#include "../hal_cc2420inc.h"
 
 
 static inline int8 _cc2420_pin_init( TiCc2420Adapter * cc );
@@ -1025,6 +1025,18 @@ uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 	return ret;
 }
 
+uint8 cc2420_iobsend( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option )
+{
+    return cc2420_send( cc, iobuf_ptr(iobuf), iobuf_length(iobuf), option );
+}
+
+uint8 cc2420_iobrecv( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option )
+{
+    uint8 count = cc2420_recv( cc, iobuf_ptr(iobuf), iobuf_size(iobuf), option );
+    iobuf_setlength( iobuf, count );
+    return count;
+}
+
 void cc2420_evolve( TiCc2420Adapter * cc )
 {
 	// the following section will check flag variable and try to read data from 
@@ -1647,6 +1659,14 @@ void cc2420_default_listener( void * ccptr, TiEvent * e )
 {
 	TiCc2420Adapter * cc = (TiCc2420Adapter *)ccptr;
 	hal_notify_ex( EVENT_DATA_ARRIVAL, ccptr, cc->lisowner );
+}
+
+TiFrameTxRxInterface * cc2420_provide( TiCc2420Adapter * cc, TiFrameTxRxInterface * intf )
+{
+    memset( intf, 0x00, sizeof(TiFrameTxRxInterface) );
+    //intf->send = cc2420_iobsend;
+    //intf->recv = cc2420_iobrecv;
+    return intf;
 }
 
 /******************************************************************************

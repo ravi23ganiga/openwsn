@@ -53,6 +53,8 @@
 #include "hal_configall.h"
 #include "hal_foundation.h"
 #include "hal_cc2420const.h"
+#include "hal_frame_transceiver.h"
+#include "../rtl/rtl_iobuf.h"
 
 /*******************************************************************************
  * Configuration
@@ -234,6 +236,10 @@ void cc2420_restart( TiCc2420Adapter * cc );
 
 uint8 cc2420_write( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option );
 uint8 cc2420_read( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option );
+
+uint8 cc2420_iobsend( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option );
+uint8 cc2420_iobrecv( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option );
+
 void  cc2420_evolve( TiCc2420Adapter * cc );
 uint8 cc2420_setrxmode( TiCc2420Adapter * cc );
 uint8 cc2420_settxmode( TiCc2420Adapter * cc );
@@ -349,6 +355,13 @@ void cc2420_disable_sfd( TiCc2420Adapter * cc );
 //void cc2420_set_sfd_listener( TiCc2420Adapter * cc, TiFunEventHandler sfd_listener, void * owner );
 
 void cc2420_default_listener( void * ccptr, TiEvent * e ); 
+
+
+/* provide the transceiver interface */
+///void * cc2420_provide( TiCc2420Adapter * cc );
+TiFrameTxRxInterface * cc2420_provide( TiCc2420Adapter * cc, TiFrameTxRxInterface * intf );
+
+
 #ifdef __cplusplus
 }
 #endif
