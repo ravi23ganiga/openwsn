@@ -1,3 +1,9 @@
+hello
+================================================================
+compiled ok with AVR Studio and Portable WinAVR 2009.03.13
+
+
+
 steps:
 
 => start AVR Studio 4
