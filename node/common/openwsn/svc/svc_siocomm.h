@@ -23,6 +23,9 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
+#ifndef _SVC_SIOCOMM_H_3634_
+#define _SVC_SIOCOMM_H_3634_
+
 
 #include "svc_configall.h"
 #include "svc_foundation.h"
@@ -30,6 +33,7 @@
 #include "../hal/hal_timer.h"
 #include "../rtl/rtl_iobuf.h"
 #include "../rtl/rtl_textspliter.h"
+#include "../rtl/rtl_textcodec.h"
 
 #ifndef SIO_RXBUFFER_CAPACITY  
   #define SIO_RXBUFFER_CAPACITY 0xFF
@@ -39,7 +43,7 @@
   #define SIO_TXBUFFER_CAPACITY SIO_RXBUFFER_CAPACITY
 #endif
 
-#define SIO_START 0x01
+#define SIO_START 0x55
 #define SIO_END   0x99
 
 /* TiSioComm
@@ -49,15 +53,23 @@ typedef struct{
   char txmem[ IOBUF_HOPESIZE(0x7F) ];
   char rxmem[ IOBUF_HOPESIZE(0x7F) ];
   char quemem[ IOBUF_HOPESIZE(0x7F) ];
+  char tmp_buf[ IOBUF_HOPESIZE(0x7F) ];
 
   TiIoBuf * txbuf;
   TiIoBuf * rxbuf;
   TiIoBuf * rxque;
+  TiIoBuf * tmp_iobuf;
 
   TiUartAdapter * uart;
   TiTextSpliter * spliter;
   uint8 option;
 }TiSioComm;
+
+//#ifdef CONFIG_DYNA_MEMORY
+TiSioComm * sio_create( TiUartAdapter * uart, TiTextSpliter * spliter, uint8 opt );
+
+void sio_free( TiSioComm * sio );
+//#endif
 
 /* Construct an TiSioComm service in the specified memory block */
 TiSioComm * sio_construct( char * buf, uint16 size );

@@ -28,12 +28,17 @@
  *
  * @created by zhangwei on 20091226
  * @modified by Yan Shixing on 20091228
+ * @modified by yanshixing on 20100511
+ * 	- add sio_create, sio_free,modified the initial of spliter.
  */
 
+#include "svc_configall.h"
+#include "svc_foundation.h"
+#include <assert.h>
 #include "../hal/hal_debugio.h"
-#include "../rtl/rtl_iobuf.h"
-#include "svc_siocomm.h"
 #include "../rtl/rtl_textcodec.h"
+#include "svc_siocomm.h"
+
 
 
 /* Construct an TiSioComm service in the specified memory block */
@@ -47,24 +52,49 @@ TiSioComm * sio_construct( char * buf, uint16 size )
 /* Destroy an TiSioComm service */
 void sio_destroy( TiSioComm * sio )
 {
-	sio_close( sio );
+	sio_close(sio);
 }
+
+//#ifdef CONFIG_DYNA_MEMORY
+TiSioComm * sio_create( size )
+{
+	TiSioComm * sio = (TiSioComm *)malloc( size );
+	sio_construct( sio, size );
+	return sio;
+}
+//#endif
+
+//#ifdef CONFIG_DYNA_MEMORY
+void sio_free( TiSioComm * sio )
+{
+	if (sio != NULL)
+	{
+		sio_destroy( sio );
+		free( sio );
+	}
+}
+//#endif
+
 /* Open an TiSioComm service */
-TiSioComm * sio_open( TiSioComm * sio, TiUartAdapter * uart, TiTextSpliter * spliter, uint8 opt )
+TiSioComm * sio_open( TiSioComm * sio, TiUartAdapter * uart, uint8 opt )
 {
 	sio->uart = uart;
 	sio->option = opt;
-	sio->spliter = spliter;
+	sio->spliter = tspl_create(SIO_RXBUFFER_CAPACITY);
 	sio->txbuf = iobuf_construct( &sio->txmem[0], sizeof(sio->txmem) );
 	sio->rxbuf = iobuf_construct( &sio->rxmem[0], sizeof(sio->rxmem) );
 	sio->rxque = iobuf_construct( &sio->quemem[0], sizeof(sio->quemem) );
+	sio->tmp_iobuf = iobuf_construct( &sio->tmp_buf[0], sizeof(sio->tmp_buf) );
 	return sio;
 
 }
 
 TiSioComm * sio_close( TiSioComm * sio )
 {
-	return NULL;
+	iobuf_clear(sio->tmp_iobuf);
+	iobuf_clear(sio->txbuf);
+	iobuf_clear(sio->rxbuf);
+	iobuf_clear(sio->rxque);
 }
 
 /* Configure an TiSioComm service 
@@ -87,9 +117,7 @@ uint8 sio_read( TiSioComm * sio, TiIoBuf * iobuf )
 	uintx available, count;
 	char * pkt;
 	uint8 i, len;
-	TiIoBuf * tmp_iobuf;
-	char * tmp_buf[ IOBUF_HOPESIZE(0x7F) ];
-	tmp_iobuf = iobuf_construct( tmp_buf, sizeof(tmp_buf) );
+
 
 	available = iobuf_available(sio->rxbuf);
 	count = uart_read( sio->uart, iobuf_endptr(sio->rxbuf), available, 0x00 );
@@ -146,7 +174,7 @@ uint8 sio_write( TiSioComm * sio, TiIoBuf * iobuf )
 {
 	uint16 count=0, result=0;
 
-	assert( !iobuf_empty(iobuf) );
+	// assert( !iobuf_empty(iobuf) );
 
 	if (iobuf_empty(sio->txbuf))
 	{

@@ -247,6 +247,11 @@ uintx _aloha_trysend( TiAloha * mac, char * buf, uint8 len, uint8 option )
 	
 	// cc2420_settxmode( mac->transceiver );
 	count = cc2420_send( mac->transceiver, buf, len, option );
+
+    // Q: why we needn't to call phy_setrxmode apparently?
+    // R: because the cc2420 transceiver can go back to RX mode after sending a frame 
+    // automatically. 
+
 	if (count > 0)
 	{   
 	
@@ -367,3 +372,158 @@ void aloha_evolve( void * macptr, TiEvent * e )
 	return;
 }
 
+
+
+
+
+
+/* this function can be used as TiCc2420Adapter's listener directly. so you can get
+ * to know when a new frame arrives through the event's id. however, the TiCc2420Adapter's 
+ * listener is fired by ISR. so we don't suggest using aloha_evolve() as TiCc2420Adapter's
+ * listener directly.
+ *
+ * the evolve() function also behaviors like a thread.
+ */
+
+/*
+void aloha_evolve2( void * macptr, TiEvent * e )
+{
+	TiAloha * mac = (TiAloha *)macptr;
+
+    switch (mac->state)
+    {
+	case ADTALOHA_IDLE:
+        // if mac->txque isn't empty, then 
+        //     start the sending random delay timer
+        //     goto ADTALOHA_WAIT_FOR_PHY_SENDING state
+        // endif 
+        if (state == ADTALOHA_IDLE)
+        {
+            if (mac->sleeprequest)
+            {
+                phy_sleep();
+                break;
+                mac->state = ADTALOHA_STATE_SLEEP;
+            }
+        }
+
+        if (!iobuf_empty(mac->txque))
+        {
+
+            _adaptaloha_trysend( mac );
+            // three cases for the frame:
+            // - it's an broadcasting frame, then we neen't to wait for ACK and 
+            // simply goto IDLE state. 
+            // - it's an frame which doesn'e need ACK, then goto IDLE state;
+            // - it's an frame needing ACK.
+            // 
+            if (ack not required)
+            {
+                mac->state = ADTALOHA_IDLE;
+            }
+            else{
+                if (mac->retrycount > 3)
+                {
+                    // failed to sending the frame after 3 try. we had to accept
+                    // the situation. 
+
+                    iobuf_clear( mac->txque );
+                    mac->state = ADTALOHA_IDLE;
+                    mac->retrycount = 0;
+                }
+                else{
+                    duration = _adaptaloha_get_duration( mac->loadfactor );
+                    time_start( mac->timer, duration );
+                    mac->state = ADTALOHA_WAITFOR_PHY_SENDING;
+                    mac->retrycount ++;
+                }
+            }
+        }
+        break;
+
+    case ADTALOHA_WAITFOR_RETRY:
+        if timer_expired()
+        {
+            _adaptaloha_trysend( mac );
+            if (failed)
+            {
+                if (mac->retrycount > 3)
+                {
+                    // failed to sending the frame after 3 try. we had to accept
+                    // the situation. 
+
+                    iobuf_clear( mac->txque );
+                    mac->state = ADTALOHA_IDLE;
+                    mac->retrycount = 0;
+                }
+                else{
+                    duration = _adaptaloha_get_duration( mac->loadfactor );
+                    time_start( mac->timer, duration );
+                    mac->state = ADTALOHA_WAITFOR_RETRY;
+                    mac->retrycount ++;
+                }
+            }
+        }
+        break;
+
+
+    case ADTALOHA_STATE_SLEEP:
+        if (e->id = wakeuprequest)
+        {
+            phy_wakeup();
+            mac->state = ADTALOHA_IDLE;
+        }
+
+    }
+
+	switch (e->id)
+	{
+    case ADTALOHA_EVENT_FRAME_ARRIVAL:
+        // no matter what state the MAC object is, we need read the frame arrived 
+        // out from the PHY layer. 
+        //
+        // @attention: if the mac->rxque already has frame, then it will be overwrite. 
+        // and the old frame will be lost. in order to avoid this, you higher layer
+        // applications should read the frame out from MAC layer as fast as possible!
+        //
+        phy_read( mac->phy, mac->rxque )
+        
+        // if (this frame isn't DATA frame such as ACK or COMMAND type)
+        //    then simply drop the frame
+        // endif
+        if ()
+        {
+            iobuf_clear( mac->rxque );
+        }
+        break;
+
+    case ADTALOHA_EVENT_SHUTDOWN_REQUEST:
+        // no matter what the current state is, then you can do shutdown
+        timer_stop(); // if it's running
+        phy_shutdown();
+        mac->state = SHUTDOWN;
+        break;    
+
+    case ADTALOHA_EVENT_STARTUP_REQUEST: 
+        if (mac->state == SHUTDOWN)
+        {
+            phy_startup();
+            mac->state = IDLE;
+        }
+
+    case other events: 
+		break;
+	}
+
+	// If the other component register listener function to accept adaptive aloha events
+    // such as frame arrival events, then call that listener to report to the listenre owner
+    //
+	if (mac->listener != NULL) && (!iobuf_empty(mac->rxque))
+	{
+		mac->listener( mac->lisowner, frame arrival event );
+	}
+
+	return;
+}
+
+*/
