@@ -1,3 +1,23 @@
+2010-05-10
+=============================================================
+- support 4 MAC protocols: simple aloha, standard aloha, adaptive aloha, and MACA. 
+
+
+2010-05-04
+=============================================================
+release version 1.1.0 (some work are still in heavy developing)
+new features: 
+- re-organize the whole file structure. preparing to port to other platforms. however, we'll still choose GAINZ as our main working platform. since the folder structure changed, some demo project configuration may need to be upgraded to reflect these changes. 
+- add project libwsn. this is used to compile most of the c file into an library. 
+- network protocol stack architecture re-design. (still in developing)
+- sleep/wakeup feature test in cc2420 adapter (still in developing)
+- adaptive aloha mac protocol (still in developing)
+- maca mac protocol (still in developing)
+- low power application architecture re-design (still in developing)
+- add project starsink. this is an upgrade version of sinknode project. however, starsink enhances sinknode and it's compatible with gateway project on the PC side.
+and a lot of minor revisions.
+
+
 2010-04-06
 =============================================================
 - Re-organize the whole source code tree. Plan to support multiple developing environment in the future. 
