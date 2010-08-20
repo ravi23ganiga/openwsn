@@ -12,9 +12,7 @@ Add your content here.  Format your content with:
   * Headings, paragraphs, and lists
   * Automatic links to other wiki pages
 
-= Temporary Notes =
-
-Why choose OpenWSN Foundation?
+= Why choose OpenWSN Foundation? =
 
 OpenWSN Foundation = {hardware} + hardware abstraction layer + kernel + components{protocols, auxiliary components, middleware components, etc}
 
