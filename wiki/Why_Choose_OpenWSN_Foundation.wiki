@@ -16,6 +16,8 @@ Add your content here.  Format your content with:
 
 Why choose OpenWSN Foundation?
 
+OpenWSN Foundation = {hardware} + hardware abstraction layer + kernel + components{protocols, auxiliary components, middleware components, etc}
+
   * fully ANSI C complied, which means it can be easily ported to almost all industry micro-controllers
 
   * fully components organization. which means: A) the application can be assembled from selected components easily. B) the application can use components required only without considering the complexity of other components.
