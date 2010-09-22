@@ -20,6 +20,9 @@
  *	- simplified the implementation. The current version supports FIFO schedule only.
  *    the real time schedule and future schedule are not mature. so I remove them
  *    from current version.
+ * @modified by zhangwei on 20100529
+ *  - revision. upgraded from Portable WinAVR 2008 to 2009 version
+ *
  *****************************************************************************/
 
 /* modified by zhangwei(openwsn@gmail.com) on 20091106
@@ -50,6 +53,8 @@
 #include "osx_configall.h"
 #include "osx_foundation.h"
 #include "../rtl/rtl_dispatcher.h"
+#include "osx_timer.h"
+#include "osx_queue.h"
 
 #ifdef CONFIG_OSX_DBA_ENABLE
 #include "osx_dba.h"
@@ -133,9 +138,9 @@ extern TiOSX *              g_osx;
 
 #define osx_eventlistener(osx,e)            _osx_post(g_osx,e)
 #define osx_evolve(e)                       _osx_evolve(g_osx,e)
-#define osx_execute(e)                      _osx_execute(g_osx,e)
+//#define osx_execute()                       _osx_execute(g_osx)
 #define osx_hardevolve(e)                   _osx_hardevolve(g_osx,e)
-#define osx_hardexecute(e)                  _osx_hardexecute(g_osx,e)
+#define osx_hardexecute()                   _osx_hardexecute(g_osx)
 #define osx_sleep()                         _osx_sleep(g_osx)
 #define osx_wakeup()                        _osx_wakeup(g_osx)
 
@@ -188,6 +193,11 @@ void _osx_rtpost( TiOSX * osx, TiEvent * e, uint16 deadline );
 void _osx_futurepost( TiOSX * osx, TiEvent * e, uint16 future );
 void _osx_trigger( TiOSX * osx, TiEvent * e );
 
+
+/* TiFunEventHandler is defined as the following:
+ *  typedef void (* TiFunEventHandler)(void * object, TiEvent * e);
+ * It's an function pointer type. It's defined in rtl_foundation.h
+ */
 bool _osx_attach( TiOSX * osx, uint8 eid, TiFunEventHandler handler, void * object );
 bool _osx_detach( TiOSX * osx, uint8 eid );
 
@@ -261,6 +271,7 @@ void _osx_wakeup( TiOSX * osx );
 
 void osx_init( void );
 void osx_execute( void );
+
 
 #ifdef __cplusplus
 }

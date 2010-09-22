@@ -1,3 +1,5 @@
+#ifndef _HAL_TIMERADAPTER_H_6828_
+#define _HAL_TIMERADAPTER_H_6828_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -23,8 +25,6 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-#ifndef _TIMERADAPTER_H_6828_
-#define _TIMERADAPTER_H_6828_
 
 /******************************************************************************
  * @author zhangwei on 2006-08-11
@@ -68,7 +68,7 @@
  
 #include "hal_configall.h"
 #include "hal_foundation.h"
-#include "hal_target.h"
+#include "hal_targetboard.h"
 
 /* This macro defines how many clocks the Timer run in one milli-seconds.
  * since we often use milli-seconds when dealing with scheduling and communication
@@ -87,10 +87,6 @@
   #define TIMER_CLOCKS_PER_MILLISECOND  (Fpclk / 1000)
   #define timer_msecof(clocks) (clocks/TIMER_CLOCKS_PER_MILLISECOND)
   #define timer_clocksof(ms) (ms*TIMER_CLOCKS_PER_MILLISECOND)
-#endif
-
-#ifdef __cplusplus
-extern "C" {    //????????????
 #endif
 
 /******************************************************************************
@@ -128,6 +124,10 @@ typedef struct{
   uint8 option;
 }TiTimerAdapter;
 
+#ifdef __cplusplus
+extern "C" {   
+#endif
+
 TiTimerAdapter* timer_construct( char * buf, uint8 size );
 void       timer_destroy( TiTimerAdapter * timer );
 TiTimerAdapter* timer_open( TiTimerAdapter * timer, uint8 id, TiFunEventHandler listener, void * object, uint8 option );
@@ -152,5 +152,5 @@ tm_value_t timer_clocksperms( TiTimerAdapter * timer );
 }
 #endif
 
-#endif /* _TIMERADAPTER_H_6828_ */
+#endif /* _HAL_TIMERADAPTER_H_6828_ */
 

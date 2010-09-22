@@ -38,7 +38,7 @@
  */ 
 
 //#include "hal_configall.h"
-#include <stdint.h>
+//#include <stdint.h>
 #include <avr/io.h>
 #include <avr/sfr_defs.h>
 #include <avr/interrupt.h>
@@ -55,6 +55,7 @@
 #ifndef __GNUC__
 #error "this file is compiled by WinAVR GNU C compiler by default. other compilers havn't been tested yet!"
 #endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -220,28 +221,6 @@ void HAL_SET_PIN_DIRECTIONS(void);
 
 // each nop is 1 clock cycle
 // 1 clock cycle on mica2 == 136ns
-
-
-
-enum {
-  HAL_ADC_PORTMAPSIZE = 12
-};
-
-enum 
-{
-//  HAL_ACTUAL_CC_RSSI_PORT = 0,
-//  HAL_ACTUAL_VOLTAGE_PORT = 7,
-  HAL_ACTUAL_BANDGAP_PORT = 30,  // 1.23 Fixed bandgap reference
-  HAL_ACTUAL_GND_PORT     = 31   // GND 
-};
-
-enum 
-{
- // TOS_ADC_CC_RSSI_PORT = 0,
- // TOS_ADC_VOLTAGE_PORT = 7,
-  TOS_ADC_BANDGAP_PORT = 10,
-  TOS_ADC_GND_PORT     = 11
-};
 */
 
 #ifdef __cplusplus

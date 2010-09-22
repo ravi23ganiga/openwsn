@@ -23,6 +23,7 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
+
 /* 
  * @attention
  *	- you should call hal_init() before calling some functions in this module. 

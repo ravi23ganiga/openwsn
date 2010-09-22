@@ -47,6 +47,7 @@
 #include "../hal_configall.h"
 #include <string.h>
 #include "../hal_foundation.h"
+//#include "../hal_assert.h"
 
 uint8 g_atomic_level = 0;
 TiFunEventHandler m_listener = NULL;
@@ -65,9 +66,8 @@ _TiIntHandlerItem m_int2handler[CONFIG_INT2HANDLER_CAPACITY];
 void hal_init( TiFunEventHandler listener, void * object )
 {
 	g_atomic_level = 0;
-	m_listener = NULL;
-	m_listener_owner = NULL;
-	hal_setlistener( listener, object );
+	m_listener = listener;
+	m_listener_owner = object;
 	memset( &(m_int2handler[0]), 0x00, sizeof(m_int2handler) );
 }
 
@@ -93,68 +93,20 @@ inline void hal_notify_ex( TiEventId eid, void * objectfrom, void * objectto )
 {
 	TiEvent e;
 
+	/* you should guarantee the listener isn't NULL, but you cannot use assert here
+     * directly, because this module is the foundation of module hal_assert, not 
+     * vice versa */
+
 	/* assert( m_listener != NULL ); */
+
 	if (m_listener != NULL)
 	{
 		e.id = eid;
+        e.handler = NULL;
 		e.objectfrom = objectfrom;
 		e.objectto = ((objectto == NULL) ? m_listener_owner : objectto);
 		m_listener( m_listener_owner, &e );
 	}
 }
 
-
-/******************************************************************************
- * interaction with osx kernel
- *****************************************************************************/
-
-/*
-TiFunOsxPostEvent m_osxpost = NULL;
-
-void hal_set_osxpost( TiFunOsxPostEvent osx_post )
-{
-	m_osxpost = osx_post;
-}
-
-void hal_osxpost( TiEventId eid, void * objectfrom, void * objectto )
-{
-	static TiEvent e;
-	//assert( m_osxpost != NULL );
-	e.id = eid;
-	e.objectfrom = objectfrom;
-	e.objectto = objectto;
-	m_osxpost( &e );
-}
-*/
-
-/******************************************************************************
- * interaction with nano os (running on atmegal 128 only currently)
- *
- * the following two function are used with nano os kernel only.
- * if you want to use nano os in your application, you should provide a hal_set_nospost()
- * in this module, and the nano os kernel will call this function during its' 
- * initialization.
- * 
- * since the nano os is built on top of the hal layer, you should not call os_post() 
- * directly in your hal layer module. you should call hal_nospost() instead. 
- *****************************************************************************/
-/*
-#ifdef CONFIG_NANOS_ENABLE 
-static bool (* m_nospost)(hal_nostask_t); 
-#endif
-
-#ifdef CONFIG_NANOS_ENABLE 
-inline void hal_set_nospost( bool (* nospost)(hal_nostask_t) )
-{
-	m_nospost = nospost;
-}
-#endif
-
-#ifdef CONFIG_NANOS_ENABLE 
-inline void hal_nospost( void (*task)(void) )
-{
-	m_nospost(task);
-}
-#endif
-*/
 

@@ -48,7 +48,7 @@
 #include <string.h>
 #include "../hal_foundation.h"
 #include "../hal_spi.h"
-#include "../hal_target.h"
+#include "../hal_targetboard.h"
 #include "../hal_assert.h"
 
 #ifdef GDEBUG

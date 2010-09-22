@@ -1,3 +1,5 @@
+#ifndef _HAL_DEBUGIO_H_6579_
+#define _HAL_DEBUGIO_H_6579_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -24,34 +26,59 @@
  *
  ******************************************************************************/
 
-#ifndef _HAL_DEBUGIO_H_6579_
-#define _HAL_DEBUGIO_H_6579_
 
-/* hal_debugio
+/* 
+ *******************************************************************************
+ * hal_debugio
  * Debug input/output utilities for HAL layer. Currently, this module support input 
  * from UART and output to group LED. 
  * 
  * design principle:
  *	- as simple as possible. so its easier to be ported to other platforms.
  *  - small code footprint.
+ *
+ * @state
+ *  released
  * 
- * @author zhangwei in 200506
+ * @author zhangwei in 2005.06
  *	- first created 
- * @modified by huanghuan in 200607
+ * @modified by huanghuan in 2006.07
  *	- developed LPC2136 ARM7 version
+ * @modified by zhangwei on 2010.07.25
+ *  - revision. only the key part is kept in this module. most of the functions
+ *    are moved into rtl_debugio module.
+ * @modified by zhangwei on 2010.08.17
+ *  - revision. more compatible with rtl_debugio module. the rtl_debugio doesn't
+ *    depend on hal_debugio. you can initialize rtl_debugio with any standard byte
+ *    device interface. hal_debugio with initialize rtl_debugio so you needn't care
+ *    its initialization if you call dbo_open()
+ *******************************************************************************
  */
 
 #include "hal_configall.h"
 #include "hal_foundation.h"
+#include "../rtl/rtl_foundation.h"
+#include "../rtl/rtl_debugio.h"
 #include "hal_uart.h"
 #include "hal_led.h"
+#include "hal_assert.h"
+//#include "hal_device.h"
 
 /* The default configuration is to use UART0. You may need to modify it to adapt
  * to your own hardware platform */
 
+/* choose which uart hardware module */
 #define CONFIG_DBO_UART0
 #undef  CONFIG_DBO_UART1
+
 #define CONFIG_DBO_TXBUFFER_SIZE 64
+
+#define TiDebugUart TiDebugIoAdapter
+
+typedef struct{
+  uint8 txlen;
+  char txbuf[CONFIG_DBO_TXBUFFER_SIZE];
+}TiDebugIoAdapter;
 
 #ifdef __cplusplus
 extern "C"{
@@ -66,75 +93,64 @@ extern "C"{
  * state = 000 wll turn off all the LEDs. other values include 001 to 111.
  */
 
+TiDebugIoAdapter * dbio_open( uint16 bandrate );
+void dbio_close( TiDebugIoAdapter * dbio );
+char dbio_getchar( TiDebugIoAdapter * dbio );
+intx dbio_putchar( TiDebugIoAdapter * dbio, char ch );
+//TiByteDeviceInterface * dbio_interface( TiByteDeviceInterface * intf );
+
+/* the following are kept here only to keep compatible with the old versions
+ */
+
 #ifdef CONFIG_DEBUG
-void _dbo_open( uint8 uart_id, uint16 bandrate );
-void _dbo_close();
-char _dbo_getchar();
-void _dbo_putchar( char c);
-void _dbo_putbyte( uint8 val );
-void _dbo_write( char * buf, uintx len );
-void _dbo_write_n8toa( char * buf, uintx len );
-uintx _dbo_asyncwrite( char * buf, uintx len );
-void _dbo_evolve();
-char _dbo_digit2hexchar( uint8 num );
-void dbo_string( char * string );
 
-inline void dbo_open( uint8 uart_id, uint16 baudrate ) {_dbo_open((uart_id),(baudrate));}
-inline void dbo_close() {_dbo_close();}
-inline void dbo_getchar() {_dbo_getchar();}
-inline void dbo_putchar( char c ) {_dbo_putchar(c);}
-inline void dbo_write( char * buf, uint8 len ) {_dbo_write(buf,len);}
-inline void dbo_asyncwrite( char * buf, uint8 len ) {_dbo_asyncwrite(buf,len);}
-inline char dbo_digit2hexchar( uint8 num ) {return _dbo_digit2hexchar(num);}
+//void _dbo_open( uint8 uart_id, uint16 bandrate );
+//void _dbo_close();
 
-inline void dbo_mem(char * buf, uint8 len) {_dbo_write(buf,len);}
-inline void dbo_char(char c) {_dbo_putchar(c);}
-inline void dbo_byte(uint8 c) {_dbo_putchar(c);}
-inline void dbo_uint8(uint8 n) {_dbo_putchar(n);}
-inline void dbo_uint16(uint16 n) {_dbo_write((char*)&(n),sizeof(n));}
-inline void dbo_uint32(uint32 n) {_dbo_write((char*)&(n),sizeof(n));}
+//char _dbo_getchar();
+//void _dbo_putchar( char c);
+//void _dbo_putbyte( uint8 val );
+//void _dbo_write( char * buf, uintx len );
+//void _dbo_write_n8toa( char * buf, uintx len );
+//uintx _dbo_asyncwrite( char * buf, uintx len );
+//void _dbo_evolve();
+//void dbo_string( char * string );
 
-inline void dbo_n8toa( uint8 n )
-{
-	_dbo_putchar(_dbo_digit2hexchar(((n)&0xF0) >> 4));	
-	_dbo_putchar(_dbo_digit2hexchar((n)&0x0F));
-}			
+void dbo_open( uint16 baudrate );
+#define dbo_close() dbio_close()
 
-inline void dbo_n16toa( uint16 n )
-{
-	_dbo_putchar( dbo_digit2hexchar(((n)>>12) & 0x000F) );   
-	_dbo_putchar( dbo_digit2hexchar(((n)>>8) & 0x000F) );	
-	_dbo_putchar( dbo_digit2hexchar((n)>>4 & 0x000F) );	
-	_dbo_putchar( dbo_digit2hexchar(n & 0x000F) );
-}
+//inline void dbo_open( uint8 uart_id, uint16 baudrate ) {_dbo_open((uart_id),(baudrate));}
+//inline void dbo_close() {_dbo_close();}
 
-inline void dbo_ledon( uint8 id ) 
-{
-	led_on(id);
-}
+inline void dbo_getchar() {dbc_getchar();}
+inline void dbo_putchar( char c ) {dbc_putchar(c);}
+inline void dbo_putbyte( uint8 c ) {dbc_putchar(c);}
+inline void dbo_write( char * buf, uint8 len ) {dbc_write(buf,len);}
+inline void dbo_asyncwrite( char * buf, uint8 len ) {dbc_asyncwrite(buf,len);}
+inline char dbo_digit2hexchar( uint8 num ) {return dbc_digit2hexchar(num);}
 
-inline void dbo_ledoff( uint8 id ) 
-{
-	led_off(id);
-}
-
-inline void dbo_led( uint8 state )
-{
-	(state & 0x04) ? led_on(LED1) : led_off(LED1);
-	(state & 0x02) ? led_on(LED2) : led_off(LED2);
-	(state & 0x01) ? led_on(LED3) : led_off(LED3);
-}
+inline void dbo_mem(char * buf, uint8 len) {dbc_write(buf,len);}
+inline void dbo_string(char * str) {dbc_string(str);}
+inline void dbo_char(char c) {dbc_putchar(c);}
+inline void dbo_byte(uint8 c) {dbc_putchar(c);}
+inline void dbo_uint8(uint8 n) {dbc_putchar(n);}
+inline void dbo_uint16(uint16 n) {dbc_write((char*)&(n),sizeof(n));}
+inline void dbo_uint32(uint32 n) {dbc_write((char*)&(n),sizeof(n));}
+inline void dbo_n8toa( uint8 n ) {dbc_n8toa(n);}
+inline void dbo_n16toa( uint16 n ) {dbc_n16toa(n);}
+inline void dbo_write_n8toa( char * buf, uintx len ) {dbc_write_n8toa(buf,len);}
 #endif 
 
 #ifndef CONFIG_DEBUG
-#define dbo_open(uart_id,baudrate) {}
+#define dbo_open(baudrate) {}
 #define dbo_close() {}
 #define dbo_getchar() {}
-#define dbo_putchar() {}
+#define dbo_putchar(c) {}
 #define dbo_write(buf,len) {}
 #define dbo_asyncwrite(buf,len) {}
 #define dbo_digit2hexchar(num) {}
 #define dbo_mem(buf,len) {}
+#define dbo_string(s) {}
 #define dbo_char(c) {}
 #define dbo_byte(c) {}
 #define dbo_uint8(n) {}
@@ -142,13 +158,13 @@ inline void dbo_led( uint8 state )
 #define dbo_uint32(n) {}
 #define dbo_n8toa(n) {}
 #define dbo_n16toa(n) {}								
-#define dbo_ledon(id) {}
-#define dbo_ledoff(id) {}
-#define dbo_led(state) {}
+
 #endif 
 
 #ifdef __cplusplus
 }
 #endif
+
+extern TiDebugUart g_dbio;
 
 #endif /* _HAL_DEBUGIO_H_6579_ */

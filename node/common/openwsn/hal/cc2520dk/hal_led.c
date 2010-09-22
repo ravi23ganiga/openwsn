@@ -25,11 +25,14 @@
  ******************************************************************************/
 
 #include "../hal_configall.h"
-//#include <avr/io.h>
 #include "../hal_foundation.h"
-#include "../hal_target.h"
+#include "../hal_targetboard.h"
 #include "../hal_cpu.h"
 #include "../hal_led.h"	
+#include "hpl_led.h"	
+#include "hpl_types.h"
+#include "hpl_led.h"
+
 
 static uint8 m_ledstate = 0x00;
 
@@ -74,6 +77,7 @@ void led( uint8 id, bool state )
 
 void led_off( uint8 id )
 {
+    /*
 	if (id & LED_RED)
 	{
      	PORTA|=_BV(PA2);
@@ -89,10 +93,21 @@ void led_off( uint8 id )
         PORTA|=_BV(PA0);
 		m_ledstate |= LED_YELLOW;		
 	}
+    */
+    switch (id)
+    {
+    case 1: HAL_LED_CLR_1(); break;
+    case 2: HAL_LED_CLR_2(); break;
+    case 3: HAL_LED_CLR_3(); break;
+    case 4: HAL_LED_CLR_4(); break;
+    default: break;
+    }
+
 }
 
 void led_on( uint8 id )
 {
+    /*
 	if (id & LED_RED)
 	{
       	PORTA&=~_BV(PA2);
@@ -108,10 +123,21 @@ void led_on( uint8 id )
       	PORTA&=~_BV(PA0);
 		m_ledstate &= ~LED_YELLOW;		
 	}
+    */
+    switch (id)
+    {
+    case 1: HAL_LED_SET_1(); break;
+    case 2: HAL_LED_SET_2(); break;
+    case 3: HAL_LED_SET_3(); break;
+    case 4: HAL_LED_SET_4(); break;
+    default: break;
+    }
+
 }
 
 void led_toggle( uint8 id )
 {
+    /*
 	if (id & LED_RED)
 	{
 		if (m_ledstate & LED_RED)
@@ -148,6 +174,16 @@ void led_toggle( uint8 id )
 			m_ledstate |= LED_YELLOW;		
 		}
 	}
+    */
+    switch (id)
+    {
+    case 1: HAL_LED_TGL_1(); break;
+    case 2: HAL_LED_TGL_2(); break;
+    case 3: HAL_LED_TGL_3(); break;
+    case 4: HAL_LED_TGL_4(); break;
+    default: break;
+    }
+
 }
 
 void led_twinkle( uint8 id , uint16 interval, uintx count )
@@ -163,3 +199,4 @@ void led_twinkle( uint8 id , uint16 interval, uintx count )
         count --;
 	}
 }
+

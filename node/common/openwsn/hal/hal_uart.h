@@ -23,7 +23,6 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-
 #ifndef _HAL_UART_H_2130_
 #define _HAL_UART_H_2130_
 
@@ -56,10 +55,14 @@
  *		uart_read()/uart_write() are ok now.
  *	- didn't test uart_getchar_wait().
  * 
+ * @modified by zhangwei on 20100510
+ *  - add block interface support
+ * 
  *****************************************************************************/
  
 #include "hal_configall.h"
 #include "hal_foundation.h"
+#include "hal_device.h"
 
 #define CONFIG_UART_INTERRUPT_DRIVEN
 //#undef  CONFIG_UART_INTERRUPT_DRIVEN
@@ -139,6 +142,9 @@ uintx uart_read( TiUartAdapter * uart, char * buf, uintx size, uint8 opt );
  * to the UART.
  *****************************************************************************/ 
 uintx uart_write( TiUartAdapter * uart, char * buf, uintx len, uint8 opt ); 
+
+TiBlockDeviceInterface * uart_get_blockinterface( TiUartAdapter * uart, TiBlockDeviceInterface * intf );
+//TiByteDeviceInterface * uart_get_byteinterface( TiUartAdapter * uart, TiByteDeviceInterface * intf );
 
 #ifdef __cplusplus
 }

@@ -169,6 +169,9 @@ inline void hal_atomic_end( void )
  */
 
 #define cpu_nop() _NOP()
+
+
+
 #define hal_delayus(usec) cpu_delayus(usec)
 #define hal_delay(msec)   cpu_delayms(msec)
 #define hal_delayms(msec) cpu_delayms(msec)
@@ -180,16 +183,8 @@ inline void hal_atomic_end( void )
  * @attention
  * the input parameter value should not large than the maximum value of int16 type
  */
-inline void cpu_delayus( int16 usec )
-{
-    usec = usec >> 1;
-	while (usec > 0) 
-	{
-        _NOP();
-        _NOP();
-		usec --;
-	}
-}
+void cpu_delayus(uint16 usec);
+
 
 /* delay for micro seconds.
  * this function is hardware dependent and should used for short delays only. 
@@ -219,6 +214,7 @@ inline void cpu_sleep(void)
 	// __asm volatile ("sleep");
 }
 
+void cpu_reset(void);
 void cpu_reboot( void );
 
 //uintx cpu_state(void);

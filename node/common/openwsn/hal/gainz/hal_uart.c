@@ -31,13 +31,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../hal_foundation.h"
-#include "../hal_target.h"
+#include "../hal_device.h"
+#include "../hal_targetboard.h"
 #include "../hal_led.h"
 #include "../hal_assert.h"
 #include "../hal_cpu.h"
 #include "../hal_interrupt.h"
 #include "../hal_uart.h"
-
+#include "../hal_device.h"
 //#include <inttypes.h> 
 //#include <avr/pgmspace.h>
 
@@ -85,6 +86,12 @@
  * @modified by zhangwei on 20090718
  *	- bug fix in interrupt driven version of uart_putchar() and uart_write()
  *
+ * @modified by zhangwei on 20100510
+ *  - add block interface support
+ * 
+ * @modified by zhangwei on 2010.05.20
+ *  - upgraded to winavr 20090319 and avrstudeo 4.17
+ * 
  *****************************************************************************/
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -595,10 +602,17 @@ void _uart_tx1_interrupt_handler( void * uartptr, TiEvent * e )
 
 
 
-
-
-
-
+TiBlockDeviceInterface * uart_get_blockinterface( TiUartAdapter * uart, TiBlockDeviceInterface * intf )
+{
+	hal_assert( intf != NULL );
+	memset( intf, 0x00, sizeof(TiBlockDeviceInterface) );
+	intf->provider = uart;
+	intf->read = (TiFunBlockDeviceWrite)uart_read;
+	intf->write = (TiFunBlockDeviceWrite)uart_write;
+	intf->evolve = NULL;
+	intf->switchtomode = NULL;
+	return intf;
+}
 
 
 

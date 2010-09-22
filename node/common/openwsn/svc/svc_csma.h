@@ -1,3 +1,5 @@
+#ifndef _SVC_CSMA_H_4829_
+#define _SVC_CSMA_H_4829_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -24,185 +26,202 @@
  *
  ******************************************************************************/
 
-#ifndef _OPENMAC_H_7248_
-#define _OPENMAC_H_7248_
-
-/******************************************************************************
- * @author zhangwei on 2006-07-20
- * OpenMAC
- * an distributed medium access layer. this layer is kind of ALOHA and use 
- * backoff to avoid collision. it also uses the cc2420's CCA feature though you 
- * cannot see the code.
+/*******************************************************************************
+ * svc_csma
+ * This module implements the standard carrier sense multi-access (CSMA) protocol. 
+ * If you want more Collision Avoidance (CA) features, you can choose MACA protocol 
+ * in module svc_maca.
  * 
- * - 由于系统底层采用的是cc2420 802.15.4 support芯片，ACK/NAK是在TiCc2420Adapter
- *   中实现的
- * - 随机延迟发送
- * - 重发
- * - 在扩展函数中提供了neighbor发现，尽管这部分内容严格意义上应该属于拓扑管理，
- *   不属于MAC层
- * - 提供了信道质量估计
- *****************************************************************************/
-  
-#include "svc_configall.h"  
-#include "../hal/hal_foundation.h"
-#include "../hal/hal_cc2420.h"
-#include "../hal/hal_timer.h"
-#include "../hal/hal_openframe.h"
-#include "svc_foundation.h"
-#include "svc_actsche.h"
+ * @state
+ *  finished developing. compiled successfully. need testing.
+ *
+ * @author zhangwei in 2009.12
+ *  - first created
+ * @modified by zhangwei on 2010.05.08
+ *  - revision. replace original "cc2420.h" with "hal_frame_transceiver.h". So this
+ *    module doesn't depend on the cc2420 from now on. It can run on other device
+ *    drivers if the "TiFrameTxRxTransceiver" interface.
+ * 
+ * @modified by zhangwei on 2010.06.13
+ *  - replace TiIoBuf with TiFrame
+ * @modified by zhangwei on 2010.08.24
+ *  - revised.
+ * 
+ ******************************************************************************/
 
-/* @TODO: these two config macros will be moved to configure.h in the future
- * as global effective configuration settings. 
+/**
+ * CONFIG_CSMA_MAX_BACKOFF
+ * Maximum backoff delay time. the really backoff time is a random number between 
+ * 0 and CONFIG_ALOHA_MAX_BACKOFF. Currently, it's set to 100 milliseconds. You should 
+ * optimize it according to your own network parameters.
  */
 
-#undef  CONFIG_OPENMAC_SIMPLE
-#define CONFIG_OPENMAC_SIMPLE
+#define CONFIG_CSMA_DEFAULT_PANID				0x0001
+#define CONFIG_CSMA_DEFAULT_LOCAL_ADDRESS		0x07 
+#define CONFIG_CSMA_DEFAULT_REMOTE_ADDRESS		0x08
+#define CONFIG_CSMA_DEFAULT_CHANNEL            11
+#define CONFIG_CSMA_BROADCAST_ADDRESS          0xFFFF
 
-#define CONFIG_OPENMAC_FULL
-#undef  CONFIG_OPENMAC_FULL 
+#define CONFIG_CSMA_MAX_RETRY                  3
+#define CONFIG_CSMA_ACK_RESPONSE_TIME          10
 
-#undef  CONFIG_OPENMAC_EXTENSION_ENABLE
-#define CONFIG_OPENMAC_EXTENSION_ENABLE
+#define CONFIG_CSMA_MAX_FRAME_SIZE             128
 
-#define CONFIG_OPENMAC_SECURITY_ENABLE
-#undef  CONFIG_OPENMAC_SECURITY_ENABLE
+#define CONFIG_CSMA_TRX_ACK_SUPPORT
+#define CONFIG_CSMA_MAX_BACKOFF                100
+#define CONFIG_CSMA_MIN_BACKOFF                0
+
+#define CONFIG_CSMA_STANDATD
+
+#include "svc_configall.h"
+#include "svc_foundation.h"
+#include "../rtl/rtl_frame.h"
+#include "../rtl/rtl_ieee802frame154.h"
+#include "../hal/hal_frame_transceiver.h"
+#include "../hal/hal_timer.h"
+
+
+/* 
+ * TiCsma is a enhanced version of the fundamental ALOHA medium access
+ * protocol. It has the same interface with TiAloha.
+ */
+
+/**
+ * Q: what's CSMA medium access protocol?
+ * R: CSMA means carrier sense multiple access. 
+ * 
+ * Q: what's p-persistent CSMA?
+ * R: When the sender is ready to send data, it checks continually if the medium is 
+ * busy. If the medium becomes idle, the sender transmits a frame with a probability p. 
+ * If the station chooses not to transmit (the probability of this event is 1-p),
+ * the sender waits until the next available time slot and transmits again. This 
+ * process repeats until the frame is sent or some other sender stops transmitting. 
+ * In the latter case the sender monitors the channel, and when idle, transmits with 
+ * a probability p, and so on.
+ *
+ * link: http://en.wikipedia.org/wiki/Carrier_sense_multiple_access
+ */
+
+/* reference
+ * - 基于短距离无线传输的CSMA/CA协议实现方法, http://www.dzsc.com/data/html/2010-7-5/83921.html;
+ * - 载波侦听多路访问协议介绍, http://www.pcdog.com/network/protocol/2005/10/e038098.html;
+ * - 无线传感器网络CSMA协议的设计与实现, http://blog.21ic.com/user1/1600/archives/2009/61918.html;
+ * - CSMA退避算法, http://book.51cto.com/art/200911/163450.htm;
+ * - CSMA, Carrier sense multiple access, http://en.wikipedia.org/wiki/Carrier_sense_multiple_access;
+ * - CSMA/CA, Carrier sense multiple access with collision avoidance, http://en.wikipedia.org/wiki/CSMA_CA;
+ * - IEEE 802.11 RTS/CTS, http://en.wikipedia.org/wiki/IEEE_802.11_RTS/CTS;
+ * - MACA, Multiple Access with Collision Avoidance, 
+ *   http://en.wikipedia.org/wiki/Multiple_Access_with_Collision_Avoidance;
+ * - Multiple Access with Collision Avoidance for Wireless, http://en.wikipedia.org/wiki/MACAW;
+ */
+
+
+#define CSMA_OPTION_ACK                    0x00
+#define CSMA_DEF_OPTION                    0x00
+
+#define CSMA_STARTUP_REQUEST                1
+#define CSMA_SHUTDOWN_REQUEST               2
+#define CSMA_SLEEP_REQUEST                  3
+#define CSMA_WAKEUP_REQUEST                 4
+
+/* cama state:
+ * - IDLE: wait for sending and receiving. since the receiving is a fast process
+ *      then i give up design a special state for receiving. 
+ *      receiving process can be occur in any state.
+ * - WAITFOR_SENDING: wait for PHY layer to sending buffer frame (namely, acceess 
+ *      the channel)
+ * - SLEEPING: sleep mode.
+ */
+
+#define CSMA_STATE_NULL                    0
+#define CSMA_STATE_IDLE                    1
+//#define CSMA_STATE_WAITFOR_CHANNELCLEAR    2
+#define CSMA_STATE_BACKOFF                 3
+#define CSMA_STATE_SLEEPING                4
+#define CSMA_STATE_POWERDOWN               5
+
+
+/* event define */
+#define CSMA_EVENT_FRAME_ARRIVAL           7
+
+    
+typedef struct{
+    uint8 state;
+	TiFrameTxRxInterface * rxtx;
+	TiTimerAdapter * timer;
+	TiFrame * txbuf;
+    uint8 sendprob;
+    uint8 loadfactor;
+    uint8 request;
+    uint8 retry;
+	uint16 backoff;
+    uint16 panto;
+    uint16 shortaddrto;
+    uint16 panfrom;
+    uint16 shortaddrfrom;
+    uint8 seqid;
+    uint8 sendoption;
+    uint8 sendfailed;
+    TiIEEE802Frame154Descriptor desc;
+    TiFunEventHandler listener;
+    void * lisowner;
+	uint8 option;
+	char txbuf_memory[FRAME_HOPESIZE(CONFIG_CSMA_MAX_FRAME_SIZE)];
+}TiCsma; 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"{
 #endif
 
-/* The following macros are used as the network PHY layers interface.
- * so you can easily port to other PHY implementations with the most less 
- * modifications on current MAC source code. 
- */
-#define THdlDriver TCc2420Driver 
-#define _hdl_read(cc,frame,size,opt) cc2420_read(cc,frame,len,opt)
-#define _hdl_write(cc,frame,size,opt) cc2420_write(cc,frame,length,opt)
-#define _hdl_rawread(cc,buf,size,opt) cc2420_rawread(cc,buf,size,opt)
-#define _hdl_rawwrite(cc,buf,size,opt) cc2420_rawwrite(cc,buf,size,opt) 
-#define _hdl_wakeup(phy) NULL
-#define _hdl_sleep(phy) NULL 
-	
-/******************************************************************************
- * IEEE 802.15.4 PPDU format
- * [4B Preamble][1B SFD][7b Framelength, 1b Reserved][nB PSDU/Payload]
- * 
- * IEEE 802.15.4 MAC DATA format (the payload of PHY frame)
- * Beacon Frame
- * [2B Frame Control] [1B Sequence Number][4 or 10 Address][2 Superframe Specification]
- * 		[k GTS fields][m Padding address fields] [n Beacon payload][2 FCS]
- * 
- * Data Frame
- * [2B Frame Control] [1B Sequence Number][4 or 20 Address][n Data Payload][2 FCS]
- * 
- * ACK Frame
- * [2B Frame Control] [1B Sequence Number][2 FCS]
- * 
- * MAC Control Frame
- * [2B Frame Control] [1B Sequence Number][4 or 20 ADdress][1 Command Type][n Command Payload][2 FCS]
- * 
- * Frame Control
- * b2b1b0  	frame type 000 beacon, 001 data 010 ACK 011 command 100-111 reserved
- * b12b13 	reserved.
- *  
- *****************************************************************************/
+TiCsma * csma_construct( char * buf, uint16 size );
+void csma_destroy( TiCsma * mac );
+TiCsma * csma_open( TiCsma * mac, TiFrameTxRxInterface * rxtx, uint16 panid, uint16 address, 
+    TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner );
+void csma_close( TiCsma * mac );
 
-#define MAC_STATE_IDLE 0
-#define MAC_STATE_PAUSE 1
-#define MAC_STATE_RECVING 2
-#define MAC_STATE_RX_SENDCTS 8
-#define MAC_STATE_RX_WAITDATA 3
-#define MAC_STATE_SENDING 4
-#define MAC_STATE_TX_DELAY 5
-#define MAC_STATE_TX_WAITCTS 6
-#define MAC_STATE_TX_WAITACK 7
+uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option );
+uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option );
+uintx csma_recv( TiCsma * mac, TiFrame * frame, uint8 option );
+void csma_evolve( void * macptr, TiEvent * e );
 
-#define MAC_EVENT_NULL 0
+//#define csma_setshortaddress(mac,addr) mac->rxtx->setshortaddress((mac->rxtx->provider),(addr))
+//#define csma_setpanid(mac,pan) mac->rxtx->setpanid((mac->rxtximpl),(pan))
+//#define csma_setchannel(mac,chn) mac->rxtx->setchannel((mac->rxtximpl),(chn))
+//#define csma_ischannelclear(mac) mac->rxtx->ischannelclear((mac->rxtx))
 
-/* #define OPENMAC_PAYLOAD_SIZE (OPENWSN_MAX_MAC_FRAME_LENGTH-7)
- */
-#define OPENMAC_PAYLOAD_SIZE OPF_PAYLOAD_SIZE
-#define OPENMAC_RETRY_LIMIT 3
-#define OPENMAC_BUFFER_SIZE OPF_FRAME_SIZE
+inline void csma_setlocaladdress( TiCsma * mac, uint16 addr )
+{
+    mac->rxtx->setshortaddress( mac->rxtx->provider, addr );
+}
 
-typedef struct{
-  uint8 state;
-  TiOpenAddress addr;
-  uint8 linkquality;
-  uint8 signalstrength;
-  uint32 distance;  
-}TiOpenMACNode;
+inline void csma_setremoteaddress( TiCsma * mac, uint16 addr )
+{
+	mac->shortaddrto = addr;
+}
 
-#define MAC_CONFIG_PANID 			0x01 
-#define MAC_CONFIG_LOCALADDRESS		0x02 
-#define MAC_CONFIG_TUNNING_POWER 	0x03
-#define MAC_CONFIG_CHANNEL			0x04
-#define MAC_BASIC_INIT               0x05
-#define MAC_XTAL_SWITCH              0x06
-#define MAC_CONFIG_APPLY				0x07
-#define MAC_SET_ACKREQUEST           0x08
+inline void csma_setpanid( TiCsma * mac, uint16 pan )
+{
+    mac->rxtx->setpanid( mac->rxtx->provider, pan );
+    mac->panto = pan;
+	mac->panfrom = pan;
+}
 
-/* retry	the count retried. 已经retry的次数
- * seqno	sequence number, 按照15.4规定
- */
-typedef struct{
-  uint8 	state;
-  uint8 	event;
-  TiCc2420Adapter * phy;
-  uint8 	retry;  
-  uint8 	seqno; 
-  TiTimerAdapter *  timer; 
-  uint8 	txlen;
-  uint8 	rxlen;
-  char * 	txframe;
-  char * 	rxframe;
-  char * 	ackbuf;
-  uint8 	backoff;
-  uint8 	backoff_rule;
-  uint8 	sleepduration;
-  TiOpenAddress localaddr;
-  TiOpenAddress rmtaddr;
-  char 		txbuf[OPF_FRAME_SIZE];
-  char 		rxbuf[OPF_FRAME_SIZE];
-  char 		rxheader[7];
-  #ifdef CONFIG_OPENMAC_EXTENSION_ENABLE  
-  //TiOpenMACNode ;?
-  #endif
-}TiOpenMAC;  
+inline void csma_setchannel( TiCsma * mac, uint8 chn )
+{
+    mac->rxtx->setchannel( mac->rxtx->provider, chn );
+}
 
-TiOpenMAC * mac_construct( char * buf, uint16 size );
-void  mac_destroy( TiOpenMAC * mac );
-void  mac_open( TiOpenMAC * mac, TiCc2420Adapter * hdl, TiActionScheduler * actsche, TiTimerAdapter * timer, TiOpenAddress * addr ); 
-void  mac_close( TiOpenMAC * mac );
-void  mac_init( TiOpenMAC * mac, TiCc2420Adapter * phy, TiTimerAdapter * timer );
-void  mac_configure( TiOpenMAC * mac, uint8 ctrlcode, uint16 value );
+inline bool csma_ischannelclear( TiCsma * mac )
+{
+    // return (mac->rxtx->ischnclear == NULL) ? true : mac->rxtx->ischnclear( mac->rxtx->provider );
+    return true;
+}
 
-uint8 mac_read( TiOpenMAC * mac, TiOpenFrame * frame, uint8 size, uint8 opt );
-uint8 mac_rawread( TiOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt );
-uint8 mac_write( TiOpenMAC * mac, TiOpenFrame * frame, uint8 len, uint8 opt );
-uint8 mac_rawwrite( TiOpenMAC * mac, char * framebuffer, uint8 len, uint8 opt );
-uint8 mac_state( TiOpenMAC * mac );
-int8  mac_evolve( TiOpenMAC * mac );
-uint8 mac_sleep( TiOpenMAC * mac );
-uint8 mac_wakeup( TiOpenMAC * mac );
+void csma_statistics( TiCsma * mac, uint16 * sendcount, uint16 * sendfailed );
 
-uint8 mac_setrmtaddress( TiOpenMAC * mac, TiOpenAddress * addr );
-uint8 mac_setlocaladdress( TiOpenMAC * mac, TiOpenAddress * addr );
-uint8 mac_getrmtaddress( TiOpenMAC * mac, TiOpenAddress * addr );
-uint8 mac_getlocaladdress( TiOpenMAC * mac, TiOpenAddress * addr );
-uint8 mac_installnotify( TiOpenMAC * mac, TiFunEventHandler * callback, void * owner );
-
-#ifdef CONFIG_OPENMAC_EXTENSION_ENABLE
-int8 mac_probe( TiOpenMAC * mac );
-int8 mac_updatestatistics( TiOpenMAC * mac );
-int8 mac_getnode( TiOpenMAC * mac, TiOpenMACNode * node );
-int8 mac_getneighbors( TiOpenMAC * mac, TiOpenAddress * addr[] );
-uint8 mac_getlinkquality( TiOpenMAC * mac, TiOpenAddress * addr );
-uint8 mac_getsignalstrength( TiOpenMAC * mac, TiOpenAddress * addr );
-#endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* _SVC_CSMA_H_4829_ */

@@ -55,7 +55,7 @@ inline TiLightQueue * lwque_construct( void * buf, uint16 size, uint16 itemsize 
 	que->front = 0;
 	que->rear = 0;
 	que->capacity = (size - sizeof(TiLightQueue))/itemsize;
-	que->count = 0;
+	que->count=0;
 	que->itemsize = itemsize;
 
 	// capacity must be larger than 1 in order to create a queue.

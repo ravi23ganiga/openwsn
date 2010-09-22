@@ -1,3 +1,5 @@
+#ifndef _HAL_RTC_H_3888_
+#define _HAL_RTC_H_3888_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -24,16 +26,59 @@
  *
  ******************************************************************************/
 
-#ifndef _HAL_RTC_H_3888_
-#define _HAL_RTC_H_7325_
 
-#define TiRealtimeClock TiRTC
-#define TiCalendarTime TiCalTime
-#define ctime_t TiCalTime
+/******************************************************************************
+ * @author Yan Shixing on 2009-12-09
+ * TiRtcAdapter 
+ * This object is the software encapsulation of the MCU's Real-time clock.
+ *
+ *****************************************************************************/
+ 
+#include "hal_configall.h"
+#include "hal_foundation.h"
+
+/* TiRtcAdapterTime
+ * represent the int type used by the RTC hardware. it varies from 16bit to 32 bit 
+ * on different hardware platform. 
+ */
+#ifdef CONFIG_TARGET_GAINZ 
+  #define TiRtcAdapterTime uint16
+#else
+  #pragma error "you should choose correct TiRtcAdapterTime type on your hardware architecture!"
+#endif
+
+/* TiCalendarTime
+ * this's a universal time type. an calendar time variable occupies 10 bytes in the 
+ * memory. it can be transmitted over the network from one device to another device.
+ */
+
+#define TiRealtimeClock TiRtcAdapter  
+#define TiRtc TiRtcAdapter
+//#define TiCalendarTime TiCalTime
+//#define ctime_t TiCalTime
 
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
+
+/******************************************************************************
+ * TiRtcAdapter
+ * 
+ *****************************************************************************/
+
+/* 10 byte representation of accurate timestamp
+ * [year 2B][month 1B][day 1B][hour 1B][min 1B][sec 1B][msec 2B][usec 2B]
+ * control: highest 2bit. always 00
+ * year: 0-9999 14b 
+ * reserved 4b
+ * month: 1-12, 4b
+ * day: 1-31: 5b
+ * hour: 0-23: 5b
+ * min: 6b
+ * sec: 6b
+ * msec: 0-999, 10b  (or using the highest 6b to represent usec. each unit represent 2^4=16us)
+ * us: 0-999, 10b
+ */
 
 typedef struct{
   uint16 year;
@@ -45,42 +90,23 @@ typedef struct{
   uint16 msec;
 }TiCalTime;
 
+
 typedef struct{
-  uint8 state;
+  TiCalTime * current_time;
+  TiCalTime * timing_time;
+
   TiFunEventHandler listener;
   void * lisowner;
-  uint8 prescale_selector;
+
+  uint8  repeat;  //似乎可改为option，然后通过option中的一个bit控制是否repeat更好，留出其他的bit备用
   uint16 scale;
   uint16 interval;
   uint16 scale_counter;
   uint16 interval_counter;
+  uint8  expired;
+
   uint8 option;
-  uint8 expired;
-}TiRTC;
-
-/* construct, destroy, open and close a TiRTC object */
-
-TiRTC * rtc_construct( void * mem, uint16 size );
-void rtc_destroy( TiRTC * rtc );
-TiRTC * rtc_open( TiRTC * rtc, TiFunEventHandler listener, void * lisowner );
-void rtc_close( TiRTC * rtc );
-
-/* start or stop the running of a TiRTC object, and time management functions */
-
-void rtc_start( TiRTC * rtc );
-void rtc_stop( TiRTC * rtc );
-bool rtc_settime( TiRTC * rtc, TiCalTime * caltime );
-bool rtc_gettime( TiRTC * rtc, TiCalTime * caltime );
-void rtc_forward( TiRTC * rtc, uint16 sec );
-void rtc_backward( TiRTC * rtc, uint16 sec );
-
-inline void rtc_adjust( TiRTC * rtc, int16 sec )
-{ 
-	if (sec > 0)
-		rtc_forward( rtc, sec );
-	else
-		rtc_backward( rtc, -sec );
-}
+}TiRtcAdapter;
 
 /* Configure the RTC fire time. There's two methods: 
  *	- Fire according to fixed time everyday;
@@ -103,13 +129,34 @@ inline void rtc_adjust( TiRTC * rtc, int16 sec )
  * rtc_expired()
  */
 
-void rtc_setexpire( TiRTC * rtc, TiCalTime * caltime, uint8 option );
-void rtc_set_scale_selector( TiRTC * rtc, uint8 selector );
-void rtc_setinterval( TiRTC * rtc, uint16 interval, uint8 option );
-bool rtc_expired( TiRTC * rtc );
+TiRtcAdapter *	   rtc_construct( char * buf, uint8 size );
+void       rtc_destroy( TiRtcAdapter * rtc );
+TiRtcAdapter *	   rtc_open( TiRtcAdapter * rtc, TiFunEventHandler listener, void * object, uint8 option );
+void       rtc_close( TiRtcAdapter * rtc );
+void       rtc_start( TiRtcAdapter * rtc );
+void       rtc_stop( TiRtcAdapter * rtc );
+void 	   rtc_pause( TiRtcAdapter * rtc );//暂停计时
+void 	   rtc_invertpause( TiRtcAdapter * rtc );//继续（恢复）计时
+void       rtc_restart( TiRtcAdapter * rtc );//重新开始计时
+void       rtc_setvalue( TiRtcAdapter * rtc, TiCalTime * caltime );//设置current_time
+bool	   rtc_getvalue( TiRtcAdapter * rtc, TiRtcAdapter * to );//获得current_time
+
+void 	   rtc_setexpire( TiRtcAdapter * rtc, TiCalTime * caltime, uint8 repeat);//该函数用于设置未来何时刻RTC定时到
+void	   rtc_setinterval( TiRtcAdapter * rtc, uint16 interval, uint16 scale, uint8 repeat );
+//该函数与rtc_setexpire类似，但是是指定定时时段有多长，他和rtc_setexpire在程序中只要用一个函数即可
+
+void       rtc_active( TiRtcAdapter * rtc );//定时时刻到
+void       rtc_expired( TiRtcAdapter * rtc );//定时间隔到
+
+void	   rtc_forward( TiRtcAdapter * rtc, uint16 sec );
+void 	   rtc_backward( TiRtcAdapter * rtc, uint16 sec );
+
+void       rtc_setlistener( TiRtcAdapter * rtc, TiFunEventHandler listener, void * object );
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* _HAL_RTC_H_3888_ */
+

@@ -24,9 +24,8 @@
  *
  ******************************************************************************/
 
-#ifndef _CC2420_H_4892_
-#define _CC2420_H_4892_
-
+#ifndef _HAL_CC2420_H_4892_
+#define _HAL_CC2420_H_4892_
 
 /*******************************************************************************
  * cc2420 adapter
@@ -42,19 +41,23 @@
  *	- revision
  * @modified by zhangwei on 20090819
  *	- add default settings of panid, local address and pan id in cc2420_open()
+ *
  * @modified by zhangwei on 20090927
  *	- revision. divide all the interface functions into serveral group according 
  *    to their functions.
+ *
  *	@modified by yanshixing on 20100409
  *	¡¡- and #define SUCCESS 0
+ * 
+ * @modified by zhangwei on 20100510
+ *  - add block interface support
  *
  ******************************************************************************/
 
 #include "hal_configall.h"
 #include "hal_foundation.h"
-#include "hal_cc2420const.h"
-#include "hal_frame_transceiver.h"
 #include "../rtl/rtl_iobuf.h"
+#include "hal_frame_transceiver.h"
 
 /*******************************************************************************
  * Configuration
@@ -67,20 +70,11 @@
  * @todo: SFD interrupt management hasn't been tested yet
  */
 
-#ifndef CONFIG_CC2420_SFD
-	//#define CONFIG_CC2420_SFD
-#endif
-
-#ifndef CONFIG_DEBUG  
-#define CONFIG_DEBUG
-//#undef CONFIG_DEBUG
-#endif
+#define CONFIG_CC2420_SFD
+#undef  CONFIG_CC2420_SFD
 
 #define SUCCESS 0
-#define CC2420_DEF_PANID                0x0001
-#define CC2420_DEF_LOCAL_ADDRESS        0x0001   
-#define CC2420_DEF_REMOTE_ADDRESS       0x0002
-#define CC2420_DEF_CHANNEL              11
+
 
 
 #define CC2420_DEF_BACKOFF         500
@@ -92,27 +86,19 @@
 // delay 20 jiffies when waiting for the ack
 #define CC2420_ACK_DELAY           20
 
-// Current Parameter Arrray Positions
-enum{
- CP_MAIN = 0,
- CP_MDMCTRL0,
- CP_MDMCTRL1,
- CP_RSSI,
- CP_SYNCWORD,
- CP_TXCTRL,
- CP_RXCTRL0,
- CP_RXCTRL1,
- CP_FSCTRL,
- CP_SECCTRL0,
- CP_SECCTRL1,
- CP_BATTMON,
- CP_IOCFG0,
- CP_IOCFG1
-} ;
 
 /*******************************************************************************
  * Interface
  ******************************************************************************/
+
+/* The following macros defines the default pan id and address when this object is 
+ * just opened. You should reconfigure the transceiver using the interface functions 
+ * with your own settings.
+ */
+#define CC2420_DEF_PANID                0x0001
+#define CC2420_DEF_LOCAL_ADDRESS        0x0001   
+#define CC2420_DEF_REMOTE_ADDRESS       0x0002
+#define CC2420_DEF_CHANNEL              11
 
 /* the minimal frame is the ACK frame, including only 5 bytes (2B Frame Control, 
  * 1B Sequence, and 2B checksum). The frames received less than 5 bytes will be 
@@ -157,10 +143,16 @@ enum{
  * RSSI_OFFSET defines the RSSI level where the PLME.ED generates a zero-value 
  */
 #define RSSI_OFFSET -38
+/* todo
+ * modified by zhangwei on 20100524
+ * in the old version, the macro is defined as -38, but in the datasheet of cc2420 transceiver,
+ * the recommended value is -45
+ * ref: cc2420 datasheet page 47 
+ */
+//#define RSSI_OFFSET -45
+
 #define RSSI_2_ED(rssi)   ((rssi) < RSSI_OFFSET ? 0 : ((rssi) - (RSSI_OFFSET)))
 #define ED_2_LQI(ed) (((ed) > 63 ? 255 : ((ed) << 2)))
-
-
 
 
 #ifdef __cplusplus
@@ -188,6 +180,7 @@ typedef struct{
 	uint8 rssi;
 	uint8 lqi;
 	volatile uint8 spistatus;
+    //TiFrameTxRxInterface intf;
 	uint16 param[14];
 }TiCc2420Adapter;
 
@@ -237,8 +230,8 @@ void cc2420_restart( TiCc2420Adapter * cc );
 uint8 cc2420_write( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option );
 uint8 cc2420_read( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option );
 
-uint8 cc2420_iobsend( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option );
-uint8 cc2420_iobrecv( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option );
+//uint8 cc2420_iobsend( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option );
+//uint8 cc2420_iobrecv( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option );
 
 void  cc2420_evolve( TiCc2420Adapter * cc );
 uint8 cc2420_setrxmode( TiCc2420Adapter * cc );
@@ -252,7 +245,8 @@ uint8 cc2420_wakeup( TiCc2420Adapter * cc );
  * cc2420 PIN based operations
  ******************************************************************************/
 
-#define cc2420_ischannelclear(cc) HAL_READ_CC_CCA_PIN()
+uint8 cc2420_ischannelclear( TiCc2420Adapter * cc );
+// #define cc2420_ischannelclear(cc) HAL_READ_CC_CCA_PIN()
 uint8 cc2420_vrefon( TiCc2420Adapter * cc );
 uint8 cc2420_vrefoff( TiCc2420Adapter * cc );
 uint8 cc2420_powerdown( TiCc2420Adapter * cc );
@@ -264,7 +258,7 @@ uint8 cc2420_powerup( TiCc2420Adapter * cc );
  ******************************************************************************/
 
 uint8 cc2420_sendcmd( TiCc2420Adapter * cc, uint8 addr);
-inline uint8 cc2420_getcmdstatus( TiCc2420Adapter * cc) {return cc2420_sendcmd(cc,CC2420_SNOP);};
+uint8 cc2420_getcmdstatus( TiCc2420Adapter * cc);
 
 uint8 cc2420_snop( TiCc2420Adapter * cc );
 uint8 cc2420_oscon( TiCc2420Adapter * cc );
@@ -273,7 +267,8 @@ uint8 cc2420_calibrate( TiCc2420Adapter * cc );
 uint8 cc2420_rxon( TiCc2420Adapter * cc );
 uint8 cc2420_txon( TiCc2420Adapter * cc );
 uint8 cc2420_txoncca( TiCc2420Adapter * cc );
-uint8 cc2420_rfoff( TiCc2420Adapter * cc );                 
+uint8 cc2420_rfoff( TiCc2420Adapter * cc );   
+void  cc2420_switchtomode( TiCc2420Adapter * cc, uint8 mode );
 
 uint8 cc2420_flushrx( TiCc2420Adapter * cc );
 uint8 cc2420_flushtx( TiCc2420Adapter * cc );               
@@ -332,6 +327,11 @@ uint8 cc2420_lqi( TiCc2420Adapter * cc );
 /* returns true when the frame just read by cc2420_recv(...) passed crc verification*/
 bool cc2420_crctest( TiCc2420Adapter * cc );
 
+
+/* provide the transceiver interface */
+TiFrameTxRxInterface * cc2420_interface( TiCc2420Adapter * cc, TiFrameTxRxInterface * intf );
+//TiFrameTxRxInterface * cc2420_interface( TiCc2420Adapter * cc );
+
 void cc2420_dump( TiCc2420Adapter * cc );
 
 /*******************************************************************************
@@ -357,12 +357,7 @@ void cc2420_disable_sfd( TiCc2420Adapter * cc );
 void cc2420_default_listener( void * ccptr, TiEvent * e ); 
 
 
-/* provide the transceiver interface */
-///void * cc2420_provide( TiCc2420Adapter * cc );
-TiFrameTxRxInterface * cc2420_provide( TiCc2420Adapter * cc, TiFrameTxRxInterface * intf );
-
-
 #ifdef __cplusplus
 }
 #endif
-#endif  /* _CC2420_H_4892_ */
+#endif  /* _HAL_CC2420_H_4892_ */

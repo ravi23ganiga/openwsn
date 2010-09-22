@@ -1,55 +1,85 @@
-/*******************************************************************************
- * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
- *
- * Copyright (C) 2005-2010 zhangwei(TongJi University)
- *
- * OpenWSN is a free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2 or (at your option) any later version.
- *
- * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA.
- *
- * For non-opensource or commercial applications, please choose commercial license.
- * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
- *
- * For other questions, you can contact the author through email openwsn#gmail.com
- * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi
- * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
- *
- ******************************************************************************/
-#ifndef _SVC_SIOCOMM_H_3634_
-#define _SVC_SIOCOMM_H_3634_
-
+#ifndef _SVC_SIOCOMM_H_4890_
+#define _SVC_SIOCOMM_H_4890_
 
 #include "svc_configall.h"
 #include "svc_foundation.h"
-#include "../hal/hal_uart.h"
-#include "../hal/hal_timer.h"
+#include "../hal/hal_device.h"
+// #include "../hal/hal_uart.h"
 #include "../rtl/rtl_iobuf.h"
 #include "../rtl/rtl_textspliter.h"
 #include "../rtl/rtl_textcodec.h"
+
+
+//#include "../hal/hal_timer.h"
+
+/* CONFIG_DYNA_MEMORY
+ * If this macro defines, then sio_create() and sio_free() are enabled
+ *
+ * CONFIG_SIOCOMM_PKTSIZE
+ * The maximum possible length of the packet that can be processed by the siocomm object.
+ */
+
+
+#ifndef CONFIG_SIOCOMM_PKTSIZE
+#define CONFIG_SIOCOMM_PKTSIZE 255
+#endif
+
+#define SIOCOMM_HOPESIZE(pktsize) (sizeof(TiSioComm)+IOBUF_HOPESIZE(CONFIG_SIOCOMM_PKTSIZE)*3)
+
+
+ //Q ???: 0x7F or 0x80? is 7F big enough?
+#ifndef CONFIG_UART_RXBUFFER_SIZE 
+  #define CONFIG_UART_RXBUFFER_SIZE 0x7F
+#endif
 
 #ifndef SIO_RXBUFFER_CAPACITY  
   #define SIO_RXBUFFER_CAPACITY 0xFF
 #endif
 
+
 #ifndef SIO_TXBUFFER_CAPACITY  
   #define SIO_TXBUFFER_CAPACITY SIO_RXBUFFER_CAPACITY
 #endif
 
+/* @modified by zhangwei on 2010.05.03
+ *  - add three new members into the TiSioComm object. 
+ *    lowlayer_object, lowlayer_read, lowlayer_write
+ *    by switching their values, the siocomm module can change low level communication 
+ *    driver to TiUartAdapter, socket communication or other transportation mechanisms
+ *    without modifying the source code.
+ *	- todo
+ *  replace uart_read/uart_write with lowlayer_read/lowlayer_write
+ *
+ *  @modified by yanshixing 20100511
+ *  - comment some #ifndef before
+ *  - modified the structure of TiSioComm
+ *  -
+ */
+
 #define SIO_START 0x55
 #define SIO_END   0x99
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* TiSioComm
- * serial communication service based on TiUartAdapter, Spliter, Codec and Packet Queue 
+ * serial communication service based on TiUartAdapter, Spliter, Codec and Packet Queue
+ *
+ * member descriptions
+ * 	device: an pointer to the block device interface. an interface is an structure of
+ * 			function pointers.
+ *  provider: which device driver provide the interface.
  */
 typedef struct{
+  uint8 state;
+  //TiUartAdapter * uart;
+  char splitermem[sizeof(TiTextSpliter)];
+  TiTextSpliter * spliter;
+  uint8 option;
+  //TiSvcTimer * timer;
+  //uint8 sof;
+
   char txmem[ IOBUF_HOPESIZE(0x7F) ];
   char rxmem[ IOBUF_HOPESIZE(0x7F) ];
   char quemem[ IOBUF_HOPESIZE(0x7F) ];
@@ -60,41 +90,46 @@ typedef struct{
   TiIoBuf * rxque;
   TiIoBuf * tmp_iobuf;
 
-  TiUartAdapter * uart;
-  TiTextSpliter * spliter;
-  uint8 option;
+  TiBlockDeviceInterface device;
+
+  // the TiSioComm object has three internal TiIoBuf members. They're padded to the
+  // siocomm object variable. we provides three small utility functions _sio_rxbuf(),
+  // _sio_txbuf() and _sio_rxque() to help you deal with these conditions in the
+  // svc_siocomm.c file,
+  //
+  // TiIoBuf * rxbuf;
+  // TiIoBuf * txbuf;
+  // TiIoBuf * rxque;
 }TiSioComm;
 
-//#ifdef CONFIG_DYNA_MEMORY
-TiSioComm * sio_create( TiUartAdapter * uart, TiTextSpliter * spliter, uint8 opt );
+#define SIO_HOPESIZE(size) (sizeof(TiSioComm)+size)
 
-void sio_free( TiSioComm * sio );
-//#endif
-
-/* Construct an TiSioComm service in the specified memory block */
 TiSioComm * sio_construct( char * buf, uint16 size );
-/* Destroy an TiSioComm service */
 void sio_destroy( TiSioComm * sio );
+TiSioComm * sio_create( uint16 size );
+void sio_free( TiSioComm * sio );
 
-/* Open a TiSioComm service*/
-TiSioComm * sio_open( TiSioComm * sio, TiUartAdapter * uart, TiTextSpliter * spliter, uint8 opt );
-
-/* close the TiSioComm service*/
-TiSioComm * sio_close( TiSioComm * sio );
+//TiSioComm * sio_open( TiSioComm * sio, TiUartAdapter * uart, uint8 opt );
+TiSioComm * sio_open( TiSioComm * sio, TiBlockDeviceInterface * device, uint8 opt );
+void sio_close( TiSioComm * sio );
 
 
 /* Configure an TiSioComm service */
-void sio_configure( TiSioComm * sio, TiTimerAdapter * timer, uint8 opt );
+// todo: in the future, sio will add timeout functionalities
+//void sio_configure( TiSioComm * sio, TiTimerAdapter * timer, uint8 opt );
+void sio_configure( TiSioComm * sio, uint8 opt );
 
 /* Read a packet from TiSioComm service. The packet is in the internal queue of TiSioComm */
-uint8 sio_read( TiSioComm * sio, TiIoBuf * iobuf );
+uintx sio_read( TiSioComm * sio, TiIoBuf * iobuf, uintx option );
 
 /* Write a packet into TiSioComm. The packet will be sent out through UART interface */
-uint8 sio_write( TiSioComm * sio, TiIoBuf * iobuf );
-
+uintx sio_write( TiSioComm * sio, TiIoBuf * iobuf, uintx option );
 
 /* Evolve the TiSioComm object */
-void sio_evolve( TiSioComm * sio, TiEvent * e  );
+void sio_evolve( TiSioComm * sio, TiEvent * e );
 
+#ifdef __cplusplus
+}
+#endif
 
-
+#endif /* _SVC_SIOCOMM_H_4890_ */

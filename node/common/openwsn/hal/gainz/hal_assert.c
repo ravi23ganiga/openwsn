@@ -45,8 +45,7 @@
 * @ I have been changed "while" in line 67 with "if " to keep the process going on --Shimiaojing  
  *****************************************************************************/ 
  
-//void _hal_assert( int cond, char * file, uint16 line )
-void _hal_assert( bool cond, char * file, uint16 line )
+void hal_assert_report( bool cond, char * file, uint16 line )
 {
 	char * msg = "assert:";
 	while (!cond)

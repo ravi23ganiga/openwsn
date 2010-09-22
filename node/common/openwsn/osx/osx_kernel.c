@@ -214,6 +214,8 @@ void _osx_execute( TiOSX * osx )
 
 	//hal_setlistener( (TiFunEventHandler)_osx_post, osx );
 
+    hal_assert( g_osx != NULL );
+
 	hal_enable_interrupts();
 	while (1)
 	{
@@ -268,7 +270,7 @@ void _osx_hardexecute( TiOSX * osx )
 	//dispa_attach( osx->dispatcher, EVENT_WAKEUP, _osx_target_wakeup );
 	//dispa_attach( osx->dispatcher, EVENT_REBOOT, _osx_target_handler );
 	//dispa_attach( sche->dispatcher, EVENT_SHUTDOWN, _osx_target_shutdown );
-
+/* todo
 	_osx_timer_construct( &osx->systimer, sizeof(TiOsxTimer) );
 	osx->systimer = _osx_timer_open( &osx->systimer, CONFIG_OSX_TIMER_INTERVAL, _osx_hardevolve, osx );
 	hal_assert( osx->systimer != NULL );
@@ -287,6 +289,7 @@ void _osx_hardexecute( TiOSX * osx )
 		}
 	};
 	_osx_free( g_osx );
+    */
 }
 
 
@@ -331,11 +334,14 @@ void osx_init( void )
 
 void osx_execute( void )
 {
-	#ifdef CONFIG_OSX_TIMER_ENABLE
+/*
+	#ifndef CONFIG_OSX_TIMER_ENABLE
 	_osx_execute( g_osx );
 	#else
 	_osx_hardexecute( g_osx );
 	#endif
+    */
+	_osx_execute( g_osx );
 }
 
 

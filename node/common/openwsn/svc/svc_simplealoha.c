@@ -25,8 +25,8 @@
  ******************************************************************************/
 
 /****************************************************************************** 
- * svc_aloha.c
- * ALOHA medium access control (MAC) protocol 
+ * svc_simplealoha.c
+ * simple ALOHA medium access control (MAC) protocol 
  *  
  * @attention
  *	- This version will wait for the ACK frame after sending a DATA frame immediately.
@@ -67,54 +67,73 @@
  * 
  * @modified by zhangwei on 20091201
  *	- add random backoff time support to delay if confliction encountered.
+ * @modified by zhangwei on 2010.06.12
+ *  - rename the module from svc_aloha to svc_simplealoha
+ *  - revision. 
+ * 
+ * @modified by zhangwei on 2010.07.18
+ *  - replace TiSimpleAloha with TiSimpleAloha, and "aloha_" with "saloha_". this is to 
+ *    avoid conflictions with module "svc_aloha"
+ *
+ * @modified by zhangwei on 2010.08.07
+ *  - revised. bug fixed.
+ *
+ * @modified by zhangwei on 2010.08.13
+ *  - correct bugs in changing mac->seqid. the sequence id should be increased after
+ *    sending successfully. (is this right?)
  *
  *****************************************************************************/
 
 #include "svc_configall.h"
 #include <string.h>
-#include "svc_aloha.h"
+#include "svc_foundation.h"
+#include "../rtl/rtl_frame.h"
+#include "../rtl/rtl_random.h"
+#include "../rtl/rtl_debugio.h"
 #include "../hal/hal_foundation.h"
 #include "../hal/hal_cc2420.h"
+#include "../hal/hal_assert.h"
 #include "../hal/hal_cpu.h"
-#include "../rtl/rtl_openframe.h"
-#include "../rtl/rtl_random.h"
+#include "../hal/hal_debugio.h"
+#include "svc_simplealoha.h"
 
+static uint16 _saloha_get_backoff( TiSimpleAloha * mac );
+static uintx _saloha_trysend( TiSimpleAloha * mac, char * buf, uint8 len, uint8 option );
+static uintx _saloha_tryrecv( TiSimpleAloha * mac, char * buf, uint8 len, uint8 option );
 
-/* todo
- * please change TiTimerAdapter to TiTimer */
-
-#define aloha_ischannelclear(mac) cc2420_ischannelclear(mac->tranceiver)
-
-static inline uintx _aloha_trysend( TiAloha * mac, char * buf, uint8 len, uint8 option );
-static inline uintx _aloha_send( TiAloha * mac, char * buf, uint8 len, uint8 option );
-static inline uintx _aloha_recv( TiAloha * mac, char * buf, uint8 len, uint8 option );
-
-
-TiAloha * aloha_construct( char * buf, uintx size )
+TiSimpleAloha * saloha_construct( char * buf, uintx size )
 {
 	memset( buf, 0x00, size );
-	hal_assert( sizeof(TiAloha) <= size );
-	return (TiAloha *)buf;
+	hal_assert( sizeof(TiSimpleAloha) <= size );
+	return (TiSimpleAloha *)buf;
 }
 
-void aloha_destroy( TiAloha * mac )
+void saloha_destroy( TiSimpleAloha * mac )
 {
 	return;
 }
 
-TiAloha * aloha_open( TiAloha * mac, TiCc2420Adapter * transceiver, uint8 chn, uint16 panid, 
+TiSimpleAloha * saloha_open( TiSimpleAloha * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uint16 panid, 
 	uint16 address, TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner, uint8 option )
 {
-	//hal_assert( (transceiver != NULL) && (timer != NULL) );
+    void * provider;
 
-	//mac->state = ALOHA_STATE_RXWAIT;
-	mac->transceiver = transceiver;  
-	mac->timer = timer;
+	rtl_assert((rxtx != NULL) && (timer != NULL));
+    timer = timer;
+
+    // assume: the rxtx driver has already been opened.
+
+    mac->rxtx = rxtx;
+	//mac->timer = timer;
 	mac->listener = listener;
 	mac->lisowner = lisowner;
-	mac->rxlen = 0;
 	mac->retry = 0;
 	mac->backoff = CONFIG_ALOHA_BACKOFF;
+    mac->panto = panid;
+    mac->shortaddrto = FRAME154_BROADCAST_ADDRESS;
+    mac->panfrom = panid;
+    mac->shortaddrfrom = address;
+    mac->seqid = 0;
 	mac->option = option;
 
 	// timer_open( timer, 0, NULL, NULL, 0x00 );
@@ -122,90 +141,233 @@ TiAloha * aloha_open( TiAloha * mac, TiCc2420Adapter * transceiver, uint8 chn, u
 	// timer_setinterval( mac->timer, CONFIG_ALOHA_ACK_RESPONSE_TIME, 0 );
 
 	// for the aloha module, we should enable ACK mechanism
-	cc2420_enable_addrdecode( transceiver );
-	cc2420_enable_autoack( transceiver );
-	cc2420_setchannel( transceiver, chn );
-	cc2420_setpanid( transceiver, panid );
-	cc2420_setshortaddress( transceiver, address );
-	cc2420_setrxmode( transceiver );							
+    provider = rxtx->provider;
+	rxtx->setchannel( provider, chn );
+	rxtx->setpanid( provider, panid );
+	rxtx->setshortaddress( provider, address );
+	//rxtx->setrxmode( provider );					
+    rxtx->enable_addrdecode( provider );
+	rxtx->enable_autoack( provider );
+
+    ieee802frame154_open( &(mac->desc) );
 
     return mac;
 }
 
-void aloha_close( TiAloha * mac )
+void saloha_close( TiSimpleAloha * mac )
 {
 	// timer_close( mac->timer );
-	cc2420_close( mac->transceiver );
 }
 
-uintx aloha_send( TiAloha * mac, TiOpenFrame * opf, uint8 option )
+uintx saloha_send( TiSimpleAloha * mac, TiFrame * frame, uint8 option )
 {
-	// assert the buffer opf has already an complete frame
-	return _aloha_send( mac, opf_buffer(opf), opf_datalen(opf), option ); 
+	TiIEEE802Frame154Descriptor * desc;
+    uintx ret;
+
+    // according to 802.15.4 specification:
+    // header 12 B = 1B frame length (required by the transceiver driver currently) 
+    //  + 2B frame control + 1B sequence number + 2B destination pan + 2B destination address
+    //  + 2B source pan + 2B source address
+    //
+	frame_skipouter( frame, 12, 2 );
+   
+    desc = ieee802frame154_format( &(mac->desc), frame_startptr(frame), frame_capacity(frame), FRAME154_DEF_FRAMECONTROL_DATA );
+    rtl_assert( desc != NULL );
+
+    ieee802frame154_set_sequence( desc, mac->seqid );
+	ieee802frame154_set_panto( desc, mac->panto );
+	ieee802frame154_set_shortaddrto( desc, mac->shortaddrto );
+	ieee802frame154_set_panfrom( desc, mac->panfrom );
+	ieee802frame154_set_shortaddrfrom( desc, mac->shortaddrfrom );
+  
+	ret = _saloha_trysend( mac, frame_startptr(frame), frame_capacity(frame), option ); 
+    frame_moveinner( frame );
+    return ret;
 }
 
-uintx aloha_broadcast( TiAloha * mac, TiOpenFrame * opf, uint8 option )
+uintx saloha_broadcast( TiSimpleAloha * mac, TiFrame * frame, uint8 option )
 {
-	uint16 * fcf;
+    TiIEEE802Frame154Descriptor * desc;
+    uintx ret;
 
-	// assert: The parameter opf has already an complete frame. It must be casted 
-	// or parsed before, or else the function call opf_set_shortaddrto() will be failed.
+    frame_skipouter( frame, 12, 2 );
 
-	// get the frame control field
-	fcf = (uint16 *)(&opf->buf[1]); 
-	opf_set_control( opf, OPF_CLR_ACK_REQUEST(*fcf) );
-     
-	// we only used PAN inside broadcasting. you may also need PAN-outside broadcasting.
-	// However, the current version hasn't support such applications yet.
-	opf_set_shortaddrto( opf, OPF_BROADCAST_ADDRESS );
-	return _aloha_send( mac, opf_buffer(opf), opf_datalen(opf), option ); 
+    desc = ieee802frame154_format( &(mac->desc), frame_startptr(frame), frame_capacity(frame), FRAME154_DEF_FRAMECONTROL_DATA_NOACK );
+    rtl_assert( desc != NULL );
+	
+    ieee802frame154_set_sequence( desc, mac->seqid );
+	ieee802frame154_set_panto( desc, mac->panto );
+	ieee802frame154_set_shortaddrto( desc, FRAME154_BROADCAST_ADDRESS );
+	ieee802frame154_set_panfrom( desc, mac->panfrom );
+	ieee802frame154_set_shortaddrfrom( desc, mac->shortaddrfrom );
+
+    // char * fcf;
+    // char * shortaddrto;
+
+    // fcf = frame_startptr(frame);
+    // shortaddrto = (char*)(frame_startptr(frame)) + 3;  // todo: according to IEEE 802.15.4 format, 加几？请参考15.4文档确认
+
+
+    // for broadcasting frames, we don't need acknowledgements. so we clear the ACK 
+    // REQUEST bit in the frame control field. 
+    // refer to 802.15.4 protocol format
+    //
+    // fcf ++;
+    // (*fcf) &= 0xFA; // TODO: this value should changed according to 802.15.4 format 
+
+    // 0xFFFFFFFF the broadcast address according to 802.15.4 protocol format
+    // attention: we only set the destination short address field to broadcast address.
+    // the destination pan keeps unchanged.
+    //
+    // *shortaddrto ++ = 0xFF;
+    // *shortaddrto ++ = 0xFF;
+
+    ret = _saloha_trysend( mac, frame_startptr(frame), frame_capacity(frame), option ); 
+    frame_moveinner( frame );
+    return ret;
 }
 
-uintx aloha_recv( TiAloha * mac, TiOpenFrame * opf, uint8 option )
+uintx saloha_recv( TiSimpleAloha * mac, TiFrame * frame, uint8 option )
 {
+    const uint8 HEADER_SIZE = 12, TAIL_SIZE = 2;
 	uint8 count;
-	count = _aloha_recv( mac, opf_buffer(opf), opf_size(opf), option );
+    char * ptr = frame_startptr(frame);;
+    
+    // move the frame current layer to mac protocol related layer. the default layer
+    // only contains the data (mac payload) rather than mac frame.
+    frame_skipouter( frame, HEADER_SIZE, TAIL_SIZE );
+    // assert: the skipouter must be success
+
+	count = _saloha_tryrecv( mac, frame_startptr(frame), frame_capacity(frame), option );
+
 	if (count > 0)
 	{
-		if (opf_parse(opf,0))
-		{
-			/* Check whether the current frame is a DATA type frame.
-			 * only the DATA type frame will be accepted here. The other types, such as COMMAND,
-			 * BEACON or ACK will be ignored here.
-			 * buf[0] is the length byte. buf[1] and buf[2] are frame control bytes.
-			 */		 
-			if (FCF_FRAMETYPE(*(opf->ctrl)) != FCF_FRAMETYPE_DATA)
+        // the first byte in the frame buffer is the length byte. it represents the 
+        // MPDU length. after received the frame, we first check whether this is an
+        // incomplete frame or not. if it's an bad frame, then we should ignore it.
+        //
+        ptr = frame_startptr(frame);
+		//dbc_putchar( frame_capacity( frame ) );
+		
+        if (*ptr == count-1 )
+        {
+            // get the pointer to the frame control field according to 802.15.4 frame format
+            // we need to check whether the current frame is a DATA type frame.
+			// only the DATA type frame will be transfered to upper layers. The other types, 
+            // such as COMMAND, BEACON and ACK will be ignored here.
+			// buf[0] is the length byte. buf[1] and buf[2] are frame control bytes.
+            ptr ++;
+			if (FCF_FRAMETYPE(*(ptr)) != FCF_FRAMETYPE_DATA)
 			{
 				count = 0;
 			}
 			else{
-				opf->datalen = count;
+                frame_setlength( frame, count );
+                frame_setcapacity( frame, count );
 			}
-		}
-		else{
-			count = 0;
-		}
-	}
-
+        }
+    }
+    frame_moveinner( frame );
+    if (count > 0)
+    {
+        frame_setlength( frame, count - HEADER_SIZE - TAIL_SIZE );
+        frame_setcapacity( frame, count - HEADER_SIZE - TAIL_SIZE );
+    }
+    else{
+        frame_setlength( frame, 0 );
+    }
+    
 	return count;
 }
 
-/* @return
+uint16 _saloha_get_backoff( TiSimpleAloha * mac )
+{
+    return 20 + rand_uint8( mac->backoff << 1 );
+}
+
+/** 
+ * try send a frame out through the transceiver. the frame should be already placed 
+ * inside buffer. 
+ * 
+ * this function is shared by saloha_send() and saloha_broadcast().
+ *
+ * @return
  *	> 0			success
  *	0           failed. no byte has been sent successfully
  */
-uintx _aloha_send( TiAloha * mac, char * buf, uint8 len, uint8 option )
+uintx _saloha_trysend( TiSimpleAloha * mac, char * buf, uint8 len, uint8 option )
 {    
+    TiFrameTxRxInterface * rxtx = mac->rxtx;
 	uintx count=0;
 
+    dbo_putchar( 0x99 );
 	if (len == 0)
 		return 0;
   
 	while (mac->retry < CONFIG_ALOHA_MAX_RETRY )
 	{  
-		count = _aloha_trysend(mac, buf, len, option);
-		if (count > 0)
+        dbo_putchar( 0xF0 );
+
+        //while (!saloha_ischannelclear( mac->transceiver))
+	    //continue;
+    	
+        // attention: you needn't set the the transceiver to TX mode manually. according
+        // to the transceiver design, the transceiver will automatically change to TX mode
+        // when you call send() function.
+
+	    count = rxtx->send( rxtx->provider, buf, len, option );
+
+        if (count > 0)
 		{
+		    //// todo : check whether this frame needs ACK
+
+		    ///* If the frame has been successfully sent by the transceiver, the program will
+		    // * start to wait for the ACK frame replied from the receiver. The maximum waiting
+		    // * duration is configured by macro CONFIG_ALOHA_ACK_RESPONSE_TIME. The time unit
+		    // * is milli-seconds.
+		    // */
+		    //cc2420_setrxmode( mac->transceiver );
+		    //// todo
+		    //// whether the cc2420 can be stable enough for receiving 
+		    //// you may need to check the cc2420 status to guarantee this
+
+		    //timer_start( mac->timer );
+		    //expired = true;
+		    //while (!timer_expired( mac->timer ))
+		    //{
+		    //	if (cc2420_read( mac->transceiver, &(mac->rxbuf[0]), CONFIG_CC2420_RXBUFFER_SIZE, 0x00 ) > 0)
+		    //	{
+		    //		/* 2 bytes for frame control */
+		    //		ctrl = ((uint16)(mac->rxbuf[1]) << 8) | (mac->rxbuf[2]);
+
+		    //		/* @attention
+		    //		 * If the incoming frame is ACK frame, then we can return successfully. 
+		    //		 * Other type frames will be ignored. 
+		    //		 * -> This should be improved in the future. Theoretically speaking, the 
+		    //		 * current frame arrived may possibly be the data type from other nodes. 
+		    //		 * You should not ignore such types or else encounter unnecessary frame loss.
+		    //		 */
+		    //		if (FCF_FRAMETYPE(ctrl) == FCF_FRAMETYPE_ACK)
+		    //		{
+		    //			timer_stop( mac->timer );
+		    //			mac->retry = 0;
+		    //			expired = false;
+		    //			break;
+		    //		}
+
+		    //		/* We needn't this frame. Simply ignore it */
+		    //		mac->rxlen = 0;
+		    //	}
+		    //}
+		    //
+		    //if (expired)
+		    //{
+		    //	mac->retry ++;
+		    //	count = 0;
+		    //}
+
+            mac->seqid ++;
+            dbo_putchar( 0xF1 );
 			mac->retry = 0;
 			break;
 		}
@@ -215,7 +377,8 @@ uintx _aloha_send( TiAloha * mac, char * buf, uint8 len, uint8 option )
 		 * we simply wait 300 milli-seconds here.
 		 */
 
-		mac->backoff = 20 + rand_uint8( mac->backoff << 1 );
+        dbo_putchar( 0xF2 );
+		mac->backoff = _saloha_get_backoff( mac );
 		hal_delay( mac->backoff );
 		mac->retry++;
 	}
@@ -231,83 +394,9 @@ uintx _aloha_send( TiAloha * mac, char * buf, uint8 len, uint8 option )
 	return count;	
 }
 
-/* @return
- *	> 0			success
- *	0           failed. no byte has been sent successfully. when it returns 0, 
- *              mac->retry will increase by 1.
- */
-uintx _aloha_trysend( TiAloha * mac, char * buf, uint8 len, uint8 option )
+uintx _saloha_tryrecv( TiSimpleAloha * mac, char * buf, uint8 len, uint8 option )
 {
-	uintx count = 0;
-    //uint16 ctrl;
-    //bool expired;
-	
-	//while (!aloha_ischannelclear( mac->transceiver))
-	//continue;
-	
-	// cc2420_settxmode( mac->transceiver );
-	count = cc2420_send( mac->transceiver, buf, len, option );
-
-    // Q: why we needn't to call phy_setrxmode apparently?
-    // R: because the cc2420 transceiver can go back to RX mode after sending a frame 
-    // automatically. 
-
-	if (count > 0)
-	{   
-	
-		//// todo : check whether this frame needs ACK
-
-		///* If the frame has been successfully sent by the transceiver, the program will
-		// * start to wait for the ACK frame replied from the receiver. The maximum waiting
-		// * duration is configured by macro CONFIG_ALOHA_ACK_RESPONSE_TIME. The time unit
-		// * is milli-seconds.
-		// */
-		//cc2420_setrxmode( mac->transceiver );
-		//// todo
-		//// whether the cc2420 can be stable enough for receiving 
-		//// you may need to check the cc2420 status to guarantee this
-
-		//timer_start( mac->timer );
-		//expired = true;
-		//while (!timer_expired( mac->timer ))
-		//{
-		//	if (cc2420_read( mac->transceiver, &(mac->rxbuf[0]), CONFIG_CC2420_RXBUFFER_SIZE, 0x00 ) > 0)
-		//	{
-		//		/* 2 bytes for frame control */
-		//		ctrl = ((uint16)(mac->rxbuf[1]) << 8) | (mac->rxbuf[2]);
-
-		//		/* @attention
-		//		 * If the incoming frame is ACK frame, then we can return successfully. 
-		//		 * Other type frames will be ignored. 
-		//		 * -> This should be improved in the future. Theoretically speaking, the 
-		//		 * current frame arrived may possibly be the data type from other nodes. 
-		//		 * You should not ignore such types or else encounter unnecessary frame loss.
-		//		 */
-		//		if (FCF_FRAMETYPE(ctrl) == FCF_FRAMETYPE_ACK)
-		//		{
-		//			timer_stop( mac->timer );
-		//			mac->retry = 0;
-		//			expired = false;
-		//			break;
-		//		}
-
-		//		/* We needn't this frame. Simply ignore it */
-		//		mac->rxlen = 0;
-		//	}
-		//}
-		//
-		//if (expired)
-		//{
-		//	mac->retry ++;
-		//	count = 0;
-		//}
-	}
-
-	return count;
-}
-
-uintx _aloha_recv( TiAloha * mac, char * buf, uint8 len, uint8 option )
-{
+    TiFrameTxRxInterface  * rxtx = mac->rxtx;
 	uintx count;
   //  uint16 ctrl=0;
 
@@ -315,9 +404,13 @@ uintx _aloha_recv( TiAloha * mac, char * buf, uint8 len, uint8 option )
 	 * a data frame. however, this is done by cc2420 transceiver. so nothing to 
 	 * do here 
 	 */
-	count = cc2420_recv( mac->transceiver, buf, len, option );
-	if (count > 0)
-	{   
+	count = rxtx->recv( rxtx->provider, buf, len, option );
+
+	//if (count > 0) 
+	//{   
+        // @todo: you should judge whether the current frame is 802.15.4 DATA type
+        // by checking the ctrl field in the frame. Only the 802.15.4 DATA frame
+        // can be passed onto the higher layer.
 		
 		/* 2 bytes for frame control
 		 * only the DATA type frame will be accepted here. The other types, such as COMMAND,
@@ -327,26 +420,27 @@ uintx _aloha_recv( TiAloha * mac, char * buf, uint8 len, uint8 option )
 		//ctrl = (((uint16)buf[2]) << 8) | (buf[1]);
 
 		//if (FCF_FRAMETYPE(ctrl) != FCF_FRAMETYPE_DATA)
-		{
+	//	{
 		//	count = 0;
-		}
-	}
-
+	//	}
+	//}
+    
 	return count;
+	
 }
 
 /* this function can be used as TiCc2420Adapter's listener directly. so you can get
  * to know when a new frame arrives through the event's id. however, the TiCc2420Adapter's 
- * listener is fired by ISR. so we don't suggest using aloha_evolve() as TiCc2420Adapter's
+ * listener is fired by ISR. so we don't suggest using saloha_evolve() as TiCc2420Adapter's
  * listener directly.
  *
  * the evolve() function also behaviors like a thread.
  */
-void aloha_evolve( void * macptr, TiEvent * e )
+void saloha_evolve( void * macptr, TiEvent * e )
 {
-	TiAloha * mac = (TiAloha *)macptr;
+	TiSimpleAloha * mac = (TiSimpleAloha *)macptr;
 
-	cc2420_evolve( mac->transceiver );
+    mac->rxtx->evolve( mac->rxtx, NULL );
 
 	if (e)
 	{
@@ -359,12 +453,13 @@ void aloha_evolve( void * macptr, TiEvent * e )
 			// todo
 			if (mac->listener != NULL)
 			{
-				//mac->rxlen = aloha_recv(mac, &(mac->rxbuf[0]), CC2420_RXBUFFER_SIZE, 0x00);
+				//mac->rxlen = saloha_recv(mac, &(mac->rxbuf[0]), CC2420_RXBUFFER_SIZE, 0x00);
 				//if (mac->rxlen > 0)
 					mac->listener( mac->lisowner, e );
 			}
 
 		case 1:
+        default:
 			break;
 		}
 	}
@@ -372,158 +467,3 @@ void aloha_evolve( void * macptr, TiEvent * e )
 	return;
 }
 
-
-
-
-
-
-/* this function can be used as TiCc2420Adapter's listener directly. so you can get
- * to know when a new frame arrives through the event's id. however, the TiCc2420Adapter's 
- * listener is fired by ISR. so we don't suggest using aloha_evolve() as TiCc2420Adapter's
- * listener directly.
- *
- * the evolve() function also behaviors like a thread.
- */
-
-/*
-void aloha_evolve2( void * macptr, TiEvent * e )
-{
-	TiAloha * mac = (TiAloha *)macptr;
-
-    switch (mac->state)
-    {
-	case ADTALOHA_IDLE:
-        // if mac->txque isn't empty, then 
-        //     start the sending random delay timer
-        //     goto ADTALOHA_WAIT_FOR_PHY_SENDING state
-        // endif 
-        if (state == ADTALOHA_IDLE)
-        {
-            if (mac->sleeprequest)
-            {
-                phy_sleep();
-                break;
-                mac->state = ADTALOHA_STATE_SLEEP;
-            }
-        }
-
-        if (!iobuf_empty(mac->txque))
-        {
-
-            _adaptaloha_trysend( mac );
-            // three cases for the frame:
-            // - it's an broadcasting frame, then we neen't to wait for ACK and 
-            // simply goto IDLE state. 
-            // - it's an frame which doesn'e need ACK, then goto IDLE state;
-            // - it's an frame needing ACK.
-            // 
-            if (ack not required)
-            {
-                mac->state = ADTALOHA_IDLE;
-            }
-            else{
-                if (mac->retrycount > 3)
-                {
-                    // failed to sending the frame after 3 try. we had to accept
-                    // the situation. 
-
-                    iobuf_clear( mac->txque );
-                    mac->state = ADTALOHA_IDLE;
-                    mac->retrycount = 0;
-                }
-                else{
-                    duration = _adaptaloha_get_duration( mac->loadfactor );
-                    time_start( mac->timer, duration );
-                    mac->state = ADTALOHA_WAITFOR_PHY_SENDING;
-                    mac->retrycount ++;
-                }
-            }
-        }
-        break;
-
-    case ADTALOHA_WAITFOR_RETRY:
-        if timer_expired()
-        {
-            _adaptaloha_trysend( mac );
-            if (failed)
-            {
-                if (mac->retrycount > 3)
-                {
-                    // failed to sending the frame after 3 try. we had to accept
-                    // the situation. 
-
-                    iobuf_clear( mac->txque );
-                    mac->state = ADTALOHA_IDLE;
-                    mac->retrycount = 0;
-                }
-                else{
-                    duration = _adaptaloha_get_duration( mac->loadfactor );
-                    time_start( mac->timer, duration );
-                    mac->state = ADTALOHA_WAITFOR_RETRY;
-                    mac->retrycount ++;
-                }
-            }
-        }
-        break;
-
-
-    case ADTALOHA_STATE_SLEEP:
-        if (e->id = wakeuprequest)
-        {
-            phy_wakeup();
-            mac->state = ADTALOHA_IDLE;
-        }
-
-    }
-
-	switch (e->id)
-	{
-    case ADTALOHA_EVENT_FRAME_ARRIVAL:
-        // no matter what state the MAC object is, we need read the frame arrived 
-        // out from the PHY layer. 
-        //
-        // @attention: if the mac->rxque already has frame, then it will be overwrite. 
-        // and the old frame will be lost. in order to avoid this, you higher layer
-        // applications should read the frame out from MAC layer as fast as possible!
-        //
-        phy_read( mac->phy, mac->rxque )
-        
-        // if (this frame isn't DATA frame such as ACK or COMMAND type)
-        //    then simply drop the frame
-        // endif
-        if ()
-        {
-            iobuf_clear( mac->rxque );
-        }
-        break;
-
-    case ADTALOHA_EVENT_SHUTDOWN_REQUEST:
-        // no matter what the current state is, then you can do shutdown
-        timer_stop(); // if it's running
-        phy_shutdown();
-        mac->state = SHUTDOWN;
-        break;    
-
-    case ADTALOHA_EVENT_STARTUP_REQUEST: 
-        if (mac->state == SHUTDOWN)
-        {
-            phy_startup();
-            mac->state = IDLE;
-        }
-
-    case other events: 
-		break;
-	}
-
-	// If the other component register listener function to accept adaptive aloha events
-    // such as frame arrival events, then call that listener to report to the listenre owner
-    //
-	if (mac->listener != NULL) && (!iobuf_empty(mac->rxque))
-	{
-		mac->listener( mac->lisowner, frame arrival event );
-	}
-
-	return;
-}
-
-*/

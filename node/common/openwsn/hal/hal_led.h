@@ -27,13 +27,13 @@
 #ifndef _LED_H_1329_
 #define _LED_H_1329_
 
-/*****************************************************************************
+/*******************************************************************************
  * @author zw (tongji university) on 20051001
  *	- first created
  * @modified by shi-miaojing (tongji university) in 200907
  *	- ported to ICT GAINZ hardware platform. GAINZ is using atmega128L MCU.
  * @modified by zhangwei (tongji university) in 200907
- *	- tested ok. this module is self-contained except the led_twinkle() uses 
+ *	- tested ok. this module is self-contained except the led_twinkle() uses
  *    the hal_cpu module.
  ****************************************************************************/ 
 	
@@ -69,6 +69,8 @@ void led_on( uint8 id );
 void led_off( uint8 id );
 void led_toggle( uint8 id );
 void led_twinkle( uint8 id, uint16 interval, uintx count );
+void led_show( uint8 state );
+
  
 #ifdef __cplusplus
 }

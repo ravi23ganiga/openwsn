@@ -62,7 +62,7 @@
 #include "../hal_cpu.h"
 #include "../hal_interrupt.h"
 #include "../hal_assert.h"
-#include "../hal_target.h"
+//#include "../hal_targetboard.h"
 #include "../hal_led.h"
 #include "../hal_uart.h"
 #include "../hal_cc2420const.h"
@@ -84,6 +84,24 @@
  */
 #include "../hal_cc2420inc.h"
 
+
+// Current Parameter Arrray Positions
+enum{
+ CP_MAIN = 0,
+ CP_MDMCTRL0,
+ CP_MDMCTRL1,
+ CP_RSSI,
+ CP_SYNCWORD,
+ CP_TXCTRL,
+ CP_RXCTRL0,
+ CP_RXCTRL1,
+ CP_FSCTRL,
+ CP_SECCTRL0,
+ CP_SECCTRL1,
+ CP_BATTMON,
+ CP_IOCFG0,
+ CP_IOCFG1
+} ;
 
 static inline int8 _cc2420_pin_init( TiCc2420Adapter * cc );
 static inline int8 _cc2420_reg_init( TiCc2420Adapter * cc );
@@ -1024,7 +1042,7 @@ uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 
 	return ret;
 }
-
+/*
 uint8 cc2420_iobsend( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option )
 {
     return cc2420_send( cc, iobuf_ptr(iobuf), iobuf_length(iobuf), option );
@@ -1036,7 +1054,7 @@ uint8 cc2420_iobrecv( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option )
     iobuf_setlength( iobuf, count );
     return count;
 }
-
+*/
 void cc2420_evolve( TiCc2420Adapter * cc )
 {
 	// the following section will check flag variable and try to read data from 
@@ -1101,6 +1119,16 @@ inline uint8 cc2420_wakeup( TiCc2420Adapter * cc )
  * These functions can be called in any case.
  ******************************************************************************/
 
+/* attention: according to the description of cc2420 datasheet, the CCA pin is only
+ * valid when the receiver has been enabled for at least 8 symbol periods. each symbol
+ * periods is about 125us
+ */
+uint8 cc2420_ischannelclear( TiCc2420Adapter * cc )
+{
+    //return HAL_READ_CC_CCA_PIN();
+    return true;
+}
+
 /* turn on the cc2420 VREF
  * attention you should wait long enough to guarantee the voltage is stable and ok 
  */
@@ -1153,6 +1181,11 @@ uint8 cc2420_sendcmd( TiCc2420Adapter * cc, uint8 addr )
     _cpu_atomic_end(cpu_status); 
 	
 	return status;
+}
+
+uint8 cc2420_getcmdstatus( TiCc2420Adapter * cc) 
+{
+    return cc2420_sendcmd(cc,CC2420_SNOP);
 }
 
 /* No operation. Has no other effects than reading out cc2420's status-bit */
@@ -1261,6 +1294,11 @@ inline uint8 cc2420_rfoff( TiCc2420Adapter * cc )
 {
 	cc2420_sendcmd( cc, CC2420_SRFOFF );
 	return SUCCESS;
+}
+
+void cc2420_switchtomode( TiCc2420Adapter * cc, uint8 mode )
+{
+    // todo
 }
 
 inline uint8 cc2420_flushrx( TiCc2420Adapter * cc )
@@ -1556,6 +1594,58 @@ bool cc2420_crctest( TiCc2420Adapter * cc )
 	return ((cc->lqi >> 7) == 1);
 }
 
+TiFrameTxRxInterface * cc2420_interface( TiCc2420Adapter * cc, TiFrameTxRxInterface * intf )
+{
+    memset( intf, 0x00, sizeof(TiFrameTxRxInterface) );
+
+    // todo: there're errors in the following assignments.
+    intf->provider = cc;
+    intf->send = (TiFunFtrxSend)cc2420_send;
+    intf->recv = (TiFunFtrxRecv)cc2420_recv;
+    intf->evolve = (TiFunFtrxEvolve)cc2420_evolve;
+    intf->switchtomode = (TiFunFtrxSwitchToMode)cc2420_switchtomode;
+    // intf->ischnclear = NULL; //(TiFunFtrxIsChannelClear)cc2420_ischannelclear;
+    intf->ischnclear = cc2420_ischannelclear;
+    intf->enable_autoack = (TiFunFtrxEnableAutoAck)cc2420_enable_autoack;
+    intf->disable_autoack = (TiFunFtrxDisableAutoAck)cc2420_disable_autoack;
+    intf->enable_addrdecode = (TiFunFtrxEnableAddrDecode)cc2420_enable_addrdecode;
+    intf->disable_addrdecode = (TiFunFtrxDisableAddrDecode)cc2420_disable_addrdecode;
+    intf->setchannel = (TiFunFtrxSetChannel)cc2420_setchannel;
+    intf->setpanid = (TiFunFtrxSetPanId)cc2420_setpanid;
+    intf->getpanid = (TiFunFtrxGetPanId)cc2420_getpanid;
+    intf->setshortaddress = (TiFunFtrxSetShortAddress)cc2420_setshortaddress;
+    intf->getshortaddress = (TiFunFtrxGetShortAddress)cc2420_getshortaddress;
+    intf->settxpower = (TiFunFtrxSetTxPower)cc2420_settxpower;
+    intf->getrssi = (TiFunFtrxGetRssi)cc2420_rssi;
+    return intf;
+}
+
+/*
+TiFrameTxRxInterface * cc2420_interface( TiCc2420Adapter * cc )
+{
+    memset( &(cc->intf), 0x00, sizeof(TiFrameTxRxInterface) );
+
+    cc->intf.send = (TiFunFtrxSend)cc2420_send;
+    cc->intf.recv = (TiFunFtrxRecv)cc2420_recv;
+    cc->intf.evolve = (TiFunFtrxEvolve)cc2420_evolve;
+    cc->intf.switchtomode = (TiFunFtrxSwitchToMode)cc2420_switchtomode;
+    cc->intf.ischnclear = NULL; //(TiFunFtrxIsChannelClear)cc2420_ischannelclear;
+    cc->intf.enable_autoack = (TiFunFtrxEnableAutoAck)cc2420_enable_autoack;
+    cc->intf.disable_autoack = (TiFunFtrxDisableAutoAck)cc2420_disable_autoack;
+    cc->intf.enable_addrdecode = (TiFunFtrxEnableAddrDecode)cc2420_enable_addrdecode;
+    cc->intf.disable_addrdecode = (TiFunFtrxDisableAddrDecode)cc2420_disable_addrdecode;
+    cc->intf.setchannel = (TiFunFtrxSetChannel)cc2420_setchannel;
+    cc->intf.setpanid = (TiFunFtrxSetPanId)cc2420_setpanid;
+    cc->intf.getpanid = (TiFunFtrxGetPanId)cc2420_getpanid;
+    cc->intf.setshortaddress = (TiFunFtrxSetShortAddress)cc2420_setshortaddress;
+    cc->intf.getshortaddress = (TiFunFtrxGetShortAddress)cc2420_getshortaddress;
+    cc->intf.settxpower = (TiFunFtrxSetTxPower)cc2420_settxpower;
+    cc->intf.getrssi = (TiFunFtrxGetRssi)cc2420_rssi;
+
+    return &(cc->intf);
+}
+*/
+
 /******************************************************************************
  * cc2420_dump
  * Dump cc2420's internal state to the debug output. This function is for debugging
@@ -1661,13 +1751,6 @@ void cc2420_default_listener( void * ccptr, TiEvent * e )
 	hal_notify_ex( EVENT_DATA_ARRIVAL, ccptr, cc->lisowner );
 }
 
-TiFrameTxRxInterface * cc2420_provide( TiCc2420Adapter * cc, TiFrameTxRxInterface * intf )
-{
-    memset( intf, 0x00, sizeof(TiFrameTxRxInterface) );
-    //intf->send = cc2420_iobsend;
-    //intf->recv = cc2420_iobrecv;
-    return intf;
-}
 
 /******************************************************************************
  * cc2420 interrupt handler

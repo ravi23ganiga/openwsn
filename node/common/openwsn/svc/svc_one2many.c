@@ -257,6 +257,9 @@ uint8 one2many_recv( TiOne2Many * svc, TiIoBuf * buf, uint8 option )
 		count = min( iobuf_size(buf), opf_msdu_len(opf) );
 		memmove( response, opf->msdu, count );
 		iobuf_setlength( buf, count );
+		// count = min( iobuf_size(buf), opf_framelength(opf)+1 );
+		// memmove( response, opf->buf[0], count );
+		// iobuf_setlength( buf, count );
 	}
 	return count;
 }

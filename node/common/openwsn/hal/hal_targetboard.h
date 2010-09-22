@@ -29,16 +29,46 @@
 #include "hal_configall.h"
 #include "hal_foundation.h"
 
+
+/* Hardware Platform Layer
+ * including CPU/MCU specific source codes
+ * 
+ * Reference 
+ * Hardware Abstraction Architecture, http://www.tinyos.net/tinyos-2.x/doc/html/tep2.html
+ */
+
+/* Q: What's the differene between module hal_targetboard and hal_targetinit?
+ * R: hal_targetboard provides a set of utility functions to operate the targetboard.
+ * While, the hal_targetinit module provides only one function "target_init" which
+ * encapsulate the source from target startup to osx kernel startup.
+ * 
+ * Q: What's the difference between target_startup() in hal_startup module and target_init()
+ * function in hal_targetinit module?
+ * R: target_startup() is called automatically when the system is powered on. It's called
+ * by the hardware and depends on the CPU architecture. For a lot of CPU, the developing 
+ * environment has already provides their own startup source code, so the target_startup()
+ * is unnecessary.
+ *    Function target_init() is usually called as the first function in main() function. 
+ * So it's always after target_startup(). This function is often called by osx kernel when
+ * the kernel is startup to perform initialization process. If you don't use the osx 
+ * kernel in your application, you can simply call target_init() in main() function.
+ */
+
 #ifdef CONFIG_TARGET_GAINZ
+//#include "hal_configall.h"
+//#include "./gainz/hpl_atmega128.h" 
 #include "./gainz/hpl_gainz.h"
 #endif
 
 #ifdef CONFIG_TARGET_CC2520DK
-#include "./gainz/hpl_cc2520dk.h"
+#include "./cc2520/hpl_cc2520dk.h"
 #endif
 
 #ifdef CONFIG_TARGET_CC2430DK
-#include "./gainz/hpl_cc2430dk.h"
+#include "./cc2430/hpl_cc2430dk.h"
 #endif
+
+void target_init( void );
+void target_reset( void );
 
 #endif /* _HAL_TARGETBOARD_H_7C83_ */

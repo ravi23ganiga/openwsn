@@ -24,17 +24,9 @@
  *
  ******************************************************************************/
 
-#include "svc_configall.h"
-#include <string.h>
-#include "svc_foundation.h"
-#include "../rtl/rtl_bit.h"
-#include "../rtl/rtl_iobuf.h"
-#include "../rtl/rtl_random.h"
-#include "../rtl/rtl_openframe.h"
-#include "../hal/hal_frame_transceiver.h"
-#include "svc_maca.h"
 
-/* MACA medium access control 
+/* MACA medium access control protocol
+ * MACA means Multiple Access with Collision Avoidance (MACA)
  *
  * @author zhangwei on 20060724
  * @modified by zhangwei on 20090725
@@ -44,67 +36,207 @@
  *  - add state transfer machine implementation
  */
 
+#include "svc_configall.h"
+#include <string.h>
+#include "svc_foundation.h"
+#include "../rtl/rtl_foundation.h"
+#include "../rtl/rtl_bit.h"
+#include "../rtl/rtl_random.h"
+#include "../rtl/rtl_frame.h"
+#include "../rtl/rtl_debugio.h"
+#include "../rtl/rtl_ieee802frame154.h"
+#include "../hal/hal_foundation.h"
+#include "../hal/hal_assert.h"
+#include "../hal/hal_debugio.h"
+#include "../hal/hal_frame_transceiver.h"
+#include "svc_maca.h"
+
+#define MACA_SLEEP_REQUEST                     1
+#define MACA_WAKEUP_REQUEST                    2
+#define MACA_SHUTDOWN_REQUEST                  3
+#define MACA_STARTUP_REQUEST                   4
+
+#define MACA_EVENT_FRAME_ARRIVAL               234 // todo
+
+#define HIGH_BYTE(n16) ((uint8)((n16) >> 8))
+#define LOW_BYTE(n16) ((uint8)((n16) & 0xFF))
+
 #define bit8_set(token,index) ((token) |= (_BV(index)))
 #define bit8_get(token,index) ((token) & (_BV(index)))
 #define bit8_clr(token,index) ((token) &= (~_BV(index)))
 
+/** 
+ * maca RTS/CTS format
+ *
+ * All frames are composed by the following components:
+ *
+ *  +----------+------------+----------------------------------------+--------+
+ *  | Preamble | PHY Header |                 MAC Data               | CRC 2B |
+ *  +----------+------------+----------------------------------------+--------+
+ * 
+ * 
+ * MAC Frame
+ *  +------------------+-------------+---------------+------------+
+ *  | Frame Control 2B | Sequence 1B | Address 4-10B | Payload nB |
+ *  +------------------+-------------+---------------+------------+
+ *
+ *
+ * RTS Frame Format
+ * attention in our design, the RTS/CTS frame are still 802.15.4 data frames. this
+ * is used to avoid potential confliction with standard 802.15.4 command frames in 
+ * a 802.15.4 based network such zigbee systems.
+ * 
+ *  +------------------+-------------+-------+-------+------------+-------------+
+ *  | Frame Control 2B | Sequence 1B | RA 4B | TA 4B | Command 1B | Duration 1B | 
+ *  +------------------+-------------+-------+-------+------------+-------------+
+ *
+ * 2B crc are padded at the end of the RTS/CTS frame. the crc bytes are actually 
+ * belong to PHY layer.
+ *
+ *  RA: receiver address := [Destinatioin Pan 2B ][Destination Short Address 2B]
+ *  TA: who transmit the RTS frame  := [Source Pan 2B ][Source Short Address 2B]
+ *  duration: in microseconds, required to transmit the next Data or Management frame,
+ *      plus one CTS frame, plus one ACK frame, plus three SIFS intervals.
+ * 
+ * so the total RTS frame is 1B length + 13B MAC + 2B CRC = 16B
+ * 
+ * 
+ * CTS Frame Format
+ * 
+ *  +------------------+-------------+-------+-------+------------+
+ *  | Frame Control 2B | Sequence 1B | RA 4B | TA 4B | Command 1B |
+ *  +------------------+-------------+-------+-------+------------+
+ * 
+ * in the 802.11 design, there's still an Duration field(2B) in the CTS. for energy
+ * saving reasons, this field is eliminated from this design.
+ * 
+ * sequence field is unnecessary in RTS/CTS frame in theory. however, we design the 
+ * RTS/CTS based on standard 802.15.4 data type frame, we had to place this sequence 
+ * byte here according to 802.15.4 standard.
+ * 
+ * so the total CTS frame is 1B length + 12B MAC + 2B CRC = 15B
+ *
+ * ACK Frame Format
+ * using the standard 802.15.4 ACK frame supported by the cc2420 transceiver.
+ *
+ * reference
+ * - 802.11 Frame Format.
+ * - 802.15.4 frame format
+ * - cc2420 datasheet from TI.com (formerly chipcon.com)
+ */
 
-static uintx _maca_trysend( TiMACA * mac, TiIoBuf * iobuf, uint8 option );
-static uintx _maca_broadcast_rts( TiMACA * mac, TiIoBuf * iobuf );
-static uintx _maca_broadcast_cts( TiMACA * mac, TiIoBuf * iobuf );
-static uint8 _maca_is_rts( TiMACA * mac, TiIoBuf * iobuf );
-static uint8 _maca_is_cts( TiMACA * mac, TiIoBuf * iobuf );
-static uintx _maca_tryrecv( TiMACA * mac, TiIoBuf * iobuf, uint8 option );
-static uintx _maca_check_rts_cts( TiMACA * mac, TiIoBuf * iobuf );
+/* reference
+ * - CSMA, Carrier sense multiple access, http://en.wikipedia.org/wiki/Carrier_sense_multiple_access;
+ * - CSMA/CA, Carrier sense multiple access with collision avoidance, http://en.wikipedia.org/wiki/CSMA_CA;
+ * - IEEE 802.11 RTS/CTS, http://en.wikipedia.org/wiki/IEEE_802.11_RTS/CTS;
+ * - MACA, Multiple Access with Collision Avoidance, 
+ *   http://en.wikipedia.org/wiki/Multiple_Access_with_Collision_Avoidance;
+ * - Multiple Access with Collision Avoidance for Wireless, http://en.wikipedia.org/wiki/MACAW;
+ */
+
+
+#define MACA_RTS_SIZE 15
+#define MACA_CTS_SIZE 14
+
+static char m_rts[MACA_RTS_SIZE];
+static char m_cts[MACA_CTS_SIZE];
+
+static void _maca_init_rts( TiMACA * mac );
+static void _maca_init_cts( TiMACA * mac );
+static void _maca_set_rts( TiMACA * mac, uint16 pan, uint16 shortaddrto, uint16 shortaddrfrom, uint8 duration );
+static void _maca_set_cts_from_rts( TiMACA * mac, char * cts, char * rts );
+static void _maca_set_cts( TiMACA * mac, uint16 pan, uint16 shortaddrto, uint16 shortaddrfrom );
+static bool _maca_is_rts( TiMACA * mac, char * buf, uint8 len );
+static bool _maca_is_cts( TiMACA * mac, char * buf, uint8 len );
+static bool _maca_is_data( TiMACA * mac, char * buf, uint8 len );
 static uint16 _maca_get_backoff( TiMACA * mac );
 
-TiMACA * maca_construct( char * buf, uintx size )  
+static uintx _maca_broadcast_rts( TiMACA * mac );
+static uintx _maca_broadcast_cts( TiMACA * mac );
+static uintx _maca_trysend( TiMACA * mac, TiFrame * frame, uint8 option );
+static uintx _maca_tryrecv( TiMACA * mac, TiFrame * frame, uint8 option );
+
+TiMACA * maca_construct( char * buf, uint16 size )  
 {
     TiMACA * mac = (TiMACA *)buf;
 
 	hal_assert( sizeof(TiMACA) <= size );
 	memset( buf, 0x00, size );
-    mac->txbuf = iobuf_construct( &mac->txbufmem[0], MACA_TXBUF_MEMSIZE );
-    mac->rxbuf = iobuf_construct( &mac->rxbufmem[0], MACA_RXBUF_MEMSIZE );
-    mac->state = MACA_STATE_NULL;
+    mac->state = MACA_STATE_SHUTDOWN;
 	return mac;
 }
 
 void maca_destroy( TiMACA * mac )
 {
-    iobuf_destroy( mac->txbuf );
-    iobuf_destroy( mac->rxbuf );
+	return;
 }
 
-TiMACA * maca_open( TiMACA * mac, TiFrameTxRxInterface * trx, void * trximpl, 
-    TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner )
+TiMACA * maca_open( TiMACA * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uint16 panid,
+    uint16 address, TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner )
 {
-	hal_assert( (trx != NULL) && (timer != NULL) && (mac->state == MACA_STATE_NULL) );
+    char * provider;
 
-	mac->trx = trx;
-    mac->trx->object = trximpl;
-	mac->timer = timer;
+    // assert( the rxtx driver has already been opened );
+    // assert( mac->timer is already opened but not start yet );
+
+	hal_assert( (rxtx != NULL) && (timer != NULL) && (mac->state == MACA_STATE_SHUTDOWN) );
+
+	mac->state = MACA_STATE_IDLE;
+    mac->rxtx = rxtx;
+    mac->timer = timer;
     mac->loadfactor = 5;
     mac->request = 0x00;
     mac->retry = 0;
 	mac->listener = listener;
 	mac->lisowner = lisowner;
+	mac->retry = 0;
+	mac->backoff = CONFIG_MACA_MIN_BACKOFF;
+    mac->panto = panid;
+    mac->shortaddrto = FRAME154_BROADCAST_ADDRESS;
+    mac->panfrom = panid;
+    mac->shortaddrfrom = address;
+    mac->seqid = 0;
+    mac->sendoption = 0x00;
+    mac->sendfailed = 0;
+	mac->option = 0x00;
+    mac->txbuf = frame_open( &(mac->txbuf_memory[0]), FRAME_HOPESIZE(CONFIG_MACA_MAX_FRAME_SIZE), 0, 0, 0 );
+    mac->rxbuf = frame_open( &(mac->txbuf_memory[0]), FRAME_HOPESIZE(CONFIG_MACA_MAX_FRAME_SIZE), 0, 0, 0 );
+	
+    // @modified by zhangwei on 2010.08.21
+    // @attention: for all hardware components, you should construct and open them 
+    // in the caller function to avoid potential conflictions. so we don't recommend
+    // initialize the timer component here.
 
-    iobuf_clear( mac->rxbuf );
-    iobuf_clear( mac->txbuf );
+	// timer = timer_construct( (void *)&g_timer, sizeof(g_timer) );
+    // timer_open( timer, id, NULL, NULL, 0x00 ); 
 
-    // assume: the transceiver(mac->trx) has already opened before calling this function
+    hal_assert( mac->timer != NULL );
 
-	mac->trx->setchannel( mac->trx, CONFIG_MACA_DEFAULT_CHANNEL );
-	mac->trx->enable_addrdecode( mac->trx );					
-	mac->trx->setpanid( mac->trx, CONFIG_MACA_DEFAULT_PANID );
-	mac->trx->setshortaddress( mac->trx, CONFIG_MACA_DEFAULT_LOCAL_ADDRESS );
-	mac->trx->switchtomode( mac->trx, FTRX_MODE_RX );
+    // initialize the frame transceiver component
+	// attention enable ACK support for aloha protocol. the current implementation depends
+    // on low level transceiver component to provide ACK mechanism. 
 
-    rand_open( 78 );
-	timer_open( timer, 0, NULL, NULL, 0x00 );
+    provider = rxtx->provider;
+	rxtx->setchannel( provider, chn );
+	rxtx->setpanid( provider, panid );
+	rxtx->setshortaddress( provider, address );
+    rxtx->enable_addrdecode( provider );
+	rxtx->enable_autoack( provider );
 
-    mac->state = MACA_STATE_IDLE;
+    _maca_init_rts( mac );
+    _maca_init_cts( mac );
+
+    ieee802frame154_open( &(mac->desc) );
+
+    // initialize the random number generator with a random seed. you can replace 
+    // the seed with other values.
+    //
+    // @attention: generally, the random generator can be initialized when the whole
+    // application started. if so, you needn't call rand_open() to initialize it 
+    // again here.
+
+    rand_open( 78 );  
+
     return mac;
 }
 
@@ -113,34 +245,75 @@ TiMACA * maca_open( TiMACA * mac, TiFrameTxRxInterface * trx, void * trximpl,
  */
 void maca_close( TiMACA * mac )
 {
-	timer_close( mac->timer );
-    rand_close();
-    mac->state = MACA_STATE_NULL;
+	timer_stop( mac->timer );
+    mac->state = MACA_STATE_SHUTDOWN;
 }
 
 /* this function will try to accept the input data and copy them into internal buffer. 
  * the real data sending is done in maca_evolve(). the caller should 
- * repeatedly call evolve() to drive the MAC to run. 
+ * repeatedly call evolve() to drive the MAC component to run. 
  *
  * @return
  *	> 0			success
  *	0           failed. no byte has been sent successfully
  */
-uintx maca_send( TiMACA * mac, TiIoBuf * iobuf, uint8 option )
+uintx maca_send( TiMACA * mac, TiFrame * frame, uint8 option )
 {
+	TiIEEE802Frame154Descriptor * desc;
     uintx ret=0;
 
-    if (iobuf_empty(mac->txbuf))
-    {
-        ret = iobuf_copyfrom( mac->txbuf, iobuf );
+	// @modified by zhangwei on 2010.05.09
+    // in the past, the mac is automatically wakeup by the following source code
+    // if there's a frame for sending. however, according to the low low power design
+    // principal, we'd better do this manually to avoid uncessary wakeup and 
+    // forgotten sleepings. so i giveup automatically wakeup in this revision.
+    //
+    // csma_wakeup( mac );
 
-        // @modified by zhangwei on 2010.05.09
-        // in the past, the mac is automatically wakeup by the following source code
-        // if there's a frame for sending. however, according to the low low power design
-        // principal, we'd better do this manually to avoid uncessary wakeup and 
-        // forgotten sleepings. so i giveup automatically wakeup in the end.
+    switch (mac->state)
+    {
+    case MACA_STATE_IDLE:
+        frame_totalcopyfrom( mac->txbuf, frame );
+
+        // according to 802.15.4 specification:
+        // header 12 B = 1B frame length (required by the transceiver driver currently) 
+        //  + 2B frame control + 1B sequence number + 2B destination pan + 2B destination address
+        //  + 2B source pan + 2B source address
         //
-        // maca_wakeup( mac );
+        frame_skipouter( mac->txbuf, 12, 2 );
+        desc = ieee802frame154_format( &(mac->desc), frame_startptr(mac->txbuf), frame_capacity(mac->txbuf), FRAME154_DEF_FRAMECONTROL_DATA );
+        rtl_assert( desc != NULL );
+        ieee802frame154_set_sequence( desc, mac->seqid );
+        ieee802frame154_set_panto( desc, mac->panto );
+        ieee802frame154_set_shortaddrto( desc, mac->shortaddrto );
+        ieee802frame154_set_panfrom( desc, mac->panfrom );
+        ieee802frame154_set_shortaddrfrom( desc, mac->shortaddrfrom );
+
+        mac->sendoption = option;
+
+        #ifdef CONFIG_MACA_STANDARD
+        _maca_trysend( mac, mac->txbuf, option );
+        #endif
+
+        #ifndef CONFIG_MACA_STANDARD
+        if (_csma_ischannelclear(mac))
+        {
+            _csma_trysend( mac, mac->txbuf, option );
+        }
+        else{
+            // if the channel is busy, then wait for a random period before really 
+            // start the transmission
+            mac->backoff = rand_uint8( CONFIG_MACA_MAX_BACKOFF );
+            mac->retry = 0;
+            timer_setinterval( mac->timer, mac->backoff, 0 );
+            timer_start( mac->timer );
+            mac->state = MACA_STATE_BACKOFF;
+        }
+        #endif
+
+        ret = frame_length( mac->txbuf );
+
+        maca_evolve( mac, NULL );
 
         // @attention
         // if you want to guarantee the frame is sent inside this function, you can 
@@ -148,15 +321,150 @@ uintx maca_send( TiMACA * mac, TiIoBuf * iobuf, uint8 option )
         // do {
         //      maca_evolve( mac, NULL );
         // }while (mac->state != MACA_STATE_IDLE);
+
+        break;
+
+    case MACA_STATE_BACKOFF:
+        // in this state, there's already a frame pending inside the aloha object. 
+        // you have no better choice but wait for this frame to be processed.
+        //
+        maca_evolve( mac, NULL );
+
+        // @attention
+        // if you want to guarantee the frame is sent inside this function, you can 
+        // try the following source code:
+        // do {
+        //      maca_evolve( mac, NULL );
+        // }while (mac->state != MACA_STATE_IDLE);
+
+        ret = 0;
+        break;
+
+    case MACA_STATE_SLEEPING:
+    default:
+        // currently, this version implementation will ignore any frame sending request
+        // if the mac component is still in sleeping state. you should wakeup it and
+        // then retry aloha_send() again.
+        ret = 0;
+        break;
     }
 
-    maca_evolve( mac, NULL );
     return ret;
 }
 
-uintx maca_broadcast( TiMACA * mac, TiIoBuf * iobuf, uint8 option )
+/** 
+ * broadcast a frame out. the difference between broadcast() and send() is that the 
+ * broadcast function will fill the destination address field with broadcast address.
+ */
+uintx maca_broadcast( TiMACA * mac, TiFrame * frame, uint8 option )
 {
-    return 0;
+    uintx ret=0;
+    TiIEEE802Frame154Descriptor * desc;
+
+    switch (mac->state)
+    {
+    case MACA_STATE_IDLE:
+        frame_totalcopyfrom( mac->txbuf, frame );
+
+        // according to 802.15.4 specification:
+        // header 12 B = 1B frame length (required by the transceiver driver currently) 
+        //  + 2B frame control + 1B sequence number + 2B destination pan + 2B destination address
+        //  + 2B source pan + 2B source address
+        //
+        frame_skipouter( mac->txbuf, 12, 2 );
+        desc = ieee802frame154_format( &(mac->desc), frame_startptr(frame), frame_capacity(frame), FRAME154_DEF_FRAMECONTROL_DATA_NOACK );
+        rtl_assert( desc != NULL );
+        ieee802frame154_set_sequence( desc, mac->seqid );
+	    ieee802frame154_set_panto( desc, mac->panto );
+	    ieee802frame154_set_shortaddrto( desc, FRAME154_BROADCAST_ADDRESS );
+	    ieee802frame154_set_panfrom( desc, mac->panfrom );
+	    ieee802frame154_set_shortaddrfrom( desc, mac->shortaddrfrom );
+
+        // char * fcf;
+        // char * shortaddrto;
+
+        // fcf = frame_startptr(frame);
+        // shortaddrto = (char*)(frame_startptr(frame)) + 3;  // todo: according to IEEE 802.15.4 format, 加几？请参考15.4文档确认
+
+
+        // for broadcasting frames, we don't need acknowledgements. so we clear the ACK 
+        // REQUEST bit in the frame control field. 
+        // refer to 802.15.4 protocol format
+        //
+        // fcf ++;
+        // (*fcf) &= 0xFA; // TODO: this value should changed according to 802.15.4 format 
+
+        // 0xFFFFFFFF the broadcast address according to 802.15.4 protocol format
+        // attention: we only set the destination short address field to broadcast address.
+        // the destination pan keeps unchanged.
+        //
+        // *shortaddrto ++ = 0xFF;
+        // *shortaddrto ++ = 0xFF;
+
+        mac->sendoption = option;
+
+        #ifdef CONFIG_MACA_STANDARD
+        _maca_trysend( mac, mac->txbuf, option );
+        #endif
+
+        #ifndef CONFIG_MACA_STANDARD
+        if (_csma_ischannelclear(mac))
+        {
+            _csma_trysend( mac, mac->txbuf, option );
+        }
+        else{
+            mac->backoff = rand_uint8( CONFIG_MACA_MAX_BACKOFF );
+            mac->retry = 0;
+            timer_setinterval( mac->timer, mac->backoff, 0 );
+            timer_start( mac->timer );
+            mac->state = MACA_STATE_BACKOFF;
+        }
+        #endif
+
+        ret = frame_length( mac->txbuf );
+        maca_evolve( mac, NULL );
+        break;
+
+    case MACA_STATE_BACKOFF:
+        // in this state, there's already a frame pending inside the aloha object. 
+        // you have no better choice but wait for this frame to be processed.
+        //
+        maca_evolve( mac, NULL );
+        ret = 0;
+        break;
+
+    case MACA_STATE_SLEEPING:
+    default:
+        // currently, this version implementation will ignore any frame sending request
+        // if the mac component is still in sleeping state. you should wakeup it and
+        // then retry aloha_send() again.
+        ret = 0;
+        break;
+    }
+
+    return ret;
+}
+
+uintx maca_recv( TiMACA * mac, TiFrame * frame, uint8 option )
+{
+	uint8 count;
+
+    _maca_tryrecv( mac, mac->rxbuf, option );
+
+    // if there're frame inside mac->rxbuf, then copy it to the parameter "frame"
+    // and reset mac->rxbuf for future arriving frames.
+
+    if (!frame_empty(mac->rxbuf))
+    {
+        frame_totalcopyfrom( frame, mac->rxbuf );
+        count = frame_length( frame );
+        frame_reset( mac->rxbuf, MACA_HEADER_SIZE+1, 2, 0 );
+    }
+    else
+        count = 0;
+
+    maca_evolve( mac, NULL );
+    return count;
 }
 
 /* @return
@@ -165,9 +473,79 @@ uintx maca_broadcast( TiMACA * mac, TiIoBuf * iobuf, uint8 option )
  *              mac->retry will increase by 1.
  */
 #ifdef CONFIG_MACA_TRX_SUPPORT_ACK
-uintx _maca_trysend( TiMACA * mac, TiIoBuf * iobuf, uint8 option )
+uintx _maca_trysend( TiMACA * mac, TiFrame * frame, uint8 option )
 {
-    return mac->trx->send( mac->trx, iobuf, option );
+	uintx count=0;
+
+    // @modified by openwsn on 2010.08.24
+    // needn't wait for channel clear here. because the caller can guarantee the 
+    // channel is clear enough before calling this function.
+    //
+	// while (!csma_ischannelclear(mac->rxtx))
+	//    continue;
+
+    // attention whether the sending process will wait for ACK or not depends on 
+    // the "option" parameter.
+
+    
+    // assume: the RTS frame has already been set with correct network pan and addresses.
+    _maca_broadcast_rts( mac );
+
+    // wait for CTS frame in a specified time duration
+    // assert( mac->timer is stopped ) now
+    timer_restart( mac->timer, CONFIG_MACA_WAIT_CTS_DURATION, 0 );
+    count = 0;
+    while (!timer_expired(mac->timer))
+    {
+        count = mac->rxtx->recv( mac->rxtx->provider, &m_cts[0], MACA_CTS_SIZE, option );
+        if (count > 0)
+        {
+            if (_maca_is_cts(mac, &m_cts[0], count))
+            {
+                timer_stop( mac->timer );
+                break;
+            }
+
+            count = 0;
+        }
+    }
+
+    // if received the CTS frame successfully in fixed time duration
+    if (count > 0)
+    {
+        // attention whether the sending process will wait for ACK or not depends on 
+        // "option" parameter.
+
+        count = mac->rxtx->send( mac->rxtx->provider, frame_startptr(frame), frame_length(frame), option );
+
+        // count > 0 indicates sending successfully, otherwise sending failure
+        if (count > 0)
+        {
+            mac->seqid ++;
+	        mac->retry = 0;
+            mac->state = MACA_STATE_IDLE;
+        }
+        else if (mac->retry >= CONFIG_MACA_MAX_RETRY)
+        {    
+	        mac->retry = 0;
+            mac->state = MACA_STATE_IDLE;
+            mac->sendfailed ++;
+        }
+        else{
+            mac->retry++;
+            mac->backoff = _maca_get_backoff( mac );
+		    timer_restart( mac->timer, mac->backoff, 0 );
+            mac->state = MACA_STATE_BACKOFF;
+        }
+    }
+    else{
+        // check for CTS frame failed
+        mac->backoff = _maca_get_backoff( mac );
+		timer_restart( mac->timer, mac->backoff, 0 );
+        mac->state = MACA_STATE_BACKOFF;
+    }
+
+	return count;
 }
 #endif
 
@@ -186,207 +564,106 @@ uintx _maca_trysend( TiMACA * mac, TiIoBuf * iobuf, uint8 option )
  *  - revision
  */
 #ifndef CONFIG_MACA_TRX_SUPPORT_ACK
-uintx _maca_trysend( TiMACA * mac, TiIoBuf * iobuf, uint8 option )
+uintx _maca_trysend( TiMACA * mac, TiFrame * frame, uint8 option )
 {
-	uintx count = 0;
-    uint16 ctrl;
-    bool expired;
-    char * ptr;
-	
-	while (!mac->trx->ischannelclear( mac->trx ))
-		continue;
-
-	mac->trx->switchtomode( mac->trx, FTRX_MODE_TX );
-    count = mac->trx->send( mac->trx, iobuf, option );
-	mac->trx->switchtomode( mac->trx, FTRX_MODE_RX );
-	
-    if (count > 0)
-	{
-		/* If the frame has been successfully sent by the transceiver, the program will
-		 * start to wait for the ACK frame replied from the receiver. The maximum waiting
-		 * duration is configured by macro CONFIG_ALOHA_ACK_RESPONSE_TIME. The time unit
-		 * is milli-seconds.
-		 */
-
-        /* wait for ack frame from the receiver. if we cannot receive the ack frame
-         * in time, then we can regard the frame just send is lost during transmission.
-         * this duration here is for the receiver to send the ack back. it consists 
-         * the processing time inside receiver node and the transmission time in 
-         * the air.
-         */ 
-		timer_restart( mac->timer, CONFIG_MACA_ACK_RESPONSE_TIME, 0 ); 
-		expired = true;
-		while (!timer_expired( mac->timer ))
-		{
-            hal_delay( 1 );
-			if (mac->trx->recv(mac->trx, mac->rxbuf, 0x00) > 0)
-			{
-				/* 2 bytes for frame control */
-                ptr = iobuf_ptr( mac->rxbuf );
-				ctrl = (((uint16)(ptr[1])) << 8) | (ptr[2]);
-
-				/* If the incoming frame is ACK frame, then we can return success. 
-				 * other type frames will be ignored. 
-                 * 
-                 * @attention
-				 *  - Theoretically speaking, the current frame arrived may possibly be the 
-                 * data type from other nodes. in the current version, this frame will be 
-                 * overwrotten, which leads to unnecessary frame loss.
-				 */
-				if (FCF_FRAMETYPE(ctrl) == FCF_FRAMETYPE_ACK)
-				{
-					timer_stop( mac->timer );
-                    iobuf_clear( mac->rxbuf );
-					expired = false;
-					break;
-				}
-			}
-		}
-		
-		if (expired)
-		{
-			count = 0;
-		}
-	}
-
-	return count;
+	hal_assert(false);
+	return 0;
 }
 #endif
 
-uintx _maca_broadcast_rts( TiMACA * mac, TiIoBuf * iobuf )
-{
-    // todo 
-    return 0;
-}
 
-uintx _maca_broadcast_cts( TiMACA * mac, TiIoBuf * iobuf )
+/**
+ * @attention: This function should be called frequently in order to catching the
+ * RTS frame arrived. if the checking process is too slow, then it may cause RTS
+ * lossing.
+ */
+uintx _maca_tryrecv( TiMACA * mac, TiFrame * frame, uint8 option )
 {
-    // todo 
-    return 0;
-}
+    TiFrameTxRxInterface  * rxtx = mac->rxtx;
+	uintx count;
+    char * ptr;
 
-uint8 _maca_is_rts( TiMACA * mac, TiIoBuf * iobuf )
-{
-    // todo 
-    return 0;
-}
-
-uint8 _maca_is_cts( TiMACA * mac, TiIoBuf * iobuf )
-{
-    // todo 
-    return 0;
-}
-
-uintx maca_recv( TiMACA * mac, TiIoBuf * iobuf, uint8 option )
-{
-    uintx count=0;
-
-    if (iobuf_empty(mac->rxbuf)) 
+    if (mac->state == MACA_STATE_BACKOFF)
     {
-        hal_assert( mac->state != MACA_STATE_SLEEP );
-        hal_assert( mac->state != MACA_STATE_POWERDOWN );
-
-        // if ((mac->state == MACA_STATE_IDLE) || (mac->state == MACA_STATE_RETRY_SEND))
-        if (mac->state == MACA_STATE_IDLE)
-        {
-            _maca_tryrecv( mac, iobuf, option );
-            count = _maca_check_rts_cts( mac, iobuf );
-        }
-    }
-    else /* if (!iobuf_empty(mac->rxbuf)) */
-    {
-        count = iobuf_copyto( mac->rxbuf, iobuf );
-        iobuf_clear( mac->rxbuf );
+        // to avoid conflications with the sending process, because in this implemention,
+        // the sending process and receiving process shares one timer only. so we 
+        // give up receiving while sending is active.
+        return 0;
     }
 
-    maca_evolve( mac, NULL );
-    return count;
-}
+    // move the frame current layer to mac protocol related layer. the default layer
+    // only contains the data (mac payload) rather than mac frame.
+    // assert: the following function call must be success and correct!
+    //
+    frame_skipouter( frame, MACA_HEADER_SIZE, MACA_TAIL_SIZE );
 
-/* try to fetch an frame from the transceiver layer. 
- * attention: this function doesn't care what state the TiMACA is in. generally, 
- * you should call this function only in IDLE state. If you call it in other state,
- * you may violate the running of the state machine in the evolve() function.
- */ 
-uintx _maca_tryrecv( TiMACA * mac, TiIoBuf * iobuf, uint8 option )
-{
-    uintx count=0;
-    uint16 ctrl=0;
-    char * buf;
-
-    count = mac->trx->recv( mac->trx, iobuf, option );
+    count = rxtx->recv( rxtx->provider, frame_startptr(frame), frame_capacity(frame), option );
     if (count > 0)
     {
-    	/* according to ALOHA protocol, the program should send ACK/NAK after receiving
-	     * a data frame. acoording to 802.15.4 protocol, there maybe COMMAND, BEACON or 
-         * ACK frames in the air. however, these type of frames are all used inside the 
-         * MAC layer only. we should filter them and keep the DATA frames only.
-         * 
-		 * 2 bytes for frame control
-		 * only the DATA type frame will be accepted here. The other types, such as 
-         * COMMAND, BEACON or ACK will be ignored. 
-		 */
-        buf = iobuf_ptr(iobuf);
-		ctrl = (((uint16)buf[1]) << 8) | (buf[2]);
-
-		if (FCF_FRAMETYPE(ctrl) != FCF_FRAMETYPE_DATA)
+        // the first byte in the frame buffer is the length byte. it represents the 
+        // MPDU length. after received the frame, we first check whether this is an
+        // incomplete frame or not. if it's an bad frame, then we should ignore it.
+        //
+        ptr = frame_startptr(frame);
+        if (*ptr == count-1)
         {
-			count = 0;
-            iobuf_clear( iobuf );
+            // get the pointer to the frame control field according to 802.15.4 frame format
+            // we need to check whether the current frame is a DATA type frame.
+			// only the DATA type frame will be transfered to upper layers. The other types, 
+            // such as COMMAND, BEACON and ACK will be ignored here.
+			// buf[0] is the length byte. buf[1] and buf[2] are frame control bytes.
+            ptr ++;
+			if (FCF_FRAMETYPE(*(ptr)) != FCF_FRAMETYPE_DATA)
+			{
+				count = 0;
+			}
+			else{
+                frame_setlength( frame, count );
+                frame_setcapacity( frame, count );
+			}
         }
-        else
-            iobuf_setlength( iobuf, count );
+
+        if ((count > 0) && (_maca_is_rts(mac, frame_startptr(frame), frame_length(frame))))
+        {
+            // todo pls do set cts
+            // _maca_set_cts( mac, cts, pan, shortaddrto, shortaddrfrom );
+            _maca_broadcast_cts(mac);
+
+            // todo: get_rts_duration(rts)
+            // timer_setinterval( mac->timer, get_rts_duration(rts), 0 );
+            timer_start( mac->timer );
+
+            // try to receive a data frame in the specified time duration. RTS/CTS 
+            // frame received in this stage will be ignored.
+            count = 0;
+            while (!timer_expired(mac->timer))
+            {
+                count = rxtx->recv( rxtx->provider, frame_startptr(frame), frame_capacity(frame), option );
+                if (count > 0)
+                {
+                    if (!_maca_is_data(mac, frame_startptr(frame), frame_length(frame)))
+                        continue;
+
+                    timer_stop( mac->timer );
+                    break;
+                }
+            }
+        }
+    }
+
+    frame_moveinner( frame );
+
+    if (count > 0)
+    {
+        frame_setlength( frame, count - MACA_HEADER_SIZE - MACA_TAIL_SIZE );
+        frame_setcapacity( frame, count - MACA_HEADER_SIZE - MACA_TAIL_SIZE );
+    }
+    else{
+        frame_setlength( frame, 0 );
     }
 
     return count;
 }
-
-/* check whether the current frame is an RTS frame or CTS frame. it it is, then do
- * corresponding processing and clear itself from the iobuf. after the call, the iobuf
- * should be empty or contains an data frame. 
- */
-uintx _maca_check_rts_cts( TiMACA * mac, TiIoBuf * iobuf )
-{
-    // until here, only the 802.15.4 DATA type frame is accepted. the other types 
-    // are rejected. we need further check whether the incoming frame is RTS 
-    // type or not.
-    
-    // if this frame is an RTS frame
-    if (_maca_is_rts(mac, iobuf))
-    {
-        // if this RTS frame destination is the current node, then it should
-        // prepare for receiving, or else it should go into alert sleep mode
-        // for some while. 
-                
-        iobuf_clear( iobuf );
-        if (0)
-        {
-            // mac->sleeprequest_duratioin = 10;
-            bit8_set( mac->request, MACA_SLEEP_REQUEST );
-        }
-        else{
-            // the RTS destination is current node. prepare for receving incoming
-            // frames. the MACA caller must call maca_evolve() or maca_recv()
-            // fast enough to avoid lossing frame.
-            _maca_broadcast_cts( mac, mac->ctsbuf );
-
-            // @attention
-            // after sending CTS frame related to the RTS received just now,
-            // we simply stay in the IDLE state. and in the next call of 
-            // the evolve() function or maca_recv() function, the data frame
-            // will be retrieved from PHY layer and put into mac->rxbuf.
-        }
-    }
-    // if we receive the CTS frame in IDLE state, just clear the buffer and 
-    // ignore it. we only keep the data frames inside mac->rxbuf.
-    else if (_maca_is_cts(mac, iobuf))
-    {
-        iobuf_clear( iobuf );
-    }
-
-    return iobuf_length( iobuf );
-}
-
 
 /* currently, the duration is configured as:
  * loadfactor => duration
@@ -396,15 +673,25 @@ uintx _maca_check_rts_cts( TiMACA * mac, TiIoBuf * iobuf )
  *      3           3*8
  *      4           4*8
  *      ...
+ * 
+ * @attention: the current delay duration algorithm is for demonstration only. you
+ * should adjust it according to your own designs.
  */
 inline uint16 _maca_get_backoff( TiMACA * mac )
 {
-    return rand_uint16(((uint16)(mac->loadfactor))  << 3);
+    // algorithm 1
+    // return rand_uint16(((uint16)(mac->loadfactor))  << 3);
+
+    // algorithm 2
+    uint16 backoff = CONFIG_MACA_MIN_BACKOFF + rand_uint16( mac->backoff << 1 );
+    if (backoff > CONFIG_MACA_MAX_BACKOFF)
+            backoff = CONFIG_MACA_MAX_BACKOFF;
+    return backoff;
 }
 
 /* this function can be used as TiFrameTxRxInterface's listener directly. so you can get
  * to know when a new frame arrives through the event's id. however, the TiCc2420Adapter's 
- * listener is fired by ISR. so we don't suggest using aloha_evolve() as TiCc2420Adapter's
+ * listener is fired by ISR. so we don't suggest using maca_evolve() as TiCc2420Adapter's
  * listener directly.
  *
  * the evolve() function also behaviors like a thread.
@@ -412,159 +699,64 @@ inline uint16 _maca_get_backoff( TiMACA * mac )
 void maca_evolve( void * macptr, TiEvent * e )
 {
 	TiMACA * mac = (TiMACA *)macptr;
-    TiFrameTxRxInterface * transceiver = mac->trx;
-    TiEvent newevent;
+    TiFrameTxRxInterface * rxtx = mac->rxtx;
 
-    if (mac->state == MACA_STATE_NULL)
+    if (mac->state == MACA_STATE_SHUTDOWN)
         return;
 
     switch (mac->state)
     {
 	case MACA_STATE_IDLE:   
-        // try to retrieve frame from PHY layer. we should do receiving process
-        // more frequently to avoid frame lossing. 
-        // 
-        if (_maca_tryrecv(mac, mac->rxbuf, 0x00) > 0)
+        // only in the idle state, we check for the sleeping request bit. if
+        // this bit in the request variable is set by the sleep() function, 
+        // then we call transceiver's sleep() function and force it into sleep
+        // mode. in the sleeping mode, all the frames in the mac layer are still 
+        // pending inside it, so the frames won't lost. different to the POWERDOWN
+        // mode, the whole application can recover from SLEEP mode fast and continue
+        // previous state.
+        //
+        if (bit8_get(mac->request, MACA_SLEEP_REQUEST))
         {
-            // until here, only the 802.15.4 DATA type frame is accepted. the other types 
-            // are rejected. we need further check whether the incoming frame is RTS 
-            // type or not.
-
-            if (_maca_check_rts_cts(mac, mac->rxbuf) > 0)
-            {
-                if (mac->listener != NULL)
-                {
-                    memset( &newevent, 0x00, sizeof(newevent) );
-                    newevent.id = MACA_EVENT_FRAME_ARRIVAL;
-	                mac->listener( mac->lisowner, &newevent );
-                }
-            }
-        }
-
-        if (!iobuf_empty(mac->txbuf))
-        {
-            // todo with this function here 2010.05.10
-            // need more developing on how to broadcast rts
-            if (_maca_broadcast_rts(mac, NULL) > 0)
-            {
-                timer_restart( mac->timer, CONFIG_MACA_WAIT_CTS_DURATION, 0 );
-                mac->state = MACA_STATE_WAIT_CTS;
-            }
-        }
-
-
-        if (mac->state == MACA_STATE_IDLE)
-        {
-            // only in the idle state, we check for the sleeping request bit. if
-            // this bit in the request variable is set by the sleep() function, 
-            // then we call transceiver's sleep() function and force it into sleep
-            // mode. in the sleeping mode, all the frames in the mac layer are still 
-            // pending inside it, so the frames won't lost. different to the POWERDOWN
-            // mode, the whole application can recover from SLEEP mode fast and continue
-            // previous state.
-            //
-            if (bit8_get(mac->request, MACA_SLEEP_REQUEST))
-            {
-                transceiver->switchtomode( transceiver->object, FTRX_MODE_SLEEP );
-                bit8_clr( mac->request, MACA_SLEEP_REQUEST );
-                mac->state = MACA_STATE_SLEEP;
-            }
+            // todo
+            // Q: shall we need to sleep the timer here? if we sleep it, when can 
+            // we wakeup it?
+            // timer_stop( mac->timer );
+            rxtx->switchtomode( mac->rxtx->provider, FTRX_MODE_SLEEP );
+            bit8_clr( mac->request, MACA_SLEEP_REQUEST );
+            mac->state = MACA_STATE_SLEEPING;
         }
         break;
 
-    case MACA_STATE_WAIT_CTS:
-        if (_maca_tryrecv( mac, mac->rxbuf, 0x00) > 0)
-        {
-            // todo: check whether this is an CTS frame
-            if (1)
-            {
-                // if the CTS frame received, then we start the transmission of 
-                // pending frames immediately without hesitation. if we failed
-                // in the sending, we should backoff for some time, and restart
-                // the RTS-CTS-DATA process again.
-                //
-                if (_maca_trysend(mac, mac->txbuf, 0x00) > 0)
-                {
-                    // sending the frame successfully
-                    mac->retry = 0;
-                    mac->state = MACA_STATE_IDLE;
-                }
-                else{
-                    if (mac->retry > CONFIG_MACA_MAX_RETRY)
-                    {
-                        // failed to sending the frame after 3 try. we had to accept
-                        // the situation and go back to IDLE state
-                        //
-                        iobuf_clear( mac->txbuf );
-                        mac->retry = 0;
-                        // mac->failed ++;
-                        mac->state = MACA_STATE_IDLE;
-                    }
-                    else{
-                        timer_restart( mac->timer, _maca_get_backoff(mac), 0 );
-                        mac->retry ++;
-                        mac->state = MACA_STATE_RETRY_SEND;
-                    }
-                }
-            }
-            else{
-                // @attention
-                // another type frame came to this node when it hopes an CTS frame
-                // do nothing and continue waiting for CTS. if the caller doesn't
-                // retrieve this frame out from "mac->rxbuf" then it will be
-                // overwrite by next frame 
-            }
-        }
-        else if (timer_expired(mac->timer))
-        {
-            // the sending process failed this time. we need to restart the whole
-            // sending process now. first, we need to delay some time. this duration
-            // is generally known as backoff time. 
-            //
-            timer_restart( mac->timer, _maca_get_backoff(mac), 0 );
-            mac->retry ++;
-            mac->state = MACA_STATE_RETRY_SEND;
-        }
-        break;    
-
-    case MACA_STATE_RETRY_SEND:
-        // since the retry backoff time is pretty long, so I design this MACA to
-        // retrieve frame from PHY layer in order to decrease receving latency. 
-        // this can avoid some frame lossing. 
-        // 
-        if (_maca_tryrecv(mac, mac->rxbuf, 0x00) > 0)
-        {
-            // until here, only the 802.15.4 DATA type frame is accepted. the other types 
-            // are rejected. we need further check whether the incoming frame is RTS 
-            // type or not.
-
-            if (_maca_check_rts_cts(mac, mac->rxbuf) > 0)
-            {
-                if (mac->listener != NULL)
-                {
-                    memset( &newevent, 0x00, sizeof(newevent) );
-                    newevent.id = MACA_EVENT_FRAME_ARRIVAL;
-	                mac->listener( mac->lisowner, &newevent );
-                }
-            }
-        }
-
-        // if the backoff duration expired, then we call PHY layer functions to 
+    case MACA_STATE_BACKOFF:
+        // backoff state is essentially the state that waiting for the physical channel
+        // for later sending.
+        // if sending random delay timer expired, then call PHY layer functions to 
         // send the frame immediately.
         //
         if (timer_expired(mac->timer))
         {
-            // for simplicity, assume the CTS already sent successfully here
-            _maca_broadcast_rts(mac, NULL);
-            timer_restart( mac->timer, CONFIG_MACA_WAIT_CTS_DURATION, 0 );
-            mac->state = MACA_STATE_WAIT_CTS;
+            // @attention
+            // the channel should be clear now. however, you shouldn't add the assertion
+            // here because it may failed in some very rare cases. however, the application
+            // can recover from these cases. so we needn't introduce more unstable behavior
+            // by enabling this assertion.
+            // hal_assert( _csma_ischannelclear(mac) );
+
+            // while (1) 
+            // {
+            //     if (_maca_ischannelclear(mac)) 
+            //         break;
+            // }
+
+            _maca_trysend( mac, mac->txbuf, mac->option );
         }
+        maca_evolve( mac, NULL );
         break;
 
-    case MACA_STATE_SLEEP:
+    case MACA_STATE_SLEEPING:
         if (bit8_get(mac->request, MACA_WAKEUP_REQUEST))
         {
-            transceiver->switchtomode( transceiver->object, FTRX_MODE_RX );
+            rxtx->switchtomode( mac->rxtx->provider, FTRX_MODE_RX );
             bit8_clr( mac->request, MACA_WAKEUP_REQUEST );
             mac->state = MACA_STATE_IDLE;
         }
@@ -574,6 +766,8 @@ void maca_evolve( void * macptr, TiEvent * e )
         // this should never happen.  the following source code can pull the state 
         // to IDLE and let the state machine to continue in case of state disorders.
         hal_assert( false );
+        rxtx->switchtomode( mac->rxtx->provider, FTRX_MODE_RX );
+        timer_stop( mac->timer );
         mac->state = MACA_STATE_IDLE;
     }
 
@@ -586,19 +780,19 @@ void maca_evolve( void * macptr, TiEvent * e )
 
             // if timer is already running, then we should stop it. 
             timer_stop( mac->timer );
-            iobuf_clear( mac->txbuf );
-            iobuf_clear( mac->rxbuf );
+            frame_reset( mac->rxbuf, MACA_HEADER_SIZE+1, 2, 0 );
+            frame_reset( mac->txbuf, MACA_HEADER_SIZE+1, 2, 0 );
 
-            transceiver->switchtomode( transceiver->object, FTRX_MODE_POWERDOWN );
+            rxtx->switchtomode( rxtx->provider, FTRX_MODE_POWERDOWN );
             bit8_clr( mac->request, MACA_SHUTDOWN_REQUEST );
-            mac->state = MACA_STATE_POWERDOWN;
+            mac->state = MACA_STATE_SHUTDOWN;
         }
 
         if (bit8_get(mac->request, MACA_STARTUP_REQUEST))
         {
-            if (mac->state == MACA_STATE_POWERDOWN)
+            if (mac->state == MACA_STATE_SHUTDOWN)
             {
-                transceiver->switchtomode( transceiver->object, FTRX_MODE_RX );
+                rxtx->switchtomode( rxtx->provider, FTRX_MODE_RX );
                 bit8_clr( mac->request, MACA_STARTUP_REQUEST );
                 mac->state = MACA_STATE_IDLE;
             }
@@ -625,7 +819,12 @@ void maca_evolve( void * macptr, TiEvent * e )
             // however, the upper layer doesn't need these frames. the maca receiving 
             // mechanism will filter them, and the RTS/CTS frames. only the valid data
             // frame are reported to the upper layer.
-            //            
+
+            // call _maca_tryrecv() to move the frame from transceiver's internal
+            // buffer to mac's local inside buffer "rxbuf".
+            //
+            _maca_tryrecv( mac, mac->rxbuf, 0x00 );
+
             if (mac->listener != NULL)
 	        {
 		        mac->listener( mac->lisowner, e );
@@ -638,4 +837,122 @@ void maca_evolve( void * macptr, TiEvent * e )
     }
 
 	return;
+}
+
+/*
+ *  +------------------+-------------+-------+-------+------------+-------------+
+ *  | Frame Control 2B | Sequence 1B | RA 4B | TA 4B | Command 1B | Duration 1B |
+ *  +------------------+-------------+-------+-------+------------+-------------+
+ */
+void _maca_init_cts( TiMACA * mac )
+{
+    uint16 ctrl = FRAME154_DEF_FRAMECONTROL_DATA_NOACK;
+
+    hal_assert( sizeof(m_rts) == 13 );
+    memset( &m_rts, 0x00, sizeof(m_rts) );
+    m_rts[0] = 12;                      // frame length. not including the length byte itself
+    m_rts[1] = (char)(ctrl >> 8);       // frame control
+    m_rts[2] = (char)(ctrl & 0xFF);
+    m_rts[12] = 0x01;                   // command 0x01 indicates this is a RTS frame
+}
+
+/*
+ *  +------------------+-------------+-------+-------+------------+
+ *  | Frame Control 2B | Sequence 1B | RA 4B | TA 4B | Command 1B |
+ *  +------------------+-------------+-------+-------+------------+
+ */
+void _maca_init_rts( TiMACA * mac )
+{
+    uint16 ctrl = FRAME154_DEF_FRAMECONTROL_DATA_NOACK;
+
+    hal_assert( sizeof(m_rts) == 12 );
+    memset( &m_rts, 0x00, sizeof(m_rts) );
+    m_rts[0] = 11;                      // frame length. not including the length byte itself
+    m_rts[1] = HIGH_BYTE(ctrl);         // frame control
+    m_rts[2] = LOW_BYTE(ctrl);
+    m_rts[12] = 0x02;                   // command 0x02 indicates this is a RTS frame
+}
+
+void _maca_set_rts( TiMACA * mac, uint16 pan, uint16 shortaddrto, uint16 shortaddrfrom, uint8 duration )
+{
+    m_rts[3]  = 0x00;
+    m_rts[4]  = HIGH_BYTE(pan);
+    m_rts[5]  = LOW_BYTE(pan);
+    m_rts[6]  = HIGH_BYTE(shortaddrto);
+    m_rts[7]  = LOW_BYTE(shortaddrto);
+    m_rts[8]  = HIGH_BYTE(pan);
+    m_rts[9]  = LOW_BYTE(pan);
+    m_rts[10] = HIGH_BYTE(shortaddrfrom);
+    m_rts[11] = LOW_BYTE(shortaddrfrom);
+    m_rts[13] = duration;
+}
+
+void _maca_set_cts( TiMACA * mac, uint16 pan, uint16 shortaddrto, uint16 shortaddrfrom )
+{
+    m_cts[3]  = 0x00;
+    m_cts[4]  = HIGH_BYTE(pan);
+    m_cts[5]  = LOW_BYTE(pan);
+    m_cts[6]  = HIGH_BYTE(shortaddrto);
+    m_cts[7]  = LOW_BYTE(shortaddrto);
+    m_cts[8]  = HIGH_BYTE(pan);
+    m_cts[9]  = LOW_BYTE(pan);
+    m_cts[10] = HIGH_BYTE(shortaddrfrom);
+    m_cts[11] = LOW_BYTE(shortaddrfrom);
+}
+
+void _maca_set_cts_from_rts( TiMACA * mac, char * cts, char * rts )
+{
+    // todo
+}
+
+bool _maca_is_rts( TiMACA * mac, char * buf, uint8 len )
+{
+    return ((len == MACA_RTS_SIZE) && (buf[12] == 0x01));
+}
+
+bool _maca_is_cts( TiMACA * mac, char * buf, uint8 len )
+{
+    return ((len == MACA_CTS_SIZE) && (buf[12] == 0x02));
+}
+
+bool _maca_is_data( TiMACA * mac, char * buf, uint8 len )
+{
+    return ((len == MACA_CTS_SIZE) && (buf[12] == 0x00));
+}
+
+
+/** 
+ * this function will send an RTS frame out immediately by calling the send() function
+ * in the lower level transceiver's interface. 
+ */
+uintx _maca_broadcast_rts( TiMACA * mac )
+{
+    TiFrameTxRxInterface * rxtx = mac->rxtx;
+
+    while (1)
+    {
+        if (rxtx->send( rxtx->provider, &m_rts[0], sizeof(m_rts), 0x00) > 0)
+            break;
+
+        rxtx->evolve( rxtx->provider, NULL );
+    }
+    return 1;
+}
+
+/** 
+ * this function will send an CTS frame out immediately by calling the send() function
+ * in the lower level transceiver's interface. 
+ */
+uintx _maca_broadcast_cts( TiMACA * mac )
+{
+    TiFrameTxRxInterface * rxtx = mac->rxtx;
+
+    while (1)
+    {
+        if (rxtx->send( rxtx->provider, &m_cts[0], sizeof(m_cts), 0x00) > 0)
+            break;
+
+        rxtx->evolve( rxtx->provider, NULL );
+    }
+    return 1;
 }

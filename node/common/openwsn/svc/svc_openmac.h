@@ -1,3 +1,5 @@
+#ifndef _OPENMAC_H_7248_
+#define _OPENMAC_H_7248_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -24,12 +26,18 @@
  *
  ******************************************************************************/
 
-#ifndef _OPENMAC_H_7248_
-#define _OPENMAC_H_7248_
+/**
+ * svc_openmac
+ * This module implements an medium access control protocol (MAC) designed for OpenWSN
+ * only. It can be regarded as an improved version of CSMA. Based on the simulation, 
+ * it has better performance than standard CSMA and MACA in some cases.
+ */
+
+
 
 /******************************************************************************
  * svc_openmac
- * implements an adaptive csma/ca medium access control based on TiCc2420Adapter.
+ * regulates the MAC layer interface
  * 
  * architecture
  * TiCc2420Adapter => TiOpenMAC => TiOpenLLC => TiOpenNET => TiOpenSession => Application
@@ -102,6 +110,7 @@
  * b12b13 	reserved.
  *  
  *****************************************************************************/
+
 
 #define MAC_STATE_IDLE 0
 #define MAC_STATE_PAUSE 1

@@ -26,42 +26,59 @@
  *
  ******************************************************************************/
 
+#include "rtl_configall.h"
+
 /*****************************************************************************
+ * Q: how to enable unicode programming?
+ * R:
+ * for windows developing, _UNICODE for C runtime library, and UNICODE for windows.
+ * furthermore, you need to include <windows.h>.
+ *
+ * reference
+ * [-] Windows环境下Unicode编程总结 (ZZ), http://yangwei.blogbus.com/logs/3192116.html
+ *
+ ****************************************************************************/
+
+/*
+#ifdef CONFIG_WINDOWS
+  #define WIN32_LEAN_AND_MEAN
+  #include <windows.h>
+#endif
+*/
+
+/*******************************************************************************
  * @name rtl_foundation.h
  * @author zhangwei on 20070331
- * 
+ *
  * system wide definitions for runtime library (RTL)
- * 
+ *
  * @history
+ * @modified by zhangwei on 200610
  * @modified by xxx on 200704
- * 
- ****************************************************************************/ 
-
-#include "rtl_configall.h"
-#include <assert.h>
+ * @modified by zhangwei on 20100709
+ *  - revision. add rtl_init() and rtl_assert() 
+ *
+ * @modified by zhangwei on 200901
+ * 	- bug fix: you should include <tchar.h> all the time no matter the macro
+ * 	  CONFIG_UNICODE defined or not, or else the system cannot recognize the
+ * 	  TCHAR macro.
+ *  - tested ok.
+ *  - review the source code.
+ *  - format the source code.
+ *
+ ******************************************************************************/
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*****************************************************************************
- * @name rtl_foundation.h
- * @author zhangwei on 20070331
- *
- * system wide definitions for runtime library (RTL)
- *
- * @history
- * @modified by xxx on 200704
- *
- ****************************************************************************/
+#define min(x,y) (((x)<(y))?(x):(y))
 
-#ifdef CONFIG_DEBUG
-    //#include <assert.h>
-    #include "../hal/hal_assert.h"
-    #define rtl_assert(cond) hal_assert((cond))
-#else
-    #define rtl_assert(cond)
-#endif
+/*******************************************************************************
+ * TiEvent and TiFunEventHandler
+ ******************************************************************************/
+
+struct _TiEvent;
 
 struct _TiEvent{
   uintx id;
@@ -75,11 +92,78 @@ typedef struct _TiEvent TiEvent;
 
 typedef void (* TiFunEventHandler)(void * object, TiEvent * e);
 
-#define min(x,y) (((x)<(y))?(x):(y))
+
+/*******************************************************************************
+ * rtl_assert(...)
+ * this function provide assert() like function which can be used in any modules.
+ * however, you should call rtl_init() first to enable the report functionalitiy. 
+ * because the reporting progress needs to operate real hardware. so we can implement
+ * assert report in another function (usually in hal layer) and pass it to the 
+ * run time library through an function pointer.
+ ******************************************************************************/
+
+typedef void (* TiFunAssert)( bool cond, char * file, uint16 line );
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef CONFIG_DEBUG
+  #define rtl_assert(cond) _rtl_assert_report((cond), __FILE__, __LINE__)
+#else
+  #define rtl_assert(cond) 
+#endif
+
+extern TiFunAssert g_assert_report;
+void _rtl_assert_report( bool cond, char * file, uint16 line );
+
+#ifdef __cplusplus
+}
+#endif
+
+/*******************************************************************************
+ * debug input/output (debugio) support by the rtl layer
+ * you must call rtl_init(...) first to register the hardware input/output function.
+ ******************************************************************************/
+
+typedef intx (* TiFunDebugIoPutChar)( void * io, char c );
+typedef char (* TiFunDebugIoGetChar)( void * io );
+
+extern void * g_dbc_io_provider;
+extern TiFunDebugIoPutChar g_dbc_putchar;
+extern TiFunDebugIoGetChar g_dbc_getchar;
+
+/**
+ * Initialize the runtime library(rtl). generally, you needn't call this function.
+ * however, if you want to activate the rtl_assert() and debug input/output functionalities
+ * in the runtime library, you should call rtl_init() when your application startup.
+ * or else the rtl_assert() and debug functions don't know how to really perform 
+ * input/output operations with the hardware modules.
+ * 
+ * Return
+ *  none
+ * 
+ * Example
+ *  rtl_init( hal_assert_report, g_uart0, uart_putchar, uart_getchar_wait );
+ * 
+ *  If you include hal_debug module in your project, then there're already the putchar() 
+ *  and getchar() function for you. You can initialize rtl layer as the following:
+ * 
+ *  dbio = (void *)dbio_open( 38400 );
+ *  rtl_init( dbio, (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
+ */
+void rtl_init( void * io_provider, TiFunDebugIoPutChar debugio_putchar, TiFunDebugIoGetChar debugio_getchar, 
+    TiFunAssert assert_report );
+
 
 
 #define STEP_CHECK(cond,retvar,retvalue) \
 	if ((retvar >= 0) && (cond)) retvar = retvalue;
+
+
+/*
+ * obsolete definitions
+ */
 
 /*******************************************************************
   DEBUG macros
@@ -105,151 +189,34 @@ typedef void (* TiFunEventHandler)(void * object, TiEvent * e);
     #define tracen6(x,n1,n2,n3,n4,n5,n6) NULL
 #endif
 
-/*******************************************************************
-  Utility Functions
-  They can be used anywhere in the whole application.
-*/
 
-//void* MemAlloc( size_t vsize );
-//void  MemFree( void * vpMem );
-//uint8 MemCompare( const byte * s1, const byte * s2, uint32 nLen );
-//void  MemFillRandom( void * vpMem, const uint32 vLen );
+#define addrof(arr) (&(arr[0]))
+#define ADDR(arr) (&((arr)[0]))
+#define ADDRAT(arr,n) (&(arr[0])+(n))
 
-//void  SetLastError( int16 vErrorNo );
-//int16 GetLastError();
+#ifdef CONFIG_COMPILER_BORLAND
+//#define max(a,b) (((a)>(b)) ? (a) : (b))
+//#define min(a,b) (((a)<(b)) ? (a) : (b))
+#endif
+
+/* @attention:
+ * you must guarantee sizeof(TiHandle) == sizeof(void*)
+ *
+ * the old definition is:
+ * 	define TiHandle uint32
+ * zhangwei changed it to the following union.
+ */
 
 /*
-// @note: these functions assume IO port actually exists. remember that:
-// although IO address is defined as int32, it must NOT exceed 16 bits in
-// length as 16 is the maximun io address the intel X96 architecture can
-// support.
-
-uint8 IoRead8( uint32 vAddress );
-uint16 IoRead16( uint32 vAddress );
-uint32 IoRead32( uint32 vAddress );
-void IoWrite8( uint32 vAddress, uint8 vData );
-void IoWrite16( uint32 vAddress, uint16 vData );
-void IoWrite32( uint32 vAddress, uint32 vData );
-
-uint8 MemRead8( uint32 vAddress );
-uint16 MemRead16( uint32 vAddress );
-uint32 MemRead32( uint32 vAddress );
-void MemWrite8( uint32 vAddress, uint8 vData );
-void MemWrite16( uint32 vAddress, uint16 vData );
-void MemWrite32( uint32 vAddress, uint32 vData );
-
-#ifdef DEBUG_RAID
-void DumpIo8( uint32 vAddr, char * vFormat );
-void DumpIo16( uint32 vAddr, char * vFormat );
-void DumpIo32( uint32 vAddr, char * vFormat );
-void DumpMem8( uint32 vAddr, char * vFormat );
-void DumpMem16( uint32 vAddr, char * vFormat );
-void DumpMem32( uint32 vAddr, char * vFormat );
-void DumpRam( uint8 * vpMem, uint32 vCount );
-#else
-#define DumpIo8 NULL
-#define DumpIo16 NULL
-#define DumpIo32 NULL
-#define DumpMem8 NULL
-#define DumpMem16 NULL
-#define DumpMem32 NULL
-#define DumpRam(v1,v2) NULL
-#endif
-
-#ifdef OS_NONE
-#define min(a, b)	( ((a) <= (b)) ? (a): (b) )
-#define max(a, b)	( ((a) >= (b)) ? (a): (b) )
-#endif
-
-//void TaskDelay( uint16 vMs );
-//#define Equal(x,y) ((x)==(y))
+typedef union{
+  int id;
+  void * ptr;
+  int value;
+}TiHandle;
+#define TiHandle uint32
 */
 
 
-//uint16 GetRandBetween( uint16 vMin, uint16 vMax );
-//uint16 GetRandNum( uint16 vSeed );
-//void DivideEx( uint32 v1, uint32 v2, uint32 * vpResult, uint32 * vpLeft );
-
-#define InRange(start1,len1,start2,len2) (((start2<=start1) && (start1+len1<start2+len2))?TRUE:FALSE)
-
-/* A structure to hold version information
- * A version can be changed to its string representations such as: "Version 2004, 4.3"
- */
-
-
-
-//#define min(a, b)  (((a) < (b)) ? (a) : (b))
-//#define max(a, b)  (((a) > (b)) ? (a) : (b))
-
-
-//typedef uint32 version_t;
-//#define MAKE_VERSION(major,minor,micro) (((major&0x0FF)<<16) | ((minor&0xFF)<<8) | (micro&0xFF))
-//#define MAJOR_VERSION(ver) ((ver>>16) & 0xFF)
-//#define MINOR_VERSION(ver) ((ver>>8) & 0xFF)
-//#define MICRO_VERSION(ver) (ver&0xFF)
-
-/* The following functions are often implemented as macros in a lot of simple C 
- * developing systems. Consider the side effect of macros, I prefer to use inline 
- * functions here instead of macros.
- *
- * #define MAKE_WORD(highbyte,lowbyte) ((((uint16)(highbyte)) << 8) | ((uint8)(lowbyte)))
- */ 
-inline uint16 MAKE_WORD( uint8 highbyte, uint8 lowbyte )
-{
-	return ((((uint16)(highbyte)) << 8) | ((uint8)(lowbyte)));
-}
-
-inline uint8 HIGH_BYTE( uint16 word )
-{
-	return (uint8)(word >> 8);
-}
-
-inline uint8 LOW_BYTE( uint16 word )
-{
-	return (uint8)(word & 0xFF);
-}
-
-
-/*******************************************************************************
- * Network Byte Order
- ******************************************************************************/
-
-/* Network order problem is encountered when transmit word or qword variables. It's
- * a very fundmental problem in network programing or porting to other platforms. 
- * 
- * According to the network byte order, the highest byte should be sent first. So
- * it's essentially a "Big Endian" design. Attention some protocol or hardware design
- * may not comply with this regulations. 
- *
- * In order to avoid the Little Endian/Big Endian problem in communications, and 
- * also helping the developer to write platform-independent programs, we define the 
- * following macros to help coding. These macros can often be found in a lot of 
- * powerful C language developing environment. 
- *
- *      htons()--"Host to Network Short"
- *      htonl()--"Host to Network Long"
- *      ntohs()--"Network to Host Short"
- *      ntohl()--"Network to Host Long"
- */
-
-#if defined(CONFIG_BIG_ENDIAN) && !defined(CONFIG_LITTLE_ENDIAN)
-	#define htons(A) (A)
-	#define htonl(A) (A)
-	#define ntohs(A) (A)
-	#define ntohl(A) (A) 
-#elif defined(CONFIG_LITTLE_ENDIAN) && !defined(CONFIG_BIG_ENDIAN)
-	#define htons(A) ((((uint16)(A) & 0xff00) >> 8) | \
-					   (((uint16)(A) & 0x00ff) << 8))
-	#define htonl(A) ((((uint32)(A) & 0xff000000) >> 24) | \
-					   (((uint32)(A) & 0x00ff0000) >> 8) | \
-					   (((uint32)(A) & 0x0000ff00) << 8) | \
-					   (((uint32)(A) & 0x000000ff) << 24))
-
-	#define ntohs htons
-	#define ntohl htohl
-#else
-	//#error "Either BIG_ENDIAN or LITTLE_ENDIAN must be #defined, but not both." 
-#endif
 
 /******************************************************************/
 #ifdef __cplusplus

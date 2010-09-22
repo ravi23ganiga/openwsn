@@ -47,7 +47,7 @@
 
 #include "hal_configall.h"
 #include "hal_foundation.h"
-#include "hal_target.h"
+#include "hal_targetboard.h"
 
 // #include "..\src\target.h"
 

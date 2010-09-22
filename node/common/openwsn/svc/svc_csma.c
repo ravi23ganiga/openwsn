@@ -24,808 +24,794 @@
  *
  ******************************************************************************/
 
+/* CSMA/CA medium access control (MAC) protocol 
+ * This module implements a p-insist carrier sense multi access MAC protocol.
+ *
+ * @author zhangwei and shan-lei on 20050710
+ *	- first version on PIC16F876. This version is fully discarded.
+ * @modified by zhangwei on 20060724
+ *  - revised
+ * @modified by zhangwei on 20090610
+ *	- fully revised for ICT GAINZ platform
+ * @modified by zhangwei on 20090725
+ *	- revision. compile passed.
+ * 
+ * @modified by zhangwei on 2010.05.07
+ *  - add state transfer machine implementation
+ *
+ * @modified by zhangwei on 2010.06.14
+ *  - change the module name from svc_adaptaloha to svc_csma
+ * 
+ * @modified by openwsn on 2010.08.24
+ *  - upgraded TiOpenFrame with TiFrame. fully revised.
+ */
 
 #include "svc_configall.h"
+#include <string.h>
 #include "svc_foundation.h"
-#include "../hal/hal_led.h"
-#include "../hal/hal_timer.h"
-#include "../hal/hal_global.h"
-#include "svc_openmac.h"
+#include "../rtl/rtl_foundation.h"
+#include "../rtl/rtl_bit.h"
+#include "../rtl/rtl_random.h"
+#include "../rtl/rtl_frame.h"
+#include "../rtl/rtl_debugio.h"
+#include "../rtl/rtl_ieee802frame154.h"
+#include "../hal/hal_foundation.h"
+#include "../hal/hal_assert.h"
+#include "../hal/hal_debugio.h"
+#include "../hal/hal_frame_transceiver.h"
+#include "svc_csma.h"
 
-#define MAC_DURATION_WAIT_CTS 200
-
-/* ACK frame
- * [2B frame control][1B seqid][2B addrfrom][2B addrto]
- * 
- * RTS/CTS frame
- * [2B frame control][1B seqid][2B addrfrom][2B addrto][1B cmdtype]
+/*  
+ * @attention
+ *	- This version will wait for the ACK frame after sending a DATA frame immediately.
+ * If another DATA frame arrives during this period, it will be ignored. This can be 
+ * improved in the future. 
+ *
+ *	- Different to the basic ALOHA protocol, this version will check whether the
+ * communication channel is clear or not. It will only send the frame when the channel
+ * is clear. This clear channel assesement (CCA) functionality is provided by 
+ * the cc2420 transceiver.
+ *
+ *  - When encounting sending conflicts, this version of ALOHA will retry for some 
+ * times. The retry count is configures by macro CONFIG_ALOHA_MAX_RETRY. However, 
+ * there's no backoff when retry the sending, so there's still large chance to 
+ * be conflicted again. This should be improved before this version of ALOHA can 
+ * be used in real applications. 
+ *
+ *  - This version doesn't depend on "osx" functionalities. So it's easy to be used.
+ * The enhanced version of this simple aloha is in svc_openmac and svc_adaptivealoha
+ *
+ *	In Summary, this version of ALOHA is mainly for demonstration and experiments. 
+ * It's a good start to be used for teaching than in real applications. 
  */
-#define WLS_ACK_LENGTH 7
-static char m_ackframe[7] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static char m_rtsframe[10] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static char m_ctsframe[8] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
 
-TiOpenMAC * mac_construct( char * buf, uint16 size )
+
+
+
+
+#define bit8_set(token,index) ((token) |= (_BV(index)))
+#define bit8_get(token,index) ((token) & (_BV(index)))
+#define bit8_clr(token,index) ((token) &= (~_BV(index)))
+
+
+static uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option );
+static uintx _csma_tryrecv( TiCsma * mac, TiFrame * frame, uint8 option );
+static uint16 _csma_get_backoff( TiCsma * mac );
+
+TiCsma * csma_construct( char * buf, uint16 size )  
 {
-	TiOpenMAC * mac = (TiOpenMAC *)buf;
-	//assert( sizeof(TiOpenMAC) <= size );
-	memset( mac, 0x00, sizeof(TiOpenMAC) );
+    TiCsma * mac = (TiCsma *)buf;
+
+	hal_assert( sizeof(TiCsma) <= size );
+	memset( buf, 0x00, size );
+    mac->state = CSMA_STATE_NULL;
 	return mac;
 }
 
-void  mac_destroy( TiOpenMAC * mac )
+void csma_destroy( TiCsma * mac )
+{
+	return;
+}
+
+TiCsma * csma_open( TiCsma * mac, TiFrameTxRxInterface * rxtx, uint16 panid, uint16 address, 
+    TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner )
+{
+    void * provider;
+
+    // assert( the rxtx driver has already been opened );
+    // assert( mac->timer is already opened but not start yet );
+
+	hal_assert( (rxtx != NULL) && (timer != NULL) && (mac->state == CSMA_STATE_NULL) );
+
+	mac->state = CSMA_STATE_IDLE;
+    mac->rxtx = rxtx;
+    mac->timer = timer;
+    mac->sendprob = 30;
+    mac->loadfactor = 5;
+    mac->request = 0x00;
+    mac->retry = 0;
+	mac->listener = listener;
+	mac->lisowner = lisowner;
+	mac->retry = 0;
+	mac->backoff = CONFIG_CSMA_MIN_BACKOFF;
+    mac->panto = panid;
+    mac->shortaddrto = FRAME154_BROADCAST_ADDRESS;
+    mac->panfrom = panid;
+    mac->shortaddrfrom = address;
+    mac->seqid = 0;
+    mac->sendoption = 0x00;
+    mac->sendfailed = 0;
+	mac->option = CSMA_DEF_OPTION;
+    mac->txbuf = frame_open( &(mac->txbuf_memory[0]), FRAME_HOPESIZE(CONFIG_CSMA_MAX_FRAME_SIZE), 0, 0, 0 );
+	
+    // @modified by zhangwei on 2010.08.21
+    // @attention: for all hardware components, you should construct and open them 
+    // in the caller function to avoid potential conflictions. so we don't recommend
+    // initialize the timer component here.
+
+	// timer = timer_construct( (void *)&g_timer, sizeof(g_timer) );
+    // timer_open( timer, id, NULL, NULL, 0x00 ); 
+
+    hal_assert( mac->timer != NULL );
+
+    // initialize the frame transceiver component
+	// attention enable ACK support for aloha protocol. the current implementation depends
+    // on low level transceiver component to provide ACK mechanism. 
+
+    provider = rxtx->provider;
+	rxtx->setchannel( provider, CONFIG_CSMA_DEFAULT_CHANNEL );
+	rxtx->setpanid( provider, panid );
+	rxtx->setshortaddress( provider, address );
+    rxtx->enable_addrdecode( provider );
+	rxtx->enable_autoack( provider );
+
+    ieee802frame154_open( &(mac->desc) );
+
+    // initialize the random number generator with a random seed. you can replace 
+    // the seed with other values.
+    //
+    // @attention: generally, the random generator can be initialized when the whole
+    // application started. if so, you needn't call rand_open() to initialize it 
+    // again here.
+
+    rand_open( 78 );  
+
+    return mac;
+}
+
+/* TiCsma doesn't call transceiver object's close. so you need to close the 
+ * transceiver object manually yourself. 
+ */
+void csma_close( TiCsma * mac )
 {
 	timer_stop( mac->timer );
+    mac->state = CSMA_STATE_NULL;
 }
 
-void  mac_open( TiOpenMAC * mac, TiCc2420Adapter * hdl, TiActionScheduler * actsche, TiTimerAdapter * timer, 
-	TiOpenAddress * addr )
+/* this function will try to accept the input data and copy them into internal buffer. 
+ * the real data sending is done in csma_evolve(). the caller should 
+ * repeatedly call evolve() to drive the MAC to run. 
+ *
+ * @return
+ *	> 0			success
+ *	0           failed. no byte has been sent successfully
+ */
+uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
 {
-	#ifndef GDEBUG
-	char * msg = "mac_open() run...\n";
-	uart_write( g_uart, msg, strlen(msg), 0x00 );
-	#endif
-	
-	mac->state = MAC_STATE_IDLE;
-	mac->event = MAC_EVENT_NULL;
-	mac->retry = 0;
-	mac->phy = hdl;
-	//mac->actsche = actsche;
-	mac->timer = timer;
-	mac->seqno = 0;
-	mac->txlen = 0;
-	mac->rxlen = 0;
-	mac->txframe = NULL;
-	mac->rxframe = NULL;
-	mac->backoff = 10;
-	mac->backoff_rule = 2;
-	mac->sleepduration = 0;
-	memset( &(mac->txbuf[0]), 0x00, OPF_FRAME_SIZE );
-	memset( &(mac->rxbuf[0]), 0x00, OPF_FRAME_SIZE );
-	memset( mac->rxheader, 0x00, 7 );
-	mac->timer = timer;
-	timer_init( timer, 1, 0 );
+	TiIEEE802Frame154Descriptor * desc;
+    uintx ret=0;
 
+	// @modified by zhangwei on 2010.05.09
+    // in the past, the mac is automatically wakeup by the following source code
+    // if there's a frame for sending. however, according to the low low power design
+    // principal, we'd better do this manually to avoid uncessary wakeup and 
+    // forgotten sleepings. so i giveup automatically wakeup in this revision.
+    //
+    // csma_wakeup( mac );
+
+    switch (mac->state)
+    {
+    case CSMA_STATE_IDLE:
+        frame_totalcopyfrom( mac->txbuf, frame );
+
+        // according to 802.15.4 specification:
+        // header 12 B = 1B frame length (required by the transceiver driver currently) 
+        //  + 2B frame control + 1B sequence number + 2B destination pan + 2B destination address
+        //  + 2B source pan + 2B source address
+        //
+        frame_skipouter( mac->txbuf, 12, 2 );
+        desc = ieee802frame154_format( &(mac->desc), frame_startptr(mac->txbuf), frame_capacity(mac->txbuf), FRAME154_DEF_FRAMECONTROL_DATA );
+        rtl_assert( desc != NULL );
+        ieee802frame154_set_sequence( desc, mac->seqid );
+        ieee802frame154_set_panto( desc, mac->panto );
+        ieee802frame154_set_shortaddrto( desc, mac->shortaddrto );
+        ieee802frame154_set_panfrom( desc, mac->panfrom );
+        ieee802frame154_set_shortaddrfrom( desc, mac->shortaddrfrom );
+
+        mac->sendoption = option;
+
+        #ifdef CONFIG_CSMA_STANDATD
+        if (mac->rxtx->ischnclear(mac))
+        {   
+            _csma_trysend( mac, mac->txbuf, option );
+        }
+        else{
+            mac->backoff = rand_uint8( CONFIG_CSMA_MAX_BACKOFF );
+            mac->retry = 0;
+            timer_setinterval( mac->timer, mac->backoff, 0 );
+            timer_start( mac->timer );
+            mac->state = CSMA_STATE_BACKOFF;
+        }
+        #endif
+
+        // optimized aloha protocol behavior. it will insert a random delay before
+        // sending to decrease the probability of conflictions.
+        // wait for a random period before really start the transmission
+        #ifndef CONFIG_CSMA_STANDATD
+        mac->backoff = rand_uint8( CONFIG_CSMA_MAX_BACKOFF );
+        mac->retry = 0;
+        timer_setinterval( mac->timer, mac->backoff, 0 );
+        timer_start( mac->timer );
+        mac->state = CSMA_STATE_BACKOFF;
+        #endif
+
+        ret = frame_length( mac->txbuf );
+
+        csma_evolve( mac, NULL );
+
+        // @attention
+        // if you want to guarantee the frame is sent inside this function, you can 
+        // try the following source code:
+        // do {
+        //      csma_evolve( mac, NULL );
+        // }while (mac->state != CSMA_STATE_IDLE);
+
+        break;
+
+    case CSMA_STATE_BACKOFF:
+        // in this state, there's already a frame pending inside the aloha object. 
+        // you have no better choice but wait for this frame to be processed.
+        //
+        csma_evolve( mac, NULL );
+
+        // @attention
+        // if you want to guarantee the frame is sent inside this function, you can 
+        // try the following source code:
+        // do {
+        //      csma_evolve( mac, NULL );
+        // }while (mac->state != CSMA_STATE_IDLE);
+
+        ret = 0;
+        break;
+
+    case CSMA_STATE_SLEEPING:
+    default:
+        // currently, this version implementation will ignore any frame sending request
+        // if the mac component is still in sleeping state. you should wakeup it and
+        // then retry aloha_send() again.
+        ret = 0;
+        break;
+    }
+
+    return ret;
 }
 
-void  mac_configure( TiOpenMAC * mac, uint8 ctrlcode, uint16 value )
+uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option )
 {
-	cc2420_configure( mac->phy, ctrlcode, value, 0);
+    uintx ret=0;
+    TiIEEE802Frame154Descriptor * desc;
+
+    switch (mac->state)
+    {
+    case CSMA_STATE_IDLE:
+        frame_totalcopyfrom( mac->txbuf, frame );
+
+        // according to 802.15.4 specification:
+        // header 12 B = 1B frame length (required by the transceiver driver currently) 
+        //  + 2B frame control + 1B sequence number + 2B destination pan + 2B destination address
+        //  + 2B source pan + 2B source address
+        //
+        frame_skipouter( mac->txbuf, 12, 2 );
+        desc = ieee802frame154_format( &(mac->desc), frame_startptr(frame), frame_capacity(frame), FRAME154_DEF_FRAMECONTROL_DATA_NOACK );
+        rtl_assert( desc != NULL );
+        ieee802frame154_set_sequence( desc, mac->seqid );
+	    ieee802frame154_set_panto( desc, mac->panto );
+	    ieee802frame154_set_shortaddrto( desc, FRAME154_BROADCAST_ADDRESS );
+	    ieee802frame154_set_panfrom( desc, mac->panfrom );
+	    ieee802frame154_set_shortaddrfrom( desc, mac->shortaddrfrom );
+
+        // char * fcf;
+        // char * shortaddrto;
+
+        // fcf = frame_startptr(frame);
+        // shortaddrto = (char*)(frame_startptr(frame)) + 3;  // todo: according to IEEE 802.15.4 format, 加几？请参考15.4文档确认
+
+
+        // for broadcasting frames, we don't need acknowledgements. so we clear the ACK 
+        // REQUEST bit in the frame control field. 
+        // refer to 802.15.4 protocol format
+        //
+        // fcf ++;
+        // (*fcf) &= 0xFA; // TODO: this value should changed according to 802.15.4 format 
+
+        // 0xFFFFFFFF the broadcast address according to 802.15.4 protocol format
+        // attention: we only set the destination short address field to broadcast address.
+        // the destination pan keeps unchanged.
+        //
+        // *shortaddrto ++ = 0xFF;
+        // *shortaddrto ++ = 0xFF;
+
+        mac->sendoption = option;
+
+        #ifdef CONFIG_CSMA_STANDATD
+        if (mac->rxtx->ischnclear(mac))
+        {   
+            _csma_trysend( mac, mac->txbuf, option );
+        }
+        else{
+            mac->backoff = rand_uint8( CONFIG_CSMA_MAX_BACKOFF );
+            mac->retry = 0;
+            timer_setinterval( mac->timer, mac->backoff, 0 );
+            timer_start( mac->timer );
+            mac->state = CSMA_STATE_BACKOFF;
+        }
+        #endif
+
+        // optimized aloha protocol behavior. it will insert a random delay before
+        // sending to decrease the probability of conflictions.
+        // wait for a random period before really start the transmission
+        #ifndef CONFIG_CSMA_STANDATD
+        mac->backoff = rand_uint8( CONFIG_CSMA_MAX_BACKOFF );
+        mac->retry = 0;
+        timer_setinterval( mac->timer, mac->backoff, 0 );
+        timer_start( mac->timer );
+        mac->state = CSMA_STATE_BACKOFF;
+        #endif
+
+        ret = frame_length( mac->txbuf );
+        csma_evolve( mac, NULL );
+        break;
+
+    case CSMA_STATE_BACKOFF:
+        // in this state, there's already a frame pending inside the aloha object. 
+        // you have no better choice but wait for this frame to be processed.
+        //
+        csma_evolve( mac, NULL );
+        ret = 0;
+        break;
+
+    case CSMA_STATE_SLEEPING:
+    default:
+        // currently, this version implementation will ignore any frame sending request
+        // if the mac component is still in sleeping state. you should wakeup it and
+        // then retry aloha_send() again.
+        ret = 0;
+        break;
+    }
+
+    return ret;
 }
 
-uint8 mac_read( TiOpenMAC * mac, TiOpenFrame * frame, uint8 size, uint8 opt )
+
+/**
+ * Check whether there's some frame arrivaled. This function can be called anytime. 
+ */
+uintx csma_recv( TiCsma * mac, TiFrame * frame, uint8 option )
 {
-	return mac_rawread( mac, (char *)frame, size, opt );
+    const uint8 HEADER_SIZE = 12, TAIL_SIZE = 2;
+	uint8 count;
+    char * ptr=NULL;
+
+    // move the frame current layer to mac protocol related layer. the default layer
+    // only contains the data (mac payload) rather than mac frame.
+
+    frame_skipouter( frame, HEADER_SIZE, TAIL_SIZE );
+    // assert: the skipouter must be success
+
+	count = _csma_tryrecv( mac, frame, option );
+	if (count > 0)
+	{
+        // the first byte in the frame buffer is the length byte. it represents the 
+        // MPDU length. after received the frame, we first check whether this is an
+        // incomplete frame or not. if it's an bad frame, then we should ignore it.
+        //
+        ptr = frame_startptr(frame);
+        if (*ptr == count-1)
+        {
+            // get the pointer to the frame control field according to 802.15.4 frame format
+            // we need to check whether the current frame is a DATA type frame.
+			// only the DATA type frame will be transfered to upper layers. The other types, 
+            // such as COMMAND, BEACON and ACK will be ignored here.
+			// buf[0] is the length byte. buf[1] and buf[2] are frame control bytes.
+            ptr ++;
+			if (FCF_FRAMETYPE(*(ptr)) != FCF_FRAMETYPE_DATA)
+			{
+				count = 0;
+			}
+			else{
+                frame_setlength( frame, count );
+                frame_setcapacity( frame, count );
+			}
+        }
+    }
+    frame_moveinner( frame );
+
+    if (count > 0)
+    {
+        frame_setlength( frame, count - HEADER_SIZE - TAIL_SIZE );
+        frame_setcapacity( frame, count - HEADER_SIZE - TAIL_SIZE );
+    }
+    else{
+        frame_setlength( frame, 0 );
+    }
+
+	csma_evolve( mac, NULL );
+	return count;
 }
 
-/* @param
- * @attention
- * 	the buffer "frame" will be used to hold the frame. if the "frame" buffer is 
- * not large enough to hold the whole frame, then this function will just drop 
- * the additional data.
+/* @return
+ *	> 0			success
+ *	0           failed. no byte has been sent successfully. when it returns 0, 
+ *              mac->retry will increase by 1.
+ */
+#ifdef CONFIG_CSMA_TRX_ACK_SUPPORT
+uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option )
+{
+	uintx count=0;
+
+    // @modified by openwsn on 2010.08.24
+    // needn't wait for channel clear here. because the caller can guarantee the 
+    // channel is clear enough before calling this function.
+    //
+	// while (!csma_ischannelclear(mac->rxtx))
+	//    continue;
+
+
+    if (rand_uint8(100) <= mac->sendprob)
+    {
+        // attention whether the sending process will wait for ACK or not depends on 
+        // "option" parameter.
+        count = mac->rxtx->send( mac->rxtx->provider, frame_startptr(frame), frame_length(frame), option );
+        if (count > 0)
+        {
+            mac->seqid ++;
+	        mac->retry = 0;
+            mac->state = CSMA_STATE_IDLE;
+        }
+        else if (mac->retry >= CONFIG_CSMA_MAX_RETRY)
+        {    
+            mac->seqid ++;
+	        mac->retry = 0;
+            mac->state = CSMA_STATE_IDLE;
+            mac->sendfailed ++;
+        }
+        else{
+            mac->retry++;
+            mac->backoff = _csma_get_backoff( mac );
+		    timer_restart( mac->timer, mac->backoff, 0 );
+            mac->state = CSMA_STATE_BACKOFF;
+        }
+    }
+    else{
+        // give up this sending try and restart the sending process after backoff duration.
+        mac->backoff = _csma_get_backoff( mac );
+		timer_restart( mac->timer, mac->backoff, 0 );
+        mac->state = CSMA_STATE_BACKOFF;
+    }
+
+	return count;
+}
+#endif
+
+/* call the PHY layer functions and try to send the frame immdietely. if ACK frame 
+ * required, then wait for ACK
  * 
  * @return
- * 	= 0		success. no frame was sent.
- * 	> 0		success. the value is the data actually sent. 
- * 	< 0		failed. however, this will never occur in current implementation.
- */
-uint8 mac_rawread( TiOpenMAC * mac, char * framebuffer, uint8 size, uint8 opt )
-{
-	uint8 copied = 0;
-	mac_evolve( mac );
-	if ((mac->state == MAC_STATE_IDLE) && (mac->rxlen))
-	{
-		copied = min( size, mac->rxlen );
-		if (copied > 0)
-		{
-		        
-			memmove( framebuffer, &(mac->rxbuf[0]), copied );
-			memmove( &(mac->rxheader[0]), &(mac->rxbuf[0]), 9 ); // backup the header of the  														  
-                                                   			// current frame for later using
-			
-			mac->rxlen = 0;
-		}
-	}
-	//uart_putchar(g_uart,copied);	
-	return copied;
-}
-
-uint8 mac_write( TiOpenMAC * mac, TiOpenFrame * frame, uint8 len, uint8 opt )
-{
-	return mac_rawwrite( mac, (char*)frame, len, opt );
-}
-
-/* @attention
- * 	the framebuffer's len should be less than MAC_FRAMEBUFFER_SIZE, so that 
- * the entire frame can be accept by mac layer. or some of the data will be lost!
- */  
-uint8 mac_rawwrite( TiOpenMAC * mac, char * framebuffer, uint8 len, uint8 opt )
-{
-	uint8 copied = 0;
-	
-	if ((mac->state == MAC_STATE_IDLE) && (mac->txlen == 0))
-	{
-		copied = min( OPF_FRAME_SIZE, len );
-		if (copied > 0)
-		{
-			memmove( (char*)(mac->txbuf), framebuffer, copied );
-			mac->txlen = copied;
-		}
-	}
-	mac_evolve( mac );
-
-	return copied;
-}
-
-/* if the mac layer is safe to sleep, then force it goto sleep state. 
- * sometimes, the mac layer cannot go to sleep due to active data, then this 
- * function does nothing.
- */
-uint8 mac_sleep( TiOpenMAC * mac )
-{
-	if ((mac->state == MAC_STATE_IDLE) && (mac->txlen ==0) && (mac->rxlen == 0))
-	{
-		_hdl_sleep( mac->phy );
-		mac->state = MAC_STATE_PAUSE;
-	}
-	return 0;
-}
-
-/* wake up the mac layer if it is in sleep mode */
-uint8 mac_wakeup( TiOpenMAC * mac )
-{
-	if (mac->state == MAC_STATE_PAUSE)
-	{
-		_hdl_wakeup( mac->phy );
-		mac->state = MAC_STATE_IDLE;
-	}
-	return 0;
-}
-
-/* evolve is a state transition function. it do state transition and perform 
- * necessary actions. however, it won't do these itself. the master module
- * should call it periodically (no matter timer driven of by a simple while loop) 
- * to drive it on.
+ *	> 0			success
+ *	0           failed. no byte has been sent successfully. when it returns 0, 
+ *              mac->retry will increase by 1.
  * 
- * @attention 20070130
- * some argue that the MAC software and the transceiver should goto SLEEP when
- * it received a RTS/CTS pair if the transmission destination is the current node
- * itself.  this may be true, but openwsn would NOT accept this due to hardware
- * restrictions. though such sleep seems resever energy, the transceive may not 
- * stable to perform so frequently switchings between sleep and active modes.
- * => more experiments needed to confirm this. 
- *  
- * the current design in OpenMAC is: the node not the destination will go to a 
- * PAUSE state. while, the transceive is still ON in PAUSE state so that the 
- * system can read/write frames as fast as possible. in this case, there's no 
- * transceiver startup time. this feature can improve the performance. 
- * the design of OpenMAC (openwsn@gmail.com) thinks that the SLEEP/WAKEUP mechanism
- * should be implemented by a separate module svc_energy. this service will 
- * control the energy behavior of whole system rather than the OpenMAC itself does.
+ * @modified by zhangwei on 2010.05.07
+ *  - revision
  */
-
-#ifdef CONFIG_OPENMAC_SIMPLE
-int8 mac_evolve( TiOpenMAC * mac )
+#ifndef CONFIG_CSMA_TRX_ACK_SUPPORT
+uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option )
 {
-	boolean done = TRUE;
-	uint16 addr;
-	uint8 id;
-	int8 count = 0, ret = 0;
-	int8 failed;
-	
-	do{
-		switch (mac->state)
-		{	
-		// IDLE is the initial state of the state machine.
-		case MAC_STATE_IDLE:
-		
-			if (mac->txlen > 0)
-			{
-				mac->state = MAC_STATE_SENDING;
-				done = FALSE;
-			}
-			else{
-				
-				mac->state = MAC_STATE_RECVING;
-				done = FALSE;
-			}
-			break;
-			
-		// start try to receving data.
-		// this state is not a stable state. it will transite to IDLE or WAITDATA
-		// state quickly.   
-		//
-		// if there's no frame received, then go back to IDLE state. this feature
-		// enable the user be able to continue call rawread()/rawwrite() successfully.
-		//
-		// the source code in the following is actually part of the IDLE state.
-		// though the source code in this state can be merged with the state IDLE, 
-		// but i still keep them here because this separation facilitates 
-		// the interaction with the interrupt routine. the interrupt can simply change 
-		// state variable to MAC_STATE_RECEIVING to trigger the following 
-		// processings without introducing other side effects.
-		// 
-		// assume: the ISR place the received packet in the buffer.
-		// 
-		case MAC_STATE_RECVING:
-		   
-			// the interrupt sevice routine will place the received frame into
-			// the RX buffer and change the value of mac->rxlen.
-			//
-			// if the master module hasn't read the data out, then MAC layer
-			// will pause to read more data from PHY layer. this improves the 
-			// efficiency. however, this may also lead data loss in the PHY layer. 
-			// but we have no good idea to solve this, unless the master module
-			// can call mac_read() more frequently. the possibility of data loss
-			// will always exists! you cannot eliminate it by only allocate  
-			// large buffer.
-			//
-		if (mac->rxlen == 0)
-		{
-			
-			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_FRAME_SIZE, 0x00 );
-			
-			mac->rxlen = count;
-			if (count == 0)
-			{
-				led_twinkle(LED_YELLOW,1);
-				mac->state = MAC_STATE_IDLE;
-				done = true;
-			}
-			
-		}
-		mac->state = MAC_STATE_IDLE;
-		done = true;
-		break;
-		
-		
-		// start frame sending process
-		// this state is only a transition state. the system will perform some 
-		// actions in this state and then quickly goes into TX_DELAY state. 
-		// the state machine will not stay in this state.
-		//
-		// before you try to start sending, you must delay for a random time to 
-		// avoid collison. this is also called "backoff time". 
-		//
-		case MAC_STATE_SENDING:
-			if (mac->txlen == 0)
-			{
-				mac->state = MAC_STATE_IDLE;
-			}
-			else{
-				mac->state = MAC_STATE_TX_DELAY;
-				mac->backoff = timer_getvalue( g_timer1 );
-				uart_putchar(g_uart,(char)(mac->backoff));
-				done = false;
-			}
-			break;
-				
-		case MAC_STATE_TX_DELAY:
-		                hal_delay(mac->backoff);
-				_hdl_rawwrite( mac->phy, mac->txbuf, mac->txlen, 0x00 );
-				mac->state = MAC_STATE_IDLE;
-				done = true;		
-			break;
-		
-		// if the state machine is in any other state, then the following code
-		// will drag it to IDLE state.
-		//
-		default:
-			mac->state = MAC_STATE_IDLE;
-			break;
-		}
-	}while (!done);
-	
-	return ret; 
-}
-#endif
-
-#ifdef CONFIG_OPENMAC_FULL
-int8 mac_evolve( TiOpenMAC * mac )
-{
-	boolean done = TRUE;
-	uint16 addr;
-	uint8 id;
-	int8 count = 0, ret = 0;
-	int8 failed;
-	
-	do{
-		switch (mac->state)
-		{
-		// @attention: in current implementation of OpenMAC, the transceiver 
-		// will be still ON in PAUSE mode. and the MCU chip is active too.
-		// 
-		case MAC_STATE_PAUSE:
-			if (timer_expired(mac->timer))
-			{
-				_hdl_wakeup( mac->phy );
-				mac->state = MAC_STATE_IDLE;
-				done = FALSE;
-			}
-			break;
-			
-		// IDLE is the initial state of the state machine.
-		case MAC_STATE_IDLE:
-		
-			if (mac->txlen > 0)
-			{
-				mac->state = MAC_STATE_SENDING;
-				done = FALSE;
-			}
-			else{
-				
-				mac->state = MAC_STATE_RECVING;
-				done = FALSE;
-			}
-			break;
-			
-		// start try to receving data.
-		// this state is not a stable state. it will transite to IDLE or WAITDATA
-		// state quickly.   
-		//
-		// if there's no frame received, then go back to IDLE state. this feature
-		// enable the user be able to continue call rawread()/rawwrite() successfully.
-		//
-		// the source code in the following is actually part of the IDLE state.
-		// though the source code in this state can be merged with the state IDLE, 
-		// but i still keep them here because this separation facilitates 
-		// the interaction with the interrupt routine. the interrupt can simply change 
-		// state variable to MAC_STATE_RECEIVING to trigger the following 
-		// processings without introducing other side effects.
-		// 
-		// assume: the ISR place the received packet in the buffer.
-		// 
-		case MAC_STATE_RECVING:
-		   
-			// the interrupt sevice routine will place the received frame into
-			// the RX buffer and change the value of mac->rxlen.
-			//
-			// if the master module hasn't read the data out, then MAC layer
-			// will pause to read more data from PHY layer. this improves the 
-			// efficiency. however, this may also lead data loss in the PHY layer. 
-			// but we have no good idea to solve this, unless the master module
-			// can call mac_read() more frequently. the possibility of data loss
-			// will always exists! you cannot eliminate it by only allocate  
-			// large buffer.
-			//
-		if (mac->rxlen == 0)
-		{
-			
-			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_FRAME_SIZE, 0x00 );
-			
-			mac->rxlen = count;
-			if (count == 0)
-			{
-				led_twinkle(LED_YELLOW,1);
-				mac->state = MAC_STATE_IDLE;
-				done = true;
-			}
-			
-			else{
-				switch (opf_type(mac->rxbuf))
-				{
-				/*
-				case OPF_TYPE_DATA:
-					// this is a data frame and do nothing now. just wait for the 
-					// master program retrieve the data out.
-					// @warning: the newest incoming frame may override the last 
-					// frame. so the mater should retrieve the frame as fast as 
-					// possible.
-					//
-					// @TODO
-					// do check sum here
-					// if checksum successfully, then return ACK or else NAK
-					// do checksum for ACK frame
-					//
-					// @attention
-					// the PHY layer 2420 chip can decide whether sending ACK 
-					// or not. so we can elimate such operations. 
-					//
-					// m_ackframe[1] |= 0x01;
-					// m_ackframe[2] = mac->rxbuf[2]; // update the sequence number
-					// m_ackframe[3] = 0x00; // @TODO checksum
-					// m_ackframe[4] = 0x00;
-					// cc2420_rawwrite( mac->phy, (char*)(&(m_ackframe[0])),12, 0x00 );  //12 is len, please modify
-					//
-					mac->state = MAC_STATE_IDLE;
-					break;
-					
-				case OPF_TYPE_ACK:
-					// ACK frame received. 
-					// if the sequence id in the ACK packet equal to or larger than 
-					// the sequence id of the frame in the sending buffer.
-					// (rxbuf[2] and txbuf[2] contain the sequence id)
-					//
-					if (mac->rxbuf[2] >= mac->txbuf[2])
-					{
-						mac->seqno = txbuf[2]; //?
-						mac->retry = 0;
-						mac->txlen = 0;
-						//acts_cancelaction( mac->actsche, mac->waitack_action );
-						mac->state = MAC_STATE_IDLE;
-					}
-					break;
-					
-				case 0x03:
-					// NAK frame received. then try to re-transmission the frame.
-					if (mac->rxbuf[2] == mac->txbuf[2])
-					{
-						mac->retry ++;
-						//acts_cancelaction( mac->actsche, mac->waitack_action );
-						mac->nextstate = MAC_STATE_SENDING;
-						done = FALSE;
-					}
-					break;
-				*/
-					
-				/*
-				case OPF_TYPE_MACCMD:
-					break;
-					
-				case OPF_TYPE_RTS:
-					addr = opf_addrto(mac->rxbuf);
-					if (addr == mac_getshortid(&(mac->localaddr)))
-					{  
-						mac->state = MAC_STATE_RECVING;
-						done = FALSE;
-					}
-					else{
-						mac->sleepduration = (uint8)(* opf_msdu( &(m_rtsframe[0]) ));
-						mac->rxlen = 0;
-						timer_setinterval( mac->timer, mac->sleepduration, 0x00 );
-						mac->state = MAC_STATE_PAUSE;
-					}
-					break;
-					
-				case OPF_TYPE_CTS:
-					break;
-				*/	
-				default:
-					NULL;
-				}
-				
-				done = true;
-			}
-		}
-		mac->state = MAC_STATE_IDLE;
-		done = true;
-		break;
-			
-		// IDEL => RECVING: event = RTS arrival
-		// MAC will goto RECVING state when it received a RTS frame
-		// 
-		case MAC_STATE_RX_SENDCTS:
-			// assume you have received the RTS frame, then you should reply 
-			// CTS back
-			//
-			opf_setaddrfrom( m_ctsframe, mac_getshortid(&(mac->localaddr)) );
-			opf_setaddrto( m_ctsframe, opf_addrto(m_rtsframe) );
-			
-			count = _hdl_rawwrite( mac->phy, m_ctsframe, sizeof(m_ctsframe), 0x00 );
-			if (count > 0)
-			{
-				mac->sleepduration = 0;		
-				mac->state = MAC_STATE_RX_WAITDATA;
-				timer_stop( mac->timer );
-				timer_setinterval( mac->timer, 2000, 0 ); // maximum duration to wait data frame
-				done = FALSE;		
-			}
-			
-		case MAC_STATE_RX_WAITDATA:
-			failed = false;
-			count = _hdl_rawread( mac->phy, mac->rxbuf, OPF_FRAME_SIZE, 0x00 );
-			if (count == 0)
-			{
-				if (timer_expired(mac->timer))
-					failed = true;
-			}			
-			
-			if ((!failed) && (count > 0))
-			{
-				//timer_stop( mac->timer );
-
-				id = opf_seqid(mac->rxbuf);
-				if ((id <= mac->seqno) || ((id == 0xFF) && (mac->seqno == 0)))
-				{
-					// just drop the packet and continue wait
-				}
-				else{
-					mac->seqno = id;
-					mac->rxlen = count;					
-					//send ACK/NAK if necessary
-					mac->state = MAC_STATE_IDLE;
-				}		
-			}
-			break;
-		
-		// start frame sending process
-		// this state is only a transition state. the system will perform some 
-		// actions in this state and then quickly goes into TX_DELAY state. 
-		// the state machine will not stay in this state.
-		//
-		// before you try to start sending, you must delay for a random time to 
-		// avoid collison. this is also called "backoff time". 
-		//
-		case MAC_STATE_SENDING:
-		uart_putchar(g_uart,1);
-			if (mac->txlen == 0)
-			{
-				mac->state = MAC_STATE_IDLE;
-			}
-			else if (mac->retry > OPENMAC_RETRY_LIMIT)
-			{
-				// this case should better not to happen! because this means a frame
-				// relly lost during transmission. your master application should 
-				// consider this problem!
-				mac->txlen = 0;
-				mac->state = MAC_STATE_IDLE;
-			}
-			else{
-			        uart_putchar(g_uart,2);
-				mac->state = MAC_STATE_TX_DELAY;
-				// 指数退避算法
-				mac->backoff = mac->backoff << 2;
-				//actsche->inputaction ?;
-				timer_stop( mac->timer );
-				timer_setinterval( mac->timer, mac->backoff, 0 );
-				timer_start( mac->timer );
-				done = false;
-			}
-			break;
-				
-		case MAC_STATE_TX_DELAY:
-		uart_putchar(g_uart,3);
-			if (timer_expired( mac->timer ))
-			{
-				uart_putchar(g_uart,4);
-				//_hdl_rawwrite( mac->phy, m_rtsframe, sizeof(m_rtsframe), 0x00 );
-				_hdl_rawwrite( mac->phy, mac->txbuf, mac->txlen, 0x00 );
-				//timer_setinterval( mac->timer, MAC_DURATION_WAIT_CTS, 0 );	
-				//mac->state = MAC_STATE_TX_WAITCTS;
-				mac->state = MAC_STATE_IDLE;
-				done = true;
-			}			
-			break;
-		/*				
-		case MAC_STATE_TX_WAITCTS:
-			if (!timer_expired(mac->timer))
-			{
-				memset( mac->rxbuf, 0x00, OPENMAC_BUFFER_SIZE );
-				count = _hdl_rawread( mac->phy, mac->rxbuf, OPENMAC_BUFFER_SIZE, 0x00 );
-				// @TODO if mac->txbuf is a valid CTS
-				if ((count > 0) && (true))
-				{
-#ifdef OPENMAC_SUPPORT_ACK
-					count = _hdl_rawwrite( mac->phy, mac->txbuf, mac->txlen, 0x00 );
-					// post assertion: the packet should always be sent successfully 
-					// by hal driver.
-					assert( count > 0 );
-					timer_stop( mac->timer );
-					timer_setinterval( MAC_INTERVAL_WAITACK );
-					mac->state = MAC_STATE_TX_WAITACK;
-					done = FALSE;
-#endif
-
-#ifndef OPENMAC_SUPPORT_ACK
-					// @attention: for our cc2420 transceive, it can support ACK
-					// mechanism in the hardware. so faciliate the developing of 
-					// MAC software. 
-					count = _hdl_rawwrite( mac->phy, mac->txbuf, mac->txlen, 0x00 | 0x01 );
-					if (count <= 0)
-					{
-						mac->state = MAC_STATE_SENDING;
-					}
-					else{
-						mac->state = MAC_STATE_IDLE;
-					}
-					done = FALSE;
-#endif
-				}
-			}
-			break;
-			
-		case MAC_STATE_TX_WAITACK:
-			id = 0;
-			memset( mac->rxbuf, 0x00, OPENMAC_BUFFER_SIZE );
-			count = _hdl_rawread( mac->phy, mac->rxbuf, OPENMAC_BUFFER_SIZE, 0x00 );
-			// if this is a ACK frame, other case NAK frame
-			if (true)
-			{
-				id = 1;
-			}
-			else if (false)
-			{
-				id = 2;
-			}
-			else{
-				if (timer_expired(mac->timer))
-					id = 3;
-			}
-			
-			switch (id)
-			{
-			case 1:
-				timer_stop( mac->timer );
-				mac->txlen = 0;
-				mac->state = MAC_STATE_IDLE;
-				break;
-			case 2:
-			case 3:
-				timer_stop( mac->timer );
-				mac->retry ++;
-				mac->state = MAC_STATE_SENDING;
-				break;
-			}
-			done = FALSE;
-			break;
-                       */
-		// if the state machine is in any other state, then the following code
-		// will drag it to IDLE state.
-		//
-		default:
-			mac->state = MAC_STATE_IDLE;
-			break;
-		}
-	}while (!done);
-	
-	return ret; 
-}
-#endif
-
-uint8 mac_state( TiOpenMAC * mac )
-{
-	return mac->state;
-}
 /*
-
-int8 mac_state_machine_evolve( TiOpenMAC * mac )
-{
-	boolean done = TRUE;
-	int8 ret = 0;
+	uintx count = 0;
+    uint16 ctrl;
+    bool expired;
+    char * ptr;
 	
-	do{
-		switch (mac->transtate)
+	while (!mac->rxtx->ischannelclear( mac->rxtximpl ))
+		continue;
+
+	mac->rxtx->switchtomode( mac->rxtximpl, FTRX_MODE_TX );
+    count = mac->rxtx->send( mac->rxtximpl, frame, option );
+	mac->rxtx->switchtomode( mac->rxtximpl, FTRX_MODE_RX );
+	
+    if (count > 0)
+	{
+		// If the frame has been successfully sent by the transceiver, the program will
+		// start to wait for the ACK frame replied from the receiver. The maximum waiting
+		// duration is configured by macro CONFIG_ALOHA_ACK_RESPONSE_TIME. The time unit
+		// is milli-seconds.
+		//
+
+        // wait for ack frame from the receiver. if we cannot receive the ack frame
+        // in time, then we can regard the frame just send is lost during transmission.
+        // this duration here is for the receiver to send the ack back. it consists 
+        // the processing time inside receiver node and the transmission time in 
+        // the air.
+        // 
+		timer_restart( mac->timer, CONFIG_ADAPT_ALOHA_ACK_RESPONSE_TIME, 0 ); 
+		expired = true;
+		while (!timer_expired( mac->timer ))
 		{
-		case MAC_IDLE_STATE:
-			if (mac->nextstate == MAC_RECVING_STATE)
+            hal_delay( 1 );
+			if (mac->rxtx->recv(mac->rxtximpl, mac->rxbuf, 0x00) > 0)
 			{
-				// @TODO
-				// start the data receiving process
-				mac->state = MAC_RECVING_STATE;
-				done = FALSE;
-			}
-			else if (mac->nextstate == MAC_SENDING_STATE)
-			{
-				mac->state = MAC_SENDING_STATE;
-				done = FALSE;
-			}
-			break;
-			
-		case MAC_RECVING_STATE:
-			// @TODO
-			// try to receive data from the wireless driver
-			// and judge whether an entire frame received
-			cc2420_read()
-			
-			if (entire frame received)
-			{
-				if DATA frame
+				// 2 bytes for frame control 
+                ptr = frame_ptr( mac->rxbuf );
+				ctrl = (((uint16)(ptr[1])) << 8) | (ptr[2]);
+
+				// If the incoming frame is ACK frame, then we can return success. 
+				// other type frames will be ignored. 
+                // 
+                // @attention
+				//  - Theoretically speaking, the current frame arrived may possibly be the 
+                // data type from other nodes. in the current version, this frame will be 
+                // overwrotten, which leads to unnecessary frame loss.
+				//
+				if (FCF_FRAMETYPE(ctrl) == FCF_FRAMETYPE_ACK)
 				{
-					// prepare ACK or NAK frame
-					mac->state = MAC_SENDING_ACK
-					done = FALSE;
-				}
-				else if CTS Frame
-				{
-					mac->state = MAC_SENDING_DATA
-					done = FALSE;
-				}
-				else if ACK frame
-				{
-					//clear 有关变量
-					mac->state = MAC_IDLE;
-				}
-				else if NAK frame
-				{
-					mac->state = MAC_SENDING_DATA
-					done = FALSE;
+					timer_stop( mac->timer );
+                    frame_clear( mac->rxbuf );
+					expired = false;
+					break;
 				}
 			}
-			break;
-			
-		// 这个状态其实是启动发送事务，但是不能立刻发送数据，还要等待一段随机时候后才允许
-		// 发送RTS
-		case MAC_SENDING_STATE:
-			if (mac->retry_count) >= 3
-			{
-				取消各计时action
-				reset各有关变量
-				mac->state = MAC_IDLE_STATE;
-			}
-			else{
-				//启动RTS发送延迟，延迟时间根据backoff_rule计算
-				// for random backoff
-				backoff = random( 0, backoff_rule );
-				// for square backoff
-				backoff = backoff * 2;
-				if (backoff == 0) 立即重传
-				{
-					设置各变量准备发送;
-					mac->state = MAC_SENDING_RTS;
-					done = FALSE;
-				}
-				else{
-					mac->rts_delay_action = acts_inputactioin( mac->actsche, 发送RTS延迟 )
-					设置各变量准备发送;
-					mac->state = MAC_SENDING_RTS:
-					done = FALSE;
-				}
-			}
-			 
-		case MAC_SENDING_RTS:
-			if (RTS发送延迟时间到)
-			{
-				cc2420_write 发送RTS
-				启动CTS等待计时
-				mac->state = MAC_WAIT_CTS;
-				done = FALSE;
-			}
-			break;
-			
-		case MAC_WAIT_CTS:
-			cc2420_read 查是否收到CTS
-			if yes
-			{
-				acts_cancel( CTS等待Action );
-				mac->state = MAC_SENDING_DATA;
-				done = FALSE;
-			}
-			else if acts_expired(CTS等待计时)
-			{
-				mac->state = MAC_SENDING_RTS;
-				done = FALSE;
-			}
-			break;
-		
-		case MAC_SENDING_DATA:
-			cc2420_write 发送数据
-			if (发送完毕)
-			{
-				mac->state = MAC_RECVING;
-				done = FALSE;
-			}
-			
-		default
-			mac->state = MAC_RECVING;
 		}
-
 		
+		if (expired)
+		{
+			count = 0;
+		}
 	}
-	while (!done)
-}
+
+	return count;
 */
-
-uint8 mac_setrmtaddress( TiOpenMAC * mac, TiOpenAddress * addr )
-{
+	hal_assert(false);
 	return 0;
 }
+#endif
 
-uint8 mac_setlocaladdress( TiOpenMAC * mac, TiOpenAddress * addr )
+uintx _csma_tryrecv( TiCsma * mac, TiFrame * frame, uint8 option )
 {
-	return 0;
+    TiFrameTxRxInterface  * rxtx = mac->rxtx;
+	uintx count;
+
+    // @attention: According to ALOHA protocol, the program should send ACK/NAK after 
+    // receiving a data frame. however, this is done by the low level transceiver's
+    // adapter component (TiCc2420Adapter), so we needn't to send ACK manually here.
+
+    count = rxtx->recv( rxtx->provider, frame_startptr(frame), frame_length(frame), option );
+	if (count > 0)
+	{   
+    	/* according to ALOHA protocol, the program should send ACK/NAK after receiving
+	     * a data frame. acoording to 802.15.4 protocol, there maybe COMMAND, BEACON or 
+         * ACK frames in the air. however, these type of frames are all used inside the 
+         * MAC layer only. we should filter them and keep the DATA frames only.
+         * 
+		 * 2 bytes for frame control
+		 * only the DATA type frame will be accepted here. The other types, such as COMMAND,
+		 * BEACON or ACK will be ignored. 
+		 */
+		/*
+        buf = frame_fullstartptr(frame);
+		ctrl = (((uint16)buf[1]) << 8) | (buf[2]);
+
+		if (FCF_FRAMETYPE(ctrl) != FCF_FRAMETYPE_DATA)
+        {
+			count = 0;
+            frame_setlength( frame, 0 );
+        }
+        else
+            frame_setlength( frame, count );
+		*/
+    }
+
+    return count;
 }
 
-uint8 mac_getrmtaddress( TiOpenMAC * mac, TiOpenAddress * addr )
+/* currently, the duration is configured as:
+ * loadfactor => duration
+ *      0           1
+ *      1           1*8
+ *      2           2*8
+ *      3           3*8
+ *      4           4*8
+ *      ...
+ * 
+ * @attention: the current delay duration algorithm is for demonstration only. you
+ * should adjust it according to your own designs.
+ */
+inline uint16 _csma_get_backoff( TiCsma * mac )
 {
-	return 0;
+    // algorithm 1
+    // return rand_uint16(((uint16)(mac->loadfactor))  << 3);
+
+    // algorithm 2
+    uint16 backoff = CONFIG_CSMA_MIN_BACKOFF + rand_uint16( mac->backoff << 1 );
+    if (backoff > CONFIG_CSMA_MAX_BACKOFF)
+            backoff = CONFIG_CSMA_MAX_BACKOFF;
+    return backoff;
 }
 
-uint8 mac_getlocaladdress( TiOpenMAC * mac, TiOpenAddress * addr )
+/* this function can be used as TiFrameTxRxInterface's listener directly. so you can get
+ * to know when a new frame arrives through the event's id. however, the TiCc2420Adapter's 
+ * listener is fired by ISR. so we don't suggest using csma_evolve() as TiCc2420Adapter's
+ * listener directly.
+ *
+ * the evolve() function also behaviors like a thread.
+ */
+void csma_evolve( void * macptr, TiEvent * e )
 {
-	return 0;
+	TiCsma * mac = (TiCsma *)macptr;
+    TiFrameTxRxInterface * rxtx = mac->rxtx;
+
+    if (mac->state == CSMA_STATE_NULL)
+        return;
+
+    switch (mac->state)
+    {
+    case CSMA_STATE_IDLE:   
+        // only in the idle state, we check for the sleeping request bit. if
+        // this bit in the request variable is set by the sleep() function, 
+        // then we call transceiver's sleep() function and force it into sleep
+        // mode. in the sleeping mode, all the frames in the mac layer are still 
+        // pending inside it, so the frames won't lost. different to the POWERDOWN
+        // mode, the whole application can recover from SLEEP mode fast and continue
+        // previous state.
+        //
+        if (bit8_get(mac->request, CSMA_SLEEP_REQUEST))
+        {
+            rxtx->switchtomode( rxtx->provider, FTRX_MODE_SLEEP );
+            bit8_clr( mac->request, CSMA_SLEEP_REQUEST );
+            mac->state = CSMA_STATE_SLEEPING;
+        }
+        break;
+
+    case CSMA_STATE_BACKOFF:
+        // backoff state is essentially the state that waiting for the physical channel
+        // for later sending.
+        // if sending random delay timer expired, then call PHY layer functions to 
+        // send the frame immediately.
+        //
+        if (timer_expired(mac->timer))
+        {
+            // @attention
+            // the channel should be clear now. however, you shouldn't add the assertion
+            // here because it may failed in some very rare cases. however, the application
+            // can recover from these cases. so we needn't introduce more unstable behavior
+            // by enabling this assertion.
+            // hal_assert( _csma_ischannelclear(mac) );
+
+            //while (!_csma_ischannelclear(mac))
+            //    continue;
+
+            _csma_trysend( mac, mac->txbuf, mac->sendoption );
+        }
+        break;
+
+    case CSMA_STATE_SLEEPING:
+        if (bit8_get(mac->request, CSMA_WAKEUP_REQUEST))
+        {
+            rxtx->switchtomode( rxtx->provider, FTRX_MODE_RX );
+            bit8_clr( mac->request, CSMA_WAKEUP_REQUEST );
+            mac->state = CSMA_STATE_IDLE;
+        }
+        break;
+
+    default:
+        // this should never happen.  the following source code can pull the state 
+        // to IDLE and let the state machine to continue in case of state disorders.
+        hal_assert( false );
+        mac->state = CSMA_STATE_IDLE;
+    }
+
+    if (mac->request > 0)
+    {
+        if (bit8_get(mac->request, CSMA_SHUTDOWN_REQUEST))
+        {
+            // no matter what the current state is, you can do shutdown. the power will 
+            // lost. so the data inside the SRAM will be lost. 
+
+            // if timer is already running, then we should stop it. 
+            timer_stop( mac->timer );
+            frame_clear( mac->txbuf );
+
+            rxtx->switchtomode( rxtx->provider, FTRX_MODE_POWERDOWN );
+            bit8_clr( mac->request, CSMA_SHUTDOWN_REQUEST );
+            mac->state = CSMA_STATE_POWERDOWN;
+        }
+
+        if (bit8_get(mac->request, CSMA_STARTUP_REQUEST))
+        {
+            if (mac->state == CSMA_STATE_POWERDOWN)
+            {
+                rxtx->switchtomode( rxtx->provider, FTRX_MODE_RX );
+                bit8_clr( mac->request, CSMA_STARTUP_REQUEST );
+                mac->state = CSMA_STATE_IDLE;
+            }
+        }
+    }
+
+    // attention the following process can occur in any state.
+    if (e != NULL)
+    {
+	    switch (e->id)
+	    {
+        case CSMA_EVENT_FRAME_ARRIVAL:
+            // if the incoming event indicates that the transceiver receives an frame, 
+            // then it simply pass the event to listener object. the listener object
+            // will call csma_recv() to retrieve the frame out. 
+            //
+            // @attention
+            // - if the caller cann't check for incoming frames fast enough, then the 
+            // new frames will overwrite the old ones inside the transceiver object.
+            // it's the application developer's responsibility to guarantee there
+            // no packet loss due to slow querying and insufficient buffering spaces.
+            //
+            // - however, for some transceiver such as 802.15.4 compatible chip cc2420, 
+            // it may report ACK/BECON/COMMAND frames according to 802.15.4 specification. 
+            // however, the upper layer doesn't need these frames. the program will ignore 
+            // them.
+            //
+            // then the following source code is enabled and the 802.15.4's ACK/BECON/COMMAND
+            // frames will be filtered. and only the DATA frame is reported to the upper 
+            // layer. this can guarantee every time the listener runs, it can read an 
+            // valid frame. 
+            //            
+            //if (_csma_tryrecv(mac, mac->rxbuf, 0x00) > 0)
+            //{
+            //    if (mac->listener != NULL)
+	        //    {
+		    //        mac->listener( mac->lisowner, e );
+	        //    }
+            //}
+			if (mac->listener != NULL)
+			{
+				mac->listener( mac->lisowner, e );
+			}
+            break;
+
+        /*
+        case ADTALOHA_EVENT_SHUTDOWN_REQUEST:
+            // no matter what the current state is, then you can do shutdown
+            timer_stop(); 
+            phy_shutdown();
+            mac->state = SHUTDOWN;
+            break;    
+
+        case ADTALOHA_EVENT_STARTUP_REQUEST: 
+            if (mac->state == SHUTDOWN)
+            {
+                phy_startup();
+                mac->state = IDLE;
+            }
+        */
+        default:
+		    break;
+	    }
+    }
+
+	return;
 }
 
-uint8 mac_installnotify( TiOpenMAC * mac, TEventHandler * callback, void * owner )
+void csma_statistics( TiCsma * mac, uint16 * sendcount, uint16 * sendfailed )
 {
-	return 0;
+    *sendcount = 0;
+    *sendfailed = mac->sendfailed;
+    mac->sendfailed = 0;
 }

@@ -51,6 +51,7 @@
  */
 
 #include "rtl_configall.h"
+#include "rtl_foundation.h"
 
 #define LIGHTQUEUE_HOPESIZE(itemsize,capacity) (sizeof(TiLightQueue) + (itemsize)*(capacity))
 
