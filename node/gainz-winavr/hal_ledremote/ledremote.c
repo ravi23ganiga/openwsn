@@ -35,21 +35,21 @@
  */
 
 
-#include "../common/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_configall.h"
 #include <stdlib.h>
 #include <string.h>
 #include <avr/wdt.h>
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_interrupt.h"	
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/hal/hal_uart.h"
-#include "../common/hal/hal_cc2420.h"
-#include "../common/hal/hal_target.h"
-#include "../common/hal/hal_debugio.h"
-#include "../common/rtl/rtl_openframe.h"
-#include "../common/hal/hal_timer.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_interrupt.h"	
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_cc2420.h"
+#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/rtl/rtl_openframe.h"
+#include "../../common/openwsn/hal/hal_timer.h"
 
 
 #define PANID				0x0001

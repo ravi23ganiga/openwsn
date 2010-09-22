@@ -35,17 +35,17 @@
  *  - revision. 
  ******************************************************************************/ 
 
-#include "../../common/svc/svc_configall.h"
-#include "../../common/hal/hal_cpu.h"
-#include "../../common/hal/hal_timer.h"
-#include "../../common/hal/hal_debugio.h"
-#include "../../common/hal/hal_uart.h"
-#include "../../common/hal/hal_led.h"
-#include "../../common/hal/hal_assert.h"
-#include "../../common/svc/svc_foundation.h"
-#include "../../common/svc/svc_timer.h"
+#include "../../common/openwsn/svc/svc_configall.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_timer.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/svc/svc_foundation.h"
+#include "../../common/openwsn/svc/svc_timer.h"
 
-#define VTM_RESOLUTION 7
+#define VTM_RESOLUTION 5
 
 static TiTimerAdapter g_timeradapter;
 static TiTimerManager g_vtm;
@@ -72,20 +72,21 @@ int main(void)
 
 	timeradapter = timer_construct( (void *)(&g_timeradapter), sizeof(g_timeradapter) );
 	vtm = vtm_construct( (void*)&g_vtm, sizeof(g_vtm) );
+
 	vtm = vtm_open( vtm, timeradapter, VTM_RESOLUTION );
 
 	vti1 = vtm_apply( vtm );
 	hal_assert( vti1 != NULL );
 	vti_open( vti1, vti_listener1, vti1 );
 	vti_setscale( vti1, 1 );
-	vti_setinterval( vti1, 100, 0x01 );
+	vti_setinterval( vti1, 800, 0x00 );
 	vti_start( vti1 );
 
 	vti2 = vtm_apply( vtm );
 	hal_assert( vti2 != NULL );
 	vti_open( vti2, vti_listener2, vti2 );
 	vti_setscale( vti2, 1 );
-	vti_setinterval( vti2, 400, 0x01 );
+	vti_setinterval( vti2, 40, 0x01 );
 	vti_start( vti2 );
 
 	hal_enable_interrupts();

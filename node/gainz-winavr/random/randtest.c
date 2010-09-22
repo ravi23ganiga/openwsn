@@ -39,8 +39,8 @@ int main(void)
 	uint16 n;
 	
 	target_init();
-	wdt_disable();
-	dbo_open( 0, 38400 );
+
+    dbo_open( 38400 );
 	led_open();
 	led_on( LED_RED );
 	hal_delay( 1000 );

@@ -28,6 +28,7 @@
 #include "../../common/openwsn/hal/hal_foundation.h"
 #include "../../common/openwsn/hal/hal_target.h"
 #include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
 
 /*******************************************************************************
  * @modified by zhangwei on 2010.05.15

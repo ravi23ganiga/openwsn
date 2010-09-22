@@ -153,11 +153,11 @@ int main(void)
 		// configure the time interval as 2 seconds. non-periodical
 		// the "vti" timer will automatically stopped when it's expired.
 		//
-		vti_setscale( vti, 1 );
-		vti_setinterval( vti, 3000, 0x00 );
-		vti_start( vti );
+			vti_setscale( vti, 1 );
+			vti_setinterval( vti, 3000, 0x00 );
+			vti_start( vti );
 
-		while (!vti_expired(vti))
+			while (!vti_expired(vti))
 		{
 			len = one2many_recv( o2m, rxbuf, 0x00 );
 			if (len > 0)

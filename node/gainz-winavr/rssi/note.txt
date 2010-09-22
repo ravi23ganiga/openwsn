@@ -4,3 +4,11 @@ sniffer可协助开发人员观察空中数据包的情况
 
 RSSI测试程序则是在sniffer程序的基础上略加扩充而成
 
+
+
+History
+================================================
+2010-06-02
+- recreate the rssi project and eliminates the obsolete source codes from sniffer project. 
+
+

@@ -23,7 +23,8 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-/******************************************************************************
+
+/*******************************************************************************
  * aloha_recv
  * The receiving test program based on ALOHA medium access control. It will try 
  * to receive the frames to itself, and then sent a character to the computer 
@@ -41,50 +42,62 @@
  *modified  by ShMiaojing
  *modified by ShimMiaojing  test ok add cc2420_open and modifeid output_openframe 
  *but about macro define-config_test_listenner may be somewhat wrong but both two way works
- *****************************************************************************/
+ *
+ * @modified by zhangwei on 2010520
+ *  - upgraded to winavr20090313
+ ******************************************************************************/
 
-#include "../common/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_configall.h"
 #include <stdlib.h>
 #include <string.h>
 #include <avr/wdt.h>
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_interrupt.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/hal/hal_uart.h"
-#include "../common/hal/hal_cc2420.h"
-#include "../common/hal/hal_target.h"
-#include "../common/rtl/rtl_openframe.h"
-#include "../common/hal/hal_debugio.h"
-#include "../common/svc/svc_aloha.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/rtl/rtl_frame.h"
+#include "../../common/openwsn/rtl/rtl_debugio.h"
+#include "../../common/openwsn/rtl/rtl_ieee802frame154.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_interrupt.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_cc2420.h"
+#include "../../common/openwsn/svc/svc_aloha.h"
+#include "apl_output_frame.h"
+
+
+#define CONFIG_DEBUG
+
 
 #define CONFIG_TEST_LISTENER  
+#undef  CONFIG_TEST_LISTENER  
+
 #define CONFIG_TEST_ADDRESSRECOGNITION
 #define CONFIG_TEST_ACK
 
-//#define PANID						0x0001
-//#define LOCAL_ADDRESS				0x01
-//#define REMOTE_ADDRESS				0x00
-//#define DEFAULT_CHANNEL				11
-//#define BROADCAST_ADDRESS			0xFFFF
+#define CONFIG_ALOHA_PANID			0x0001
+#define CONFIG_ALOHA_LOCAL_ADDRESS	0x02
+#define CONFIG_ALOHA_REMOTE_ADDRESS	0x00
+#define CONFIG_ALOHA_CHANNEL		11
 
-static  TiCc2420Adapter             m_cc;
-static  TiUartAdapter	            m_uart;
-static  TiAloha						m_aloha;
-static  char                        m_rxbufmem[OPF_SUGGEST_SIZE];
-static 	TiTimerAdapter               m_timer;
-uint8   chn=11;
-uint16  panid=0x0001; 
-uint16  address=0x02;
-  uint8 len;
+#define BROADCAST_ADDRESS			0xFFFF
+
+#define MAX_IEEE802FRAME154_SIZE    128
+
+static TiCc2420Adapter		        m_cc;
+static TiFrameRxTxInterface         m_rxtx;
+static TiAloha                      m_aloha;
+static TiTimerAdapter               m_timer;
+static char                         m_rxbufmem[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
+
 
 #ifdef CONFIG_TEST_LISTENER
 static void _aloha_listener( void * ccptr, TiEvent * e );
 #endif
 
 static void recvnode(void);
-static void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart );
 
 int main(void)
 {
@@ -94,51 +107,55 @@ int main(void)
 void recvnode(void)
 {
     TiCc2420Adapter * cc;
-	TiUartAdapter * uart;
+    TiFrameRxTxInterface * rxtx;;
     TiAloha * mac;
-	TiOpenFrame * opf;
 	TiTimerAdapter   *timer;
+	TiFrame * rxbuf;
 	char * msg = "welcome to aloha recv test...";
-    #ifndef CONFIG_TEST_LISTENER
-  
-    #endif
-
+	int len=0;
 	target_init();
-	HAL_SET_PIN_DIRECTIONS();
-	wdt_disable();
 
+    // flash the led to indicate the software is successfully running now.
+    //
 	led_open();
+	led_on( LED_ALL );
+	hal_delay( 500 );
+	led_off( LED_ALL );
 	led_on( LED_RED );
-	//hal_delay( 1000 );
-	//led_off( LED_ALL );
-	dbo_open( 0, 38400 );
+
+    // initialize the runtime library for debugging input/output and assertion
+    // hal_assert_report is defined in module "hal_assert"
+    //
+	//dbo_open( 38400 );
+    rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
+    dbc_putchar( 0xF0 );
+    dbc_mem( msg, strlen(msg) );
 
 	cc = cc2420_construct( (void *)(&m_cc), sizeof(TiCc2420Adapter) );
-	uart = uart_construct( (void *)(&m_uart), sizeof(TiUartAdapter) );
     mac = aloha_construct( (char *)(&m_aloha), sizeof(TiAloha) );
     timer= timer_construct(( char *)(&m_timer),sizeof(TiTimerAdapter));
 
-	uart_open( uart, 0, 38400, 8, 1, 0x00 );
-	uart_write( uart, msg, strlen(msg), 0x00 );
 	#ifdef CONFIG_TSET_LISTENER
-	cc = cc2420_open( cc, 0, _aloha_listener, NULL, 0x00 );
-	#else
-    cc = cc2420_open( cc, 0, NULL, NULL, 0x00 );
+	// cc = cc2420_open( cc, 0, _aloha_listener, NULL, 0x00 );
+    cc = cc2420_open( cc, 0, aloha_evolve, mac, 0x00 );
+    rxtx = cc2420_interface( cc, &m_rxtx );
+	mac = aloha_open( mac, rxtx, CONFIG_ALOHA_CHANNEL, CONFIG_ALOHA_PANID, CONFIG_ALOHA_LOCAL_ADDRESS, 
+        timer, _aloha_listener, NULL,0x00 );
 	#endif
 
-	
-
-
-	#ifdef CONFIG_TEST_LISTENER
-	mac = aloha_open( mac, cc,chn,panid,address,timer, _aloha_listener, NULL,0x00 );
-	#else
-	mac = aloha_open( mac, cc,chn,panid,address,timer,NULL, NULL,0x00 );
+    #ifndef CONFIG_TSET_LISTENER
+    cc = cc2420_open( cc, 0, NULL, NULL, 0x00 );
+    rxtx = cc2420_interface( cc, &m_rxtx );
+	mac = aloha_open( mac, rxtx, CONFIG_ALOHA_CHANNEL, CONFIG_ALOHA_PANID, CONFIG_ALOHA_LOCAL_ADDRESS, 
+        timer, NULL, NULL,0x00 );
 	#endif
  
-	//aloha_setchannel( mac, DEFAULT_CHANNEL );
-	//aloha_setpanid( mac, PANID );				 //网络标识, seems no use in sniffer mode
-	//aloha_setlocaladdress( mac, LOCAL_ADDRESS );	 //网内标识, seems no use in sniffer mode
-	
+	cc2420_setchannel( cc, CONFIG_ALOHA_CHANNEL );
+	cc2420_setrxmode( cc );							            // enable RX mode
+	cc2420_setpanid( cc, CONFIG_ALOHA_PANID );					// network identifier, seems no use in sniffer mode
+	cc2420_setshortaddress( cc, CONFIG_ALOHA_LOCAL_ADDRESS );	// in network address, seems no use in sniffer mode
+	cc2420_enable_autoack( cc );
+
 	#ifdef CONFIG_TEST_ADDRESSRECOGNITION
 	cc2420_enable_addrdecode( cc );
 	#else	
@@ -149,13 +166,15 @@ void recvnode(void)
 	cc2420_enable_autoack( cc );
 	#endif
  
-	#ifdef CONFIG_TEST_ACK
-    opf = opf_open( (void *)(&m_rxbufmem), sizeof(m_rxbufmem), OPF_DEF_FRAMECONTROL_DATA_ACK, 
-        OPF_DEF_OPTION );
+    rxbuf = frame_open( (char*)(&m_rxbufmem), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 0 );
+
+    #ifdef CONFIG_TEST_ACK
+    //fcf = OPF_DEF_FRAMECONTROL_DATA_ACK; 
 	#else
-    opf = opf_open( (void *)(&m_rxbufmem), sizeof(m_rxbufmem), OPF_DEF_FRAMECONTROL_DATA_NOACK, 
-        OPF_DEF_OPTION );
+    //fcf = OPF_DEF_FRAMECONTROL_DATA_NOACK; 
 	#endif
+
+
     hal_enable_interrupts();
 
 	/* Wait for listener action. The listener function will be called by the TiCc2420Adapter
@@ -167,13 +186,17 @@ void recvnode(void)
 	/* Query the TiCc2420Adapter object if there's no listener */
 	#ifndef CONFIG_TEST_LISTENER
 	while(1) 
-	{
-	
-       	len = aloha_recv( mac, opf, 0x00 );
+	{	
+        frame_reset( rxbuf, 3, 20, 0 );
+
 		if (len > 0)
 		{   
-			//dbo_putchar(0x88);
-			_output_openframe( opf,&m_uart);
+			dbc_putchar( 0xF3 );
+
+            //frame_moveouter( rxbuf );
+            //_output_frame( rxbuf, NULL );
+            //frame_moveinner( rxbuf );
+
 			led_off( LED_RED );
 
 			/* warning: You shouldn't wait too long in the while loop, or else 
@@ -186,25 +209,32 @@ void recvnode(void)
 			//hal_delay( 500 );
         }
 
-		//aloha_evolve(mac,NULL );
+		aloha_evolve(mac, NULL );
 	}
 	#endif
-}
 
+    frame_close( rxbuf );
+    aloha_close( mac );
+    cc2420_close( cc );
+}
 
 #ifdef CONFIG_TEST_LISTENER
 void _aloha_listener( void * owner, TiEvent * e )
 {
 	TiAloha * mac = &m_aloha;
-    TiOpenFrame * opf = (TiOpenFrame *)m_rxbufmem;
-	uart_putchar( &m_uart, 0x77 );
+    TiFrame * frame = (TiFrame *)m_rxbufmem;
+    uint8 len;
+
+	dbc_putchar( 0xF4 );
 	led_toggle( LED_RED );
 	while (1)
 	{
-       	len = aloha_recv( mac, opf, 0x00 );
+       	len = aloha_recv( mac, frame, 0x00 );
 		if (len > 0)
 		{    
-			_output_openframe( opf, &m_uart);
+            frame_moveouter( frame );
+            _output_frame( frame, NULL );
+            frame_moveinner( rxbuf );
 			led_toggle( LED_RED );
 
 			/* warning: You cannot wait too long in the listener. Because in the 
@@ -222,28 +252,5 @@ void _aloha_listener( void * owner, TiEvent * e )
 	}
 }
 #endif
-
-void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart )
-{
-	if (opf->datalen > 0)
-	{   
-		dbo_putchar( '>' );
-	 	dbo_n8toa( opf->datalen );
-
-		if (!opf_parse(opf, 0))
-		{
-	        dbo_n8toa( *opf->sequence );
-			dbo_putchar( ':' );
-			dbo_write( (char*)&(opf->buf[0]), opf->buf[0] );
-		}
-		else{
-	
-	        dbo_putchar( 'X' );
-			dbo_putchar( ':' );
-			dbo_write( (char*)&(opf->buf[0]), opf->datalen );
-		}
-		dbo_putchar( '\n' );
-	}
-}
 
 

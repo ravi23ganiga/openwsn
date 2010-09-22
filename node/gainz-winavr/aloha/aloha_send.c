@@ -23,8 +23,16 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-/*
-*****************************************************************************
+
+/*******************************************************************************
+ * aloha_send
+ * This project implements a frame sending node based on TiAloha component. This
+ * component is in module "svc_aloha". 
+ *
+ * @modified by openwsn on 2010.08.23
+ *  - compiled succssfully. the aloha_send.c only has slightly modifications comparing 
+ *    to the aloha_send.c inside "gainz-winavr\simplealoha\".  that version has already
+ *    tested successfully by Xu Fuzhen in 2010.07
  * 
  * @modified by zhangwei on 20090724
  *  - compile the whole application passed
@@ -33,134 +41,140 @@
  *	- revision. compile passed.
  * @modified by Shi-Miaojing on 20090731
  *	- tested  ok
- *@ modifeied by Shimiaojing on 20091031  match the style of MAC frame and add cc2420_open 
- *tesk ok both ACK and non-ACK works
- *****************************************************************************/
+ * @modifeied by Shimiaojing on 20091031  
+ *  - match the style of MAC frame and add cc2420_open 
+ *  - tesk ok both ACK and non-ACK works
+ * @modified by zhangwei on 20100713
+ *  - replace TiOpenFrame with TiFrame 
+ *  - upgrade rtl_assert, rtl_debugio
+ *
+ ******************************************************************************/
 
-#include "../common/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_configall.h"
 #include <stdlib.h>
 #include <string.h>
 #include <avr/wdt.h>
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_interrupt.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/hal/hal_uart.h"
-#include "../common/hal/hal_cc2420.h"
-#include "../common/hal/hal_target.h"
-#include "../common/rtl/rtl_openframe.h"
-#include "../common/hal/hal_debugio.h"
-#include "../common/svc/svc_aloha.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/rtl/rtl_foundation.h"
+#include "../../common/openwsn/rtl/rtl_frame.h"
+#include "../../common/openwsn/rtl/rtl_debugio.h"
+#include "../../common/openwsn/rtl/rtl_ieee802frame154.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_interrupt.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_cc2420.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/svc/svc_aloha.h"
 
+
+#define CONFIG_DEBUG
 
 #ifdef CONFIG_DEBUG   
     #define GDEBUG
 #endif
 
-/*#define PANID				0x0001
-#define LOCAL_ADDRESS		0x00   
-#define REMOTE_ADDRESS		0x01
-#define BUF_SIZE			128
-#define DEFAULT_CHANNEL     11*/
+#define CONFIG_ALOHA_PANID				        0x0001
+#define CONFIG_ALOHA_LOCAL_ADDRESS		        0x01
+#define CONFIG_ALOHA_REMOTE_ADDRESS		        0x02
+#define CONFIG_ALOHA_CHANNEL                    11
 
+#define MAX_IEEE802FRAME154_SIZE                128
 
-#define CONFIG_ALOHA_DEFAULT_PANID				0x0001
-#define CONFIG_ALOHA_DEFAULT_LOCAL_ADDRESS		0x01
-#define CONFIG_ALOHA_DEFAULT_REMOTE_ADDRESS		0x02
-#define CONFIG_ALOHA_DEFAULT_CHANNEL            11
+static TiCc2420Adapter		                    m_cc;
+static TiFrameRxTxInterface                     m_rxtx;;
+static TiAloha                                  m_aloha;
+static TiTimerAdapter                           m_timer;
+static char                                     m_txbuf[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
 
-static TiCc2420Adapter		m_cc;
-static TiAloha              m_aloha;
-static TiUartAdapter		m_uart;
-static TiTimerAdapter       m_timer;
-uint8   chn=11;
-uint16  panid=0x0001; 
-uint16  address=0x01;
-uint16  len;
 void aloha_sendnode(void);
 
 int main(void)
 {
 	aloha_sendnode();
+    return 0;
 }
 
 void aloha_sendnode(void)
 {   
     TiCc2420Adapter * cc;
+    TiFrameRxTxInterface * rxtx;;
     TiAloha * mac;
-	TiUartAdapter * uart;
 	TiTimerAdapter   *timer;
-	
-    char opfmem[OPF_SUGGEST_SIZE];
-	TiOpenFrame * opf;
+	TiFrame * txbuf;
+	char * pc;
 
 	char * msg = "welcome to aloha sendnode...";
-	uint8 i, total_length, seqid=0, option;
-    uint16 fcf;
+	uint8 i, seqid=0, option;
 
 	target_init();
-	HAL_SET_PIN_DIRECTIONS();
-	wdt_disable();
 
 	led_open();
 	led_on( LED_ALL );
 	hal_delay( 500 );
 	led_off( LED_ALL );
 	led_on( LED_RED );
-	dbo_open( 0, 38400 );
+    dbo_open( 38400 );
+
+    rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
+    dbc_mem( msg, strlen(msg) );
 
 	cc = cc2420_construct( (char *)(&m_cc), sizeof(TiCc2420Adapter) );
 	mac = aloha_construct( (char *)(&m_aloha), sizeof(TiAloha) );
-	uart = uart_construct( (void *)(&m_uart), sizeof(TiUartAdapter) );
     timer= timer_construct(( char *)(&m_timer),sizeof(TiTimerAdapter));
     	
+	cc2420_open(cc, 0, NULL, NULL, 0x00 );
+    rxtx = cc2420_interface( cc, &m_rxtx );
 
+    hal_assert( rxtx != NULL );
+    // attention: since timer0 is used for the osx kernel, we propose the next 16bit 
+    // timer to be used in this module. If you port this example to other hardware
+    // platform, you may need to adjust the timer_open parameters.
+    //
+    // Q: is the second parameter be 2 or 3 for atmega's 16 bit timer?
+    timer = timer_open( timer, 2, NULL, NULL, 0x00 ); 
 
-	uart_open( uart, 0, 38400, 8, 1, 0x00 );
-	uart_write( uart, msg, strlen(msg), 0x00 );
-	cc2420_open(cc, 0, NULL, NULL, 0x00 );//it is necessary since we have pick it outside from aloha_open 
+    // initialize the standard aloha component for sending/recving
+    hal_assert( (rxtx != NULL) && (timer != NULL) );
+    aloha_open( mac, rxtx, CONFIG_ALOHA_CHANNEL, CONFIG_ALOHA_PANID, CONFIG_ALOHA_LOCAL_ADDRESS, 
+        timer, NULL, NULL, 0x01);
 
-	aloha_open( mac,cc,chn,panid,address,timer, NULL, NULL,0x01);
-
-	//aloha_setchannel( mac, CONFIG_ALOHA_DEFAULT_CHANNEL );
-	//aloha_setpanid( mac, CONFIG_ALOHA_DEFAULT_PANID );					//网络标识
-	//aloha_setlocaladdr( mac, CONFIG_ALOHA_DEFAULT_LOCAL_ADDRESS );		//网内标识
-
-    opf = opf_open( (void *)(&opfmem[0]), sizeof(opfmem), OPF_DEF_FRAMECONTROL_DATA_ACK, OPF_DEF_OPTION );
-
+    txbuf = frame_open( (char*)(&m_txbuf), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 25 );
+    
 	hal_enable_interrupts();
 
 	while(1) 
 	{
-        fcf = OPF_DEF_FRAMECONTROL_DATA; 
-		total_length = 50;					   // frame length, which is equal the length of PSDU
-		                                       // plus addtional 1.
-		opf_cast( opf, total_length, fcf );
-        
+        aloha_setremoteaddress( mac, CONFIG_ALOHA_REMOTE_ADDRESS );
 
-        opf_set_sequence( opf, seqid ++ );
-		opf_set_panto( opf, CONFIG_ALOHA_DEFAULT_PANID );
-		opf_set_shortaddrto( opf, CONFIG_ALOHA_DEFAULT_REMOTE_ADDRESS );
-		opf_set_panfrom( opf, CONFIG_ALOHA_DEFAULT_PANID);
-		opf_set_shortaddrfrom( opf, CONFIG_ALOHA_DEFAULT_LOCAL_ADDRESS );
+        dbc_putchar(0x24);
+        frame_reset(txbuf, 3, 20, 25);
 
-           
+	    #define TEST1
 
-		for (i=0; i<opf->msdu_len; i++)
-			opf->msdu[i] = i; // msdu is just is signal nothing with the  data frame 
+        #ifdef TEST1
+        pc = frame_startptr( txbuf );
+        for (i=0; i<frame_capacity(txbuf); i++)
+            pc[i] = i;
+        #endif
 
-		/*for (i=0; i<opf->msdu_len; i++)
-		{
-			dbo_putchar(opf->buf[i]);
-		}*/
+        #ifdef TEST2
+        frame_pushback( txbuf, "01234567890123456789", 20 ); 
+        #endif
 
-		option = 0x01;
+
+        // if option is 0x00, then aloha send will not require ACK from the receiver. 
+        // if you want to debugging this program alone without receiver node, then
+        // suggest you use option 0x00.
+        // the default setting is 0x01, which means ACK is required.
+        //
+		option = 0x00;
 
         while (1)
         {
-		 
-            if (aloha_send(mac, opf, option) > 0)
+            if (aloha_send(mac, txbuf, option) > 0)
             {			
                 led_toggle( LED_YELLOW );
                 dbo_putchar( 0x11);
@@ -174,12 +188,22 @@ void aloha_sendnode(void)
             hal_delay(1000);
         }
 		
-		//aloha_evolve( mac, NULL );
+		// for simple aloha, you needn't to call aloha_evolve(). it's necessary for 
+        // standard aloha.
+   
+        aloha_evolve( mac, NULL );
 
         // controls the sending rate. if you want to test the RXFIFO overflow processing
         // you can decrease this value. 
+        // attention: this long delay will occupy the CPU and it may lead to frame lossing.
+        
 		hal_delay(1000);
 
 		//break;
 	}
+
+    frame_close( txbuf );
+    aloha_close( mac );
+    cc2420_close( cc );
 }
+
