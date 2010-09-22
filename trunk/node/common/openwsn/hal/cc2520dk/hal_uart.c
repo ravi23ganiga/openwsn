@@ -26,7 +26,6 @@
 
 
 #include "../hal_configall.h"
-#include <avr/io.h> 
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h>
@@ -40,6 +39,14 @@
 
 //#include <inttypes.h> 
 //#include <avr/pgmspace.h>
+
+#include "hal_types.h"
+#include "hal_uart.h"
+#include "hal_board.h"
+#include "util_buffer.h"
+#include "hal_int.h"
+#include "hal_mcu.h"
+
 
 /****************************************************************************** 
  * @author zhangwei on 2006-07-20

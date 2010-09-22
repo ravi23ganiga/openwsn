@@ -27,7 +27,7 @@
 #include "../hal_configall.h"
 //#include <avr/io.h>
 #include "../hal_foundation.h"
-#include "../hal_target.h"
+#include "../hal_targetboard.h"
 #include "../hal_cpu.h"
 #include "../hal_led.h"	
 
@@ -162,4 +162,11 @@ void led_twinkle( uint8 id , uint16 interval, uintx count )
 		hal_delay( interval );
         count --;
 	}
+}
+
+void led_showstate( uint8 state )
+{
+	(state & 0x04) ? led_on(LED1) : led_off(LED1);
+	(state & 0x02) ? led_on(LED2) : led_off(LED2);
+	(state & 0x01) ? led_on(LED3) : led_off(LED3);
 }

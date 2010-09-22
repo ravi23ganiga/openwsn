@@ -34,5 +34,14 @@
  *
  ******************************************************************************/
 
+
+/**
+ * @attention
+ * - Generally, you needn't call this module in your project after main()
+ * - This modules is called when the application started.
+ * - a lot of developing environment has already provide startup source code.
+ *   so this module is often unnecessary.
+ */
+
 #endif
 

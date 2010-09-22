@@ -28,10 +28,11 @@
 
 
 #include "rtl_configall.h"
+#include "rtl_foundation.h"
 
-/*****************************************************************************
+/*******************************************************************************
  * @name rtl_assert.h
- * @author zhangwei on 20100103
+ * @author zhangwei on 20050120
  * 
  * assert support for the runtime library.
  * In the past, the rtl_assert() is support inside rtl_foundation. However, the 
@@ -41,25 +42,29 @@
  * In all the rtl library modules, this module is the only one depends on modules
  * outside of rtl.
  * 
- * 
- ****************************************************************************/ 
+ * @modified by zhangwei on 2005-01-20
+ *  - released
+ * @modified by zhangwei on 200812
+ *	- upgraded from the original tk_assert.*
+ *	- revision, but not tested
+ *	- not tested.
+ *	- todo: eliminate the dependence on BCB. it should be ansi/windows only.
+ * @modified by zhangwei on 20100713
+ *  - fully revised. the rtl_assert() has been moved into rtl_foundation module.
+ *    this module is kept for old module's compatible issues.
+ *
+ ******************************************************************************/ 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// rtl_assert
+// rtl_assert_init()
 
-#ifdef CONFIG_DEBUG
-    //#include <assert.h>
-    #include "../hal/hal_assert.h"
-    #define rtl_assert(cond) hal_assert((cond))
-#else
-    #define rtl_assert(cond)
-#endif
-
-/******************************************************************/
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* _RTL_ASSERT_H_7689_ */
+

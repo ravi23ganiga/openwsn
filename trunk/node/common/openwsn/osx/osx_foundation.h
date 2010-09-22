@@ -1,6 +1,7 @@
 #ifndef _OSX_FOUNDATION_4328_
 #define _OSX_FOUNDATION_4328_
-/*******************************************************************************
+/*
+ *******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
  * Copyright (C) 2005-2010 zhangwei(TongJi University)
@@ -24,7 +25,8 @@
  * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi 
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  * 
- ******************************************************************************/ 
+ *******************************************************************************
+ */ 
 
 /******************************************************************************
  * osx_foundation
@@ -34,7 +36,14 @@
  *	- revision
  * @author zhangwei on 200906
  *	- add osx timer
- *****************************************************************************/
+ * @modified by zhangwei on 2010.08.05
+ *  - remove the including of osx_timer
+ *  - add macro osx_assert()
+ * 
+ * @modified by openwsn on 2010.09.02
+ *  - merge osx_foundation and osx_timer.h. and osx_timer.h will be removed from
+ * this project.
+ ******************************************************************************/
 
 /* fundamental declarations for the kernel
  *
@@ -48,7 +57,7 @@
  * the kernel is based on hardware adapter objects and osx_foundation, so what
  * you need to do is porting this module only to the new platform.
  *
- *   osx_kernel, osx_simplesche, osx_rtsche, ...
+ *   osx_kernel, osx_simplesche, osx_rtsche, osx_fsche...
  *        |-------------|-------------|
  *         osx_timer, osx_queue, osx_dba
  *                      |
@@ -61,19 +70,34 @@
 #include "../rtl/rtl_foundation.h"
 #include "../rtl/rtl_lightqueue.h"
 #include "../hal/hal_foundation.h"
-#include "../hal/hal_systimer.h"
 #include "../hal/hal_interrupt.h"
 #include "../hal/hal_cpu.h"
-#include "osx_timer.h"
-#include "osx_queue.h"
+#include "../hal/hal_assert.h"
+#include "../hal/hal_systimer.h"
+
+#define osx_assert(x) hal_assert(x)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/******************************************************************************
- * osx critical
- *****************************************************************************/
+/** 
+ * TiOsxTask and TiFunEventHandler shares the same data structure so that the event 
+ * handler can used as an osx task or vice versa. 
+ */
+#define TiOsxTask TiFunEventHandler
+
+/*******************************************************************************
+ * Osx Critical Operation Support
+ * The following two function are used during task switching or concurrent access
+ * on shared resources. 
+ * 
+ * @attention: If your compiler doesn't support "inline", you can replace the inline
+ * with macro as the following:
+ * 
+ * #define osx_atomic_begin() hal_atomic_begin()
+ * #define osx_atomic_end() hal_atomic_end()
+ ******************************************************************************/
 
 inline void osx_atomic_begin() 
 {
@@ -85,9 +109,17 @@ inline void osx_atomic_end()
 	hal_atomic_end();
 }
 
-/******************************************************************************
+/*******************************************************************************
+ * Osx Timer Adapter
+ ******************************************************************************/
+
+#define TiOsxTimer2 TiRtcAdapter
+
+
+
+/*******************************************************************************
  * Power Management
- *****************************************************************************/
+ ******************************************************************************/
 
 inline void _osx_cpu_sleep() {cpu_sleep();}
 inline void _osx_cpu_nop() {cpu_nop();}

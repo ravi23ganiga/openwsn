@@ -87,7 +87,8 @@ uint16 rand_read()
 
     // return (unsigned int)(m_rand_next/(2 * (RAND_MAX16 +1L)) % (RAND_MAX16+1L));
 
-    return (unsigned int) m_rand_next%RAND_MAX16;//(m_rand_next/((RAND_MAX16+1L)<<1) % (RAND_MAX16+1L)); 
+    //(m_rand_next/((RAND_MAX16+1L)<<1) % (RAND_MAX16+1L)); 
+    return (unsigned int) m_rand_next % RAND_MAX16;
 }
 
 /* return a random number in [0, n). The value range includes 0 but excludes n.*/

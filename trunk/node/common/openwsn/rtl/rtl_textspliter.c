@@ -56,7 +56,7 @@ inline void tspl_free( TiTextSpliter * split )
 #ifdef TSPL_VERSION20
 TiTextSpliter * tspl_construct( void * mem, uint16 size )
 {
-	hal_assert( sizeof(TiTextSpliter) <= size );
+	rtl_assert( sizeof(TiTextSpliter) <= size );
 	memset( mem, 0x00, size );
 	TiTextSpliter * split = (TiTextSpliter *)(mem);
 	
@@ -81,14 +81,14 @@ void tspl_clear( TiTextSpliter * split )
 #ifdef TSPL_VERSION30
 TiTextSpliter * tspl_construct( void * mem, uint16 size )
 {
-	hal_assert( sizeof(TiTextSpliter) <= size );
+	rtl_assert( sizeof(TiTextSpliter) <= size );
 	memset( mem, 0x00, size );
 	TiTextSpliter * split = (TiTextSpliter *)(mem);
 
 	split->state = SPLITER_STATE_1;
-	split->buf = (TiIoBuf *)malloc( IOBUF_HOPESIZE(128) );
-	iobuf_construct( split->buf, IOBUF_HOPESIZE(128) );
 
+	split->txbuf = iobuf_construct( &split->txmem[0], sizeof(split->txmem) );
+	split->rxbuf = iobuf_construct( &split->rxmem[0], sizeof(split->rxmem) );
 	return split;
 }
 
@@ -102,7 +102,8 @@ void tspl_clear( TiTextSpliter * split )
 
 void tspl_destroy( TiTextSpliter * split )
 {
-	return;
+	iobuf_clear(split->rxbuf);
+	iobuf_clear(split->txbuf);
 }
 
 
@@ -388,12 +389,13 @@ uint16 tspl_txhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output )
 #endif
 
 #ifdef TSPL_VERSION30
-uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output )
+uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output, uint8 * success )
 {
 	char * data = iobuf_data(input);
 	uint16 t_len = iobuf_length(input);
 	uint16 count = 0;
-	uint8 ret = 0;
+	*success = 0;
+
 	while(count<t_len)
 	{
 
@@ -433,33 +435,34 @@ uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output )
 
 				if( data[count] == PAC_START_FLAG )//如果是开始标志
 				{
-					if(iobuf_length(split->buf) == split->exp_len)//检查帧长度是否正确
+					if(iobuf_length(split->rxbuf) == split->exp_len)//检查帧长度是否正确
 					{
-						iobuf_copyto( split->buf, output );
-						iobuf_clear( split->buf );
+						iobuf_copyto( split->rxbuf, output );
+						iobuf_clear( split->rxbuf );
 						split->state = SPLITER_STATE_2;
+						*success = 1;
 						return count;//为了防止m_rxbuf缓冲区中有两个帧造成的第一个帧被踢掉
 					}
 					else//否就丢弃
 					{
-						iobuf_clear( split->buf );
+						iobuf_clear( split->rxbuf );
 						split->state = 2;
 					}
 				}
-				else if(iobuf_full(split->buf))//超长错帧，清除
+				else if(iobuf_full(split->rxbuf))//超长错帧，清除
 				{
-					iobuf_clear( split->buf );
+					iobuf_clear( split->rxbuf );
 					split->state = SPLITER_STATE_1;
 				}
 				else//如果是数据，则保存
 				{
-					iobuf_pushbyte(split->buf, data[count]);
-					if(iobuf_length(split->buf) == split->exp_len)
+					iobuf_pushbyte(split->rxbuf, data[count]);
+					if(iobuf_length(split->rxbuf) == split->exp_len)
 					{
-						ret=1;
-						iobuf_copyto( split->buf, output );
-						iobuf_clear( split->buf );
+						iobuf_copyto( split->rxbuf, output );
+						iobuf_clear( split->rxbuf );
 						split->state = SPLITER_STATE_1;//找到足够的数据，返回初始状态
+						*success = 1;
 						return count;//为了防止m_rxbuf缓冲区中有两个帧,而while循环继续进行，而造成第一个帧被踢掉
 					}
 				}
@@ -469,7 +472,7 @@ uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output )
 		}
 		count++;
 	}
-	return ret;
+	return count;
 }
 #endif
 
@@ -477,24 +480,25 @@ uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output )
 uint16 tspl_txhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output )
 {//增加头部和长度
 	uint16 count;
-	count = iobuf_pushbyte(split->buf, PAC_START_FLAG);
+	count = iobuf_pushbyte(split->txbuf, PAC_START_FLAG);
 
-	count = count + iobuf_pushbyte(split->buf, ((iobuf_length(input)&0xFF00)>>8) );//先传长度的高位
+	count = count + iobuf_pushbyte(split->txbuf, ((iobuf_length(input)&0xFF00)>>8) );//先传长度的高位
 
-	count = count + iobuf_pushbyte(split->buf, iobuf_length(input)&0x00FF );//低位
+	count = count + iobuf_pushbyte(split->txbuf, iobuf_length(input)&0x00FF );//低位
 
-	count = count + iobuf_pushback(split->buf, iobuf_ptr(input), iobuf_length(input));
+	count = count + iobuf_pushback(split->txbuf, iobuf_ptr(input), iobuf_length(input));
 
 	//count = iobuf_pushbyte(split->buf, PAC_END_FLAG);
 
 
 	if( (count>0) && (count<iobuf_size(output)) )
 	{
-		iobuf_moveto(split->buf, output);
+		iobuf_append( output, split->txbuf );
+		iobuf_clear( split->txbuf );
 	}
 	else
 	{
-		iobuf_clear(split->buf);
+		iobuf_clear(split->txbuf);
 		count = 0;
 	}
 	return count;

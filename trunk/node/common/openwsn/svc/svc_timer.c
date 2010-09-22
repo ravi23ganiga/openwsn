@@ -81,8 +81,8 @@ TiTimerManager * vtm_open( TiTimerManager * vtm, TiTimerAdapter * timeradapter, 
 	// attention
 	// assert( timeradapter is initiazed successfully and prepared to run )
 	// 我们需要周期性触发timer中断
-	// timer_open( timeradapter, 0, vtm_inputevent, vtm, 0x01 ); //VTM_TIMERADAPTER_ID
-	timer_setinterval( timeradapter, resolution, 8 );
+	timer_open( timeradapter, 0, vtm_inputevent, vtm, 0x01 ); //VTM_TIMERADAPTER_ID
+	timer_setinterval( timeradapter, resolution, 0 );  //(timer,interval,repeat)  the range of the interval  1~8
 	timer_start( timeradapter );
 
 	return vtm;

@@ -7,15 +7,8 @@
  */
 #include "rtl_configall.h"
 #include "rtl_foundation.h"
-
-#ifdef CONFIG_DEBUG
-#include <stdio.h>
-#include <assert.h>
-#endif
-
-#include "rtl_assert.h"
 #include "rtl_iobuf.h"
-
+#include "rtl_assert.h"
 
 #ifdef CONFIG_DYNA_MEMORY
 TiIoBuf * iobuf_create( uintx size )
@@ -173,7 +166,7 @@ inline void iobuf_popfront( TiIoBuf * iobuf, uintx count )
 
 inline bool iobuf_set( TiIoBuf * iobuf, uintx idx, char c )
 {
-	// assert( idx < iobuf_size(iobuf) );
+	rtl_assert( idx < iobuf_size(iobuf) );
 	if (idx < iobuf_size(iobuf))
 	{
 		iobuf_ptr(iobuf)[idx] = c;
@@ -185,7 +178,7 @@ inline bool iobuf_set( TiIoBuf * iobuf, uintx idx, char c )
 
 inline bool iobuf_get( TiIoBuf * iobuf, uintx idx, char * c )
 {
-	// assert( idx < iobuf_length(iobuf) );
+	rtl_assert( idx < iobuf_length(iobuf) );
 	if (idx < iobuf_length(iobuf))
 	{
 		*c = iobuf_ptr(iobuf)[idx];
@@ -252,25 +245,27 @@ inline void	iobuf_setlength( TiIoBuf * buf, uintx count )
 	buf->length = count;
 }
 
-inline void iobuf_adjustlength( TiIoBuf * buf, int delta )
+void iobuf_adjustlength( TiIoBuf * buf, int delta )
 {
 	buf->length += delta;
 }
 
 #ifdef CONFIG_DEBUG
 void iobuf_dump( TiIoBuf * buf )
-{/*
+{
 	int i;
 	char * pc;
-	printf("dump iobuf: memsize=%d, size=%d, length=%d\n", buf->memsize, buf->size, buf->length );
+	// printf("dump iobuf: memsize=%d, size=%d, length=%d\n", buf->memsize, buf->size, buf->length );
 	if (buf->length > 0)
 	{
-		putchar('=');
-		putchar('>');
-		pc = (char*)iobuf_ptr(buf);
+		// putchar('=');
+		// putchar('>');
+		pc = iobuf_ptr(buf);
 		for (i=0; i<buf->length; i++)
-			putchar(pc[i]);
-		putchar('\n');
-	}*/
+        {
+			// putchar(pc[i]);
+        }
+		// putchar('\n');
+	}
 }
 #endif

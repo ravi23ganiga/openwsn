@@ -3,6 +3,10 @@
 /******************************************************************************
  * nano-os (nos)
  * this module is a nano/tiny/light embedded operating system core. 
+ * nos (nanos) is an ultralight none-preemptive operating system kernel running
+ * on atmega MCU only now. it's much more like a classical operating system.
+ * generally, suggest using "osx kernel" instead of "nos" in the openwsn project. 
+ * 
  * 
  * running on: 
  *	- Atmel Atmega MCU such as:
@@ -39,11 +43,7 @@ extern "C" {
  * layer (hal). so: 
  *	- porting hal layer first before porting the nano os kernel. 
  *  - in your application, you should call hal_nosinit(os_post). 
-<<<<<<< .mine
  *  - call nos_runtask() in an infinite while loop.
-=======
- *  - call os_runtask() in an infinite while loop.
->>>>>>> .r432
  *
  * example:
  *		int main(void)
@@ -52,11 +52,7 @@ extern "C" {
  *			hal_init();
  *			hal_nosinit(os_post)
  *			......
-<<<<<<< .mine
  *			while (1) {nos_runtask();}
-=======
- *			while (1) {os_runtask();}
->>>>>>> .r432
  *		}
  * 
  * Q: how to create an task in interrupt service routines?
@@ -93,13 +89,9 @@ extern "C" {
  *****************************************************************************/
 	
 /* assume: the CPU's status register is 8 bits only */
-<<<<<<< .mine
-typedef uint8 nhal_atomic_t;
+//typedef uint8 nhal_atomic_t;
 typedef void (* nos_task_t)(void);
-=======
 typedef uint8 nos_atomic_t;
-typedef void (* nos_task_t)(void);
->>>>>>> .r432
 
 /* the nano os is built based on the hardware abstraction layer. the "hal" layer
  * must provide the following function. the nano os will call this function in its

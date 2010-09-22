@@ -1,3 +1,5 @@
+#ifndef _HAL_ASSERT_H_5748_
+#define _HAL_ASSERT_H_5748_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -23,15 +25,15 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-#ifndef _HAL_ASSERT_H_5748_
-#define _HAL_ASSERT_H_5748_
 
-
-
-
-/* modified by zhangwei on 20090711
+/* 
  * @state
- * ok
+ *  compiled successfully. released. stable.
+ *
+ * @modified by zhangwei on 2009.07.11
+ *
+ * @modified by zhangwei on 2010.08.17
+ *  - revision. 
  */
 
 #include "hal_configall.h"
@@ -41,12 +43,12 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_DEBUG
-  #define hal_assert(v) _hal_assert((v), __FILE__, __LINE__)
+  #define hal_assert(v) hal_assert_report((v), __FILE__, __LINE__)
 #else
   #define hal_assert(v) 
 #endif
 
-void _hal_assert( bool cond, char * file, uint16 line );
+void hal_assert_report( bool cond, char * file, uint16 line );
 
 #ifdef __cplusplus
 }

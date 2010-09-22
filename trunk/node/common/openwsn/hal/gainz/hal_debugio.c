@@ -28,24 +28,25 @@
 #include <string.h>
 #include <avr/io.h> 
 #include "../hal_foundation.h"
+#include "../../rtl/rtl_debugio.h"
 #include "../hal_debugio.h"
+#include "../hal_assert.h"
 
 #ifdef CONFIG_DEBUG
 
-typedef struct{
-  uint8 txlen;
-  char txbuf[CONFIG_DBO_TXBUFFER_SIZE];
-}TiDebugUart;
+static bool g_dbio_init = false;
+TiDebugUart g_dbio;
 
-static bool g_dbo_init = false;
-TiDebugUart g_dbo;
+/*******************************************************************************
+ * raw debug input/output device
+ ******************************************************************************/
 
-void _dbo_open( uint8 uart_id, uint16 bandrate )
+TiDebugIoAdapter * dbio_open( uint16 bandrate )
 {
-	if (g_dbo_init)
-		return;
+	if (g_dbio_init)
+		return  &g_dbio;
 
-	memset( &g_dbo, 0x00, sizeof(TiDebugUart) );
+	memset( &g_dbio, 0x00, sizeof(TiDebugUart) );
 
 	#ifdef CONFIG_DBO_UART0
 	/* initialize PIN directions. PE0 should be input and PE1 should be output.
@@ -78,18 +79,24 @@ void _dbo_open( uint8 uart_id, uint16 bandrate )
 	UCSR1B = (1 << RXEN1) | (1 << TXEN1);
 	#endif
 
-	g_dbo_init = true;
+	g_dbio_init = true;
+    return &g_dbio;
+
+    // todo: plan to switch dbo to dbc_
+    //rtl_init( NULL, (TiFunDebugIoPutChar)debug_putchar, (TiFunDebugIoGetChar)debug_getchar, debug_assert_report );
 }
 
-void _dbo_close()
+
+void dbio_close( TiDebugIoAdapter * dbio )
 {
-	g_dbo.txlen = 0;
+	g_dbio.txlen = 0;
+	g_dbio_init = false;
 }
 
 /* getchar from UART. if there's no input from UART, then this function will wait
  * until there's a input. 
  */
-char _dbo_getchar()
+char dbio_getchar( TiDebugIoAdapter * dbio )
 {
 	#ifdef CONFIG_DBO_UART0
 	while (!(UCSR0A & (1<<RXC0))) {};
@@ -102,14 +109,14 @@ char _dbo_getchar()
 	#endif
 }
 
-/* _dbo_putchar()
+/* _dbio_putchar()
  * this function sends one character only through the UART hardware. 
  * 
  * @return
  *	0 means success, and -1 means failed (ususally due to the buffer is full)
  *  when this functions returns -1, you need retry.
  */
-void _dbo_putchar( char ch )
+intx dbio_putchar( TiDebugIoAdapter * dbio, char ch )
 {
 	/* wait for the transmit buffer empty */
 	#ifdef CONFIG_DBO_UART0
@@ -122,13 +129,83 @@ void _dbo_putchar( char ch )
 	UDR1 = ch;
 	#endif
 
+	return 1;
+}
+
+/*
+TiByteDeviceInterface * dbio_interface( TiByteDeviceInterface * intf )
+{
+    intf->&g_dbio;
+    intf->putchar = dbio_putchar;
+    intf->getchar = dbio_getchar;
+    return intf;
+}
+*/
+
+void dbo_open( uint16 baudrate )
+{
+    dbio_open( baudrate );
+    rtl_init( (void*)&g_dbio, (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
+}
+
+/*******************************************************************************
+ * higher debug functions
+ ******************************************************************************/
+
+/* getchar from UART. if there's no input from UART, then this function will wait
+ * until there's a input. 
+ */
+/*
+char _dbo_getchar()
+{
+	#ifdef CONFIG_DBO_UART0
+	while (!(UCSR0A & (1<<RXC0))) {};
+	return UDR0;
+	#endif
+
+	#ifdef CONFIG_DBO_UART1
+	while (!(UCSR1A & (1<<RXC1))) {};
+	return UDR1;
+	#endif
+}
+*/
+
+/* _dbo_putchar()
+ * this function sends one character only through the UART hardware. 
+ * 
+ * @return
+ *	0 means success, and -1 means failed (ususally due to the buffer is full)
+ *  when this functions returns -1, you need retry.
+ */
+/*
+void _dbo_putchar( char ch )
+{
+	// wait for the transmit buffer empty 
+	#ifdef CONFIG_DBO_UART0
+	while (!(UCSR0A & (1<<UDRE0))) {};
+	UDR0 = ch;
+	#endif
+
+	#ifdef CONFIG_DBO_UART1
+	while (!(UCSR1A & (1<<UDRE1))) {};
+	UDR1 = ch;
+	#endif
+
 	return;
+}
+*/
+/*
+
+char _dbo_digit2hexchar( uint8 num )
+{
+	static char g_digit2hextable[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+	return (g_digit2hextable[num & 0x0F]);
 }
 
 void _dbo_putbyte( uint8 val )
 {
-	_dbo_putchar(_dbo_digit2hexchar(((val)&0xF0) >> 4));	
-	_dbo_putchar(_dbo_digit2hexchar((val)&0x0F));	
+	_dbo_putchar(dbc_digit2hexchar(((val)&0xF0) >> 4));	
+	_dbo_putchar(dbc_digit2hexchar((val)&0x0F));	
 }
 
 void _dbo_write( char * buf, uintx len )
@@ -154,30 +231,27 @@ void dbo_string( char * string )
 {
 	uintx i;
 	for (i=0; i<strlen(string); i++)
-		dbo_n8toa( string[i] );
+		//dbo_n8toa( string[i] );
+		dbo_putchar(string[i]);
 }
-
+*/
 /* simply wrotten to internal memory. this is pretty fast so that this function can
  * help debugging ISR */
 
+/*
+
 uintx _dbo_asyncwrite( char * buf, uintx len )
 {
-	uintx count = min( CONFIG_DBO_TXBUFFER_SIZE - g_dbo.txlen, len );
-	memmove( &(g_dbo.txbuf[g_dbo.txlen]), buf, count );
-	g_dbo.txlen += count;
+	uintx count = min( CONFIG_DBO_TXBUFFER_SIZE - g_dbio.txlen, len );
+	memmove( &(g_dbio.txbuf[g_dbio.txlen]), buf, count );
+	g_dbio.txlen += count;
 	return count;
 }
 
 void _dbo_evolve()
 {
-	_dbo_write( &(g_dbo.txbuf[0]), g_dbo.txlen );
+	_dbo_write( &(g_dbio.txbuf[0]), g_dbio.txlen );
 }
-
-char _dbo_digit2hexchar( uint8 num )
-{
-	static char g_digit2hextable[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-	return (g_digit2hextable[num & 0x0F]);
-}
-
+*/
 
 #endif /* CONFIG_DEBUG */

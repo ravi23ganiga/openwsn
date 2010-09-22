@@ -53,10 +53,10 @@
 #define TSPL_VERSION30
 
 #define CONFIG_TSPL_PACKET_SIZE 255
-#define TSPL_HOPESIZE(size) (sizeof(TiTextSpliter)+size)
+#define TSPL_HOPESIZE(size) (sizeof(TiTextSpliter))
 #define TSPL_RXBUF_SIZE (CONFIG_TSPL_PACKET_SIZE*2 + 4)
 
-#define PAC_START_FLAG 0x01
+#define PAC_START_FLAG 0x55
 #define PAC_END_FLAG 0x02
 
 #define SPLITER_STATE_WAITFOR_START 0x01
@@ -83,7 +83,11 @@ typedef struct{
 
 #ifdef TSPL_VERSION30
 typedef struct{
-	TiIoBuf * buf;
+	char txmem[ IOBUF_HOPESIZE(0xFF) ];
+	char rxmem[ IOBUF_HOPESIZE(0xFF) ];
+
+	TiIoBuf * rxbuf;
+	TiIoBuf * txbuf;
 	uint8 state;
 	uint16 exp_len;
 }TiTextSpliter;
@@ -117,7 +121,7 @@ uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output )
 #endif
 
 #ifdef TSPL_VERSION30
-uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output );
+uint16 tspl_rxhandle( TiTextSpliter * split, TiIoBuf * input, TiIoBuf * output, uint8 * success );
 #endif
 // TX stream assemble
 // Parameter-

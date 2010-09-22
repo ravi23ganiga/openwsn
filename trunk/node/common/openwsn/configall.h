@@ -52,6 +52,10 @@
  *  - enable #define CONFIG_OS_OSX and disable CONFIG_OS_TINYOS at the same time
  * @modified by zhangwei on 20090708
  *  - add fundamental data types definition 
+ * @modified by zhangwei on 20100712
+ *  - intx/uintx are reconfigurable data types if the compiler support them. 
+ *    in the past, they're bounded to the CPU architecture. 
+ *
  *****************************************************************************/
 
 
@@ -185,8 +189,13 @@
  * a new hardware and compiling environment. 
  ******************************************************************************/
 
-/* intx and uintx are related to CPU architecture
- * for most of the 8bit MCUs, intx/uintx are 8 bit, and for ARM, they're 32bit
+/* intx and uintx: are reconfigurable data types. they can be defined as int8/uint8,
+ * int16/uint16, int32/uint32 no matter what kind of CPU used. 
+ * 
+ * in the past, these data types are related to CPU architecture. for most of the 
+ * 8bit MCUs, intx/uintx are 8 bit, and for ARM, they're usually 32bit. however, 
+ * this isn't always. you can still redefine uintx as uint16 on 8bit ATmega128 MCU
+ * unless the compiler support them. 
  */
 
 /* for atmega128 MCU and avr-gcc (WinAVR or AVR Studio)
@@ -203,8 +212,10 @@ typedef signed long long    int64;
 typedef unsigned long long  uint64;
 typedef float               fp32;             /* single precision floating point variable (32bits)  */
 typedef double              fp64;             /* double precision floating point variable (64bits)  */
-typedef signed int          intx;
-typedef unsigned int        uintx;
+typedef signed char         intx;
+//typedef unsigned char       uintx;
+#define uintx uint16
+#define intx int16
 #endif
 
 #ifndef CONFIG_TARGET_GAINZ 

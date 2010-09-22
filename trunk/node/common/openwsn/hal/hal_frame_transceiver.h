@@ -29,32 +29,36 @@
 #define FTRX_MODE_SLEEP         2
 #define FTRX_MODE_POWERDOWN     3
 
+#define TiFrameRxTxInterface TiFrameTxRxInterface 
+
 struct _TiFrameTxRxInterface;
 
-typedef uint8  (* TiFunFtrxSend)( struct _TiFrameTxRxInterface * trx, TiIoBuf * iobuf, uint8 option );
-typedef uint8  (* TiFunFtrxRecv)( struct _TiFrameTxRxInterface * trx, TiIoBuf * iobuf, uint8 option );
-typedef void   (* TiFunFtrxEvolve)( struct _TiFrameTxRxInterface * trx, TiEvent * e );
-typedef void   (* TiFunFtrxSwitchToMode)( struct _TiFrameTxRxInterface * trx, uint8 mode );
-typedef uint8  (* TiFunFtrxIsChannelClear)( struct _TiFrameTxRxInterface * trx );
-typedef uint8  (* TiFunFtrxEnableAutoAck)( struct _TiFrameTxRxInterface * trx );
-typedef uint8  (* TiFunFtrxDisableAutoAck)( struct _TiFrameTxRxInterface * trx );
-typedef uint8  (* TiFunFtrxEnableAddrDecode)( struct _TiFrameTxRxInterface * trx );
-typedef uint8  (* TiFunFtrxDisableAddrDecode)( struct _TiFrameTxRxInterface * trx );
+//typedef uint8  (* TiFunFtrxSend)( void * trx, TiIoBuf * iobuf, uint8 option );
+//typedef uint8  (* TiFunFtrxRecv)( void * trx, TiIoBuf * iobuf, uint8 option );
+typedef uint8  (* TiFunFtrxSend)( void * trx, char * buf, uint8 len, uint8 option );
+typedef uint8  (* TiFunFtrxRecv)( void * trx, char * buf, uint8 capacity, uint8 option );
+typedef void   (* TiFunFtrxEvolve)( void * trx, TiEvent * e );
+typedef void   (* TiFunFtrxSwitchToMode)( void * trx, uint8 mode );
+typedef uint8  (* TiFunFtrxIsChannelClear)( void * trx );
+typedef uint8  (* TiFunFtrxEnableAutoAck)( void * trx );
+typedef uint8  (* TiFunFtrxDisableAutoAck)( void * trx );
+typedef uint8  (* TiFunFtrxEnableAddrDecode)( void * trx );
+typedef uint8  (* TiFunFtrxDisableAddrDecode)( void * trx );
 
-typedef uint8  (* TiFunFtrxSetChannel)( struct _TiFrameTxRxInterface * trx, uint8 chn );
-typedef uint8  (* TiFunFtrxSetPanId)( struct _TiFrameTxRxInterface * trx, uint8 panid );
-typedef uint16 (* TiFunFtrxGetPanId)( struct _TiFrameTxRxInterface * trx );
-typedef uint8  (* TiFunFtrxSetShortAddress)( struct _TiFrameTxRxInterface * trx, uint16 addr );
-typedef uint16 (* TiFunFtrxGetShortAddress)( struct _TiFrameTxRxInterface * trx );
-typedef void   (* TiFunFtrxSetTxPower)( struct _TiFrameTxRxInterface * trx, uint8 power );
-typedef uint8  (* TiFunFtrxGetRssi)( struct _TiFrameTxRxInterface * trx );
+typedef uint8  (* TiFunFtrxSetChannel)( void * trx, uint8 chn );
+typedef uint8  (* TiFunFtrxSetPanId)( void * trx, uint8 panid );
+typedef uint16 (* TiFunFtrxGetPanId)( void * trx );
+typedef uint8  (* TiFunFtrxSetShortAddress)( void * trx, uint16 addr );
+typedef uint16 (* TiFunFtrxGetShortAddress)( void * trx );
+typedef void   (* TiFunFtrxSetTxPower)( void * trx, uint8 power );
+typedef uint8  (* TiFunFtrxGetRssi)( void * trx );
 
-// typedef uint8  (* TiFunFtrxGetLqi)( struct _TiFrameTxRxInterface * trx );
-// typedef uint8  (* TiFunFtrxSetListener)( struct _TiFrameTxRxInterface * trx, TiFunEventHandler listener );
+// typedef uint8  (* TiFunFtrxGetLqi)( void * trx );
+// typedef uint8  (* TiFunFtrxSetListener)( void * trx, TiFunEventHandler listener );
 
 
 struct _TiFrameTxRxInterface{
-    void * object;
+    void * provider;
     TiFunFtrxSend send;
     TiFunFtrxRecv recv;
     TiFunFtrxEvolve evolve;

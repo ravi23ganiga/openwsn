@@ -71,14 +71,10 @@ bool nos_post(void (*tp)(void))
 {
 	nos_atomic_t flag;
 	uint8_t tmp;
-<<<<<<< .mine
-	flag = nhal_atomic_start();
-	tmp = g_nos_sched_free;
-=======
 	flag = nos_atomic_start();
 	tmp = g_nos_sched_free;
->>>>>>> .r432
-	if (g_taskqueue[tmp].tp == (void *)NULL) 
+
+    if (g_taskqueue[tmp].tp == (void *)NULL) 
 	{
 		g_nos_sched_free = (tmp + 1) & OS_TASK_BITMASK;
 		g_taskqueue[tmp].tp = tp;

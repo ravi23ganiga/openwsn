@@ -1,0 +1,3 @@
+Q: how to porting OpenWSN to micaz platform?
+R:
+MicaZ uses Atmega128L and cc2420 transceiver. and the GAINZ hardware is almost the same as mica. So porting OpenWSN from GAINZ hardware to MicaZ should be pretty simple.

@@ -30,7 +30,6 @@
 #include "rtl_configall.h"
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #ifdef CONFIG_DEBUG
 #include <stdio.h>
 #endif

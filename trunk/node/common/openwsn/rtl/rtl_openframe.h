@@ -23,6 +23,9 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
+#ifndef _RTL_OPENFRAME_H_7824_ 
+#define _RTL_OPENFRAME_H_7824_
+
 /******************************************************************************
  * rtl_openframe
  * this module implements an openframe object to help manipulating the IEEE 802.15.4 frame 
@@ -42,10 +45,9 @@
  *    of it is the length of the data in the buffer. It's often equal to (framelength+1).
  *  - add member function opf_datalen(...) and opf_framelength().
  *	- not to suggest using opf->len directly.
+ * @modified by zhangwei on 20100613
+ *  - correct bugs in ACK bit operation
  *****************************************************************************/ 
-
-#ifndef _RTL_OPENFRAME_H_7824_ 
-#define _RTL_OPENFRAME_H_7824_
 
 /******************************************************************************
  * IEEE 802.15.4 PPDU format
@@ -221,8 +223,8 @@
 #define OPF_FRAMECONTROL_UNKNOWN            0x0000
 
 #define OPF_GET_ACK_REQUEST(fcf)            (((fcf) & 0x0020) >> 5)
-#define OPF_CLR_ACK_REQUEST(fcf)            ((fcf) & (~0x0020))
-#define OPF_SET_ACK_REQUEST(fcf)            ((fcf) | 0x0020)
+#define OPF_CLR_ACK_REQUEST(fcf)            ((fcf) &= (~0x0020))
+#define OPF_SET_ACK_REQUEST(fcf)            ((fcf) |= 0x0020)
 
 
 //#define OPF_OPTION_CRC                    (0x01 << 0)

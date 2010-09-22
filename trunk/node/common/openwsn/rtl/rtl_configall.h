@@ -1,5 +1,5 @@
-#ifndef _RTL_CONFIGALL_H_
-#define _RTL_CONFIGALL_H_
+#ifndef _RTL_CONFIGALL_H_4832_
+#define _RTL_CONFIGALL_H_4832_
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
@@ -26,7 +26,8 @@
  *
  ******************************************************************************/
 
-/*****************************************************************************
+/*
+ *******************************************************************************
  * @name rtl_configall.h
  * @author zhangwei on 20070331
  * 
@@ -34,44 +35,11 @@
  * 
  * @history
  * @modified by xxx on 200704
-  * @modified by zhangwei on 20090708
-  *	- eliminate RTL_DEBUG, USER_DEBUG. they should be replaced with CONFIG_DEBUG
+ * @modified by zhangwei on 20090708
+ *	- eliminate RTL_DEBUG, USER_DEBUG. they should be replaced with CONFIG_DEBUG
  * 
- ****************************************************************************/ 
+ ******************************************************************************/ 
 
 #include "../configall.h"
 
-/* If you want to build a Dynamic Link Library(DLL). please define
- * compiler macro BUILD_DLL as the following before including this
- * interface file:
- *		#define BUILD_DLL
- *
- * By default, the whole source code will be compiled as DLL
- */
-/*
-#if (!defined(BUILD_STANDALONE) && !defined(BUILD_APPLICATION))
-  #define BUILD_DLL
-#endif
-
-#ifdef DLLFUNC
-  #undef DLLFUNC
-#endif
-
-#ifdef BUILD_DLL
-  #define DLLFUNC __declspec(dllexport)
-#else
-  #define DLLFUNC __declspec(dllimport)
-#endif
-
-#if defined( BUILD_APPLICATION )
-  #define MODULE_INTERFACE __declspec(dllimport)
-#elif defined( BUILD_DLL )
-  #define MODULE_INTERFACE __declspec(dllexport)
-#elif defined( BUILD_STANDALONE )
-  #define MODULE_INTERFACE extern
-#endif
-
-#define MODU_INTF MODULE_INTERFACE
-*/
-/******************************************************************/
-#endif
+#endif /* _RTL_CONFIGALL_H_4832_ */

@@ -1,5 +1,23 @@
 current version features
 
+2010.08.23
+- improved TiSimpleAloha (svc_simplealoha)
+- add TiTinyMAC (svc_tinymac)
+- add TiAloha (svc_aloha)
+
+
+2010-08-17
+- Improved hal_debugio and rtl_debugio
+- Change function dbo_open(id,baudrate) in module hal_debugio to dbo_open(baudrate). Also improves the dbo_open() function.
+- Recompile gainz-winavr/simplealoha/aloha_recv project
+
+2010-06
+
+- improved MAC protocols. now four MAC modules are supported including simple aloha (in svc_simplealoha), standard aloha (svc_aloha), csma (in svc_csma) and maca (in svc_maca) module. (2010.05)
+- improved time sync mechnism. now two different time synchronization mechanism are support, long term synchronization (in svc_clocksync) and high percision synchronization (in  svc_timesync). (2010.06)
+
+
+
 Atmega Version
 
 2009.08
