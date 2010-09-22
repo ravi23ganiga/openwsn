@@ -7,24 +7,30 @@
  *
  * @author by zhangwei on 20070910
  * @modified by zhangwei on 20090704
+ *  - revision
+ * @modified by zhangwei on 2010.05.30
+ *  - compiled successfully. upgraded from Portable WinAVR 2008 to 2009 version.
  *
  *****************************************************************************/
 
-#include "../common/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_configall.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_interrupt.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/hal/hal_timer.h"
-#include "../common/osx/osx_foundation.h"
-#include "../common/osx/osx_kernel.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_interrupt.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_timer.h"
+#include "../../common/openwsn/osx/osx_kernel.h"
 
 TiTimerAdapter		g_timer;
 TiUartAdapter		g_uart;
 
-static void _osx_event_listener(void * object, struct _TiHalEvent * e);
+// modified by zhangwei on 2010.05.31
+// if you encounter problems, you can try the following prototype.
+static void _osx_event_listener(void * object, TiEvent * e);
+
+//static void _osx_event_listener(void * object, struct _TiHalEvent * e);
 
 int main(void)
 {
@@ -32,11 +38,17 @@ int main(void)
     hal_init( NULL, NULL );
 	target_init();
 
+    osx_init();
+
 	// add an event listener to the hal layer. if there's a event raised by the hal 
 	// layer, then it will be routed to the osx kernel and drive the kernel to do something.
-	hal_setlistener( osx_post );
+    // @modified by zhangwei on 2010.05.30
+    // - due to the macro problems, we cannot use osx_post() here. we must use _osx_post,
+    // through osx_post is only an macro and defined as _osx_post
+	hal_setlistener( (TiFunEventHandler)_osx_post, g_osx );
 
 	// set the map between event id and event listener
+    // todo: seems error here
 	osx_attach( 0, _osx_event_listener, NULL );
 
 	hal_enable_interrupts();
@@ -44,49 +56,8 @@ int main(void)
 	return 0;
 }
 
-void _osx_event_listener(void * object, struct _TiHalEvent * e)
+void _osx_event_listener(void * object, TiEvent * e)
 {
 	led_toggle( LED_ALL );
 }
 
-
-/*
-
-
-// osx test
-// osx is an component based, lightweight operating system kernel. 
-// this program tests the event and runnable service support of osx. 
-
-TiRunService1 g_svc1
-TiRunService2 g_svc2
-
-int main()
-{
-	construct
-	open;
-
-	// configure the connections among services
-	svc2_setlistener( svc2, (TiFunEventHandler)svc3_evolve, (void *)svc3 );
-
-	// add an event listener to the hal layer. if there's a event raised by the hal 
-	// layer, then it will be routed to the osx kernel and drive the kernel to do something.
-	hal_setlistener( osx_post );
-
-	// set the map between event id and event listener
-	osx_attach( 1, svc1_evolve, svc1 );
-	osx_attach( 2, svc1_evolve, svc1 );
-	osx_attach( 3, svc2_evolve, svc2 );
-	osx_attach( 0, svc2_evolve, svc2 );
-
-	hal_enable_interrupts();
-
-    // already support sleep/wakeup because the sleep/wakeup handler have been 
-    // registered by the osx itself.
-
-	while (1) { osx_evolve() };
-	// or fired by timer interrupt to drive the osx kernel running
-
-	close()
-	destroy()
-}
-*/

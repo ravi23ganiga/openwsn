@@ -23,18 +23,29 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-#include "../common/hal/hal_configall.h"
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_timer.h"
-#include "../common/hal/hal_debugio.h"
-#include "../common/hal/hal_uart.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
-#include "hal_rtc.h"
+#include "../../common/openwsn/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_timer.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_rtc.h"
 
+static volatile uint8 g_count=0;
 static TiRtc g_rtc;
 
+	void on_timer_expired( void * object, TiEvent * e )
+        {   	g_count ++;
+               if (g_count == 1)
+                 {
+	              led_toggle( LED_RED );
+	              g_count = 0;
+
+                  }
+         }      
 int main()
 {
 	target_init();
@@ -47,19 +58,20 @@ int main()
 
 
 	TiRtc * rtc;
-	rtc = rtc_construct( (void *)&g_rtc, sizeof(g_rtc) );
-	rtc = rtc_open( rtc, NULL, NULL, 0x00 );
+	rtc=rtc_construct( (void *)&g_rtc, sizeof(g_rtc) );
+	rtc_setinterval(rtc,0,2,0x01);//定时周期为一秒 
+	rtc_open( rtc, on_timer_expired, NULL, 0x01 );
+    hal_enable_interrupts();
 	rtc_start( rtc );
-
 	while(1)
-	{}
+	{};
 	
+/*
 	// if not use listener 
 	while (!rtc_expired(rtc))
 	{
 		//do something;
 	}
+*/
 
-	// rtc_expired now
 
-}

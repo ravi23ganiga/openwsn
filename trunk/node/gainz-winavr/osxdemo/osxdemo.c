@@ -16,15 +16,15 @@
 
 #include "asv_configall.h"
 #include <string.h>
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_interrupt.h"
-#include "../common/hal/hal_target.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/hal/hal_timer.h"
-#include "../common/hal/hal_debugio.h"
-#include "../common/osx/osx_kernel.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_interrupt.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_timer.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/osx/osx_kernel.h"
 #include "asv_foundation.h"
 #include "appsvc1.h"
 #include "appsvc2.h"
@@ -50,7 +50,7 @@
 #undef  CONFIG_AUTO_STOP
 
 #undef  CONFIG_TIMER_DRIVE
-#define CONFIG_TIMER_DRIVE
+//#define CONFIG_TIMER_DRIVE
 
 #define CONFIG_DISPATCHER_TEST_ENABLE
 
@@ -78,14 +78,17 @@ int main()
 	char * msg = "welcome to osxdemo...";
 
 	target_init();
-	// hal_disable_interrupts();
 
 	led_open();
 	led_on( LED_ALL );
 	hal_delay( 1000 );
 	led_off( LED_ALL );
+
 	dbo_open( CONFIG_UART_ID, 38400 );
-	dbo_write( msg, strlen(msg) );
+	rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
+	dbio_putchar(NULL,0xF4);
+
+	dbc_write( msg, strlen(msg) );
 
 	g_count = 0;
 
@@ -133,14 +136,16 @@ int main()
 	 * whole program can accept interrupt requests.
      * attention: osx kernel already support sleep/wakeup because the sleep/wakeup 
 	 * handler have been registered inside the osx itself.  */
+	dbc_putchar(0xf1);
 	 
 	#ifndef CONFIG_TIMER_DRIVE
 	osx_execute();
 	#endif
 
 	#ifdef CONFIG_TIMER_DRIVE
-	osx_hardexec();
+	osx_hardexecute();
 	#endif
+	dbc_putchar(0xf2);
 }
 
 
@@ -154,6 +159,9 @@ int main()
 void on_timer_expired( void * object, TiEvent * e )
 {
 	TiEvent newe;
+
+	//led_on( LED2 );
+	//while (1) {};
 
 	g_count ++;
 	if ((g_count % 15) == 0)

@@ -34,29 +34,31 @@
 
  * 	@Created by zhangwei on 20100406
  */
-#include "../../common/hal/hal_configall.h"  
-#include "../../common/svc/svc_configall.h"  
-#include "../../common/rtl/rtl_foundation.h"
-#include "../../common/rtl/rtl_iobuf.h"
-#include "../../common/rtl/rtl_openframe.h"
-#include "../../common/rtl/rtl_textspliter.h"
-#include "../../common/rtl/rtl_textcodec.h"
-#include "../../common/rtl/rtl_lightqueue.h"
-#include "../../common/hal/hal_foundation.h"
-#include "../../common/hal/hal_cpu.h"
-#include "../../common/hal/hal_adc.h"
-#include "../../common/hal/hal_luminance.h"
-#include "../../common/hal/hal_timer.h"
-#include "../../common/hal/hal_debugio.h"
-#include "../../common/hal/hal_uart.h"
-#include "../../common/hal/hal_led.h"
-#include "../../common/hal/hal_assert.h"
-#include "../../common/svc/svc_foundation.h"
-#include "../../common/svc/svc_aloha.h"
-#include "../../common/svc/svc_timer.h"
-#include "../../common/svc/svc_ledtune.h"
-#include "../../common/svc/svc_one2many.h"
-#include "../../common/svc/svc_siocomm.h"
+
+//#include "../../common/openwsn/configall.h"
+//#include "../../common/openwsn/foundation.h"
+#include "../../common/openwsn/rtl/rtl_iobuf.h"
+#include "../../common/openwsn/rtl/rtl_openframe.h"
+#include "../../common/openwsn/rtl/rtl_textspliter.h"
+#include "../../common/openwsn/rtl/rtl_textcodec.h"
+#include "../../common/openwsn/rtl/rtl_lightqueue.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_adc.h"
+#include "../../common/openwsn/hal/hal_luminance.h"
+//#include "../../common/openwsn/hal/hal_timer.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_device.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/svc/svc_foundation.h"
+#include "../../common/openwsn/svc/svc_aloha.h"
+#include "../../common/openwsn/svc/svc_timer.h"
+#include "../../common/openwsn/svc/svc_ledtune.h"
+#include "../../common/openwsn/svc/svc_one2many.h"
+#include "../../common/openwsn/svc/svc_siocomm.h"
+
 
 /* todo
  * yanshixing
@@ -70,9 +72,9 @@
 #define CONFIG_NODE_CHANNEL             11
 #define CONFIG_REQUEST_SIZE             7
 
-#define CONFIGURE_COMMAND				0x77
-#define RESTART_COMMAND					0x88
-#define TEST_CMD						0x99
+#define CONFIGURE_COMMAND				0x11
+#define RESTART_COMMAND					0x22
+#define TEST_CMD						0x33
 
 #define VTM_RESOLUTION 					7
 
@@ -90,6 +92,8 @@ static TiSioComm        	m_sio;
 static TiTextSpliter		m_spliter;
 static TiAdcAdapter         m_adc;
 static TiLumSensor          m_lum;
+
+static TiBlockDeviceInterface m_intf;
 
 //static TiLedTune          m_ledtune;
 static char                 m_txbuf[ IOBUF_HOPESIZE(0x7F) ];
@@ -109,11 +113,12 @@ uint8 _text_digit2hexchar( uint8 num )
 int main(void)
 {
 	_gatwsink();
+	return 0;
 }
 
 void _gatwsink()
 {
-	uint8 len=0, count;	
+	uint8 count;	
 	char * msg = "welcome to gateway sink node...";
 	char * pkt;
 	uint16 val;
@@ -176,7 +181,7 @@ void _gatwsink()
 
 	spliter = tspl_construct((void *)(&m_spliter), sizeof(TiTextSpliter));
 	sio = sio_construct( (char *)(&m_sio), sizeof(TiSioComm) );
-	sio_open( sio, uart, spliter, 0x00 );
+	sio_open( sio, uart_get_blockinterface(uart,&m_intf), 0x00 );
 
 	uart_write( uart, msg, strlen(msg), 0x00 );
 
@@ -223,7 +228,7 @@ void _gatwsink()
 		}*/
 		//else//if time is not up
 		{
-			count = sio_read(sio, rxbuf);//check the inbox
+			count = sio_read(sio, rxbuf, 0x00);//check the inbox
 			
 			if( count>0 )//if there are messages
 			{
@@ -244,7 +249,7 @@ void _gatwsink()
 					iobuf_pushbyte(txbuf, _text_digit2hexchar(LOW_BYTE(val)));
 					if(!iobuf_empty(txbuf))
 					{
-						count = sio_write(sio, txbuf);
+						count = sio_write(sio, txbuf, 0x00);
 						iobuf_clear(txbuf);
 					}
 				}//or do nothing
@@ -277,7 +282,7 @@ int8 _interpret( char * cmd, uint8 len )
 		result = -1;
 		break;
 
-	case 0xFF:
+	case 0x44:
 		switch (cmd[1])
 		{
 		case TEST_CMD:

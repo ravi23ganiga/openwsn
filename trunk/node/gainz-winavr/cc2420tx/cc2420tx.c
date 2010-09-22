@@ -54,7 +54,7 @@
 #include "../../common/openwsn/hal/hal_assert.h"
 #include "../../common/openwsn/hal/hal_uart.h"
 #include "../../common/openwsn/hal/hal_cc2420.h"
-#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
 #include "../../common/openwsn/rtl/rtl_openframe.h"
 #include "../../common/openwsn/hal/hal_debugio.h"
 

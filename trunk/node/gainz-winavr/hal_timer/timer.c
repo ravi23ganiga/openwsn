@@ -47,7 +47,7 @@ int main(void)
 	hal_delay( 500 );
 	led_off( LED_ALL );
 
-	dbo_open(0, 38400);
+	dbo_open( 38400 );
 
 	// the parameter id can be 0-3 denoting timer hardware 0 to 3
      	timer_interrupt_driven_test( 0 );
@@ -68,36 +68,15 @@ void timer_query_driven_test( uint8 id )
 	while (1)
 	{
 
-/*  		for(i=0;i<100;i++)              //
-		{
-//		   loop_until_bit_is_set(TIFR,OCF0);   
-//		   TIFR=TIFR|0x02;  
-		  // be caution: the flag should be clear after it is queried by set the OCF0 bit to be 1
-
-
-		  //   loop_until_bit_is_set(TIFR,OCF2);		    
-		  //	 TIFR=TIFR|0x80; 
-		  	
-		//	dbo_putchar(OCR1AH);
-		//	dbo_putchar(OCR1AL);
-			
-		//	loop_until_bit_is_set(TIFR,OCF1A);
-		//	TIFR =TIFR| (1 << OCF1A); 
-		   // led_toggle(LED_GREEN);
-
-		//	loop_until_bit_is_set(ETIFR,OCF3A);
-		//	ETIFR =ETIFR| (1 << OCF3A); 
-			}
-*/
-			i=0;
-			while(i<100){
-				if(timer_expired(timer))
-							i++;
-
-			}
+        i=0;
+        while(i<100)
+        {
+            // todo: maybe mistake here. shall we restart the timer manualy here?
+		    if(timer_expired(timer))
+		        i++;
+		}
 		led_toggle( LED_RED );
 		led_toggle(LED_GREEN);
-
 	}
 
   //  timer_close( timer );
@@ -113,13 +92,12 @@ void timer_interrupt_driven_test( uint8 id )
     timer_setinterval( timer, 1, 0 );  //(timer,interval,repeat)  the range of the interval  1~8
 	timer_start( timer );
 	
-	while (1) {
-//	dbo_putchar(0x2);
-	};
+    while (1) {};
 }
 
 void on_timer_expired( void * object, TiEvent * e )
-{   	g_count ++;
+{   	
+    g_count ++;
 	if (g_count == 100)
 	{
 	    led_toggle( LED_RED );

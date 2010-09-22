@@ -24,7 +24,7 @@
  *
  ******************************************************************************/
 
-/*****************************************************************************
+/*******************************************************************************
  * @attention
  * the "cc2420" chip has address identification mechanism built. if you want to 
  * use it as a sniffer frontier, you must turn off it. 
@@ -33,7 +33,7 @@
  * 	- revision today.
  * @modified by yan-shixing 20090725
  *  - revision. tested ok
- ****************************************************************************/ 
+ ******************************************************************************/ 
 
 #include "../../common/openwsn/hal/hal_configall.h"
 #include <stdlib.h>

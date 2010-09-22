@@ -12,3 +12,10 @@ this is a program used to test our mac protocl--aloha protocol.
 
 2009-12-23
 -- test ok by Yan Shixing
+
+2010.08.21
+- upgraded TiOpenFrame to TiFrame
+- upgraded the debug io module
+- and a lot of other minor changes
+- compiled successfully
+
