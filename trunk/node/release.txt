@@ -1,6 +1,6 @@
 2010-10-10
 =============================================================
-openwsn 2.0.0 released
+openwsn 2.0.0 released!
 this version improved a lot of core features, in particular the low power event and task scheduling architecture, and some protocols. since we upgraded the low level MAC protocols, the flooding coomponent failed to run on the new MAC component now, but we will fix this soon in the next release before the end of this year.
 
 - upgrading developing environment to the newest WinAVR and AVR Studio;
