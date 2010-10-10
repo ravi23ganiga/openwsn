@@ -85,14 +85,9 @@
  * It's a good start to be used for teaching than in real applications. 
  */
 
-
-
-
-
 #define bit8_set(token,index) ((token) |= (_BV(index)))
 #define bit8_get(token,index) ((token) & (_BV(index)))
 #define bit8_clr(token,index) ((token) &= (~_BV(index)))
-
 
 static uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option );
 static uintx _csma_tryrecv( TiCsma * mac, TiFrame * frame, uint8 option );
@@ -113,7 +108,7 @@ void csma_destroy( TiCsma * mac )
 	return;
 }
 
-TiCsma * csma_open( TiCsma * mac, TiFrameTxRxInterface * rxtx, uint16 panid, uint16 address, 
+TiCsma * csma_open( TiCsma * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uint16 panid, uint16 address, 
     TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner )
 {
     void * provider;
@@ -123,10 +118,12 @@ TiCsma * csma_open( TiCsma * mac, TiFrameTxRxInterface * rxtx, uint16 panid, uin
 
 	hal_assert( (rxtx != NULL) && (timer != NULL) && (mac->state == CSMA_STATE_NULL) );
 
+    // sendprob: sending probability
+
 	mac->state = CSMA_STATE_IDLE;
     mac->rxtx = rxtx;
     mac->timer = timer;
-    mac->sendprob = 30;
+    mac->sendprob = 60;
     mac->loadfactor = 5;
     mac->request = 0x00;
     mac->retry = 0;
@@ -159,7 +156,7 @@ TiCsma * csma_open( TiCsma * mac, TiFrameTxRxInterface * rxtx, uint16 panid, uin
     // on low level transceiver component to provide ACK mechanism. 
 
     provider = rxtx->provider;
-	rxtx->setchannel( provider, CONFIG_CSMA_DEFAULT_CHANNEL );
+	rxtx->setchannel( provider, chn );
 	rxtx->setpanid( provider, panid );
 	rxtx->setshortaddress( provider, address );
     rxtx->enable_addrdecode( provider );
@@ -255,7 +252,7 @@ uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
         mac->state = CSMA_STATE_BACKOFF;
         #endif
 
-        ret = frame_length( mac->txbuf );
+        ret = frame_capacity( mac->txbuf );
 
         csma_evolve( mac, NULL );
 
@@ -368,7 +365,7 @@ uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option )
         mac->state = CSMA_STATE_BACKOFF;
         #endif
 
-        ret = frame_length( mac->txbuf );
+        ret = frame_capacity( mac->txbuf );
         csma_evolve( mac, NULL );
         break;
 
@@ -471,7 +468,7 @@ uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option )
     {
         // attention whether the sending process will wait for ACK or not depends on 
         // "option" parameter.
-        count = mac->rxtx->send( mac->rxtx->provider, frame_startptr(frame), frame_length(frame), option );
+        count = mac->rxtx->send( mac->rxtx->provider, frame_startptr(frame), frame_capacity(frame), option );
         if (count > 0)
         {
             mac->seqid ++;
@@ -595,7 +592,7 @@ uintx _csma_tryrecv( TiCsma * mac, TiFrame * frame, uint8 option )
     // receiving a data frame. however, this is done by the low level transceiver's
     // adapter component (TiCc2420Adapter), so we needn't to send ACK manually here.
 
-    count = rxtx->recv( rxtx->provider, frame_startptr(frame), frame_length(frame), option );
+    count = rxtx->recv( rxtx->provider, frame_startptr(frame), frame_capacity(frame), option );
 	if (count > 0)
 	{   
     	/* according to ALOHA protocol, the program should send ACK/NAK after receiving
@@ -753,6 +750,7 @@ void csma_evolve( void * macptr, TiEvent * e )
 	    switch (e->id)
 	    {
         case CSMA_EVENT_FRAME_ARRIVAL:
+		//case EVENT_DATA_ARRIVAL:
             // if the incoming event indicates that the transceiver receives an frame, 
             // then it simply pass the event to listener object. the listener object
             // will call csma_recv() to retrieve the frame out. 
@@ -787,7 +785,7 @@ void csma_evolve( void * macptr, TiEvent * e )
             break;
 
         /*
-        case ADTALOHA_EVENT_SHUTDOWN_REQUEST:
+        case CSMA_EVENT_SHUTDOWN_REQUEST:
             // no matter what the current state is, then you can do shutdown
             timer_stop(); 
             phy_shutdown();

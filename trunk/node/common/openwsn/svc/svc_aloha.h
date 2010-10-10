@@ -137,10 +137,28 @@ TiAloha *	aloha_open( TiAloha * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uin
 			uint16 address, TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner, uint8 option );
 void        aloha_close( TiAloha * mac );
 
-/** if bit 0 of option is 1, then this function will request ACK from the receiver.
+/**
+ * \brief aloha_send() will send the frame object with the option. This function will
+ * duplicate a frame object inside the MAC object, so the original input frame keeps
+ * unchanged.
+ *
+ * @param mac mac component
+ * @param frame the frame object to be sent
+ * @param option sending option. controls the ACK behavior currently. please refer to 
+ *   the transceiver's driver interface. 
+ *      current settings: if bit 0 of option is 1, then this function will request ACK 
+ *   from the receiver. the ack is handled inside mac or transceiver object.
+ * 
+ * @return
+ *  if the frame can be accepted successfully, then this function will return positive
+ * value. however, theoretically speaking, the hardware may haven't really send the 
+ * frame out. you should guarantee to repeated call aloha_evolve() to try to send the
+ * frame out if this occurs.
  */
 uintx       aloha_send( TiAloha * mac, TiFrame * frame, uint8 option );
+
 uintx       aloha_broadcast( TiAloha * mac, TiFrame * opf, uint8 option );
+
 uintx       aloha_recv( TiAloha * mac, TiFrame * opf, uint8 option );
 void        aloha_evolve( void * macptr, TiEvent * e );
 

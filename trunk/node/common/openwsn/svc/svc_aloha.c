@@ -86,7 +86,6 @@
 static uintx _aloha_trysend( TiAloha * mac, char * buf, uint8 len, uint8 option );
 static uintx _aloha_tryrecv( TiAloha * mac, char * buf, uint8 len, uint8 option );
 
-
 TiAloha * aloha_construct( char * buf, uint16 size )
 {
 	hal_assert( sizeof(TiAloha) <= size );
@@ -172,10 +171,10 @@ uintx aloha_send( TiAloha * mac, TiFrame * frame, uint8 option )
 {
 	TiIEEE802Frame154Descriptor * desc;
     uintx ret=0;
-
     switch (mac->state)
     {
     case ALOHA_STATE_IDLE:
+
         frame_totalcopyfrom( mac->txbuf, frame );
 
         // according to 802.15.4 specification:
@@ -183,10 +182,11 @@ uintx aloha_send( TiAloha * mac, TiFrame * frame, uint8 option )
         //  + 2B frame control + 1B sequence number + 2B destination pan + 2B destination address
         //  + 2B source pan + 2B source address
         //
+        //frame_dump(mac->txbuf);
         frame_skipouter( mac->txbuf, 12, 2 );
         desc = ieee802frame154_format( &(mac->desc), frame_startptr(mac->txbuf), frame_capacity(mac->txbuf), FRAME154_DEF_FRAMECONTROL_DATA );
         rtl_assert( desc != NULL );
-        ieee802frame154_set_sequence( desc, mac->seqid );
+        ieee802frame154_set_sequence( desc, mac->seqid ); 
         ieee802frame154_set_panto( desc, mac->panto );
         ieee802frame154_set_shortaddrto( desc, mac->shortaddrto );
         ieee802frame154_set_panfrom( desc, mac->panfrom );
@@ -196,10 +196,15 @@ uintx aloha_send( TiAloha * mac, TiFrame * frame, uint8 option )
         mac->sendoption = option;
 
         // standard aloha protocol behavior
+
         #ifdef CONFIG_ALOHA_STANDARD
+        /*
+         * @modified by XuFuzhen on 2010.09.29
+         * - bug fix. should replace frame_length() here with frame_capacity()
+         */
         if (mac->rxtx->ischnclear(mac))
         {
-            _aloha_trysend( mac, frame_startptr(mac->txbuf), frame_length(mac->txbuf), option );
+			_aloha_trysend( mac, frame_startptr(mac->txbuf), frame_capacity(mac->txbuf), option );
         }
         else{
             mac->backoff = rand_uint8( CONFIG_ALOHA_MAX_BACKOFF );
@@ -225,12 +230,16 @@ uintx aloha_send( TiAloha * mac, TiFrame * frame, uint8 option )
          * - bug fix. you should place the frame_length() call before aloha_evolve() 
          * because aloha_evolve() may send mac->txbuf and clear it. this will cause
          * frame_length() returns 0 instead of the real frame length.
+         * 
+         * @modified by XuFuzhen on 2010.09.29
+         * - bug fix. should replace frame_length() here with frame_capacity()
          */
-        ret = frame_length( mac->txbuf );
+        ret = frame_capacity( mac->txbuf );
         aloha_evolve( mac, NULL );
         break;
 
     case ALOHA_STATE_BACKOFF:
+
         // in this state, there's already a frame pending inside the aloha object. 
         // you have no better choice but wait for this frame to be processed.
         //
@@ -239,6 +248,7 @@ uintx aloha_send( TiAloha * mac, TiFrame * frame, uint8 option )
         break;
 
     case ALOHA_STATE_SLEEPING:
+
     default:
         // currently, this version implementation will ignore any frame sending request
         // if the mac component is still in sleeping state. you should wakeup it and
@@ -258,6 +268,7 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
     switch (mac->state)
     {
     case ALOHA_STATE_IDLE:
+
         frame_totalcopyfrom( mac->txbuf, frame );
 
         // according to 802.15.4 specification:
@@ -302,7 +313,7 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
         #ifdef CONFIG_ALOHA_STANDARD
         if (mac->rxtx->ischnclear(mac))
         {
-            _aloha_trysend( mac, frame_startptr(mac->txbuf), frame_length(mac->txbuf), option );
+            _aloha_trysend( mac, frame_startptr(mac->txbuf), frame_capacity(mac->txbuf), option );
         }
         else{
             mac->backoff = rand_uint8( CONFIG_ALOHA_MAX_BACKOFF );
@@ -324,11 +335,12 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
         mac->state = ALOHA_STATE_BACKOFF;
         #endif
 
-        ret = frame_length( mac->txbuf );
+        ret = frame_capacity( mac->txbuf );
         aloha_evolve( mac, NULL );
         break;
 
     case ALOHA_STATE_BACKOFF:
+
         // in this state, there's already a frame pending inside the aloha object. 
         // you have no better choice but wait for this frame to be processed.
         //
@@ -337,6 +349,7 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
         break;
 
     case ALOHA_STATE_SLEEPING:
+
     default:
         // currently, this version implementation will ignore any frame sending request
         // if the mac component is still in sleeping state. you should wakeup it and
@@ -362,7 +375,6 @@ uintx aloha_recv( TiAloha * mac, TiFrame * frame, uint8 option )
 
     frame_skipouter( frame, HEADER_SIZE, TAIL_SIZE );
     // assert: the skipouter must be success
-
 	count = _aloha_tryrecv( mac, frame_startptr(frame), frame_capacity(frame), option );
 	if (count > 0)
 	{
@@ -430,10 +442,9 @@ uintx _aloha_trysend( TiAloha * mac, char * buf, uint8 len, uint8 option )
     // "option" parameter.
 
     count = mac->rxtx->send( mac->rxtx->provider, buf, len, option );
-
     if (count > 0)
-    {
-        mac->seqid ++;
+    {       
+		mac->seqid ++;
         mac->retry = 0;
         mac->state = ALOHA_STATE_IDLE;
     }
@@ -512,7 +523,7 @@ void aloha_evolve( void * macptr, TiEvent * e )
             // has reached its maximum number retry count and should report sending
             // failure.
             //
-            _aloha_trysend(mac, frame_startptr(mac->txbuf), frame_length(mac->txbuf), mac->sendoption );
+            _aloha_trysend(mac, frame_startptr(mac->txbuf), frame_capacity(mac->txbuf), mac->sendoption );
         }
         break;
     
