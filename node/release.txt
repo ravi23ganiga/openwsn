@@ -1,19 +1,21 @@
 2010-10-10
 =============================================================
 openwsn 2.0.0 released!
-this version improved a lot of core features, in particular the low power event and task scheduling architecture, and some protocols. since we upgraded the low level MAC protocols, the flooding coomponent failed to run on the new MAC component now, but we will fix this soon in the next release before the end of this year.
+this version improved a lot of core features, in particular the low power event and task scheduling architecture (osx kernel), and some protocols. since we upgraded the low level MAC protocols, the flooding coomponent failed to run on the new MAC component now, but we will fix this soon in the next release before the end of this year.
 
 - upgrading developing environment to the newest WinAVR and AVR Studio;
-- rewrite the task scheduling component. now using heap data structure for priority scheduling;
+- rewrite the task scheduling component. now using heap data structure for priority queuing based scheduling;
 - using interface design and implementation to split transceiver components and mac components;
-- add interface definition;
+- add interface definition for byte, block and frame devices;
 - upgrade the MAC components, including simple aloha(tested), aloha(tested), csma(in testing) and maca;
 - reorganize the folder structures. it's intend to support multiple developing platform; and target platforms;
 - add some new examples such as low power testing;
 - upgrade cc2420 testings and other testing/examples;
 - and a lot of other minor improvements.
 
-The next release will contain more bug fix, protocol improvements and extensions. and will released in Dec. 2010.
+openwsn 2.0.0 is an important release due to the great improvements of osx kernel and files reorganization. but it maybe not very stable due to some high level components may cannot keep consistent with the low level upgradings. but this will be solved in the next release.
+
+The next release will contain more bug fix, protocol improvements and extensions. and will released in Dec. 2010. the time synchronization feature will be provided in the next release too.
 
 
 2010-08-26
