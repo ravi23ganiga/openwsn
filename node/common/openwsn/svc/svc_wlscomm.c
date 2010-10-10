@@ -24,21 +24,60 @@
  *
  ******************************************************************************/
 
-#ifndef _SVC_FOUNDATION_H_4278_
-#define _SVC_FOUNDATION_H_4278_
-
-/*****************************************************************************
- * @author zhangwei on 2006-08-20
- * this is the foundation file of service layer.
- * every service modules in this directory should include this one as their first file.
- *
- *****************************************************************************/
-
 #include "svc_configall.h"
-#include "../rtl/rtl_foundation.h"
-#include "../hal/hal_assert.h"
+#include "svc_foundation.h"
+#include "../rtl/rtl_openframe.h"
+#include "../rtl/rtl_framequeue.h"
+#include "svc_wlscomm.h"
 
-#define svc_assert(cond) hal_assert(cond)
+/* prefix meanings:
+ * "nac_" => "network acceptor"
+ * "ios_" => "input/output service"
+ * "nio_" => "network input/output"
+ * "fc" => filter chain
+ */
 
-#endif
+TiNetIoService * nio_construct( void * mem, uint16 size, _TiWirelessAdapter * adapter, 
+	TiFilterChain * filterchain, TiIoHandler iohandler )
+{
+	TiNetIoService * svc;
+
+	hal_assert( (adapter != NULL) && (filterchain != NULL) && (iohandler != NULL) );
+
+	memset( mem, 0x00, size );
+	svc = (TiNetIoService *)mem;
+	svc->state = 0;
+	svc->adapter = adapter;
+	svc->filterchain = filterchain;
+	svc->iohandler = iohandler;
+
+	return iohandler;
+}
+
+void nio_destroy( TiNetIoService * nio )
+{
+	nio = nio;
+	return;
+}
+
+void nio_evolve( TiNetIoService * nio, TiEvent * e )
+{
+	if (iobuf_empty( nio->rxbuf ))
+	{
+		len = _wlsbase_recv( nio->adapter, iobuf->buf, iobuf->size, 0x00 );
+		iobuf->length = len;
+	}
+	if (!iobuf_empty(nio->rxbuf) && iobuf_empty(nio->txbuf))
+	{
+		fltc_rxhandle( nio->rxbuf, nio->txbuf );
+	}
+	if (!iobuf_empty(nio->txbuf))
+	{
+		len = _wlsbase_send( nio->adapter, iobuf->buf, iobuf->len, 0x00 );
+		if (len > 0)
+			iobuf_clear( nio->txbuf );
+	}
+
+	fltc_evolve( nio->filterchain, NULL );
+}
 
