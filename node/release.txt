@@ -3,11 +3,11 @@
 openwsn 2.0.0 released!
 this version improved a lot of core features, in particular the low power event and task scheduling architecture (osx kernel), and some protocols. since we upgraded the low level MAC protocols, the flooding coomponent failed to run on the new MAC component now, but we will fix this soon in the next release before the end of this year.
 
-- upgrading developing environment to the newest WinAVR and AVR Studio;
+- upgrading developing environment to the newest WinAVR and AVR Studio: AVR Studio 4.18 and SP3 for ATmega128L from ATMEL.com, and WinAVR 20100110 Toolchain. attention we install it into D:\binx\embedded\winarm and don't use the portal version of WinAVR now.
 - rewrite the task scheduling component. now using heap data structure for priority queuing based scheduling;
 - using interface design and implementation to split transceiver components and mac components;
 - add interface definition for byte, block and frame devices;
-- upgrade the MAC components, including simple aloha(tested), aloha(tested), csma(in testing) and maca;
+- upgrade the MAC components, including tinymac, simple aloha(tested), aloha(tested), csma(in testing) and maca;
 - reorganize the folder structures. it's intend to support multiple developing platform; and target platforms;
 - add some new examples such as low power testing;
 - upgrade cc2420 testings and other testing/examples;
