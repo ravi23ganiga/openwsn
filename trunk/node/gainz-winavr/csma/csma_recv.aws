@@ -1,1 +1,1 @@
-<AVRWorkspace><IOSettings><CurrentRegisters/></IOSettings><part name="ATMEGA128"/><Files><File00000 Name="D:\dev\openwsn\source\tongjiwsn\csma\csma_recv.c" Position="279 143 809 390" LineCol="3 0"/></Files></AVRWorkspace>
+<AVRWorkspace><IOSettings><CurrentRegisters/></IOSettings><part name="ATMEGA128"/><Files><File00000 Name="D:\dev\openwsn\source\node\gainz-winavr\csma\csma_recv.c" Position="276 149 1180 497" LineCol="132 20"/></Files></AVRWorkspace>

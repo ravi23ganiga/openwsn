@@ -1,1 +1,1 @@
-<AVRWorkspace><IOSettings><CurrentRegisters/></IOSettings><part name="ATMEGA128"/><Files><File00000 Name="D:\dev\openwsn\source\node\gainz-winavr\aloha\aloha_send.c" Position="226 99 1159 373" LineCol="9 77"/></Files></AVRWorkspace>
+<AVRWorkspace><IOSettings><CurrentRegisters/></IOSettings><part name="ATMEGA128"/><Files><File00000 Name="D:\dev\openwsn\source\node\common\openwsn\svc\svc_aloha.c" Position="251 124 1155 472" LineCol="344 0"/><File00001 Name="aloha_send.c" Position="480 243 1380 565" LineCol="181 0"/></Files></AVRWorkspace>

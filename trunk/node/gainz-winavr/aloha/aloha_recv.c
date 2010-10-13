@@ -167,6 +167,7 @@ void recvnode(void)
 	#endif
  
     rxbuf = frame_open( (char*)(&m_rxbufmem), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 0 );
+    dbc_putchar(0x11);
 
     #ifdef CONFIG_TEST_ACK
     //fcf = OPF_DEF_FRAMECONTROL_DATA_ACK; 
@@ -188,14 +189,15 @@ void recvnode(void)
 	while(1) 
 	{	
         frame_reset( rxbuf, 3, 20, 0 );
-
+		len = aloha_recv( mac, rxbuf, 0x00 );        
 		if (len > 0)
 		{   
 			dbc_putchar( 0xF3 );
+            //len = aloha_recv( mac, rxbuf, 0x00 );
 
-            //frame_moveouter( rxbuf );
-            //_output_frame( rxbuf, NULL );
-            //frame_moveinner( rxbuf );
+            frame_moveouter( rxbuf );
+            _output_frame( rxbuf, NULL );
+            frame_moveinner( rxbuf );
 
 			led_off( LED_RED );
 
