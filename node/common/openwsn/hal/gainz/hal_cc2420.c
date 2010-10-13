@@ -37,7 +37,7 @@
  * - cc2420's startup and initialization, http://blog.sina.com.cn/s/blog_5e194f5e0100heex.html;
  * 
  * @state
- *	tested
+ *	compile passed. tested. released.
  * 
  * @history
  * @author zhangwei on 200609
@@ -51,7 +51,10 @@
  *  - add cc2420_sfd_handler(). not tested.
  * @modified by zhangwei(TongJi University) on 20090919
  *	- add cc2420_rssi() and cc2420_lqi(). not tested.
- * @modified by zhangwei, yanshixing cc2420_recv add crc校验
+ * @modified by zhangwei, yanshixing 
+ *  - improved cc2420_recv add crc校验
+ * @modified by Xu-Fuzhen in TongJi University(xufz0726@126.com) in 2010.10
+ *  - improved interface and cc2420_ischannelclear()
  *
  *****************************************************************************/
 
@@ -62,7 +65,7 @@
 #include "../hal_cpu.h"
 #include "../hal_interrupt.h"
 #include "../hal_assert.h"
-//#include "../hal_targetboard.h"
+#include "../hal_targetboard.h"
 #include "../hal_led.h"
 #include "../hal_uart.h"
 #include "../hal_cc2420const.h"
@@ -1126,6 +1129,7 @@ inline uint8 cc2420_wakeup( TiCc2420Adapter * cc )
 uint8 cc2420_ischannelclear( TiCc2420Adapter * cc )
 {
     //return HAL_READ_CC_CCA_PIN();
+	// @todo
     return true;
 }
 
@@ -1597,15 +1601,12 @@ bool cc2420_crctest( TiCc2420Adapter * cc )
 TiFrameTxRxInterface * cc2420_interface( TiCc2420Adapter * cc, TiFrameTxRxInterface * intf )
 {
     memset( intf, 0x00, sizeof(TiFrameTxRxInterface) );
-
-    // todo: there're errors in the following assignments.
     intf->provider = cc;
     intf->send = (TiFunFtrxSend)cc2420_send;
     intf->recv = (TiFunFtrxRecv)cc2420_recv;
     intf->evolve = (TiFunFtrxEvolve)cc2420_evolve;
     intf->switchtomode = (TiFunFtrxSwitchToMode)cc2420_switchtomode;
-    // intf->ischnclear = NULL; //(TiFunFtrxIsChannelClear)cc2420_ischannelclear;
-    intf->ischnclear = cc2420_ischannelclear;
+    intf->ischnclear = (TiFunFtrxIsChannelClear)cc2420_ischannelclear;
     intf->enable_autoack = (TiFunFtrxEnableAutoAck)cc2420_enable_autoack;
     intf->disable_autoack = (TiFunFtrxDisableAutoAck)cc2420_disable_autoack;
     intf->enable_addrdecode = (TiFunFtrxEnableAddrDecode)cc2420_enable_addrdecode;

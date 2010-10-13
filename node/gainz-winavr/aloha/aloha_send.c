@@ -28,25 +28,29 @@
  * aloha_send
  * This project implements a frame sending node based on TiAloha component. This
  * component is in module "svc_aloha". 
+ * 
+ * @state
+ *  - tested ok. released.
  *
+ * @author ShiMiaojing
  * @modified by openwsn on 2010.08.23
  *  - compiled succssfully. the aloha_send.c only has slightly modifications comparing 
  *    to the aloha_send.c inside "gainz-winavr\simplealoha\".  that version has already
  *    tested successfully by Xu Fuzhen in 2010.07
- * 
  * @modified by zhangwei on 20090724
  *  - compile the whole application passed
- * @authered by ShiMiaojing
  * @modified by zhangwei on 20090804
  *	- revision. compile passed.
  * @modified by Shi-Miaojing on 20090731
  *	- tested  ok
- * @modifeied by Shimiaojing on 20091031  
+ * @modifeied by Shimiaojing(TongJi University, Peking University) on 20091031  
  *  - match the style of MAC frame and add cc2420_open 
  *  - tesk ok both ACK and non-ACK works
  * @modified by zhangwei on 20100713
- *  - replace TiOpenFrame with TiFrame 
+ *  - replace TiOpenFrame with TiFrame. needs testing. 
  *  - upgrade rtl_assert, rtl_debugio
+ * @modified by Xu-Fuzhen (xufz0726@126.com) in TongJi University in 2010.10
+ *  - revised. tested.
  *
  ******************************************************************************/
 
@@ -147,17 +151,29 @@ void aloha_sendnode(void)
 
 	while(1) 
 	{
-        aloha_setremoteaddress( mac, CONFIG_ALOHA_REMOTE_ADDRESS );
-
-        dbc_putchar(0x24);
+		aloha_setremoteaddress( mac, CONFIG_ALOHA_REMOTE_ADDRESS );
         frame_reset(txbuf, 3, 20, 25);
+
 
 	    #define TEST1
 
         #ifdef TEST1
         pc = frame_startptr( txbuf );
         for (i=0; i<frame_capacity(txbuf); i++)
+        {
             pc[i] = i;
+        }
+        // @attention
+        // generally, we need call frame_setlength() after assigning data into this 
+        // frame. however, considering the pre-allocated feature of TiFrame, the 
+        // maximum length of current layer, namely the capacity has already been 
+        // initialized. if the later program process this frame by calling frame_capacity()
+        // then we can omit the frame_setlength() operation here. but if the later
+        // processing use frame_length(), then we had to call frame_setlength() here
+        // because the the frame object doesn't know how many bytes really put into
+        // its interal buffer until the developer call frame_setlength() manually.
+        //
+		//frame_setlength(txbuf, i-1);
         #endif
 
         #ifdef TEST2
@@ -172,10 +188,13 @@ void aloha_sendnode(void)
         //
 		option = 0x00;
 
+		//dbc_putchar(*(pc+1));
+
         while (1)
-        {
+        {   
             if (aloha_send(mac, txbuf, option) > 0)
-            {			
+            {	
+			    dbc_putchar(0x22);		
                 led_toggle( LED_YELLOW );
                 dbo_putchar( 0x11);
                 dbo_putchar( seqid );
