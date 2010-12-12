@@ -322,7 +322,6 @@ ISR(TIMER0_COMP_vect)
    	hal_invokehandler( INTNUM_TIMER0_COMP, NULL );
 }
 
-
 ISR(TIMER1_OVF_vect)
 {
    	hal_invokehandler( INTNUM_TIMER1_OVF, NULL );

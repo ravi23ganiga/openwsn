@@ -752,9 +752,11 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
  *  >0                        byte count successfully send. It should equal to parameter 
  *                            "len" when success.
  */
-inline uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
+uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 {
 	uint16 count, rxlen, loopcount;
+
+	hal_assert( len > 0 );
 
 	// @attention
 	// @todo

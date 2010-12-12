@@ -8,6 +8,8 @@ MCU = atmega128
 TARGET = aloha_recv.elf
 CC = avr-gcc
 
+CPP = avr-g++
+
 ## Options common to compile, link and assembly rules
 COMMON = -mmcu=$(MCU)
 
@@ -34,8 +36,14 @@ HEX_EEPROM_FLAGS += --set-section-flags=.eeprom="alloc,load"
 HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
+## Library Directories
+LIBDIRS = -L"D:\dev\openwsn\source\node\gainz-winavr\aloha\..\lib" 
+
+## Libraries
+LIBS = -lwsn 
+
 ## Objects that must be built in order to link
-OBJECTS = aloha_recv.o svc_aloha.o hal_assert.o hal_cc2420.o hal_cpu.o hal_debugio.o hal_foundation.o hal_interrupt.o hal_led.o hal_target.o hal_timer.o hal_uart.o hpl_atmega128.o rtl_openframe.o rtl_random.o 
+OBJECTS = aloha_recv.o rtl_debugio.o rtl_foundation.o rtl_frame.o rtl_iobuf.o hal_assert.o hal_cc2420.o hal_cpu.o hal_debugio.o hal_foundation.o hal_interrupt.o hal_led.o hal_startup.o hal_timer.o hal_uart.o hpl_atmega128.o rtl_ieee802frame154.o hal_targetboard.o svc_aloha.o apl_output_frame.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
@@ -45,46 +53,61 @@ all: $(TARGET) aloha_recv.hex aloha_recv.eep aloha_recv.lss## Compile
 aloha_recv.o: ../aloha_recv.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-svc_aloha.o: ../../common/svc/svc_aloha.c
+rtl_debugio.o: ../../../common/openwsn/rtl/rtl_debugio.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_assert.o: ../../common/hal/hal_assert.c
+rtl_foundation.o: ../../../common/openwsn/rtl/rtl_foundation.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_cc2420.o: ../../common/hal/hal_cc2420.c
+rtl_frame.o: ../../../common/openwsn/rtl/rtl_frame.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_cpu.o: ../../common/hal/hal_cpu.c
+rtl_iobuf.o: ../../../common/openwsn/rtl/rtl_iobuf.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_debugio.o: ../../common/hal/hal_debugio.c
+hal_assert.o: ../../../common/openwsn/hal/gainz/hal_assert.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_foundation.o: ../../common/hal/hal_foundation.c
+hal_cc2420.o: ../../../common/openwsn/hal/gainz/hal_cc2420.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_interrupt.o: ../../common/hal/hal_interrupt.c
+hal_cpu.o: ../../../common/openwsn/hal/gainz/hal_cpu.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_led.o: ../../common/hal/hal_led.c
+hal_debugio.o: ../../../common/openwsn/hal/gainz/hal_debugio.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_target.o: ../../common/hal/hal_target.c
+hal_foundation.o: ../../../common/openwsn/hal/gainz/hal_foundation.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_timer.o: ../../common/hal/hal_timer.c
+hal_interrupt.o: ../../../common/openwsn/hal/gainz/hal_interrupt.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_uart.o: ../../common/hal/hal_uart.c
+hal_led.o: ../../../common/openwsn/hal/gainz/hal_led.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hpl_atmega128.o: ../../common/hal/hpl_atmega128.c
+hal_startup.o: ../../../common/openwsn/hal/gainz/hal_startup.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-rtl_openframe.o: ../../common/rtl/rtl_openframe.c
+hal_timer.o: ../../../common/openwsn/hal/gainz/hal_timer.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-rtl_random.o: ../../common/rtl/rtl_random.c
+hal_uart.o: ../../../common/openwsn/hal/gainz/hal_uart.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+hpl_atmega128.o: ../../../common/openwsn/hal/gainz/hpl_atmega128.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+rtl_ieee802frame154.o: ../../../common/openwsn/rtl/rtl_ieee802frame154.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+hal_targetboard.o: ../../../common/openwsn/hal/gainz/hal_targetboard.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+svc_aloha.o: ../../../common/openwsn/svc/svc_aloha.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+apl_output_frame.o: ../apl_output_frame.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link

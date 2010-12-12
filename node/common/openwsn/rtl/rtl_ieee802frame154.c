@@ -2,6 +2,7 @@
 #include <string.h>
 #include "rtl_foundation.h"
 #include "rtl_ieee802frame154.h"
+#include "rtl_debugio.h"
 
 static inline void _write_n16( char * buf, uint16 value );
 static inline uint16 _read_n16( char * buf );
@@ -179,8 +180,9 @@ TiIEEE802Frame154Descriptor * _ieee802frame154_cast_as( TiIEEE802Frame154Descrip
 
         // an valid frame's length should not be smaller than 9 because the smallest 
         // header has more than 9 byte
-        
+       
         rtl_assert( len > FRAME154_MIN_FRAME_LENGTH );
+		
         rtl_assert( len > 9 );
 
 		buf[0] = len-1;
@@ -231,7 +233,9 @@ TiIEEE802Frame154Descriptor * _ieee802frame154_cast_as( TiIEEE802Frame154Descrip
             option = 0x00;
         }
 	}
-		
+	
+	
+
 	if (ret != NULL)
 	{
 		desc->ctrl = buf + 1;
@@ -283,7 +287,12 @@ TiIEEE802Frame154Descriptor * _ieee802frame154_cast_as( TiIEEE802Frame154Descrip
             //
             // in the past, we had use assertion here. based on the above analysis,
             // we shouldn't use assertion here.
-            //
+            
+            // the following is for debugging only. you should delete them in released version.
+			// dbc_putchar(0xb3);
+			// dbc_putchar(0xb3);
+			// dbc_putchar(0xb3);
+			// dbc_putchar(0xb3);
 			ret = NULL;
 			break;
 		}

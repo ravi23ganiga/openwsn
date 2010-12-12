@@ -31,40 +31,39 @@
 #include "../../common/openwsn/hal/hal_uart.h"
 #include "../../common/openwsn/hal/hal_led.h"
 #include "../../common/openwsn/hal/hal_assert.h"
-#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
 #include "../../common/openwsn/hal/hal_rtc.h"
+
 
 static volatile uint8 g_count=0;
 static TiRtc g_rtc;
-
-	void on_timer_expired( void * object, TiEvent * e )
-        {   	g_count ++;
-               if (g_count == 1)
-                 {
-	              led_toggle( LED_RED );
-	              g_count = 0;
-
-                  }
-         }      
+void on_timer_expired( void * object, TiEvent * e );
+	
 int main()
 {
 	target_init();
 	HAL_SET_PIN_DIRECTIONS();
-	wdt_disable();
+	wdt_disable();//watch dog disable
 	led_on( LED_ALL );
 	hal_delay( 500 );
 	led_off( LED_ALL );
-	dbo_open(0, 38400);
+	dbo_open(38400);
 
 
-	TiRtc * rtc;
+    TiRtc * rtc;
 	rtc=rtc_construct( (void *)&g_rtc, sizeof(g_rtc) );
 	rtc_setinterval(rtc,0,2,0x01);//定时周期为一秒 
-	rtc_open( rtc, on_timer_expired, NULL, 0x01 );
+	//@todo
+	rtc_open( rtc, on_timer_expired, NULL, 0x01 );//rtc_open( rtc, on_timer_expired, NULL, 0x01 );
     hal_enable_interrupts();
 	rtc_start( rtc );
 	while(1)
-	{};
+	{
+		
+	}
+
+	
+	}
 	
 /*
 	// if not use listener 
@@ -73,5 +72,18 @@ int main()
 		//do something;
 	}
 */
+void on_timer_expired( void * object, TiEvent * e )
+        {   	
+			/*
+			g_count ++;
+               if (g_count == 1)
+                 {
+	              led_toggle( LED_GREEN );
+	              g_count = 0;
 
+                  }*/
+			led_toggle( LED_GREEN );
+			dbc_putchar(g_rtc.curtime.min);
+			
+         }      
 

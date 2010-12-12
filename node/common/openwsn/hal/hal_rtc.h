@@ -28,14 +28,19 @@
 
 
 /******************************************************************************
- * @author Yan Shixing on 2009-12-09
+ * @author Yan Shixing on 2009.12.09
  * TiRtcAdapter 
  * This object is the software encapsulation of the MCU's Real-time clock.
- *
+ * 
+ * @modified by LiXin at TongJi University on 2010.05.25
+ *  - upgraded. bug fixed. released. at least the interrupt interface is tested.
+ * @modified by ZhangWei at TongJi University on 2010.11.25
+ *  - revision. bug fix.
  *****************************************************************************/
  
 #include "hal_configall.h"
 #include "hal_foundation.h"
+
 
 /* TiRtcAdapterTime
  * represent the int type used by the RTC hardware. it varies from 16bit to 32 bit 
@@ -46,6 +51,16 @@
 #else
   #pragma error "you should choose correct TiRtcAdapterTime type on your hardware architecture!"
 #endif
+
+/**
+ * CONFIG_INTERRUPT_MODE_LISTENER_ENABLE
+ * If this macro is defined, then the interrupt service routine will call the listerner
+ * function. This will be faster but also a lot of restrictions in interrupt mode.
+ * If this macro is undefined, then the listener function will be called when the
+ * master function invokes rtc_expired() function. So in the latter case, the master
+ * must check for rtc_expired() periodically and as often as possible.
+ */
+#undef CONFIG_INTERRUPT_MODE_LISTENER_ENABLE
 
 /* TiCalendarTime
  * this's a universal time type. an calendar time variable occupies 10 bytes in the 
@@ -66,8 +81,11 @@ extern "C" {
  * 
  *****************************************************************************/
 
-/* 10 byte representation of accurate timestamp
+/* TiCalTime
+ * 
+ * 10 byte representation of accurate timestamp
  * [year 2B][month 1B][day 1B][hour 1B][min 1B][sec 1B][msec 2B][usec 2B]
+ * 
  * control: highest 2bit. always 00
  * year: 0-9999 14b 
  * reserved 4b
@@ -90,69 +108,83 @@ typedef struct{
   uint16 msec;
 }TiCalTime;
 
-
+/* TiRtcAdapter
+ * RTC hardware adapter component.
+ */
 typedef struct{
-  TiCalTime * current_time;
-  TiCalTime * timing_time;
+  TiCalTime curtime;
+  TiCalTime deadline;
 
   TiFunEventHandler listener;
   void * lisowner;
 
-  uint8  repeat;  //似乎可改为option，然后通过option中的一个bit控制是否repeat更好，留出其他的bit备用
+  //uint8  repeat;  //似乎可改为option，然后通过option中的一个bit控制是否repeat更好，留出其他的bit备用
+                // todo , please using bit0 in the option variable as repeat flag
   uint16 scale;
   uint16 interval;
   uint16 scale_counter;
   uint16 interval_counter;
-  uint8  expired;
+  //uint8  expired;   // todo , please using bit1 in the option variable as repeat flag
 
   uint8 option;
 }TiRtcAdapter;
 
-/* Configure the RTC fire time. There's two methods: 
- *	- Fire according to fixed time everyday;
- *	- Fire according to interval setting
- * When the RTC expired, rtc_expired() will return true for only 1 time. and the 
- * callback listener function will be called if it's not NULL.
- * 
- * option decided whether to fire periodically.
- *
- * rtc_setexpire()
- * set the condition when the RTC should expire and to call the listener 
- * 
- * rtc_set_scale_selector()
- * set the prescale selector of the RTC hardware. Refer to the datasheet or the application
- * note to get the prescale selector settings.
- *
- * rtc_setinterval()
- * 
- *
- * rtc_expired()
+
+/**
+ * Construct an TiRtcAdapter component on specified memory block.
  */
+TiRtcAdapter * rtc_construct( char * buf, uint8 size );
+void rtc_destroy( TiRtcAdapter * rtc );
 
-TiRtcAdapter *	   rtc_construct( char * buf, uint8 size );
-void       rtc_destroy( TiRtcAdapter * rtc );
-TiRtcAdapter *	   rtc_open( TiRtcAdapter * rtc, TiFunEventHandler listener, void * object, uint8 option );
-void       rtc_close( TiRtcAdapter * rtc );
-void       rtc_start( TiRtcAdapter * rtc );
-void       rtc_stop( TiRtcAdapter * rtc );
-void 	   rtc_pause( TiRtcAdapter * rtc );//暂停计时
-void 	   rtc_invertpause( TiRtcAdapter * rtc );//继续（恢复）计时
-void       rtc_restart( TiRtcAdapter * rtc );//重新开始计时
-void       rtc_setvalue( TiRtcAdapter * rtc, TiCalTime * caltime );//设置current_time
-bool	   rtc_getvalue( TiRtcAdapter * rtc, TiRtcAdapter * to );//获得current_time
+/**
+ * Open an rtc component and do initializations.
+ */
+TiRtcAdapter * rtc_open( TiRtcAdapter * rtc, TiFunEventHandler listener, void * object, uint8 option );
+void rtc_close( TiRtcAdapter * rtc );
+void rtc_setinterval( TiRtcAdapter * rtc, uint16 interval, uint16 scale, uint8 repeat );
 
-void 	   rtc_setexpire( TiRtcAdapter * rtc, TiCalTime * caltime, uint8 repeat);//该函数用于设置未来何时刻RTC定时到
-void	   rtc_setinterval( TiRtcAdapter * rtc, uint16 interval, uint16 scale, uint8 repeat );
-//该函数与rtc_setexpire类似，但是是指定定时时段有多长，他和rtc_setexpire在程序中只要用一个函数即可
+/**
+ * Start the RTC clock and the hardware will run from now on.
+ */
+void rtc_start( TiRtcAdapter * rtc );
+void rtc_stop( TiRtcAdapter * rtc );
 
-void       rtc_active( TiRtcAdapter * rtc );//定时时刻到
-void       rtc_expired( TiRtcAdapter * rtc );//定时间隔到
+/**
+ * Restart the RTC using the last configuations. This function is often used after
+ * checking the expired flag if you don't configure the RTC to repeat automatically.
+ */
+void rtc_restart( TiRtcAdapter * rtc );
 
-void	   rtc_forward( TiRtcAdapter * rtc, uint16 sec );
-void 	   rtc_backward( TiRtcAdapter * rtc, uint16 sec );
+/**
+ * Set current time inside the TiRtcAdapter component 
+ */
+void rtc_setvalue( TiRtcAdapter * rtc, TiCalTime * caltime );
 
-void       rtc_setlistener( TiRtcAdapter * rtc, TiFunEventHandler listener, void * object );
+/**
+ * Get current time
+ */
+void rtc_getvalue( TiRtcAdapter * rtc, TiCalTime * caltime );
 
+/** 
+ * Configure when the RTC will be expired. The value is often much longer than the 
+ * RTC hardware can supported. For example, you can configure the TiRtcAdapter component to
+ * expired everey 24 hours, while the RTC hardware only support maximum 2 seconds.
+ * During this long period, there maybe many times low level timer expire interrupts, 
+ * but only one time high level expire event.
+ */
+void rtc_setexpire( TiRtcAdapter * rtc, TiCalTime * caltime, uint8 repeat);
+
+/**
+ * Check for the RTC component to see whether the timer is expired. 
+ * 
+ * @attention: the expired flag inside the RTC component will be clearly by this function
+ * only. So if you call this function and get true this time, then the next time it
+ * will be false.
+ */
+bool rtc_expired( TiRtcAdapter * rtc );
+
+void rtc_forward( TiRtcAdapter * rtc, uint16 sec );
+void rtc_backward( TiRtcAdapter * rtc, uint16 sec );
 
 #ifdef __cplusplus
 }

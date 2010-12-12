@@ -46,8 +46,8 @@
 #include "../../common/openwsn/hal/hal_assert.h"
 #include "../../common/openwsn/hal/hal_uart.h"
 #include "../../common/openwsn/hal/hal_cc2420.h"
-#include "../../common/openwsn/hal/hal_target.h"
-#include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
+#include "../../common/openwsn/hal/hal_debugio1.h"
 #include "../../common/openwsn/rtl/rtl_openframe.h"
 #include "../../common/openwsn/hal/hal_timer.h"
 
@@ -103,7 +103,7 @@ void _ledremote(void)
     timer_setinterval( timer, 8, 1 );
 	timer_start( timer );
 
-	dbo_open(0,38400);
+	dbo_open(38400);
 
 
 	uart = uart_construct( (void *)(&g_uart), sizeof(TiUartAdapter) );
@@ -146,6 +146,7 @@ void _cc2420_listener( void * owner, TiEvent * e )
 			break;
 	}
 }
+
 
 void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart )
 {

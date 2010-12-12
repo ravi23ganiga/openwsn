@@ -1,8 +1,15 @@
 #include "../hal_startup.h"
 
 /* 
- * @modified by zhangwei in 2009008
+ * hal_startup.
+ * This module is used to initialize necessary components to be used by the osx kernel.
+ * You should call the init functions here before calling osx startup. If you don't 
+ * use the osx kernel, you needn't use this module.
+ * 
+ * @modified by zhangwei in 2009.08
  * - replace the previous hal_boot module.
+ * 
+ * @modified by zhangwei on 2010.12.03
  */
 
 /* @attention

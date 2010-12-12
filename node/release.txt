@@ -1,3 +1,16 @@
+2010-10-18
+=============================================================
+
+- improved maca mac protocol component (in svc_maca module)
+- improved maca testing project in gainz-winavr/maca/
+
+
+2010-10-14
+=============================================================
+openwsn 2.1.0 released
+- bug fix: svc_csma component and also upgrade related testing programs in gainz-winavr folder.
+
+
 2010-10-10
 =============================================================
 openwsn 2.0.0 released!
@@ -21,7 +34,8 @@ The next release will contain more bug fix, protocol improvements and extensions
 2010-08-26
 =============================================================
 - support 4 MAC protocols: TinyMAC, SimpleAloha, Aloha, CSMA and MACA is in revision
-- upgraded to WinAVR 20100110.
+- upgraded to WinAVR 20100110
+.
 
 
 

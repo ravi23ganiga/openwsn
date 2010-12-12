@@ -25,13 +25,119 @@
  ******************************************************************************/
 http://blog.chinaunix.net/u3/94369/showart_1910373.html
 
+/** 
+ * time library
+ * This library is similar to the ANSI C time library. It supports two three time
+ * types: 
+ *   - TiTime, which is an unsigned long int
+ *   - TiWallTime, which is an structure 
+ *   - TiTimeBuffer/TiTimeStamp, which is an time buffer used for storage and transportation.
+ * 
+ * The difference between this module and ANSI C time library is: this one support
+ * high percision storage and processing even to 1 milli-seconds, and it can also 
+ * extend to us.
+ */
+typedef uint8  TiTime8;
+typedef uint16 TiTime16;
+typedef uint32 TiTime32;
+typedef uint64 TiTime64;
+
+
+#ifdef CONFIG_PLATFORM16
+#define TiTime TiTime16
+#else
+typedef TiTime TiTime32
+#endif
+
+#define TiTickCounter TiTickTime
+#define TiSystemTime TiTickTimer
+
+typedef struct{
+    uint16 w3; 
+    uint16 w2; 
+    uint16 w1; 
+    uint16 w0; 
+}TiTickTime; TiDeviceTime  TiTime64
+
+#define TiTimeBuffer TiTimeStamp
+typedef unsigned char[10] TiTimeStamp;
+
+/* TiCalTime
+ * 
+ * 10 byte representation of accurate timestamp
+ * [year 2B][month 1B][day 1B][hour 1B][min 1B][sec 1B][msec 2B][usec 2B]
+ * 
+ * control: highest 2bit. always 00
+ * year: 0-9999 14b 
+ * reserved 4b
+ * month: 1-12, 4b
+ * day: 1-31: 5b
+ * hour: 0-23: 5b
+ * min: 6b
+ * sec: 6b
+ * msec: 0-999, 10b  (or using the highest 6b to represent usec. each unit represent 2^4=16us)
+ * us: 0-999, 10b
+ */
+
+typedef struct{
+  uint16 year;
+  uint8  month;
+  uint8  day;
+  uint8  hour;
+  uint8  min;
+  uint8  sec;
+      //int tm_mday;
+      //int tm_wday;
+      //int tm_yday;
+  uint16 msec;
+}TiCalTime; TiWallTime  TiClockTime
+void settimezone(int8 offset);
+get_worldtime( TiWallTime * tm );
+get_walltime( TiWallTime * tm );
+
+walltime_current  wallclock
+walltime_reset
+walltime_forward
+walltime_backward
+walltime_timezone
+walltime_set_timezone
+walltime_differ
+walltime_compare
+walltime_lessthan
+walltime_greaterthan
+walltime_lessthanequal
+
+systime_current
+systime_reset
+systime_forward
+systime_backward
+systime_diff
+
+walltime * gmtime( TiTime, walltime )
+
+clocktime
+
+
+
 
 ctime
 
-TiWorldTime
-TiWallTime
-TiSystemTime
+TiWorldTime (calendar time, unique to greenwich time zone)
+TiWallTime (wall clock time = calendar time)
+TiSystemTime (64bit integer time)
+TiCalTime
 localtime
+
+typedef struct _SYSTEMTIME { // st  
+  WORD wYear;  
+  WORD wMonth;  
+  WORD wDayOfWeek;  
+  WORD wDay;  
+  WORD wHour;  
+  WORD wMinute;  
+  WORD wSecond;  
+  WORD wMilliseconds;  
+} SYSTEMTIME; 
 
 time.h
 

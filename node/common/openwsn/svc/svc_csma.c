@@ -44,6 +44,9 @@
  * 
  * @modified by openwsn on 2010.08.24
  *  - upgraded TiOpenFrame with TiFrame. fully revised.
+ *
+ * @modified by xu-fuzhen(Control Department, TongJi University) on 2010.10.12
+ *  - revision. tested ok. 
  */
 
 #include "svc_configall.h"
@@ -86,7 +89,7 @@
  */
 
 #define bit8_set(token,index) ((token) |= (_BV(index)))
-#define bit8_get(token,index) ((token) & (_BV(index)))
+#define bit8_get(token,index) ((token) &  (_BV(index)))
 #define bit8_clr(token,index) ((token) &= (~_BV(index)))
 
 static uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option );
@@ -285,7 +288,7 @@ uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
     default:
         // currently, this version implementation will ignore any frame sending request
         // if the mac component is still in sleeping state. you should wakeup it and
-        // then retry aloha_send() again.
+        // then retry csma_send() again.
         ret = 0;
         break;
     }
@@ -401,7 +404,7 @@ uintx csma_recv( TiCsma * mac, TiFrame * frame, uint8 option )
 
     // move the frame current layer to mac protocol related layer. the default layer
     // only contains the data (mac payload) rather than mac frame.
-
+    //
     frame_skipouter( frame, HEADER_SIZE, TAIL_SIZE );
     // assert: the skipouter must be success
 

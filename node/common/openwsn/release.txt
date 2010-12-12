@@ -16,7 +16,7 @@ current version features
 - improved MAC protocols. now four MAC modules are supported including simple aloha (in svc_simplealoha), standard aloha (svc_aloha), csma (in svc_csma) and maca (in svc_maca) module. (2010.05)
 - improved time sync mechnism. now two different time synchronization mechanism are support, long term synchronization (in svc_clocksync) and high percision synchronization (in  svc_timesync). (2010.06)
 
-
+ 
 
 Atmega Version
 
