@@ -28,6 +28,12 @@ OpenWSN Foundation = {hardware} + hardware abstraction layer + kernel + componen
 
   * scalable: from 1K SRAM to 1M memory (mainly 16bit architecture). depends on how many components used.
 
+  * low memory overhead
+ 
+  * highly customizable thanks to its service component architecture(SCA)
+
+  * reliable for long term running. --- because eliminate the dynamic memory allocation and free in the implementation.
+
   * easily ported: thanks to its highly strict layer design. and ANSI C complied. it doesn't depend on the portability of GCC like TinyOS
 
   * Beyond ZigBee: openwsn is designed to support general applications of WSN and future SN research. So it's much broader than zigbee's target. In particularly, if you want develop a proprietary system or choose a platform to support research, then openwsn is an ideal solution.
