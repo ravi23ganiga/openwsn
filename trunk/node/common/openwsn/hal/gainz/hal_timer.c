@@ -341,6 +341,7 @@ void timer_start( TiTimerAdapter * timer )
 	//dbo_putchar(timer->count);
 	//dbo_putchar(timer->prescale_factor);
 
+    // TCCR: timer control register
 
 	switch (timer->id)
 	{

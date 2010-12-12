@@ -33,7 +33,7 @@
  * in module svc_maca.
  * 
  * @state
- *  finished developing. compiled successfully. need testing.
+ *  compiled successfully. tested.
  *
  * @author zhangwei in 2009.12
  *  - first created
@@ -47,20 +47,32 @@
  * @modified by zhangwei on 2010.08.24
  *  - revised.
  * 
+ * @modified by xu-fuzhen(Control Department, TongJi University) on 2010.10.12
+ *  - revision. tested ok. 
+ * 
  ******************************************************************************/
 
 /**
+ * CONFIG_CSMA_BROADCAST_ADDRESS
+ * This is an const value equals 0xFFFF. You shouldn't change it.
+ *
+ * CONFIG_CSMA_MAX_RETRY
+ * Maxium sending retry count when encounter sending failure.
+ *
+ * CONFIG_CSMA_ACK_RESPONSE_TIME
+ * Maximum duration to wait for the ACK frame.
+ *
  * CONFIG_CSMA_MAX_BACKOFF
  * Maximum backoff delay time. the really backoff time is a random number between 
  * 0 and CONFIG_ALOHA_MAX_BACKOFF. Currently, it's set to 100 milliseconds. You should 
  * optimize it according to your own network parameters.
  */
 
-#define CONFIG_CSMA_DEFAULT_PANID				0x0001
+#define CONFIG_CSMA_DEFAULT_PANID			    0x0001
 #define CONFIG_CSMA_DEFAULT_LOCAL_ADDRESS		0x07 
 #define CONFIG_CSMA_DEFAULT_REMOTE_ADDRESS		0x08
 #define CONFIG_CSMA_DEFAULT_CHANNEL            11
-#define CONFIG_CSMA_BROADCAST_ADDRESS          0xFFFF
+#define CONFIG_CSMA_BROADCAST_ADDRESS          FRAME154_BROADCAST_ADDRESS
 
 #define CONFIG_CSMA_MAX_RETRY                  3
 #define CONFIG_CSMA_ACK_RESPONSE_TIME          10
@@ -81,9 +93,9 @@
 #include "../hal/hal_timer.h"
 
 
-/* 
+/**
  * TiCsma is a enhanced version of the fundamental ALOHA medium access
- * protocol. It has the same interface with TiAloha.
+ * protocol. It has the same interface with TiAloha. 
  */
 
 /**
@@ -119,6 +131,9 @@
 #define CSMA_OPTION_ACK                    0x00
 #define CSMA_DEF_OPTION                    0x00
 
+/* In order to support low power implementation, current version CSMA component support 
+ * four external request.
+ */ 
 #define CSMA_STARTUP_REQUEST                1
 #define CSMA_SHUTDOWN_REQUEST               2
 #define CSMA_SLEEP_REQUEST                  3
@@ -141,7 +156,7 @@
 #define CSMA_STATE_POWERDOWN               5
 
 
-/* event define */
+/* event definition */
 #define CSMA_EVENT_FRAME_ARRIVAL           7
 
     
@@ -175,7 +190,7 @@ extern "C"{
 
 TiCsma * csma_construct( char * buf, uint16 size );
 void csma_destroy( TiCsma * mac );
-TiCsma * csma_open( TiCsma * mac, TiFrameTxRxInterface * rxtx, uint16 panid, uint16 address, 
+TiCsma * csma_open( TiCsma * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uint16 panid, uint16 address, 
     TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner );
 void csma_close( TiCsma * mac );
 

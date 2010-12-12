@@ -46,9 +46,21 @@
  *  - upgraded TiOpenFrame/TiIoBuf to TiFrame
  *  - fully revised.
  * 
+ * @modified by zhangwei(Control Department, TongJi University) on 2010.10.18
+ *  - revision.
+ * 
  ******************************************************************************/
 
 /**
+ * CONFIG_MACA_BROADCAST_ADDRESS
+ * This is an const value equals 0xFFFF. You shouldn't change it.
+ *
+ * CONFIG_MACA_MAX_RETRY
+ * Maxium sending retry count when encounter sending failure.
+ *
+ * CONFIG_MACA_ACK_RESPONSE_TIME
+ * Maximum duration to wait for the ACK frame.
+ *
  * CONFIG_CSMA_MAX_BACKOFF
  * Maximum backoff delay time. the really backoff time is a random number between 
  * 0 and CONFIG_ALOHA_MAX_BACKOFF. Currently, it's set to 100 milliseconds. You should 
@@ -78,6 +90,8 @@
 
 #define CONFIG_MACA_STANDARD 
 #define CONFIG_MACA_TRX_SUPPORT_ACK
+
+#define CONFIG_MACA_DURATION                    100
 
 
 #include "svc_configall.h"
@@ -150,10 +164,12 @@
 #define MACA_STATE_BACKOFF                  3
 #define MACA_STATE_SLEEPING                 4
 
-
-
-/* TiMACA:
- *	- state
+/**
+ * TiMACA component:
+ *	- state: state of the maca protocol component.
+ *  - rxtx: the transceiver interface
+ *  - timer: hardware timer used by the mac protocol
+ *  - backoff: backoff duration when sending failed. 
  */
 typedef struct{
     uint8 state;
@@ -220,7 +236,7 @@ inline void maca_setchannel( TiMACA * mac, uint8 chn )
 inline bool maca_ischannelclear( TiMACA * mac )
 {
     // todo
-    //mac->rxtx->ischnclear( mac->rxtx->provider );
+    // return (mac->rxtx->ischnclear == NULL) ? true : mac->rxtx->ischnclear( mac->rxtx->provider );
     return true;
 }
 

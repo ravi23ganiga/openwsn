@@ -27,7 +27,7 @@
 #define _SVC_APPLICATION_H_3297_
 
 typedef struct{
-}TiAppFrame;
+}TiAppFramework;
 
 apf_construct
 apf_destroy

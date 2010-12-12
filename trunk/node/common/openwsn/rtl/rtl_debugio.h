@@ -72,7 +72,7 @@ char _dbc_digit2hexchar( uint8 digit );
 #define dbc_mem(buf,len) _dbc_write(&g_dbc,(char*)(buf),len);
 #define dbc_char(c) _dbc_putchar(&g_dbc,c);
 #define dbc_byte(c) _dbc_putchar(&g_dbc,c);
-#define dbc_uint8(n) _dbc_putchar(&g_dbc,(uint8)n);}
+#define dbc_uint8(n) _dbc_putchar(&g_dbc,(uint8)n);
 #define dbc_uint16(n) _dbc_write(&g_dbc,(char*)&(n),sizeof(n));
 #define dbc_uint32(n) _dbc_write(&g_dbc,(char*)&(n),sizeof(n));
 

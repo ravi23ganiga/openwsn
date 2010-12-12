@@ -19,3 +19,6 @@ this is a program used to test our mac protocl--aloha protocol.
 - and a lot of other minor changes
 - compiled successfully
 
+modified by Xu-Fuzhen(TongJi University) on 2010.10.14
+- revision. tested ok.
+
