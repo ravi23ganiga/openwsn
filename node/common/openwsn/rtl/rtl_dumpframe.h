@@ -11,6 +11,6 @@
  * initialize the fundamental input/output interface 
  */
 
-void ieee802frame154_dump( TiFrame * frame, TiUartAdapter * uart );
+void ieee802frame154_dump( TiFrame * frame);
 
 #endif

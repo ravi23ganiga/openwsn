@@ -3,7 +3,7 @@
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
- * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ * Copyright (C) 2005-2015 zhangwei(TongJi University)
  *
  * OpenWSN is a free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -40,6 +40,15 @@
  *  - full revised. compile passed. not fully tested yet.
  * @modified by zhangwei on 2010.08.07
  *  - revision
+ * @modified by zhangwei on 2010.12.27
+ *  - add a new member variable option. This variable can be used to keep some 
+ *    information when passing the frame between different objects.
+ * @modified by zhangwei in 2011.02
+ *  - add member variable "option" to save some configurations when passing between
+ *    different layers. 
+ * @modified by zhangwei in 2011.03
+ *  - add four new functions: frame_addlayerinterior, frame_addlayerexterior, 
+ *    frame_removelayerinterior, frame_removelayerexterior.
  ******************************************************************************/
 
 /** 
@@ -52,7 +61,9 @@
  * so this macro is defined to 8 by default. you can decrease value to save memory space.
  */
 
+#ifndef CONFIG_FRAME_LAYER_CAPACITY
 #define CONFIG_FRAME_LAYER_CAPACITY 8
+#endif
 
 /* atention: if you use Dynamic C compiler from rabbit semiconductor to compile 
  * this module, you should attention that the "size" is an keyword in dyanmic C.
@@ -66,6 +77,20 @@
  */
 
 #define FRAME_HOPESIZE(capacity) (sizeof(TiFrame)+(capacity))
+
+/**
+ * Q: Why TiFrame?
+ * R: 网络协议栈是一个有层次的软件结构，层与层之间通过预定的接口传递网络报文。
+ * 网络报文中包含了在协议栈各层使用到的各种信息。网络报文的长度是不固定的，因此采用什么样的数据结构来存储这些
+网络报文就显得非常重要。在BSD的实现中，采用的数据结构是 mbuf，它所
+能存储的数据的长度是固定的，如果一个网络报文需要多个 mbuf，这些 mbuf
+链接成一个链表。所以同一个网络报文里的数据在内存中的存储可能是不连续
+的。在LINUX的实现中，同一个网络报文的数据在内存中是连续存放的，每个
+网络报文都有一个控制结构，叫做sk_buff。
+ *
+ * 	In openwsn architecture, the equivalent object to mbuf or sk_buff is TiFrame.
+ * We use TiFrame to management the frame/packet description and it's data together.
+ */
 
 /** 
  * TiFrame
@@ -85,7 +110,7 @@
  * 
  * each higher layer item is also the payload of the lower item.
  * 
- * member variables
+ *  member variables
  *  memsize: the memory block size the current frame object occupied
  *  curlayer: current item
  *  layercount: active items currently.
@@ -98,12 +123,15 @@
  */
 typedef struct{
     uintx memsize;
+	uint8 option;
     uintx firstlayer;
     uintx curlayer;
     uintx layercount;
     uintx layerstart[CONFIG_FRAME_LAYER_CAPACITY];
     uintx layerlength[CONFIG_FRAME_LAYER_CAPACITY];
     uintx layercapacity[CONFIG_FRAME_LAYER_CAPACITY];
+	
+	//struct TiFrame * next;
 }TiFrame;
 
 
@@ -132,14 +160,39 @@ void frame_close( TiFrame * frame );
 TiFrame * frame_duplicate( TiFrame * frame );
 #endif
 
+/**
+ * Clear the frame. After reset, the frame object is the same as it is just opened.
+ * There will be only one layer existed after reset for reading and writing.
+ * 
+ * @param frame The pointer to the frame object to be reset
+ * @param init_layerindex Indicate the index of the initial layer. 
+ * @param init_layerstart Indicate where the initial layer start in the frame internal buffer.
+ * @param init_layercapacity The capacity of the initial layer.
+ * @return None
+ */
 void frame_reset( TiFrame * frame, uintx init_layerindex, uintx init_layerstart, uintx init_layercapacity );
+
+char * frame_buffer( TiFrame * frame );
 
 /**
  * clear the TiFrame object. after the clear, there's only one item inside the frame
  * and it occupies all the memory available.
+ * 
+ * Q: what's the difference between frame_reset() and frame_bufferclear()?
+ * R: frame_reset() can choose where the initial layer is and frame_bufferclear assumes
+ * layer 0 is the initial layer.
+ * 
+ * @modified by zhangwei on 2010.08.07
+ *  - in the past, this function will automatically create the first layer. however,
+ *    this may cause problems if you start the frame at the the application layer.
+ *    now the bufferclear means clear all layers. you need to create the your first
+ *    layer manually.
  */
 void frame_bufferclear( TiFrame * frame );
+#define frame_totalclear(frame) frame_bufferclear(frame)
+
 uintx frame_buffercapacity( TiFrame * frame );
+
 
 #define frame_totalstart(frame) frame_layerstart(frame,(frame)->firstlayer)
 #define frame_totalstartptr(frame) frame_layerstartptr(frame,(frame)->firstlayer)
@@ -149,7 +202,8 @@ uintx frame_buffercapacity( TiFrame * frame );
 #define frame_totalcapacity(frame) frame_layercapacity(frame,(frame)->firstlayer)
 #define frame_settotalcapacity(frame,count) frame_setlayerlength(frame,(frame)->firstlayer,count)
 
-#define frame_totalcopyfrom(frame,from) {memmove((frame),(from),(from->memsize));}
+#define frame_totalcopyto(frame,to) frame_totalcopyfrom(to,frame)
+uintx frame_totalcopyfrom( TiFrame * frame, TiFrame * from );
 
 uintx frame_layerstart( TiFrame * frame, uint8 layer );
 char * frame_layerstartptr( TiFrame * frame, uint8 layer );
@@ -184,17 +238,51 @@ bool frame_moveouter( TiFrame * frame );
 
 #define frame_movefirst(f) frame_moveoutermost(f)
 #define frame_movelast(f) frame_moveinnermost(f)
+#define frame_movemostoutner(f) frame_moveoutermost(f)
+#define frame_movemostinner(f) frame_moveinnermost(f)
 
 bool frame_moveinnermost( TiFrame * frame );
 bool frame_moveoutermost( TiFrame * frame );
 
 #define frame_firstlayer(f) frame_outermost(f)
 #define frame_lastlayer(f) frame_innermost(f)
+#define frame_mostouter(f) frame_outermost(f)
+#define frame_mostinner(f) frame_innermost(f)
 
+// inside/outside?
+// interior/exterior
 uintx frame_innermost( TiFrame * frame );
 uintx frame_outermost( TiFrame * frame );
 
-uintx frame_initlayer( TiFrame * frame, uint8 layerindex, uintx skiplen, uintx capacity );
+/**
+ * This function will initialize an specified layer item in the layer table inside
+ * an frame object. Attention it doesn't affect the "curlayer" property of the frame
+ * object, but it will blindly increase the "layercount" property. Since this function
+ * judges whether an layer meta item is empty or not by "layercapacity"
+ * property, it may lead to wrong result if you doesn't reset the frame object first.
+ * 
+ * @warning This function is better to be used inside the TiFrame object. It doesn't
+ * guarantee the allocate layer are nearby together in the layer table. It's totally
+ * depends on the value of "layerindex" parameter input.
+ */
+bool frame_initlayer( TiFrame * frame, uint8 layerindex, uintx layerstart, uintx layercapacity );
+
+/**
+ * add a layer. Different to frame_skipinner and frame_skipouter, this function 
+ * doesn't affect the curlayer settings.
+ * 
+ * frame_skipinner = frame_addlayerinner + frame_moveinner
+ * 
+ * @param offset The relative position related to the outer layer's start position. 
+ *   	Essentially, the value of offset is the header size of the outer layer.
+ */
+bool frame_addlayerinterior( TiFrame * frame, uintx offset, uintx left );
+
+/*
+ * @param offset The relative position related to the outer layer's start position. 
+ *   	Essentially, the value of offset is the header size of the new layer.
+ */
+bool frame_addlayerexterior( TiFrame * frame, uintx offset, uintx left );
 
 /** 
  * add inner item and also change the current to it
@@ -207,9 +295,27 @@ bool frame_skipinner( TiFrame * frame, uintx skiplen, uintx left );
 bool frame_skipouter( TiFrame * frame, uintx skiplen, uintx left );
 
 /**
+ * Remove the most innert layer from the frame object.
+ *
+ * @attention Generally this function doesn't affect the "curlayer" property of 
+ *   the frame object. However, the "curlayer" will decrease by 1 if the most inner
+ *   layer(last layer) is the "curlayer". Furthermore, if there's no layer after
+ *   the remove, then the "firstlayer", "curlayer" and "layercount" property are 
+ *   all reset to 0.
+ * 
+ * @return true when success.
+ */
+bool frame_removelayerinterior( TiFrame * frame );
+bool frame_removelayerexterior( TiFrame * frame );
+
+/**
  * @section all the following functions are operated on current layer.
  */
 
+/**
+ * Clear the data of the current layer inside the frame object.
+ * @return none
+ */
 void frame_clear( TiFrame * frame );
 
 /**
@@ -225,8 +331,18 @@ uintx frame_start( TiFrame * frame );
 
 uintx frame_end( TiFrame * frame );
 
+/** 
+ * Return the data length in the current layer. 
+ * @return The data length in the current layer. 
+ */
 uintx frame_length( TiFrame * frame );
 
+/** 
+ * Return the capacity of the current layer. It's based on bytes. The capacity is 
+ * fixed when this layer is created.
+ * 
+ * @return The capacity of the current layer. It's based on bytes.
+ */
 uintx frame_capacity( TiFrame * frame );
 
 /**
@@ -236,17 +352,39 @@ uintx frame_capacity( TiFrame * frame );
  */
 char * frame_dataptr( TiFrame * frame );
 
+/** Returns an char * type pointer to the first byte of the frame buffer. */
 char * frame_startptr( TiFrame * frame );
+
+/** Returns an char * type pointer to the last byte of the frame buffer. */
 char * frame_endptr( TiFrame * frame );
 
 char * frame_header( TiFrame * frame, uintx * psize );
 char * frame_interior( TiFrame * frame, uintx * psize );
 char * frame_tail( TiFrame * frame, uintx * psize );
 
+/** Returns true when the frame buffer in the current layer is full */
 bool frame_full( TiFrame * frame );
+
+/** Returns true when the frame buffer in the current layer is empty */
 bool frame_empty( TiFrame * frame );
+
+/** Return the avaiable space length in byte count in the buffer of current layer */
 uintx frame_available( TiFrame * frame );
+
+/** 
+ * @brief Reads the data out from the frame buffer and place them into the buf.
+ * @param buf Where the data will be placed.
+ * @param size The maximum length of the buf.
+ * @return The data length inside buf.
+ */
 uintx frame_read( TiFrame * frame, char * buf, uintx size );
+
+/** 
+ * @brief Reads the data out from the frame buffer and place them into the buf.
+ * @param buf Where the data will be placed.
+ * @param size The maximum length of the buf.
+ * @return The data length inside buf.
+ */
 uintx frame_write( TiFrame * frame, char * data, uintx len );
 
 /* frame_pushback
@@ -273,7 +411,27 @@ uintx frame_movefrom( TiFrame * frame1, TiFrame * frame2 );
 uintx frame_moveto( TiFrame * frame1, TiFrame * frame2 );
 uintx frame_append( TiFrame * frame1, TiFrame * frame2 );
 
+/**
+ * Set the length property of current layer. Attention if you put the data into 
+ * the layer's buffer directly by memory pointer, then the frame object cannot 
+ * know how many bytes you have put. You need to tell the frame object the data 
+ * length by calling this function.:
+ * 
+ * Example: 
+ * 		char * buf = frame_startptr(f);
+ * 		uintx len = min( frame_available(f), count );
+ * 		memmove( buf, data, len );
+ *      frame_setlength(len);
+ *
+ * @param frame Pointer to the TiFrame object. 
+ * @param count the new length of current layer.
+ */
 void frame_setlength( TiFrame * frame, uintx count );
+
+/**
+ * Adjust the length property of current layer. Different to frame_setlength(), 
+ * this function will adjust the length property of current layer by adding an offset.
+ */
 void frame_adjustlength( TiFrame * frame, int delta );
 
 #define frame_setcapacity(f,capacity) frame_setlayercapacity((f),(f)->curlayer,(capacity))

@@ -48,8 +48,9 @@
  *    from current version.
  * @modified by zhangwei on 20100529
  *  - revision. upgraded from Portable WinAVR 2008 to 2009 version
- *
- *****************************************************************************/
+ * @modified by openwsn on 2010.12.12
+ *	- revision
+ ******************************************************************************/
 
 /* modified by zhangwei(openwsn@gmail.com) on 20091106
  *	In the past, the kernel supports changing the scheduler (FIFO, Realtime, and Future)
@@ -268,13 +269,24 @@ void _osx_hardexecute( TiOSX * osx );
 void _osx_sleep( TiOSX * osx );
 void _osx_wakeup( TiOSX * osx );
 
-
 /******************************************************************************
  * osx_init()
+ * osx_execute()
+ *****************************************************************************/
+
+/**
+ * Initialize the osx kernel. Generally, you should post the tasks(is also the event
+ * handler) or create event-handler mapping after osx_init().
+ *
  * initialize osx. after initialization, you can call osx_post() functions and 
  * enjoy the scheduler. 
  *
- * osx_execute()
+ */
+void osx_init( void );
+
+/**
+ * Start the osx kernel. The kernel will wait for incoming event and dispatch the
+ * events to their related handlers. 
  * run the osx kernel. this function has an internal infinite loop to check events
  * in the system event queue. it will never return. but it can support sleep()/wakeup()
  * 
@@ -288,16 +300,8 @@ void _osx_wakeup( TiOSX * osx );
  *   osx_attach( id, handler, ... )
  *   osx_execute()
  * 
- *****************************************************************************/
-
-
-/******************************************************************************
- * osx_init() and osx_execute()
- *****************************************************************************/
-
-void osx_init( void );
+ */
 void osx_execute( void );
-
 
 #ifdef __cplusplus
 }

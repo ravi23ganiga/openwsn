@@ -1,3 +1,228 @@
+/**
+ * Q: What's TiClockAdapter?
+ * R: clock adapter is an hardware component adapter helps to implement a clock
+ * (usually the system clock). An system clock keeps the time. You can read/write
+ * this component to get/set the current time. The time is usually represented as
+ * a 64b integer value. 
+ * 
+ * Q: What's the difference between TiTimerAdapter and TiClockAdapter?
+ * R: "timer" is pretty powerful in time measurement, but the duration is usually
+ * very short. For example, an 8bit timer can only records from 0-255, and a 16b
+ * time is only from 0 to 65535. Furthermore, the timer hardware usually have more
+ * functionalities such as "capture", multi-channel snapshot, etc.
+ *    The clock is for time measurement only. But it usually uses multi-bytes to
+ * represent the current time. The overflow is rarely occured for a clock component
+ * because the time variable is much bigger than a timer component.
+ * 
+ * Q: How to improve the occuracy of a clock?
+ * R: Different to the clock software in desktop PC, this clock is more accurate 
+ * because it can read out the offset value in one tick. A tick is defined as the
+ * interval between two clock counting interrupts. So the current tick count plus
+ * the offset is a precise value.
+ *
+ * Q: How to deal with the time lagging phenomena if the interrupt is disabled?
+ * R: Using interrupt request queue, so that the clock component can keep up pace
+ * with the real time. Every time the clock interrupt occurs, the ISR pushes an 
+ * time increase request into the queue. Through the queue technique, the interrupt
+ * request won't lost. 
+ * 
+ * Attention, the interrupt request queue isn't maintained by the clock component 
+ * itself. Since the TiClockAdapter is in "hal" layer, we want it to be simpler
+ * and efficient. You can use the system event queue provided in the osx kernel 
+ * as such a clock interrupt queue. 
+ * 
+ * You can register an interupt mode event handler(listerner) to perform the above 
+ * "push into queue" operations. By default, the clock itself will increase the 
+ * internal tick counter. If you provides the handler(listerner), then the clock
+ * component will depend on the listener to increase the tick counter.
+ * 
+ * Q: What's the draw back of TiClockAdapter?
+ * R: Clock is simple and efficient because it uses TiTime64 to represent the time.
+ * For Real time clock(RTC), it's usually less efficient because RTC uses TiCalendarTime
+ * which is much more complicated. However, a lot of systems uses hardware to implement
+ * the RTC, which will be more efficient and energy saving.
+ * 
+ * Another big difference is that: the TiClockAdapter is affected by the MCU power
+ * control. If the MCU goes sleep mode, then the clock will also ceased. and If 
+ * the interrupt is disabled, then the clock will also stopped. However, the RTC
+ * is usually designed to be executed independently even the MCU is in sleep mode.
+ * 
+ * Q: What's the difference between TiClockAdapter and TiSysTicker?
+ * R: TiSysTicker is an simple component to generate event periodically to drive
+ * the osx kernel to run. The TiClockAdapter also implements the osx kernel required 
+ * interface and can replace the ticker.
+ *    We suggest you replace TiSysTicker if possible because the TiClockAdapter
+ * is designed for more accurate applications. A high accuracy clock is much better
+ * for timing-restricted applications.
+ */ 
+ 
+bool (* TiClockAdapterGetOffset)( void * object, TiSystemTime * tm );
+
+/**
+ * TiClockAdapter
+ * An efficient, occurate time counting component.
+ *
+ * interval: time length of one tick
+ * curtime: essentially the tick counter.
+ *
+ * getoffset: This is an function pointer. This function pointer is used to return 
+ *      the offset value inside a single piece of slice. Since the lowest resolution
+ *      is the length of one slice, it's usually pretty large for high precision
+ *      measurement applicatioins. Since the slice counter is increased by the call
+ *      of wtm_inputevent() function, the time resolution is decided by the interval
+ *      between two calls. This is usually done by the timer hardware's interrupt,
+ *      and it's usually not too fast. For example, every 10 ms a interrupt is generated.
+ *      So if you want to get the precise time value, you should add the offset inside
+ *      one slice. The offset is usually read from the timer hardware. For example, 
+ *      the timer_elapsed() function call return how many counts since last expiration.
+ * 
+ *      If you don't provide this function and the value is null, then the time resolution
+ *      is decided by the call of wtm_inputevent() function.
+ * 
+ * listener: callback function every tick. If you don't provide this listener function,
+ *      then the clock will use an internal one, but this one is affected by the 
+ *      interrupt flag. If the interrupt is disabled, then this internal ISR will
+ *      not run, which lower the accuracy.
+ * lisowner: listener's owner object.
+ */
+typedef struct{
+  uint8 state;
+  uint32 interval;
+  TiSystemTime curtime;
+  TiClockAdapterGetOffset getoffset;
+  TiFunEventHandler listener;
+  void * lisowner;
+  uint8 option;
+  // TiSystemTime epoch;
+}TiClockAdapter;
+
+
+/** 
+ * Q: an example of getoffset function
+ * R:
+ * bool time0_get_offset( void * object, TiDateTime * value )
+ * {
+ *   memset( value, 0x00, sizeof(TiDateTime) );
+ *   value->offset = time_elapsed( object );
+ *   return true;
+ * }
+ */
+
+TiClockAdapter * clock_construct( char * buf, uint16 size );
+void clock_destroy( TiClockAdapter * clk );
+
+/**
+ * Initialize an TiClockAdapter component.  
+ *
+ * @param interval Length of one tick duration. 
+ * @param listener If you attach an event handler here, then the clock will be 
+ *    push to run by the handler. By default, it's pushed forward by an internal
+ *    interrupt handler.
+ * @param lisowner An component pointer to the listener's owner.
+ */
+TiClockAdapter * clock_open( TiClockAdapter * clk, uint16 interval, TiFunEventHandler listener, void * lisowner );
+void clock_close( TiClockAdapter * clk );
+
+void clock_curtime( TiClockAdapter * clk, TiSystemTime * curtime );
+void clock_setcurtime( TiClockAdapter * clk, TiSystemTime * curtime );
+//TiSystemTime * clock_curtimeptr( TiClockAdapter * clk );
+//void clock_snapshot( TiClockAdapter * clk, TiSystemTime * curtime );
+void clock_forward( TiClockAdapter * clk, uint16 milliseconds );
+void clock_backward( TiClockAdapter * clk, uint16 milliseconds );
+
+void clock_offset( TiClockAdapter * clk, TiSystemTime * offset );
+void clock_setoffset( TiClockAdapter * clk, TiSystemTime * offset );
+void clock_tune( TiClockAdapter * clk, TiSystemTime * delta );
+
+
+
+
+
+
+the above is ok
+
+listener
+evolve 
+
+clock_read( sec )
+clock_write( sec )
+
+
+
+
+
+
+void clock_step( void * wtmptr, TiEvent * e );
+
+/**
+ * Everytime this function called, the inside timer slice counter will increase. 
+ * periodically call this function to push the world timer component to run continuously.
+ * 
+ * @attention
+ * Generally, this function is often executed in interrupt mode. So don't do too
+ * much work inside this function in order to keep timing precision.
+ */
+void clock_inputevent( void * wtmptr, TiEvent * e );
+
+/**
+ * If you want the TiClockAdapter component to call the listener at some time, then
+ * you should call clock_evolve() to check for that event, because the listener is
+ * actually called by the evolve mechanism.
+ */
+void clock_evolve( TiClockAdapter * clk, TiEvent * e );
+
+
+在listener中做什么事情：
+- clock_forward()
+- do user things such as push a message into system event queue, which will activate the main loop
+
+
+void clock_setlistener( TiClockAdapter * clk, TiFunEventHandler listener, void * lisowner );
+
+/**
+ * Set future time. If the current time equals the future time, then clock_expired() will
+ * return true. If the listener callback hander is set, then this handler will be 
+ * invoked by the evolve() function.
+ */
+
+void clock_setfuture( TiClockAdapter * clk, TiSystemTime * future );
+void clock_setinterval( TiClockAdapter * clk, TiSystemTime * interval, uint8 option );
+
+/** 
+ * Return how many ms elapsed since this interval begins.
+ */
+void clock_elapsed( TiClockAdapter * clk, TiSystemTime * offset );
+
+bool clock_expired( TiClockAdapter * clk );
+void clock_setexpired( TiClockAdapter * clk, bool value );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+clk
+
+
+
+
+
+TiClockAdapter
+
+TiDeviceClock  
+
+clock
+
+sclk 
+
 hardware level: TiTimerAdapter, TiOsxTimerAdapter (formerly known as TiSysTimer)
 rtl: rtl_time, rtl_systime, rtl_caltime, rtl_datetime, calendar time, world time
 svc: svc_systimer, svc_timer
@@ -66,6 +291,7 @@ typedef struct{
 
 time80_pack
 time80_unpack
+snapshot
 
     
 

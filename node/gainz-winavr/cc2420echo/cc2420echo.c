@@ -35,7 +35,7 @@
 #include "../../common/openwsn/hal/hal_assert.h"
 #include "../../common/openwsn/hal/hal_uart.h"
 #include "../../common/openwsn/hal/hal_cc2420.h"
-#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
 #include "../../common/openwsn/rtl/rtl_openframe.h"
 #include "../../common/openwsn/hal/hal_debugio.h"
 
@@ -88,7 +88,7 @@ void echonode(void)
 	led_on( LED_RED );
 	hal_delay( 500 );
 	led_off( LED_ALL );
-	dbo_open(0, 38400);
+	dbo_open( 38400);
 
 	cc = cc2420_construct( (void *)(&g_cc), sizeof(TiCc2420Adapter) );
 	uart = uart_construct( (void *)(&g_uart), sizeof(TiUartAdapter) );

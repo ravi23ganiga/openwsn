@@ -27,6 +27,25 @@
 #include "../rtl/rtl_timer.h"
 #include "../hal/hal_timer.h"
 
+采用TiTime80表示time
+提供长时间、高精度的时间获取与调整
+
+基于TiClockAdapter(本质上就是个timer)
+与RTC不同的是，这里用TiTime80，RTC通常用TiCalendarTime
+但是要注意，TiClock也可构建在RTC之上，二者主要是接口形式不同。
+RTC的设计精度也不如Clock，只能到ms，clock可以到us，depending on the hardware, clock的实现也许需要rtc和timer两个协助，也许也许
+
+在openwsn中，长时间休眠用TiClock，注意全系统只有1个，短时间用TiSvcTimer，可自由申请和释放，可作常规用途
+精度上，Ticlock更高
+
+
+
+
+
+
+
+
+
 
 一类是以time_t结构为参数的，共十个字节，一类是出于效率起见，以uint16整型为参数的
 

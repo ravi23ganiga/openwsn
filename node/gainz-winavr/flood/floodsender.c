@@ -39,22 +39,22 @@
  * test ok on November 17,2009  good performance.
  *****************************************************************************/
 
-#include "../common/hal/hal_configall.h"
+#include "../../commom/openwsn/hal/hal_configall.h"
 #include <stdlib.h>
 #include <string.h>
 #include <avr/wdt.h>
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_interrupt.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/hal/hal_uart.h"
-#include "../common/hal/hal_cc2420.h"
-#include "../common/hal/hal_target.h"
-#include "../common/rtl/rtl_openframe.h"
-#include "../common/hal/hal_debugio.h"
-#include "../common/svc/svc_aloha.h"
-#include "../common/svc/svc_flood.h"
+#include "../../commom/openwsn/hal/hal_foundation.h"
+#include "../../commom/openwsn/hal/hal_cpu.h"
+#include "../../commom/openwsn/hal/hal_interrupt.h"
+#include "../../commom/openwsn/hal/hal_led.h"
+#include "../../commom/openwsn/hal/hal_assert.h"
+#include "../../commom/openwsn/hal/hal_uart.h"
+#include "../../commom/openwsn/hal/hal_cc2420.h"
+#include "../../commom/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/rtl/rtl_openframe.h"
+#include "../../commom/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/svc/svc_aloha.h"
+#include "../../common/openwsn/svc/svc_flood.h"
 
 #ifdef CONFIG_DEBUG   
     #define GDEBUG

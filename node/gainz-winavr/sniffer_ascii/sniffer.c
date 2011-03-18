@@ -39,9 +39,11 @@
  *    mode are using _output_openframe() now.
  * @modified by shi-miaojing(TongJi University) on 20091031
  *	- tested ok.
- * @modified by zhangwei
+ * @modified by zhangwei in 2010
  *	- support both the binary format and text ascii format. You can use macro
  *    CONFIG_ASCII_OUTPUT to configure it.
+ * @modified by zhangwei on 2011.03.04
+ * 	- revision.
  ******************************************************************************/ 
 
 #include "../../common/openwsn/hal/hal_configall.h"
@@ -60,8 +62,13 @@
 #include "../../common/openwsn/hal/hal_debugio.h"
 #include "../../common/openwsn/rtl/rtl_frame.h"
 #include "../../common/openwsn/rtl/rtl_ascii.h"
+#include "../../common/openwsn/rtl/rtl_assert.h"
 #include "../../common/openwsn/rtl/rtl_debugio.h"
+#include "../../common/openwsn/rtl/rtl_frame.h"
 
+/* This macro controls the apl_ieee802frame154_dump module to output
+ * the frame in ascii mode.
+ */
 #define CONFIG_ASCII_OUTPUT
 #include "apl_ieee802frame154_dump.h"
 
@@ -81,9 +88,6 @@
 #undef  CONFIG_LISTENER    
 #define CONFIG_LISTENER    
 
-
-//#undef  CONFIG_ASCII_OUTPUT
-
 #define PANID				0x0001
 #define LOCAL_ADDRESS		0x02
 #define REMOTE_ADDRESS		0x01
@@ -92,19 +96,17 @@
 
 #define MAX_IEEE802FRAME154_SIZE    128
 
-TiCc2420Adapter             g_cc;
-//TiUartAdapter               g_uart;
-//char                        g_rxbufmem[ OPF_SUGGEST_SIZE ];
-static char                   m_frame[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
+
+
+static TiCc2420Adapter g_cc;
+static char m_frame[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
 
 #ifdef CONFIG_LISTENER
+static bool	g_listener_running = false;
 static void _cc2420_listener( void * ccptr, TiEvent * e );
 #endif
 
-//static uint8 len=0;
-
 static void sniffer(void);
-//static void _output_openframe( TiOpenFrame * opf, TiUartAdapter * uart );
 
 /*******************************************************************************
  * functions 
@@ -117,35 +119,23 @@ int main(void)
 
 void sniffer(void)
 {
-    //void * dbio;
     TiCc2420Adapter * cc;
-	TiFrame * frame;
-	//TiUartAdapter * uart;
-	//TiOpenFrame * opf;
-	char * msg = "welcome to sniffer...\r\n";
-	
+    TiFrame * frame;
+	char * msg = "welcome to sniffer in ascii mode...";
+
 	#ifndef CONFIG_LISTENER
     int8 len=0;
     #endif
-	
+
 	target_init();
-	//HAL_SET_PIN_DIRECTIONS();
-	//wdt_disable();
 
 	led_open();
 	led_on( LED_RED );
 	hal_delay( 500 );
 	led_off( LED_ALL );
-    
-    //dbo_open( 38400 );
-    //dbio = (void *)dbio_open(38400);
+
     rtl_init( dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
     dbc_mem( msg, strlen(msg) );
-    //dbc_putchar( 0xFF );
-
-	//uart = uart_construct( (void *)(&g_uart), sizeof(TiUartAdapter) );
-	//uart = uart_open( uart, 0, 38400, 8, 1, 0x00 );
-	//uart_write( uart, msg, strlen(msg), 0x00 );
 
 	cc = cc2420_construct( (void *)(&g_cc), sizeof(TiCc2420Adapter) );
 	#ifdef CONFIG_LISTENER
@@ -160,8 +150,7 @@ void sniffer(void)
 	cc2420_setshortaddress( cc, LOCAL_ADDRESS );	// in network address, seems no use in sniffer mode
 	cc2420_disable_addrdecode( cc );				// disable address decoding
 	cc2420_disable_autoack( cc );
-    //opf = opf_open( (void *)(&g_rxbufmem[0]), sizeof(g_rxbufmem), OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
-    // opf = opf_open( (void *)(&g_rxbufmem), sizeof(g_rxbufmem), OPF_DEF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
+
     frame = frame_open( (char*)(&m_frame), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 0, 0, 0 );
 
 	hal_enable_interrupts();
@@ -173,28 +162,17 @@ void sniffer(void)
 	#ifndef CONFIG_LISTENER
 	while(1) 
 	{
-        frame_reset(frame, 0, 0, 0);
+        frame_reset( frame, 0, 0, 0 );
         len = cc2420_read( cc, frame_startptr(frame), frame_capacity(frame), 0x00 );
         if (len > 0)
         {
             frame_setlength( frame, len );
             ieee802frame154_dump( frame );
-			led_toggle( LED_YELLOW ); 
-/*
-		len = cc2420_read( cc, opf_buffer(opf), opf_size(opf), 0x00 );
-		if (len > 0)
-		{
-			* since cc2420_read() only copies the received data into "opf"'s internal 
-			 * buffer, we had to call opf_set_datalen() to tell "opf" how long the  
-			 * received data is.
-			opf_set_datalen( opf, len );
-			_output_openframe( opf, &g_uart );
-			led_toggle( LED_YELLOW );
+			led_toggle( LED_RED );
         }
-*/
 		cc2420_evolve( cc );
 	}
-	#endif
+	#endif 
 }
 
 /* _cc2420_listener
@@ -209,17 +187,23 @@ void sniffer(void)
 void _cc2420_listener( void * owner, TiEvent * e )
 {
 	TiCc2420Adapter * cc = (TiCc2420Adapter *)(owner);
-    TiFrame * frame = (TiFrame *)&m_frame;    
-   //TiOpenFrame * opf;
-    int8 len=0 ;
-    //dbc_putchar( 0xF0 );
+    TiFrame * frame = (TiFrame *)&m_frame;
+    int8 len=0;
 
-	// todo
-	// must we call opf_open() every time here? attention we had already opened it 
-	// during the initialization. can we open the opf structure for only 1 time 
-	// and reuse it in the future?
-	//opf = opf_open( (void *)(&g_rxbufmem), sizeof(g_rxbufmem), OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
-    frame = frame_open( (char*)(&m_frame), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 0, 0, 0 );
+	/* If the callback listener function is already running, then we should exit
+	 * from it in order to not affecting those global variables simulataneously. 
+	 * However, We'll also miss the new frame just arrived. You should avoid such
+	 * frame loss by adding a frame queue. 
+	 * 
+	 * The next version of sniffer will introduce the frame queue (TiFrameQueue)
+	 * to avoid unnecessary frame losing.
+	 */
+	if (g_listener_running)
+		return;
+
+	g_listener_running = true;
+	dbc_putchar( 0xF0 );
+	
 	while (1)
 	{
         frame_reset(frame, 0, 0, 0);
@@ -228,27 +212,11 @@ void _cc2420_listener( void * owner, TiEvent * e )
         {
             frame_setlength( frame, len );
             ieee802frame154_dump( frame );
-			led_toggle( LED_YELLOW );
+			led_toggle( LED_RED );
         }
         else
             break;
-/*
-		len = cc2420_read( cc, opf_buffer(opf), opf_size(opf), 0x00 );
-		if (len > 0)
-		{
-			 since cc2420_read() only copies the received data into "opf"'s internal 
-			 * buffer, we had to call opf_set_datalen() to tell "opf" how long the  
-			 * received data is.
-			 
-			opf_set_datalen( opf, len );
-			_output_openframe( opf, &g_uart );
-			led_toggle( LED_RED );
-        }
-		else 
-			break;
-*/
 	}
+	g_listener_running = false;
 }
 #endif
-
-

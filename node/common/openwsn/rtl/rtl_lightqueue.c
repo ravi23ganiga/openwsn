@@ -96,6 +96,8 @@ inline void * lwque_getbuf( TiLightQueue * que, uint8 idx )
 {
 	rtl_assert( idx < que->capacity );
 	return (char*)que + sizeof(TiLightQueue) + (idx * que->itemsize);
+	
+	
 }
 
 /* lwque_front()
@@ -105,6 +107,8 @@ inline void * lwque_getbuf( TiLightQueue * que, uint8 idx )
 inline void * lwque_front( TiLightQueue * que )
 {
 	void * item = (que->count > 0) ? lwque_getbuf(que,que->front) : NULL;
+	
+    
 	return item;
 }
 
@@ -125,9 +129,8 @@ inline void * lwque_rear( TiLightQueue * que )
 inline bool lwque_pushback( TiLightQueue * que, void * item )
 {
 	bool ret;
-
 	if (que->count == 0)
-	{
+	{   
 		que->rear = 0;
 		que->front = 0;
 		memmove( lwque_getbuf(que,0), item, que->itemsize );

@@ -30,7 +30,7 @@
 #include <avr/wdt.h> 
 #include "../../common/openwsn/hal/hal_foundation.h"
 #include "../../common/openwsn/hal/hal_cpu.h"
-#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
 #include "../../common/openwsn/hal/hal_interrupt.h"
 #include "../../common/openwsn/hal/hal_led.h"
 #include "../../common/openwsn/hal/hal_assert.h"
@@ -62,10 +62,10 @@ void echonode(void)
 	HAL_SET_PIN_DIRECTIONS();
 	wdt_disable();
 
-	led_open();
-	led_off( LED_ALL );
+	led_on(LED_ALL);
+	
 	hal_delay( 500 );
-	led_on( LED_RED );
+	led_off( LED_ALL );
 
 	cc = cc2420_construct( (void *)(&g_cc), sizeof(TiCc2420Adapter) );
 	uart = uart_construct( (void *)(&g_uart), sizeof(TiUartAdapter) );
@@ -83,12 +83,15 @@ void echonode(void)
 	hal_enable_interrupts();
  
 	while(1) 
-	{
+	{   
+	   
 		cc2420_evolve( cc );
 		len = cc2420_read( cc, (char*)(&buf[0]), BUF_SIZE, 0x00 );
 		if (len > 6)
 		{
 			uart_putchar( uart, '>' );
+            
+           
 
 			// switch source address and destination address
 			_change(buf[3], buf[7]);

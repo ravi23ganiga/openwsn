@@ -23,7 +23,7 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-http://blog.chinaunix.net/u3/94369/showart_1910373.html
+
 
 /** 
  * time library
@@ -37,10 +37,224 @@ http://blog.chinaunix.net/u3/94369/showart_1910373.html
  * high percision storage and processing even to 1 milli-seconds, and it can also 
  * extend to us.
  */
-typedef uint8  TiTime8;
-typedef uint16 TiTime16;
+typedef uint8  TiTime8;  TiSystemTime8  epoch tick  tm8  rtl_systime  rtl_caltime  rtl  sysclock
+typedef uint16 TiTime16;  TiSystemTime32 
 typedef uint32 TiTime32;
 typedef uint64 TiTime64;
+
+/** By default, the system time type is define as time64 */
+#define TiSystemTime TiTime64
+
+/*******************************************************************************
+ * TiTime8 operations
+ ******************************************************************************/
+
+inline void tm8_reset( TiTime8 * var, uint8 value ) {*var=value;}
+inline void tm8_clear( TiTime8 * var ) {*var=0;}
+
+inline TiTime8 * tm8_plus( TiTime8 * var1, TiTime8 * var2 )
+{
+	(*var1) += (*var2);
+	return var1;
+}
+
+inline TiTime8 * tm8_minus( TiTime8 * var1, TiTime8 * var2 ) 
+{
+	(*var1) -= (*var2);
+	return var1;
+}
+
+inline bool tm8_forward( TiTime8 * var, uint8 interval )
+{
+	// return false to indicate overflow during forward
+	if (*var + interval < *var)
+		return false;
+	else
+		return true;
+}
+
+inline bool tm8_backward( TiTime8 * var, uint8 interval )
+{
+	// return false to indicate overflow during forward
+	if (*var - interval > *var)
+		return false;
+	else
+		return true;
+}
+
+/*******************************************************************************
+ * TiTime64 operations
+ ******************************************************************************/
+
+inline void tm64_reset( TiTime64 * var, uint64 value ) {*var=value;}
+inline void tm64_clear( TiTime64 * var ) {*var=0;}
+
+inline TiTime64 * tm8_plus( TiTime64 * var1, TiTime64 * var2 )
+{
+	(*var1) += (*var2);
+	return var1;
+}
+
+inline TiTime64 * tm64_minus( TiTime64 * var1, TiTime64 * var2 ) 
+{
+	(*var1) -= (*var2);
+	return var1;
+}
+
+inline bool tm64_forward( TiTime64 * var, uint64 interval )
+{
+	// return false to indicate overflow during forward
+	if (*var + interval < *var)
+		return false;
+	else
+		return true;
+}
+
+inline bool tm64_backward( TiTime64 * var, uint64 interval )
+{
+	// return false to indicate overflow during forward
+	if (*var - interval > *var)
+		return false;
+	else
+		return true;
+}
+
+/**
+ * TiCalendarTime / TiCalTime
+ *
+ * @reference
+ *  SYSTEMTIME type in windows API
+ */ 
+typedef struct{
+  uint16 year;
+  uint8  month;
+  int8 mday;
+  int8 wday;
+  int8 yday;
+  int8  day;
+  uint8  hour;
+  uint8  min;
+  uint8  sec;
+  uint16 msec;
+  uint16 usec;
+}TiCalTime; 
+
+caltime_clear( TiCalTime * caltime );
+caltime_parse( TiCalTime * caltime, TiSystemTime * tm )
+caltime_assemble( TiCalTime * caltime, TiSystemTime * tm )
+caltime_plus( TiCalTime * t1, TiCalTime * t2 )
+caltime_minus( TiCalTime * t1, TiCalTime * t2 )
+caltime_forward_sec( TiCalTime * caltime, uint16 sec )
+caltime_backward_sec( TiCalTime * caltime, uint16 sec )
+caltime_forward_msec( TiCalTime * caltime, uint16 msec )
+caltime_backward_msec( TiCalTime * caltime, uint16 msec )
+caltime_compare( TiCalTime * t1, TiCalTime * t2 )
+caltime_lessthan( TiCalTime * t1, TiCalTime * t2 )
+caltime_greaterthan( TiCalTime * t1, TiCalTime * t2 )
+caltime_lessthanequal( TiCalTime * t1, TiCalTime * t2 )
+caltime_greaterthanequal( TiCalTime * t1, TiCalTime * t2 )
+
+/* TiCalTime
+ * 
+ * 10 byte representation of accurate timestamp
+ * [year 2B][month 1B][day 1B][hour 1B][min 1B][sec 1B][msec 2B][usec 2B]
+ * 
+ * control: highest 2bit. always 00
+ * year: 0-9999 14b 
+ * reserved 4b
+ * month: 1-12, 4b
+ * day: 1-31: 5b
+ * hour: 0-23: 5b
+ * min: 6b
+ * sec: 6b
+ * msec: 0-999, 10b  (or using the highest 6b to represent usec. each unit represent 2^4=16us)
+ * us: 0-999, 10b
+ */
+caltime_pack( TiCalTime * t, char * buf, uint8 size=10 ); 
+caltime_unpack( TiCalTime * t, char * buf, uint8 size=10 ); 
+
+
+
+/*
+void settimezone(int8 offset);
+get_worldtime( TiWallTime * tm );
+get_walltime( TiWallTime * tm );
+
+walltime_current  wallclock
+walltime_reset
+walltime_forward
+walltime_backward
+walltime_timezone
+walltime_set_timezone
+walltime_differ
+
+typedef struct{
+  uint16 year;
+  uint8  month;
+  uint8  day;
+  uint8  hour;
+  uint8  min;
+  uint8  sec;
+      //int tm_mday;
+      //int tm_wday;
+      //int tm_yday;
+  uint16 msec;
+}TiCalTime; TiWallTime  TiClockTime
+
+
+systime_current
+systime_reset
+systime_forward
+systime_backward
+systime_diff
+
+walltime * gmtime( TiTime, walltime )
+
+clocktime
+
+
+
+
+
+
+
+#define TiTime TiTime64
+
+typedef uint64 TiTime64
+
+TiSystemTime
+
+rtl_systime.h
+rtl_time
+rtl_rtctime
+
+TiDateTime
+
+syncwith( TiTime64 * tm, uint16 ratio, uint16 drift )
+
+TiTime64
+
+
+
+
+
+
+
+
+
+time.h函数介绍,2009, http://blog.chinaunix.net/u3/94369/showart_1910373.html
+
+
+hardware time   TiDeviceTime
+hardware indepent time   TiSystemTime 都是TiTme64类型 在device time和systime之间要高性能变换
+calendar time (hardware independent)  TiWallTime， there're two variables, g_localtime, g_gmtime, 
+	一个是相对的，一个是绝对的 used by rtc
+timebuf for transmission TiTimeBuf (binary format, or ascii format, and can be extendable, from ns to even millions years)
+还有一个给os专用的ticker, 考虑到real time特性，ticker应该从systime中产生，并且给出明确的drift
+
+
+Timer: hardware driven without interrupt because interrupt can be disabled
+or software interrupt drive (time drift after a long time)
 
 
 #ifdef CONFIG_PLATFORM16
@@ -61,62 +275,6 @@ typedef struct{
 
 #define TiTimeBuffer TiTimeStamp
 typedef unsigned char[10] TiTimeStamp;
-
-/* TiCalTime
- * 
- * 10 byte representation of accurate timestamp
- * [year 2B][month 1B][day 1B][hour 1B][min 1B][sec 1B][msec 2B][usec 2B]
- * 
- * control: highest 2bit. always 00
- * year: 0-9999 14b 
- * reserved 4b
- * month: 1-12, 4b
- * day: 1-31: 5b
- * hour: 0-23: 5b
- * min: 6b
- * sec: 6b
- * msec: 0-999, 10b  (or using the highest 6b to represent usec. each unit represent 2^4=16us)
- * us: 0-999, 10b
- */
-
-typedef struct{
-  uint16 year;
-  uint8  month;
-  uint8  day;
-  uint8  hour;
-  uint8  min;
-  uint8  sec;
-      //int tm_mday;
-      //int tm_wday;
-      //int tm_yday;
-  uint16 msec;
-}TiCalTime; TiWallTime  TiClockTime
-void settimezone(int8 offset);
-get_worldtime( TiWallTime * tm );
-get_walltime( TiWallTime * tm );
-
-walltime_current  wallclock
-walltime_reset
-walltime_forward
-walltime_backward
-walltime_timezone
-walltime_set_timezone
-walltime_differ
-walltime_compare
-walltime_lessthan
-walltime_greaterthan
-walltime_lessthanequal
-
-systime_current
-systime_reset
-systime_forward
-systime_backward
-systime_diff
-
-walltime * gmtime( TiTime, walltime )
-
-clocktime
-
 
 
 
@@ -310,3 +468,5 @@ int main()
     printf("Current time=%s",asctime(localtime(&td)));
     return 0;
 }
+
+*/

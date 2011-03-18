@@ -1,5 +1,19 @@
 current version features
 
+2011.02
+- add next generation network I/O architecture (svc_nio_xxx) with some basic components.
+- add svc_nio_acceptor (tested)
+- add svc_nio_tinymac (tested)
+- buf fix: rtl_framequeue
+- add example: svc_nio_tinymac
+
+2010.12
+- add new network i/o architecture (svc_nio_acceptor, svc_nio_service, svc_nio_dispatcher)
+
+2010.11
+- upgrade TiRtcAdapter (hal_rtc)
+- correct bugs in rtl_debugio
+
 2010.08.23
 - improved TiSimpleAloha (svc_simplealoha)
 - add TiTinyMAC (svc_tinymac)

@@ -55,7 +55,8 @@
 #include "../hal/hal_uart.h"
 #include "../hal/hal_debugio.h"
 #include "svc_foundation.h"
-#include "svc_aloha.h"
+//#include "svc_aloha.h"  //todo
+#include "svc_nio_aloha.h"
 
 #ifndef CONFIG_MAX_FLOOD_COUNT 
   #define CONFIG_MAX_FLOOD_COUNT 5

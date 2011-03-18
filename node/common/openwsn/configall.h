@@ -55,6 +55,8 @@
  * @modified by zhangwei on 20100712
  *  - intx/uintx are reconfigurable data types if the compiler support them. 
  *    in the past, they're bounded to the CPU architecture. 
+ * @modified by zhangwei on 20110301
+ *  - add warning alert for uintx. you cannot define it as uint8 or mistake encountered.
  *
  *****************************************************************************/
 
@@ -196,6 +198,16 @@
  * 8bit MCUs, intx/uintx are 8 bit, and for ARM, they're usually 32bit. however, 
  * this isn't always. you can still redefine uintx as uint16 on 8bit ATmega128 MCU
  * unless the compiler support them. 
+ */
+ 
+/*
+ * @warning
+ * - considering soome components uses uintx to respresent memory block size, you 
+ * cannot define uintx as uint8. The valid definition is only by uint16 and uint32!!!
+ * If you define uintx as uint8, a lot of objects such as TiFrame will encounter 
+ * running mistake.
+ *   You needn't worry about uint16 on 8bit MCUs because almost all 8bit MCU support
+ * 16bit integer by hardware or software. You can freely use int16 on these MCUs.
  */
 
 /* for atmega128 MCU and avr-gcc (WinAVR or AVR Studio)

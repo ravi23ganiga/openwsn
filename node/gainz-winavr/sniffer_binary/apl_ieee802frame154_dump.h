@@ -8,10 +8,6 @@
 #include "../../common/openwsn/rtl/rtl_frame.h"
 #include "../../common/openwsn/rtl/rtl_debugio.h"
 
-#undef CONFIG_ASCII_OUTPUT
 void ieee802frame154_dump( TiFrame * f );
-
-// todo: should be 
-// void _output_frame( TiFrame * f );
 
 #endif

@@ -53,3 +53,9 @@
  rxque and txque: stream based 
  
  
+ 
+ process( TNioSession * session )
+ session provides two queue for send/recv
+ 
+ 
+ 
