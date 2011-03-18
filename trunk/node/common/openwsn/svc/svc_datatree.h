@@ -26,7 +26,7 @@
 
 #ifndef _SVC_DATATREE_H_4576_
 #define _SVC_DATATREE_H_4576_
-/******************************************************************************
+/*******************************************************************************
  * svc_datatree
  * This module implements a tree based data collection multi-hop protocol and service
  * for ad-hoc network. The module mainly includes three parts:
@@ -48,7 +48,31 @@
  *    It's different from the sequence id in MAC layer's 802.15.4 MAC frame format.
  *    The sequence id in DTP header is actually an identifier to distinguish 
  *    different request and response packets.
- *****************************************************************************/
+ ******************************************************************************/
+ 
+/*
+ * reference
+ * - The Collection Tree Protocol (CTP), http://www.tinyos.net/tinyos-2.x/doc/html/tep123.html
+ * - The Collection Tree Protocol (CTP), http://www.tinyos.net/tinyos-2.x/doc/txt/tep123.txt
+ * - Collection, http://www.tinyos.net/tinyos-2.x/doc/html/tep119.html
+ * - Network Protocols, http://docs.tinyos.net/index.php/Network_Protocols
+ */
+ 
+/* The following two macros should be defined before including "rtl_cache" in order
+ * to be effective in rtl_cache module. Or else the rtl_cache will use its internal
+ * configurations.
+ */
+#ifndef CONFIG_DTP_CACHE_CAPACITY
+  #define CONFIG_DTP_CACHE_CAPACITY 8
+#endif
+
+#define CONFIG_DTP_CACHE_MAX_LIFETIME 8
+
+#ifndef CONFIG_DTP_MAX_COUNT 
+  #define CONFIG_DTP_MAX_COUNT 5
+#endif
+
+ 
 
 #define TiDTP TiDataTreeNetwork
 
@@ -92,13 +116,20 @@
  * 
  * DTP Packet := [DTP Header 8B+mB] [DTP Payload nB]
  * 
+ * DTP Header := [DTP Protocol Identifier 1B][Sequence Id 1B][Destination Address 2B][Source Address 2B][Command and Control 1B]
+ *               [Hop Count 1B][Maximum Hop Count 1B] [Path Descriptor Count 1B] 
+ *               [Path Description m byte]
+ *               The length of path description = value of [Path Description Count] * 2
+ *
  * DTP Header := [DTP Protocol Control 1B][Sequence Id 1B][Destination Address 2B][Source Address 2B]
  *               [Hop Count 1B][Maximum Hop Count 1B] [Path Description Count 1B] 
  *               [Path Description  m byte]
  *               The length of path description = value of [Path Description Count] * 2
  * DTP Payload := [char based array]
  * 
- * DTP Protocol Control Byte := [b7,...b0]
+ * Detail Description about the DTP Header:
+ * DTP Protocol Identifier: always 0x33
+ * DTP Command and Control Byte := [b7,...b0]
  *   b1 b0  packet command type. 
  *      0x00 MAINTAIN REQUEST
  *      0x01 MAINTAIN RESPONSE 
@@ -137,6 +168,8 @@
 #define DTP_MAINTAIN_RESPONSE           0x01 
 #define DTP_DATA_REQUEST                0x02 
 #define DTP_DATA_RESPONSE               0x03
+
+#define DTP_MAX_FRAME_SIZE 128
 
 #define DTP_MAX_TX_TRYTIME              0x1FF
 
@@ -180,10 +213,51 @@
 #define DTP_STATE_RECVING 5
 #define DTP_STATE_SENDING 6
 
-
 #define TiDTP TiDataTreeNetwork
 
 #define dtp_send(net,opf,option) dtp_unicast((net),(opf),(option))
+
+
+
+/**
+ * _TiDtpCacheItem and _TiDtpCache
+ * The cache is used inside flood component to improve the flood performance. In 
+ * order to shrink the memory used by the cache, it does only put the meta information 
+ * of a frame into the cache instead of put all the frame content into the cache. 
+ * 
+ * _TiDtpCache is implemented as some macros based on the TiCache component, which 
+ * is already provided in module "rtl_cache".
+ * 
+ * _TiDtpCacheItem is used to save the meta information of a frame.
+ * 
+ * @attention
+ * CONFIG_FLOOD_CACHE_CAPACITY 
+ * This macro is used to configure the cache capacity. Suggested values are 4-8. 
+ * Attention don't consume all the SRAM inside the MCU. Larger value is better to 
+ * improve the performance of the flood component, but the MCU may not have enough 
+ * memory as you hoped.
+ */
+
+/* lifetime = 0 means this is an empty item in the cache. The bigger the lifetime, 
+ * the newer the lifetime.
+ */
+typedef struct{
+	uint16				lifetime;
+	uint16				panto;
+	uint16				shortaddrto;
+	uint16				panfrom;
+	uint16				shortaddrfrom;
+	uint8				seqid;
+}_TiDtpCacheItem;
+
+#define DTP_CACHE_ITEMSIZE sizeof(_TiDtpCacheItem)
+#define DTP_CACHE_HOPESIZE CACHE_HOPESIZE(DTP_CACHE_ITEMSIZE,CONFIG_DTP_CACHE_CAPACITY)
+
+#define _TiDtpCache TiCache
+#define dtp_cache_open(mem,memsize) cache_open(mem,memsize,DTP_CACHE_ITEMSIZE,CONFIG_DTP_CACHE_CAPACITY)
+#define dtp_cache_close(ca) cache_close(ca)
+#define dtp_cache_hit(ca,item,pidx) cache_hit(ca,item,DTP_CACHE_ITEMSIZE,pidx)
+#define dtp_cache_visit(ca,item) cache_visit(ca,item,DTP_CACHE_ITEMSIZE)
 
 
 /* @todo 
@@ -225,6 +299,7 @@
 typedef struct{
 	uint8               state;
 	uint8               option;
+	TiNioAcceptor *     nac;
 	uint16              pan;
 	uint16              root;
 	uint16		        parent;
@@ -235,29 +310,31 @@ typedef struct{
 //	uint16				panfrom;
 	TiAloha *			mac;
 	uint16              txtrytime;
-	TiOpenFrame * 		txque;
-	TiOpenFrame *		rxque;
-	TiOpenFrame *       rxbuf;
+	TiFrame * 			txque;
+	TiFrame *			rxque;
+	TiFrame *       	rxbuf;
 	uint8               request_id; 
 	uint8               response_id;
 	TiFunEventHandler   listener;
 	void *              lisowner;
-	char                opf1[ OPF_SUGGEST_SIZE ];
-	char                opf2[ OPF_SUGGEST_SIZE ];
-	char                opf3[ OPF_SUGGEST_SIZE ];
+	char                txque_mem[ FRAME_HOPESIZE(DTP_MAX_FRAME_SIZE) ];
+	char                rxque_mem[ FRAME_HOPESIZE(DTP_MAX_FRAME_SIZE) ];
+	char                rxbuf_mem[ FRAME_HOPESIZE(DTP_MAX_FRAME_SIZE) ];
 	char                frame_feature[6];
-	TiCache*            cache;
-	char                cachemem[ CACHE_HOPESIZE(DTP_HEADER_SIZE(CONFIG_DTP_DEF_MAX_HOPCOUNT), CONFIG_DTP_CACHE_CAPACITY) ];
+	_TiDtpCache *	    cache;
+	char                cache_mem[ DTP_CACHE_HOPESIZE ];
 }TiDataTreeNetwork;
 
-/* dtp_open()
+TiDataTreeNetwork * dtp_construct( void * mem, uint16 size );
+void dtp_destroy( TiDataTreeNetwork * net );
+
+/**
+ * dtp_open()
  *	option: to control whether the current node should be initialized as general 
  * sensor node or gateway node. The default settings is 0x00 which means the DTP
  * will be initialized as sensor mode.
  */
-TiDataTreeNetwork * dtp_construct( void * mem, uint16 size );
-void dtp_destroy( TiDataTreeNetwork * net );
-TiDataTreeNetwork * dtp_open( TiDataTreeNetwork * net, TiAloha * mac, uint16 localaddress, 
+TiDataTreeNetwork * dtp_open( TiDataTreeNetwork * net, TiNioAcceptor * nac, TiAloha * mac, uint16 localaddress, 
 	TiFunEventHandler listener, void * lisowner, uint8 option );
 void dtp_close( TiDataTreeNetwork * net );
 
@@ -268,7 +345,7 @@ void dtp_close( TiDataTreeNetwork * net );
  * only the receiver node will accept this frame. The other nodes will discard 
  * it because the destination address isn't match.
  */
-uint8 dtp_fdsendto( TiDataTreeNetwork * net, TiOpenFrame * opf, uint8 option );
+uint8 dtp_fdsendto( TiDataTreeNetwork * net, TiFrame * frame, uint8 option );
 
 
 /* dtp_broadcast()
@@ -277,32 +354,30 @@ uint8 dtp_fdsendto( TiDataTreeNetwork * net, TiOpenFrame * opf, uint8 option );
  * In most cases, the frame can reach every node in the network. But it doesn't 
  * guarantee this. 
  */
-uint8 dtp_broadcast( TiDataTreeNetwork * dtp, TiOpenFrame * opf, uint8 option );
+uint8 dtp_broadcast( TiDataTreeNetwork * dtp, TiFrame * frame, uint8 option );
 
 
 /* dtp_multicast()
- * multicast a frame in a tree. The root node of the tree is the destination node
- * specfied inside the opf. 
+ * multicast a frame in a sub-tree. The root node of the sub-tree is the destination 
+ * node specfied inside the frame. 
  * 
  * different to the broadcast(), the multicast() actually sends the frame to the 
  * multicast tree root along the tree edges. In most cases, the frame should be 
  * able to reach every node in the sub tree, but no guarantee about this.
  */
-uint8 dtp_multicast( TiDataTreeNetwork * dtp, TiOpenFrame * opf, uint8 option );
+uint8 dtp_multicast( TiDataTreeNetwork * dtp, TiFrame * frame, uint8 option );
 
 
 /* Send a frame to a specific node(unicast). The network will transmit frames along the edges
  * in the tree. No broadcast is used. It doesn't guarantee the frame reach its destination. 
  */
-uint8 dtp_unicast( TiDataTreeNetwork * net, TiOpenFrame * opf, uint8 option );
-uint8 dtp_unicast_leaftoroot( TiDataTreeNetwork * net, TiOpenFrame * opf, uint8 option );
-uint8 dtp_unicast_roottoleaf( TiDataTreeNetwork * net, TiOpenFrame * opf, uint8 option );
+uint8 dtp_unicast( TiDataTreeNetwork * net, TiFrame * frame, uint8 option );
+
+uint8 dtp_unicast_leaftoroot( TiDataTreeNetwork * net, TiFrame * frame, uint8 option );
+uint8 dtp_unicast_roottoleaf( TiDataTreeNetwork * net, TiFrame * frame, uint8 option );
 
 /* Check for arrived frames, no matter who send them. */
-uint8 dtp_recv( TiDataTreeNetwork * dtp, TiOpenFrame * opf, uint8 option );
-
-uint8 dtp_send_request( TiDataTreeNetwork * net, TiOpenFrame * opf, uint8 max_hopcount );
-uint8 dtp_send_response( TiDataTreeNetwork * net, TiOpenFrame * opf, uint8 max_hopcount );
+uint8 dtp_recv( TiDataTreeNetwork * dtp, TiFrame * frame, uint8 option );
 
 /* Build the tree covering all the nodes in the network by flooding. 
  *

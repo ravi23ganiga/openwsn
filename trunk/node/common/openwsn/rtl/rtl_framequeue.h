@@ -24,15 +24,14 @@
  *
  ******************************************************************************/
 #ifndef _RTL_FRAMEQUEUE_H_6788_
-#ifndef _RTL_FRAMEQUEUE_H_6788_
-
+#define _RTL_FRAMEQUEUE_H_6788_
 /*******************************************************************************
  * @author zhangwei on 2007.03.02
  * @description
  *  Frame queue. Each item in the queue is an TiFrame object.
  * 
  * @status
- *  - Finished developing. Not fully tested yet. 
+ *  - Released.
  * 
  * @history
  * @modified by zhangwei on 2007.03.02
@@ -41,26 +40,44 @@
  *  - replace TiOpenFrame with TiFrame.  The TiFrame can be regarded as an upgraded
  *    version of TiOpenFrame. The most significant feature of TiFrame is that it
  *    support multilayer frame/packet operations.
+ * @modified by zhangwei on 2010.12.12
+ *  - revision. 
+ * @modified by zhangwei on 2011.02.25
+ *  - bug fixed. the original memory management has error.
+ * @modified by zhangwei on 2011.03.05
+ * 	- bug fix. The original fmque_construct(...) is defined as:
+ *      	return lwque_construct( buf, size, sizeof(TiFrame) );
+ *    it should be:
+ *      	return lwque_construct( buf, size, FRAMEQUEUE_ITEMSIZE );
+ *
  ******************************************************************************/
   
 #include "rtl_foundation.h"
-//#include "rtl_openframe.h"   
 #include "rtl_frame.h"   
 #include "rtl_lightqueue.h"
 
-//#define TiOpfQueue TiFrameQueue
-//#define OPFQUEUE_HOPESIZE(capa) FRAMEQUEUE_HOPESIZE(capa) 
+#ifdef CONFIG_DEBUG
+#include "rtl_dumpframe.h"
+#include "rtl_debugio.h"
+#endif
 
-#define FRAMEQUEUE_HOPESIZE(capacity) (sizeof(TiFrameQueue) + sizeof(TiFrame)*(capacity))
+/* Since this software package is designed to be compatible with IEEE 802.15.4 protocol,
+ * the frame queue's item must be large enough to hold one IEEE 802.15.4 frame. That'
+ * why we define FRAMEQUEUE_ITEMSIZE as FRAME_HOPESIZE(128). You can also define 
+ * FRAMEQUEUE_ITEMSIZE as other values if you can guarantee it can accept the longest
+ * frame. 
+ */ 
+#define FRAMEQUEUE_ITEMSIZE FRAME_HOPESIZE(128)
+#define FRAMEQUEUE_HOPESIZE(capacity) (sizeof(TiFrameQueue) + FRAMEQUEUE_ITEMSIZE*(capacity))
 #define TiFrameQueue TiLightQueue
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-inline TiFrameQueue * fmque_construct( void * buf, uintx size );
+inline TiFrameQueue * fmque_construct( void * buf, uintx size )
 {
-	return lwque_construct( buf, size, sizeof(TiFrame) );
+	return lwque_construct( buf, size, FRAMEQUEUE_ITEMSIZE );
 }
 
 inline void fmque_destroy( TiFrameQueue * que )
@@ -93,24 +110,47 @@ inline void * fmque_getbuf( TiFrameQueue * que, uintx idx )
 	return lwque_getbuf(que,idx);
 }
 
-inline void * fmque_front( TiFrameQueue * que )
+inline TiFrame * fmque_front( TiFrameQueue * que )
 {
 	return lwque_front(que);
 }
 
-inline void * fmque_rear( TiFrameQueue * que )
+inline TiFrame * fmque_rear( TiFrameQueue * que )
 {
 	return lwque_rear(que);
 }
 
 inline bool fmque_pushback( TiFrameQueue * que, TiFrame * item )
-{
+{   
+	#ifndef CONFIG_DEBUG    
 	return lwque_pushback(que,(void *)item);
+	#endif
+
+    #ifdef CONFIG_DEBUG
+	return lwque_pushback(que,(void *)item);
+
+	// the following source code is for debugging only. you should comment or
+	// eliminate them from the release version
+	//
+	/*
+	if (lwque_pushback(que,(void *)item))
+	{
+		dbc_putchar( 0xff );
+		dbc_putchar( que->itemsize);
+		dbc_putchar( 0xaa );
+		dbc_putchar( sizeof(TiFrame));
+		dbc_putchar( 0xcc );
+		dbc_putchar( que->count);
+		dbc_putchar( 0xee );
+		ieee802frame154_dump(lwque_getbuf(que,0));
+	}
+	*/
+	#endif
 }
 
 inline bool fmque_pushfront( TiFrameQueue * que, TiFrame * item )
 {
-	return lwque_pushfront(que,(void *)item;
+	return lwque_pushfront(que,(void *)item);
 }
 
 inline bool fmque_popfront( TiFrameQueue * que )
@@ -129,11 +169,10 @@ inline bool fmque_poprear( TiFrameQueue * que )
  */
 /* bool fmque_extend( TiFrameQueue * que, uintx newsize ); */
 
-
 #ifdef __cplusplus
 }
 #endif
 
-
 #endif /* _RTL_FRAMEQUEUE_H_6788_ */
+
 

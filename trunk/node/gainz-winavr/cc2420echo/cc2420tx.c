@@ -23,7 +23,8 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-/*****************************************************************************
+ 
+/*******************************************************************************
  * cc2420tx used with cc2420echo
  * This module will send frames periodically and try to receive the replied one.
  * The sending and receiving information will be output through UART.
@@ -41,22 +42,22 @@
  * @modified by zhangwei in 200908
  *	- improve the simple sender in the past. Now the program will switch to RX 
  *    mode after TX in order to receive the frame replyied by echo node.
- ****************************************************************************/ 
+ ******************************************************************************/ 
 
-#include "../common/hal/hal_configall.h"
+#include "../../common/openwsn/hal/hal_configall.h"
 #include <stdlib.h>
 #include <string.h>
 #include <avr/wdt.h>
-#include "../common/hal/hal_foundation.h"
-#include "../common/hal/hal_cpu.h"
-#include "../common/hal/hal_interrupt.h"
-#include "../common/hal/hal_led.h"
-#include "../common/hal/hal_assert.h"
-#include "../common/hal/hal_uart.h"
-#include "../common/hal/hal_cc2420.h"
-#include "../common/hal/hal_target.h"
-#include "../common/rtl/rtl_openframe.h"
-#include "../common/hal/hal_debugio.h"
+#include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/hal/hal_cpu.h"
+#include "../../common/openwsn/hal/hal_interrupt.h"
+#include "../../common/openwsn/hal/hal_led.h"
+#include "../../common/openwsn/hal/hal_assert.h"
+#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_cc2420.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
+#include "../../common/openwsn/rtl/rtl_openframe.h"
+#include "../../common/openwsn/hal/hal_debugio.h"
 
 #ifdef CONFIG_DEBUG
     #define GDEBUG
@@ -90,6 +91,7 @@ void sendnode(void)
 	TiOpenFrame * opf;
 
 	char * msg = "welcome to echo sender...";
+	char * failed_message = "checking for response failed\r\n";
 	uint8 i, total_length, seqid=0, option, len;
     uint16 fcf;
 
@@ -100,15 +102,18 @@ void sendnode(void)
 	led_on( LED_RED );
 	hal_delay( 500 );
 	led_off( LED_ALL );
-	dbo_open(0, 38400);
+	dbo_open( 38400);
 
 	cc = cc2420_construct( (void *)(&g_cc), sizeof(TiCc2420Adapter) );
 	uart = uart_construct( (void *)(&g_uart), sizeof(TiUartAdapter) );
 	uart_open( uart, 0, 38400, 8, 1, 0x00 );
 	uart_write( uart, msg, strlen(msg), 0x00 );
+   //todo
+	/*
+    opf = opf_construct( (void *)(&opfmem), sizeof(opfmem)
+    opf_open( opf, OPF_DEF_FRAMECONTROL_DATA, OPF_DEF_OPTION );*/
 
-    opf = opf_construct( (void *)(&opfmem), sizeof(opfmem) );
-    opf_open( opf, OPF_DEF_FRAMECONTROL_DATA, OPF_DEF_OPTION );
+	opf = opf_open( (void *)(&opfmem[0]), sizeof(opfmem), OPF_DEF_FRAMECONTROL_DATA, OPF_DEF_OPTION );
 
 
 	cc2420_open( cc, 0, NULL, NULL, 0x00 );
@@ -166,7 +171,9 @@ void sendnode(void)
 
 
 		// try receive the frame replied from the echo node
-		while (1)
+		bool failed;
+		failed = true;
+		for (i=0; i<0x0FFF; i++)
         {
             len = cc2420_recv(cc, (char*)(opf_buffer(opf)), 127, 0x00 );
 			if (len > 0)
@@ -176,11 +183,17 @@ void sendnode(void)
 				led_off( LED_YELLOW );
 				dbo_putchar( 'R' );
 				_output_openframe( opf, &g_uart );
+				failed = false;
                 break;
             }
             hal_delay(10);
         }
-
+		
+		if (failed);
+		{
+			dbc_write( failed_message, strlen(failed_message) );
+		}
+	
 		cc2420_evolve( cc );
 
 		// attention

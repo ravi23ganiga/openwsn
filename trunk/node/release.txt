@@ -34,8 +34,7 @@ The next release will contain more bug fix, protocol improvements and extensions
 2010-08-26
 =============================================================
 - support 4 MAC protocols: TinyMAC, SimpleAloha, Aloha, CSMA and MACA is in revision
-- upgraded to WinAVR 20100110
-.
+- upgraded to WinAVR 20100110.
 
 
 

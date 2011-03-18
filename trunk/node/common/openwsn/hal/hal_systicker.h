@@ -24,8 +24,8 @@
  *
  ******************************************************************************/
 
-#ifndef _HAL_SYSTIMER_H_3214_
-#define _HAL_SYSTIMER_H_3214_
+#ifndef _HAL_SYSTICKER_H_3214_
+#define _HAL_SYSTICKER_H_3214_
 
 
 #include "hal_configall.h"
@@ -97,5 +97,5 @@ bool systm_expired( TiSysTimer * timer );
 }
 #endif
 
-#endif /* _HAL_SYSTIMER_H_3214_ */
+#endif /* _HAL_SYSTICKER_H_3214_ */
 

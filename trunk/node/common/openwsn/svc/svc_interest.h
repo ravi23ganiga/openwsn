@@ -27,6 +27,11 @@
 #ifndef _SVC_INTEREST_4768_
 #define _SVC_INTEREST_4768_
 
+/**
+ * This module implements the "interest" object required by the Directed Diffusion 
+ * protocol (in module "svc_dd").
+ */
+
 #define DD_CTRL_REQUEST 0x01
 #define DD_CTRL_RESPONSE 0x02
 

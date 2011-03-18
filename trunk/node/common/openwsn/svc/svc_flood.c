@@ -65,9 +65,9 @@
 #include "svc_aloha.h"
 #include "svc_flood.h"
 
-inline static bool _flood_cache_hit( TiFloodNetwork * net, TiOpenFrame * opf, uint8 * idx );
-inline static uint8 _flood_cache_displace( TiFloodNetwork * net, TiOpenFrame * opf, uint8 idx );
-inline static uint8 _flood_cache_visit( TiFloodNetwork * net, TiOpenFrame * opf );
+inline static bool _flood_cache_hit( TiFloodNetwork * net, TiOpenFrame * frame, uint8 * idx );
+inline static uint8 _flood_cache_displace( TiFloodNetwork * net, TiOpenFrame * frame, uint8 idx );
+inline static uint8 _flood_cache_visit( TiFloodNetwork * net, TiOpenFrame * frame );
 inline static void _switch_ptr( TiOpenFrame **ptr1, TiOpenFrame ** ptr2 );
 
 TiFloodNetwork * flood_construct( void * mem, uint16 size )
@@ -138,7 +138,7 @@ void flood_close( TiFloodNetwork * net )
 /* Broadcast a frame in the network. In most cases, the frame should be able to 
  * reach every node in the network, but no guarantee about this.
  */
-uint8 flood_broadcast( TiFloodNetwork * net, TiOpenFrame * opf, uint8 option )
+uint8 flood_broadcast( TiFloodNetwork * net, TiOpenFrame * frame, uint8 option )
 {
 	uint8 count=0;
 	
@@ -148,7 +148,7 @@ uint8 flood_broadcast( TiFloodNetwork * net, TiOpenFrame * opf, uint8 option )
 	if (opf_empty(net->txque))
 	{     
 	
-		count = opf_copyfrom( net->txque, opf ); 
+		count = opf_copyfrom( net->txque, frame ); 
 		if (opf_parse( net->txque ,0))
 		{    
 			opf_set_panto( net->txque, net->panto );
@@ -171,7 +171,7 @@ uint8 flood_broadcast( TiFloodNetwork * net, TiOpenFrame * opf, uint8 option )
 /* Send a frame to a specific node. This function is almost the same as the flood_broadcast(). 
  * However, the receiver will discard this frame if the destination isn't match.
  */
-uint8 flood_send( TiFloodNetwork * net, TiOpenFrame * opf, uint8 option )
+uint8 flood_send( TiFloodNetwork * net, TiOpenFrame * frame, uint8 option )
 {
 	uint8 count=0;
 
@@ -180,7 +180,7 @@ uint8 flood_send( TiFloodNetwork * net, TiOpenFrame * opf, uint8 option )
 	 */
 	if (opf_empty(net->txque))
 	{
-		count = opf_copyfrom( net->txque, opf ); 
+		count = opf_copyfrom( net->txque, frame ); 
 		if (opf_parse( net->txque ,0)) //why is 0??   what's meaning  about len
 		{
 			opf_set_panto( net->txque, net->panto );
@@ -200,16 +200,16 @@ uint8 flood_send( TiFloodNetwork * net, TiOpenFrame * opf, uint8 option )
 }
 
 /* Check for arrived frames, no matter who send them. The frame will be returned 
- * through the parameter "opf" only when the frame's destination matches the current 
+ * through the parameter "frame" only when the frame's destination matches the current 
  * node. The other frames will be forwarded or discarded.
  */
-uint8 flood_recv( TiFloodNetwork * net, TiOpenFrame * opf, uint8 option )
+uint8 flood_recv( TiFloodNetwork * net, TiOpenFrame * frame, uint8 option )
 {
 	uint8 count=0;
 
 	if (!opf_empty(net->rxque))
 	{
-		count = opf_copyto( net->rxque, opf ); 
+		count = opf_copyto( net->rxque, frame ); 
 		opf_clear( net->rxque );
 	}
   
@@ -387,7 +387,7 @@ void flood_evolve( void * netptr, TiEvent * e )
  *                           the item index in the cache.
  *  false                    not hitted. *idx is undefined in this case. 
  */
-bool _flood_cache_hit( TiFloodNetwork * net, TiOpenFrame * opf, uint8 * idx )
+bool _flood_cache_hit( TiFloodNetwork * net, TiOpenFrame * frame, uint8 * idx )
 {
 	bool found=false;;
 	uint8 i;
@@ -400,9 +400,9 @@ bool _flood_cache_hit( TiFloodNetwork * net, TiOpenFrame * opf, uint8 * idx )
 	for (i=0; i<CONFIG_FLOOD_CACHE_SIZE; i++)
 	{
 		item = &(net->cache[i]);
-		if ((item->panto == opf_panto(opf)) && (item->shortaddrto == opf_shortaddrto(opf))
-			&& (item->panfrom == opf_panfrom(opf)) && (item->shortaddrfrom == opf_shortaddrfrom(opf))
-			&& (item->seqid == opf_sequence(opf)) )
+		if ((item->panto == opf_panto(frame)) && (item->shortaddrto == opf_shortaddrto(frame))
+			&& (item->panfrom == opf_panfrom(frame)) && (item->shortaddrfrom == opf_shortaddrfrom(frame))
+			&& (item->seqid == opf_sequence(frame)) )
 		{
 			found = true;
 			if (idx != NULL)
@@ -415,11 +415,11 @@ bool _flood_cache_hit( TiFloodNetwork * net, TiOpenFrame * opf, uint8 * idx )
 	if (!found)
 	{
 		item->lifetime = CONFIG_FLOOD_CACHE_MAX_LIFETIME;
-		item->panto = opf_panto(opf);
-		item->shortaddrto = opf_shortaddrto(opf);
-		item->panfrom = opf_panfrom(opf);
-		item->shortaddrfrom = opf_shortaddrfrom(opf);
-		item->seqid = opf_sequence(opf);
+		item->panto = opf_panto(frame);
+		item->shortaddrto = opf_shortaddrto(frame);
+		item->panfrom = opf_panfrom(frame);
+		item->shortaddrfrom = opf_shortaddrfrom(frame);
+		item->seqid = opf_sequence(frame);
 	}
 
 	return found;
@@ -432,7 +432,7 @@ bool _flood_cache_hit( TiFloodNetwork * net, TiOpenFrame * opf, uint8 * idx )
  * @return 
  *	the index of the new frame in the cache.
  */
-uint8 _flood_cache_displace( TiFloodNetwork * net, TiOpenFrame * opf, uint8 idx )
+uint8 _flood_cache_displace( TiFloodNetwork * net, TiOpenFrame * frame, uint8 idx )
 {
 	uint8 replace=0, i;
 	_TiFloodCacheItem * item;
@@ -458,11 +458,11 @@ uint8 _flood_cache_displace( TiFloodNetwork * net, TiOpenFrame * opf, uint8 idx 
 	}
 
 	item = &(net->cache[replace]);
-	item->panto = opf_panto(opf);
-	item->shortaddrto = opf_shortaddrto(opf);
-	item->panfrom = opf_panfrom(opf);
-	item->shortaddrfrom = opf_shortaddrfrom(opf);
-	item->seqid = opf_sequence(opf);
+	item->panto = opf_panto(frame);
+	item->shortaddrto = opf_shortaddrto(frame);
+	item->panfrom = opf_panfrom(frame);
+	item->shortaddrfrom = opf_shortaddrfrom(frame);
+	item->seqid = opf_sequence(frame);
 	item->lifetime = CONFIG_FLOOD_CACHE_MAX_LIFETIME;
 
 	return replace;
@@ -477,15 +477,15 @@ uint8 _flood_cache_displace( TiFloodNetwork * net, TiOpenFrame * opf, uint8 idx 
  *	true					when successfully found the item in the cache (hit the cache)
  *  false                   
  */
-uint8 _flood_cache_visit( TiFloodNetwork * net, TiOpenFrame * opf )
+uint8 _flood_cache_visit( TiFloodNetwork * net, TiOpenFrame * frame )
 {
 	uint8 i;
 	_TiFloodCacheItem * item;
 
-	if (_flood_cache_hit(net, opf, 0))
+	if (_flood_cache_hit(net, frame, 0))
 		return true;
 
-	_flood_cache_displace( net, opf, 0 );
+	_flood_cache_displace( net, frame, 0 );
 
 	for (i=0; i<CONFIG_FLOOD_CACHE_SIZE; i++)
 	{

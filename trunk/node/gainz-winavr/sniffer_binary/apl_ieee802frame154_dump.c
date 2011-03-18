@@ -21,11 +21,15 @@ void ieee802frame154_dump( TiFrame * f )
 			dbc_putchar( ':' );
 			dbc_write_n8toa( frame_startptr(f), len );
 			dbc_putchar( 0xFC );
+			dbc_putchar( '\r' );
+			dbc_putchar( '\n' );
 			}
 		else{
             // if parsing failed, then we also output the data
             dbc_putchar( 0xFC );
 			dbc_write_n8toa( frame_startptr(f), len );
+			dbc_putchar( '\r' );
+			dbc_putchar( '\n' );
 			}
 		}
 		 else{
@@ -33,35 +37,6 @@ void ieee802frame154_dump( TiFrame * f )
         dbc_putchar( 0xFB );
         dbc_putchar( 0xFB );
     }
-	//uint8 i;
-/*
-    // if the f structure contains an frame, then output it.
-	if (opf_datalen(f) > 0)
-	{   
-		dbc_putchar( '>' );
-	 	dbc_n8toa( f->datalen );
-
-		if (opf_parse(f, 0))
-		{
-            // if the frame parsing succeed, then output the whole frame.
-	        dbc_n8toa( *f->sequence );
-			dbc_putchar( ':' );
-			dbc_write_n8toa( (char*)&(f->buf[0]), f->buf[0]+1 );
-		}
-		else{
-	        dbc_putchar( 'X' );
-			dbc_putchar( ':' );
-			dbc_write_n8toa( (char*)&(f->buf[0]), f->datalen );
-		}
-		dbc_putchar( '\r' );
-		dbc_putchar( '\n' );
-	}
-    else{
-        // If the f structure doesn't contain frames, then output a '.' to indicate 
-        // the call of this function. However, this case rarely happens.
-        dbc_putchar( '.' );
-    }
-    */
 }
 #endif
 
@@ -103,40 +78,5 @@ void ieee802frame154_dump( TiFrame * f )
         dbc_putchar( 0xFB );
         dbc_putchar( 0xFB );
     }
-
-    /*
-    // if the f structure contains an frame, then output it.
-	if (opf_datalen(f) > 0)
-	{   
-		dbc_putchar( 0x88 );
-		dbc_putchar( 0x88 );
-	 	dbc_putchar( f->datalen );
-
-		if (opf_parse(f, 0))
-		{
-            // if the frame parsing succeed, then output the whole frame.
-	        dbc_putchar( *f->sequence );
-			dbc_putchar( 0x88 );
-			dbc_putchar( 0x88 );
-			dbc_write( (char*)&(f->buf[0]), f->buf[0]+1 );
-		}
-		else{
-            dbc_putchar( 0x00 );
-			dbc_putchar( 0x88 );
-			dbc_putchar( 0x88 );
-			dbc_write( (char*)&(f->buf[0]), f->datalen );
-		}
-		dbc_putchar( 0x99 );
-		dbc_putchar( 0x99 );
-	}
-    else{
-        // If the f structure doesn't contain frames, then output a '.' to indicate 
-        // the call of this function. However, this case rarely happens.
-        dbc_putchar( 0x88 );
-        dbc_putchar( 0x88 );
-		dbc_putchar( 0x99 );
-		dbc_putchar( 0x99 );
-    }
-    */
 }
 #endif

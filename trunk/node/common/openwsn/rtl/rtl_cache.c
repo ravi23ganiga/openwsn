@@ -23,6 +23,7 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
+ 
 #include "rtl_configall.h"
 #include "rtl_foundation.h"
 #include "rtl_cache.h"
@@ -31,8 +32,7 @@
 
 static inline uintx _cache_displace( TiCache * cache, char * item, uint16 itemlen, uintx idx );
 
-
-TiCache * cache_construct( void * mem, uint16 memsize, uint16 itemsize, uintx capacity )
+TiCache * cache_open( void * mem, uint16 memsize, uint16 itemsize, uintx capacity )
 {
 	uintx i;
 	TiCache * cache;
@@ -47,7 +47,7 @@ TiCache * cache_construct( void * mem, uint16 memsize, uint16 itemsize, uintx ca
 	return cache;
 }
 
-void cache_destroy( TiCache * cache )
+void cache_close( TiCache * cache )
 {
 	return;
 }
@@ -168,6 +168,7 @@ uintx cache_visit( TiCache * cache, char * item, uint16 itemlen )
      }
 	_cache_displace( cache, item, itemlen, idx );
     
+	// decrease the life time of each in the cache
 	curitem = (char*)cache + sizeof(TiCache);
 	for (i=0; i<cache->capacity; i++)
 	{

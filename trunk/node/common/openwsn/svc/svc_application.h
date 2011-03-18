@@ -26,6 +26,14 @@
 #ifndef _SVC_APPLICATION_H_3297_
 #define _SVC_APPLICATION_H_3297_
 
+/**
+ * TiApplication
+ * There's only one TiApplication component in the whole system. It keeps a list 
+ * addons and is established based on osx low power kernel. Different addon may 
+ * have different functions, and TiApplication manages the set of them. The developer
+ * only need to care the addon developing.
+ */
+
 typedef struct{
 }TiAppFramework;
 
@@ -37,5 +45,6 @@ apf_unregister
 apf_put
 apf_get
 apf_remove
+apf_evolve
 
 #endif

@@ -157,9 +157,9 @@ void        aloha_close( TiAloha * mac );
  */
 uintx       aloha_send( TiAloha * mac, TiFrame * frame, uint8 option );
 
-uintx       aloha_broadcast( TiAloha * mac, TiFrame * opf, uint8 option );
+uintx       aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option );
 
-uintx       aloha_recv( TiAloha * mac, TiFrame * opf, uint8 option );
+uintx       aloha_recv( TiAloha * mac, TiFrame * frame, uint8 option );
 void        aloha_evolve( void * macptr, TiEvent * e );
 
 inline void aloha_setlocaladdress( TiAloha * mac, uint16 addr )

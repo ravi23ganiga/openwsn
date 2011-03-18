@@ -40,7 +40,7 @@
  *  - linux, windows, and embedded platforms with c compiler only
  *
  * @state
- *	finished but not tested yet
+ *	most are tested. released.
  *
  * @author zhangwei in 200503
  * @modified by zhangwei in 200803

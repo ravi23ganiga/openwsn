@@ -48,7 +48,7 @@
 #include "svc_tinymac.h"
 
 //static uintx _tinymac_trysend( TiTinyMAC * mac, char * buf, uint8 len, uint8 option );
-static uintx _tinymac_send( TiTinyMAC * mac, char * buf, uint8 len, uint8 option );
+static intx _tinymac_trysend( TiTinyMAC * mac, char * buf, uint8 len, uint8 option );
 
 TiTinyMAC * tinymac_construct( char * buf, uintx size )
 {
