@@ -1,0 +1,21 @@
+This's the open source version of OpenWSN project by TongJi University.
+
+For the detail about the OpenWSN project, please refer to the project site:
+http://code.google.com/p/openwsn
+
+
+
+2010.09.21
+Upgrading the developing environment to the newest software
+=================================================================================
+
+- AVR Studio 4.18 and SP3 for ATmega128L from ATMEL.com
+
+- WinAVR 20100110 Toolchain
+
+You should: 1) install AVR Studio D:\binx\embedded\avrstudio (not mandatory); 2) install WinAVR to d:\binx\embedded\winavr (mandatory).
+
+Attention in the past, we use Portable WinAVR 20090313. now we changed back to standard WinAVR to help the beginners to avoid directory settings. Since we haven't changed the path settings in all the example project, we still keep a copy of Portable WinAVR 20090313 in "d:\portable\WinAVR-20090313" is by default our former settings. You only need uninstall the AVR studio and reinstall the new version.
+
+This upgrading may cause some projects failed to open by AVR studio, you can simply re-created the project file. If you encounter such problems, please report to us through google code's issue report. We'll correct them in the next release.
+
