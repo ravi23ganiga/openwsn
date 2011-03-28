@@ -24,17 +24,21 @@
  *
  ******************************************************************************/
 
-#include "svc_foundation.h"
-#include "svc_openpacket.h"
+#ifndef _EEPROM_H_5783_
+#define _EEPROM_H_5783_
+/*******************************************************************************
+ * This module provides the interface to read/write e2prom.
+ * 
+ * @attention 
+ *  - This module is firstly introduced on OpenWSN 2.0/3.5 hardware, which
+ * uses LPC2136/LPC2146 from Philips(now NXP).
+ *  - The atmegal128 micro-controller used by the MicaZ and GAINZ node has 4KB E2PROM.
+ * 
+ ******************************************************************************/
 
-char * opt_ownerframe( char * packet )
-{
-	return packet-1;
-}
+#include "hal_foundation.h"
 
-char * opt_data( char * packet )
-{
-	return packet+8;
-	
-}
+void eeprom_rawread( uint32 flashaddr, uint32 memaddr, uint32 size );
+void eeprom_rawwrite( uint32 flashaddr, uint32 memaddr, uint32 size );
 
+#endif
