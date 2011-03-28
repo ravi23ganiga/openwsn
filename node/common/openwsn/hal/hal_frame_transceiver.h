@@ -24,6 +24,8 @@
 #include "hal_foundation.h"
 #include "../rtl/rtl_iobuf.h"
 
+/* FTRX is the abbreviation of "frame transceiver" */
+
 #define FTRX_MODE_RX            0
 #define FTRX_MODE_TX            1
 #define FTRX_MODE_SLEEP         2

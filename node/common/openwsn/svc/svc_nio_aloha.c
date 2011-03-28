@@ -283,8 +283,6 @@ uintx aloha_send( TiAloha * mac,  uint16 shortaddrto, TiFrame * frame, uint8 opt
 uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
 {
     uintx ret=0;
-    
-	
 	
     TiIEEE802Frame154Descriptor * desc;
 
@@ -307,14 +305,13 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
 		desc = ieee802frame154_format( &(mac->desc), frame_startptr(mac->txbuf), frame_capacity(mac->txbuf), 
 			FRAME154_DEF_FRAMECONTROL_DATA );//todo 如果使用上一句则前12个字节没有赋值成功！
         rtl_assert( desc != NULL );
+		
         ieee802frame154_set_sequence( desc, mac->seqid );
 	    ieee802frame154_set_panto( desc, mac->panto );
 	    ieee802frame154_set_shortaddrto( desc, FRAME154_BROADCAST_ADDRESS );
 	    ieee802frame154_set_panfrom( desc, mac->panfrom );
 	    ieee802frame154_set_shortaddrfrom( desc, mac->shortaddrfrom );
 
-		
-		
         // char * fcf;
         // char * shortaddrto;
 
@@ -361,7 +358,7 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
         // sending to decrease the probability of conflictions.
         // wait for a random period before really start the transmission
 		
-        #ifdef CONFIG_ALOHA_STANDARD
+        #ifndef CONFIG_ALOHA_STANDARD
         mac->backoff = rand_uint8( CONFIG_ALOHA_MAX_BACKOFF );
         mac->retry = 0;
         timer_setinterval( mac->timer, mac->backoff, 0 );
@@ -391,7 +388,7 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
         ret = 0;
         break;
     }
-
+   
     return ret;
 }
 
@@ -511,7 +508,7 @@ uintx _aloha_trysend( TiAloha * mac, TiFrame * frame, uint8 option )
     {   
 		count = nac_send( mac->nac, frame, option );
 		if (count > 0)
-		{       
+		{   
 			mac->seqid ++;
 			mac->retry = 0;
 			mac->state = ALOHA_STATE_IDLE;

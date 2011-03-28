@@ -63,7 +63,7 @@
  * configurations.
  */
 #ifndef CONFIG_DTP_CACHE_CAPACITY
-  #define CONFIG_DTP_CACHE_CAPACITY 8
+  #define CONFIG_DTP_CACHE_CAPACITY 2
 #endif
 
 #define CONFIG_DTP_CACHE_MAX_LIFETIME 8
@@ -79,17 +79,20 @@
 #include "svc_configall.h"
 #include "../rtl/rtl_cache.h"
 #include "../hal/hal_foundation.h"
-#include "../hal/hal_target.h"
+#include "../hal/hal_targetboard.h"
 #include "../hal/hal_cc2420.h"
 #include "../hal/hal_uart.h"
 #include "../hal/hal_debugio.h"
 #include "svc_foundation.h"
-#include "svc_aloha.h"
+#include "svc_nio_acceptor.h"
+#include "svc_nio_aloha.h"
 
 /* This macro only provides a default value to the max hopcount field in the frame.
  * Actually, the application layer program can freely assign values to the max hopcount
  * field in the packet.
  */
+
+/*
 #ifndef CONFIG_DTP_DEF_MAX_HOPCOUNT 
   #define CONFIG_DTP_DEF_MAX_HOPCOUNT 5
 #endif
@@ -99,7 +102,7 @@
 #endif
 
 #define CONFIG_DTP_CACHE_MAX_LIFETIME 16
-
+*/
 
 
 /* @attention
@@ -171,33 +174,38 @@
 
 #define DTP_MAX_FRAME_SIZE 128
 
-#define DTP_MAX_TX_TRYTIME              0x1FF
+//todo #define DTP_MAX_TX_TRYTIME              0x1FF
 
-#define DTP_HEADER_SIZE(maxhopcount) (9+(maxhopcount-1)*2)
+#define DTP_MAX_TX_TRYTIME            0x04
+
+#define DTP_HEADER_SIZE(maxhopcount) (10+(maxhopcount-1)*2)//(9+(maxhopcount-1)*2)
 #define DTP_MAKEWORD(high,low) (((uint16)high<<8) | ((uint8)low))
 
-#define DTP_PACKETCONTROL(pkt) ((pkt)[0])
-#define DTP_SEQUENCEID(pkt) ((pkt)[1])
-#define DTP_SHORTADDRTO(pkt) DTP_MAKEWORD((pkt)[3],(pkt)[2])
-#define DTP_SHORTADDRFROM(pkt) DTP_MAKEWORD((pkt)[5],(pkt)[4])
-#define DTP_HOPCOUNT(pkt) ((pkt)[6])
-#define DTP_MAX_HOPCOUNT(pkt) ((pkt)[7])
-#define DTP_PATHDESC_COUNT(pkt) ((pkt)[8])
-#define DTP_PATHDESC_PTR(pkt) (&(pkt[9]))
+#define DTP_PACKETCONTROL(pkt) ((pkt)[1])
+#define DTP_SEQUENCEID(pkt) ((pkt)[2])
+#define DTP_SHORTADDRTO(pkt) DTP_MAKEWORD((pkt)[4],(pkt)[3])
+#define DTP_SHORTADDRFROM(pkt) DTP_MAKEWORD((pkt)[6],(pkt)[5])
+#define DTP_HOPCOUNT(pkt) ((pkt)[7])
+#define DTP_MAX_HOPCOUNT(pkt) ((pkt)[8])
+#define DTP_PATHDESC_COUNT(pkt) ((pkt)[9])
+#define DTP_PATHDESC_PTR(pkt) (&(pkt[10]))
 #define DTP_PAYLOAD_PTR(pkt) ((char*)(pkt)+DTP_HEADER_SIZE(DTP_MAX_HOPCOUNT((pkt))))
 
-#define DTP_SET_PACKETCONTROL(pkt,value) (pkt)[0]=(value)
-#define DTP_SET_SEQUENCEID(pkt,value) (pkt)[1]=(value)
-#define DTP_SET_SHORTADDRTO(pkt,addr) {(pkt)[2]=((uint8)(addr&0xFF)); (pkt)[3]=((uint8)(addr>>8));}
-#define DTP_SET_SHORTADDRFROM(pkt,addr) {(pkt)[4]=((uint8)(addr&0xFF)); (pkt)[5]=((uint8)(addr>>8));}
-#define DTP_SET_HOPCOUNT(pkt,value) (pkt)[6]=value
-#define DTP_SET_MAX_HOPCOUNT(pkt,value) (pkt)[7]=value
-#define DTP_SET_PATHDESC_COUNT(pkt,value) (pkt)[8]=value
+#define DTP_SET_PROTOCAL_IDENTIFIER(pkt,value) (pkt)[0]=(value)
+#define DTP_SET_PACKETCONTROL(pkt,value) (pkt)[1]=(value)//b1 b0  packet command type;b7 b6  transportation method.
+#define DTP_SET_SEQUENCEID(pkt,value) (pkt)[2]=(value)
+#define DTP_SET_SHORTADDRTO(pkt,addr) {(pkt)[3]=((uint8)(addr&0xFF)); (pkt)[4]=((uint8)(addr>>8));}
+#define DTP_SET_SHORTADDRFROM(pkt,addr) {(pkt)[5]=((uint8)(addr&0xFF)); (pkt)[6]=((uint8)(addr>>8));}
+#define DTP_SET_HOPCOUNT(pkt,value) (pkt)[7]=(value)
+#define DTP_SET_MAX_HOPCOUNT(pkt,value) (pkt)[8]=(value)
+#define DTP_SET_PATHDESC_COUNT(pkt,value) (pkt)[9]=(value)  // path descriptor count
 
-#define DTP_TRANTYPE(pkt) (pkt[0] & 0xC0)
-#define DTP_SET_TRANTYPE(pkt,newtype) (pkt[0] = (pkt[0] & 0x3F) | (newtype))
-#define DTP_CMDTYPE(pkt) (pkt[0] & 0x03)
-#define DTP_SET_CMDTYPE(pkt,newtype) (pkt[0] = (pkt[0] & 0xFC) | (newtype))
+//pkt[0]:protocal_identifier
+//pkt[1]:command type and transportation method.
+#define DTP_TRANTYPE(pkt) (pkt[1] & 0xC0)
+#define DTP_SET_TRANTYPE(pkt,newtype) (pkt[1] = (pkt[1] & 0x3F) | (newtype))
+#define DTP_CMDTYPE(pkt) (pkt[1] & 0x03)
+#define DTP_SET_CMDTYPE(pkt,newtype) (pkt[1] = (pkt[1] & 0xFC) | (newtype))
 
 /* DTP protocol state
  * STARTUP state: when the node first powered on, it's in STARTUP state. In this state, 
@@ -335,7 +343,7 @@ void dtp_destroy( TiDataTreeNetwork * net );
  * sensor node or gateway node. The default settings is 0x00 which means the DTP
  * will be initialized as sensor mode.
  */
-TiDataTreeNetwork * dtp_open( TiDataTreeNetwork * net, TiNioAcceptor * nac, TiAloha * mac, uint16 localaddress, 
+TiDataTreeNetwork * dtp_open( TiDataTreeNetwork * net, TiAloha * mac, uint16 localaddress, 
 	TiFunEventHandler listener, void * lisowner, uint8 option );
 void dtp_close( TiDataTreeNetwork * net );
 
@@ -352,7 +360,7 @@ void dtp_close( TiDataTreeNetwork * net );
  *
  * In real applications, the sink node is usually as the root node. 
  */
-uint8 dtp_maintain( TiDataTreeNetwork * net, uint8 max_hopcount );
+uint8 dtp_maintain( TiDataTreeNetwork * net, TiFrame * f,uint8 max_hopcount );
 
 /* dtp_fdsendto()
  * Send frames to a specific node by flooding. The frame will propagate in the network 
@@ -371,6 +379,23 @@ uint8 dtp_fdsendto( TiDataTreeNetwork * net, uint16 shortaddrto, TiFrame * frame
  */
 uint8 dtp_broadcast( TiDataTreeNetwork * dtp, TiFrame * frame, uint8 option );
 
+/* dtp_send_request()
+ * broadcast DTP_DATA_REQUEST among the network.
+ *
+ * This function should be called by the root node only. If a sensor node calls
+ * this function to send data request, all the data response will still reply to 
+ * the old root node.
+ */
+uint8 dtp_send_request( TiDataTreeNetwork * net, TiFrame * frame, uint8 max_hopcount );
+
+/* dtp_send_response()
+ * unicast the response to the root node of the data tree.
+ *
+ * This function should be called by the sensor node only. If the root node(sink 
+ * node) calls this function, the packet won't be sent out because the DTP service
+ * will regard the packet already reaches its destination. 
+ */
+uint8 dtp_send_response( TiDataTreeNetwork * net, TiFrame * frame, uint8 max_hopcount );
 
 /* dtp_multicast()
  * multicast a frame in a sub-tree. The root node of the sub-tree is the destination 

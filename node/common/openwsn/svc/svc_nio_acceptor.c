@@ -156,7 +156,10 @@ intx nac_send( TiNioAcceptor * nac, TiFrame * item, uint8 option )
 		return frame_capacity(item);
 	}
 	else
+	{   
+		
 		return 0;
+	}
 }
 
 /**
@@ -208,7 +211,7 @@ void nac_evolve ( TiNioAcceptor * nac, TiEvent * event )
 		//todo
 		//发送函数中的frame_layerstartptr(f,first)是有问题的，其中，first = f->firstlayer,
 		
-		count = rxtx->send( rxtx->provider, frame_layerstartptr(f,first), frame_layercapacity(f,first), f->option );
+		count = rxtx->send( rxtx->provider, frame_layerstartptr(f,first), frame_layercapacity(f,first), 0x00 );//todo 没用f->option
 		// count = rxtx.send( rxtx.provider, frame_startptr(f), frame_capacity(f), frame->option );
 		// count = rxtx.send( rxtx.provider, frame_startptr(f), frame_length(f), frame->option );
 		
@@ -219,11 +222,13 @@ void nac_evolve ( TiNioAcceptor * nac, TiEvent * event )
 		
 		if (count > 0)
 		{   
-			
 			fmque_popfront( nac->txque );
 			
 		}
+		
+		
 	}
+	
 	
 	if (!fmque_full(nac->rxque ))
 	{
@@ -237,9 +242,7 @@ void nac_evolve ( TiNioAcceptor * nac, TiEvent * event )
 	    frame_reset( f, 0, 0, 0 );    		
 		count = rxtx->recv( rxtx->provider, frame_startptr(f), frame_capacity(f), f->option );
 		if (count > 0)
-		{  
-            
-
+		{   
             frame_setlength( f, count );
             frame_setcapacity( f, count );
 			fmque_pushback( nac->rxque, f );

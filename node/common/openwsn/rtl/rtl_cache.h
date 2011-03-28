@@ -38,8 +38,13 @@
  *	- first created.
  ******************************************************************************/ 
 
+#ifndef CONFIG_CACHE_CAPACITY 
 #define CONFIG_CACHE_CAPACITY 8
+#endif
+
+#ifndef CONFIG_CACHE_MAX_LIFETIME 
 #define CONFIG_CACHE_MAX_LIFETIME 0xFF
+#endif
 
 #define CACHE_HOPESIZE(itemsize,capacity) (sizeof(TiCache) + itemsize*capacity)
 
@@ -55,8 +60,8 @@ typedef struct{
 	uint8  lifetime[CONFIG_CACHE_CAPACITY];				
 } TiCache;
 
-TiCache * cache_construct( void * mem, uint16 memsize, uint16 itemsize, uintx capacity );
-void cache_destroy( TiCache * cache );
+TiCache * cache_open( void * mem, uint16 memsize, uint16 itemsize, uintx capacity );
+void cache_close( TiCache * cache );
 bool cache_hit( TiCache * cache, char * item, uint16 itemlen, uintx * idx );
 uintx cache_visit( TiCache * cache, char * item, uint16 itemlen );
 

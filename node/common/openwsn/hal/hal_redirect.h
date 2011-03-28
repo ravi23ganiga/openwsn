@@ -1,7 +1,7 @@
 /*******************************************************************************
  * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
  *
- * Copyright (C) 2005-2010 zhangwei(TongJi University)
+ * Copyright (C) 2005-2020 zhangwei(TongJi University)
  *
  * OpenWSN is a free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -24,13 +24,28 @@
  *
  ******************************************************************************/
 
-#ifndef _HAL_STDC_H_7689
-#define _HAL_STDC_H_7689
+#ifndef _HAL_STDC_REDIRECT_H_7689_
+#define _HAL_STDC_REDIRECT_H_7689_
+/*******************************************************************************
+ * This module provides the most fundamental I/O functions used by the C language 
+ * runtime library. The default implementation will help to redirect the printf()
+ * output and sscanf() input stream to/from the UART stream. This is usually very
+ * useful in debugging. 
+ * 
+ * @attention The openwsn foundation contains a self-contained debugging input/output 
+ * module rtl_debugio(and hal_debugio). It's more simpler and easy to use. 
+ *
+ ******************************************************************************/
 
 #include "hal_configall.h"
 #include "hal_foundation.h"
 #include "hal_uart.h"
 
+/**
+ * \brief Redirect the standard input/output stream to the uart.
+ * 
+ * @attention The uart must be constructed and opened successfully before call this function.
+ */
 void stdc_redirect( TiUartAdapter * uart );
 
 #endif

@@ -986,7 +986,7 @@ uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 					cc->lqi = cc->rxbuf[cc->rxlen-1];
 
 					// If the crc checksum failed, then simply drop this frame.
-					if(((cc->lqi>>7)==0x00))
+					if(((cc->lqi >> 7)==0x00))
 					{
 						cc->rxlen = 0;
 					}
@@ -1852,6 +1852,7 @@ void _cc2420_fifop_handler( void * ccptr, TiEvent * e )
 		// and both the FIFO and SFD pin go to low. 
 
 		cc2420_sendcmd( cc, 0x08 );
+		// hal_delayus( 5 );
 		cc2420_sendcmd( cc, 0x08 );
 		// hal_delayus( 10 );
 		// hal_assert( HAL_READ_CC_FIFO_PIN() == 0 );

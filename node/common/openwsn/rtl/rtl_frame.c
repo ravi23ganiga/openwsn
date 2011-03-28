@@ -187,7 +187,7 @@ char * frame_buffer( TiFrame * frame )
 void frame_bufferclear( TiFrame * frame )
 {
 	uintx memsize;
-
+    
 	rtl_assert( frame != NULL );
 	memsize = frame->memsize;
 	memset( (char*)frame, 0x00, memsize );

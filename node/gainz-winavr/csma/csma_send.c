@@ -13,7 +13,6 @@
  *  - tested ok.
  ******************************************************************************/
 
-
 #include "../../common/openwsn/hal/hal_configall.h"
 #include <stdlib.h>
 #include <string.h>
@@ -48,7 +47,7 @@
 
 static TiCc2420Adapter		                    m_cc;
 static TiFrameRxTxInterface                     m_rxtx;;
-static TiCsma                                  m_csma;
+static TiCsma                                   m_csma;
 static TiTimerAdapter                           m_timer;
 static char                                     m_txbuf[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
 
@@ -138,8 +137,6 @@ void csma_sendnode(void)
         // the default setting is 0x01, which means ACK is required.
         //
 		option = 0x00;
-
-		
 
         while (1)
         {   

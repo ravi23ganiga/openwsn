@@ -32,7 +32,6 @@
 
 #define CONFIG_DEBUG
 
-
 #define CONFIG_TEST_LISTENER  
 #undef  CONFIG_TEST_LISTENER  
 

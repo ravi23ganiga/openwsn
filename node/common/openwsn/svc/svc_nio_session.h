@@ -32,6 +32,21 @@
  * processing, the component can place the result frame into the txque. The result
  * frame count can varies from 0 to N, where N depends on the available space in 
  * the txque.
+ * 
+ * Reference
+ * - Apache MINA Introduction (with figures), http://mina.apache.org/mina-based-application-architecture.html 
+ * - Apache MINA IoSession, http://mina.apache.org/chapter-4-session.html
+ *
+ * 		The Session is at the heart of MINA : every time a client connects to the 
+ *		server, a new session is created, and will be kept in memory until the 
+ *		client is disconnected. 
+ *
+ *		A session is used to store persistent informations about the connection, 
+ *		plus any kind of information the server might need to use during the request 
+ *		processing, and eventually during the whole session life.
+ *
+ * - Apache MINA IoFilter, http://mina.apache.org/chapter-5-filters.html
+ *      
  */
  
 typedef struct{
