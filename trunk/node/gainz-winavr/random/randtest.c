@@ -1,10 +1,9 @@
-
 /*******************************************************************************
  * randtest
  * test random functions
  *
  * @status
- *	developing
+ *	tested ok.
  *
  * @author sunqiang(TongJi University), zhangwei(TongJi University) on 20091031
  *
@@ -15,9 +14,9 @@
  *
  ******************************************************************************/
 
+#include "../common/configall.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../common/configall.h"
 #include "../common/foundation.h"
 #include "../common/hal/hal_foundation.h"
 #include "../common/hal/hal_debugio.h"
@@ -27,13 +26,10 @@
 #include "../common/hal/hal_interrupt.h"
 #include "../common/hal/hal_led.h"
 #include "../common/hal/hal_target.h"
-
-
 #include <string.h>
 
 int main(void)
 {
-
 	uint16 seed=0x3212;
 	int i;
 	uint16 n;
@@ -59,3 +55,4 @@ int main(void)
 
 	return 0;
 }
+

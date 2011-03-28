@@ -24,7 +24,7 @@
  *
  ******************************************************************************/
 
-/*************************************************************
+/*******************************************************************************
  * @author zhangwei on 2005-07-19
  * @note: Interface file CRC check module.
  *	thanks Ruijie to give the original source code (first version). 
@@ -33,7 +33,9 @@
  * 2005-07-19 first created by zhangwei
  * @modified by zhangwei on 20061030
  * revised and released as part of RTL
- ************************************************************/
+ ******************************************************************************/
+
+#ifdef CONFIG_CRC_FAST_VERSION
 
 #define CRC_FCS(fcs, c) (((fcs) >> 8) ^ fcstab[((fcs) ^ (c)) & 0xff])
 
@@ -72,17 +74,13 @@ static const unsigned short fcstab[256] = {
     0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
 };
 
-/*  CRCProduce
-*********************************************************************************************************
-* Description: 产生CRC校验字段.
-* Arguments  : buf,  帧缓冲区的首指针，指向第一个待校验的字符
-*                     number, 待校验帧的字符个数
-* Returns    :   fcsOut, CRC校验码
-*                    另外，本函数在输入buf缓冲区的末尾添加了CRC校验码  
-* Complete date  : 2005.5.20
-                   Modified by xxx at xxxx.xx.xx:
-*********************************************************************************************************
-*/
+/**
+ * calculate the CRC checksum
+ * @param buf, 帧缓冲区的首指针，指向第一个待校验的字符
+ * @param number, 待校验帧的字符个数
+ * @return fcsOut, CRC校验码
+ *   另外，本函数在输入buf缓冲区的末尾添加了CRC校验码  
+ */
 unsigned short crc_produce(unsigned char *buf, unsigned short number)
 {
     unsigned short  n;
@@ -98,17 +96,13 @@ unsigned short crc_produce(unsigned char *buf, unsigned short number)
     return fcsOut;
 }
 
-/*  CRCCheck
-*********************************************************************************************************
-* Description: CRC校验函数.
-* Arguments  : buf,  帧缓冲区的首指针，指向第一个已校验的字符
-*                     number, 已校验帧的字符个数，可以包括CRC校验码
-* Returns    :   fcsOut, CRC校验码
-*                    另外，当检验帧包含CRC校验码时，CRC校验正确时输出fcsOut为0  
-* Complete date  : 2005.5.20
-                   Modified by xxx at xxxx.xx.xx:
-*********************************************************************************************************
-*/
+/**
+ * do CRC verification
+ * @param buf,  帧缓冲区的首指针，指向第一个已校验的字符
+ * @param number, 已校验帧的字符个数，可以包括CRC校验码
+ * @return fcsOut, CRC校验码
+ *                    另外，当检验帧包含CRC校验码时，CRC校验正确时输出fcsOut为0  
+ */
 unsigned short crc_check(unsigned char *buf, unsigned short number)
 {
     unsigned short  n;
@@ -121,3 +115,66 @@ unsigned short crc_check(unsigned char *buf, unsigned short number)
     }
     return fcsOut;
 }
+
+#endif /* CONFIG_CRC_FAST_VERSION */
+
+
+#ifndef CONFIG_CRC_FAST_VERSION
+
+/*
+ * Reference
+ * http://www.geocities.com/malbrain/crc_c.html
+ */
+
+/*
+ *        calculate ccitt cyclic redundancy codes
+ *
+ *        actual Crc16 = x ^ 16 + x ^ 12 + x ^ 5 + 1
+ *
+ *        inverse Crc32 = x ^ 32 + x ^ 31 + x ^ 30 +
+ *              x ^ 28 + x ^ 27 + x ^ 25 + x ^ 24 +
+ *              x ^ 22 + x ^ 21 + x ^ 20 + x ^ 16 +
+ *              x ^ 10 + x ^ 9 + x ^ 6 + 1
+ *
+ *        n.b. standard ANSI X3.66 crc-32 polynomial:
+ *        x^0 + x^1 + x^2 + x^4 + x^5 + x^7 + x^8 + x^10 +
+ *        x^11 + x^12 + x^16 + x^22 + x^23 + x^26 + x^32
+ *
+ *        Tables constructed so that entry 0x80 = inverse polynomial
+ */
+
+unsigned short Crc16[] = {
+0x0000, 0x1081, 0x2102, 0x3183, 0x4204, 0x5285, 0x6306, 0x7387,
+0x8408, 0x9489, 0xa50a, 0xb58b, 0xc60c, 0xd68d, 0xe70e, 0xf78f
+};
+
+unsigned long Crc32[] = {
+0x00000000, 0x1db71064, 0x3b6e20c8, 0x26d930ac,
+0x76dc4190, 0x6b6b51f4, 0x4db26158, 0x5005713c,
+0xedb88320, 0xf00f9344, 0xd6d6a3e8, 0xcb61b38c,
+0x9b64c2b0, 0x86d3d2d4, 0xa00ae278, 0xbdbdf21c
+};
+
+unsigned short crc16_calc (unsigned char *ptr, unsigned cnt, unsigned short crc)
+{
+    while( cnt-- ) {
+        crc = ( crc >> 4 ) ^ Crc16[(crc & 0xf) ^ (*ptr & 0xf)];
+        crc = ( crc >> 4 ) ^ Crc16[(crc & 0xf) ^ (*ptr++ >> 4)];
+    }
+
+    return crc;
+}
+
+unsigned long crc32_calc (unsigned char *ptr, unsigned cnt, unsigned long crc)
+{
+    while( cnt-- ) {
+        crc = ( crc >> 4 ) ^ Crc32[(crc & 0xf) ^ (*ptr & 0xf)];
+        crc = ( crc >> 4 ) ^ Crc32[(crc & 0xf) ^ (*ptr++ >> 4)];
+    }
+
+    return crc;
+}
+
+
+#endif /* Not defined CONFIG_CRC_FAST_VERSION  */
+

@@ -1,4 +1,4 @@
-CSMA
+CSMA_CA (not finished)
 ================================================================
 
 testing CSMA/CA medium access protocol

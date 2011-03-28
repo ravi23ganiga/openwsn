@@ -26,11 +26,7 @@
 TiTimerAdapter		g_timer;
 TiUartAdapter		g_uart;
 
-// modified by zhangwei on 2010.05.31
-// if you encounter problems, you can try the following prototype.
 static void _osx_event_listener(void * object, TiEvent * e);
-
-//static void _osx_event_listener(void * object, struct _TiHalEvent * e);
 
 int main(void)
 {
@@ -45,10 +41,12 @@ int main(void)
     // @modified by zhangwei on 2010.05.30
     // - due to the macro problems, we cannot use osx_post() here. we must use _osx_post,
     // through osx_post is only an macro and defined as _osx_post
+	//
 	hal_setlistener( (TiFunEventHandler)_osx_post, g_osx );
 
 	// set the map between event id and event listener
     // todo: seems error here
+	//
 	osx_attach( 0, _osx_event_listener, NULL );
 
 	hal_enable_interrupts();

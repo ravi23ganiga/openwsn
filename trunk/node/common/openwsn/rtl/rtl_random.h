@@ -36,9 +36,9 @@
  * @history
  * @modified by zhangwei on 20091102
  *	- revision
- * @modified by Sun Qiang on 20091112
+ * @modified by Sun Qiang(TongJi University) on 20091112
  *  - revision
- * @modified by Sun Qiang on 20091123
+ * @modified by Sun Qiang(TongJi University) on 20091123
  *  - remove higer statistic functions to new module rtl_stochastic
  *
  *****************************************************************************/ 

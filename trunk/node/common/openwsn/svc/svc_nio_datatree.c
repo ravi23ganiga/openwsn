@@ -68,7 +68,8 @@
 #include <string.h>
 #include "../rtl/rtl_frame.h"
 #include "../rtl/rtl_ieee802frame154.h"
-#include "../hal/hal_target.h"
+#include "../rtl/rtl_dumpframe.h"
+#include "../hal/hal_targetboard.h"
 #include "../hal/hal_cpu.h"
 #include "../hal/hal_interrupt.h"
 #include "../hal/hal_debugio.h"
@@ -77,8 +78,9 @@
 #include "../hal/hal_debugio.h"
 #include "../hal/hal_assert.h"
 #include "svc_foundation.h"
-#include "svc_aloha.h"
-#include "svc_datatree.h"
+#include "svc_nio_acceptor.h"
+#include "svc_nio_aloha.h"
+#include "svc_nio_datatree.h"
 
 static bool _dtp_evolve_recv_check( TiDataTreeNetwork * net );
 static bool _dtp_evolve_startup_maintain_check( TiDataTreeNetwork * net );
@@ -203,46 +205,70 @@ void dtp_close( TiDataTreeNetwork * net )
  *	currently, the root node doesn't need the maintain response packet. So I don't
  * implement the maintain response in this service.
  */
-uint8 dtp_maintain( TiDataTreeNetwork * net, uint8 max_hopcount )
-{
+uint8 dtp_maintain( TiDataTreeNetwork * net, TiFrame * f,uint8 max_hopcount )
+{	
 	char * request;
-    uint8 len, count, i;
-	char frame_mem[FRAME_HOPESIZE(DTP_MAX_FRAME_SIZE)];
-    TiFrame * f;
+    uint8 len, count;
 
-	f = frame_open( (char *)(&frame_mem), FRAME_HOPESIZE(DTP_MAX_FRAME_SIZE), 3, 20, 0);
+	//todo 函数内是不可以开辟frame的，否则程序就飞掉了！
+	//todo for testing char  frame_mem[FRAME_HOPESIZE(DTP_MAX_FRAME_SIZE)];//todo
+	
+    //todo for testing TiFrame * f;
+    //todo for testing f = frame_open( (char *)(&frame_mem), FRAME_HOPESIZE(DTP_MAX_FRAME_SIZE), 3, 20, 0);
+   
     request = frame_startptr( f );
 	
-	DTP_SET_PROTOCOL_IDENTIFER(request, DTP_PROTOCOL_IDENTIFER);
-	DTP_SET_CONTROL
-	DTP_SET_SEQID
-	DTP_SET_ADDRTO
-	DTP_SET_ADDRFROM
-	DTP_SET_HOPCOUNT
-	DTP_SET_MAXHOPCOUNT
-	DTP_SET_PATHDESC_COUNT
+	// The to and from address here are the NET layer address. Do NOT confuse
+	// them with the MAC layer address.
+
 	
+	DTP_SET_PROTOCAL_IDENTIFIER( request,DTP_PROTOCOL_IDENTIFER);
+	
+	DTP_SET_PACKETCONTROL( request, DTP_BROADCAST | DTP_MAINTAIN_REQUEST);//b1 b0  packet command type;b7 b6  transportation method.
+	DTP_SET_SEQUENCEID( request,net->request_id);
+	DTP_SET_SHORTADDRTO( request, 0xffff );		
+	DTP_SET_SHORTADDRFROM( request,net->localaddress); 
+	DTP_SET_HOPCOUNT( request,0);
+	DTP_SET_MAX_HOPCOUNT( request,max_hopcount);
+	
+	DTP_SET_PATHDESC_COUNT( request,0);
+    
+	frame_setlength( f, frame_capacity( f) );
+	
+	
+	/*
 	request[0] = DTP_PROTOCOL_IDENTIFER;
 	request[1] = DTP_BROADCAST | DTP_MAINTAIN_REQUEST;
 	request[2] = net->seqid;
-	request[3] = HIGH_BYTE(FRAME154_BROADCAST_ADDRESS);
-	request[4] = LOW_BYTE(FRAME154_BROADCAST_ADDRESS);
-	request[5] = HIGH_BYTE(net->localaddress);
-	request[6] = LOW_BYTE(net->localaddress);
+	request[3] = HIGH_BYTE(FRAME154_BROADCAST_ADDRESS);//todo 
+	request[4] = LOW_BYTE(FRAME154_BROADCAST_ADDRESS);//todo
+	request[5] = HIGH_BYTE(net->localaddress);//todo
+	request[6] = LOW_BYTE(net->localaddress);//todo
 	request[7] = 0; // current hop count
 	request[8] = max_hopcount; // max hop count
 	request[9] = 0; // path descriptor count
+	*/
 	
 	// if the low level medium access protocol(MAC) is busy, then broadcast() will return 0.
 	// in this case, we should repeat the broadcast again.
-
+    
 	count = 0;
-    while (count < 0xFE)
-    {
+
+	
+
+	
+    while (count < 0x04)
+    {   
+
+		
 		len = dtp_broadcast( net, f, 0x00 );
+
+		
+		
 		if (len > 0)
-		{
+		{  
 			net->request_id ++;
+			
 			hal_delay( 100 );
 			break;
 		}
@@ -256,11 +282,12 @@ uint8 dtp_maintain( TiDataTreeNetwork * net, uint8 max_hopcount )
 		 *
 		 * If the MAC layer is very strong, then we can also eliminate this delay
 		 * and depends on MAC layer to solve the conflication. 
-		 */ 
+		 */
 		hal_delay( 100 );
 		count ++;
 	}
 
+    
 	return len;
 }
 
@@ -276,6 +303,8 @@ uint8 dtp_maintain( TiDataTreeNetwork * net, uint8 max_hopcount )
  * you must call DTP_SET_SHORTADDRTO( pkt, destination ) before calling this function
  * to set the final destination address.
  */
+
+
 uint8 dtp_fdsendto( TiDataTreeNetwork * net, uint16 shortaddrto, TiFrame * frame, uint8 option )
 {
 	uint8 count=0;
@@ -284,31 +313,35 @@ uint8 dtp_fdsendto( TiDataTreeNetwork * net, uint16 shortaddrto, TiFrame * frame
 	/* This function will try to put the frame into TiDataTreeNetwork's internal TX buffer. 
 	 * The real sending processing is in dtp_evolve(). 
 	 */
-	if (opf_empty(net->txque))
+	if (frame_empty(net->txque))
 	{
-		hal_assert( opf_size(net->txque) >= opf_datalen(opf) );
-		count = opf_copyfrom( net->txque, opf ); 
+		hal_assert( frame_capacity(net->txque) >= frame_length( frame) );
+		count = frame_totalcopyfrom( net->txque, frame ); 
 		hal_assert( count > 0 );
-		if (opf_parse( net->txque, 0)) 
+		pkt = frame_startptr( net->txque);
+		if (pkt[7] < pkt[8]) 
 		{
+			/*
 			opf_set_panto( net->txque, net->pan );
 			opf_set_panfrom( net->txque, net->pan );
 			opf_set_shortaddrto( net->txque, DTP_BROADCAST_ADDRESS );
 			opf_set_shortaddrfrom( net->txque, net->localaddress );
+			*/
 			
 			// the master must call DTP_SET_SHORTADDRTO( pkt, destination );     
 			// before call this function.
-			pkt = net->txque->msdu;
-			DTP_SET_SHORTADDRFROM( pkt, net->localaddress );
+			//pkt = net->txque->msdu;
+			DTP_SET_SHORTADDRTO( pkt,shortaddrto);
+		    //DTP_SET_SHORTADDRFROM( pkt, net->localaddress );//数据包的源地址若在此赋值会将之前的地址覆盖掉。
 			DTP_SET_HOPCOUNT( pkt, 0 );
 			if (DTP_MAX_HOPCOUNT(pkt) == 0)
 			{
-				DTP_SET_MAX_HOPCOUNT( pkt, CONFIG_DTP_DEF_MAX_HOPCOUNT );
+				DTP_SET_MAX_HOPCOUNT( pkt, CONFIG_DTP_MAX_COUNT);
 			}
 			DTP_SET_PATHDESC_COUNT( pkt, 0 );
 		}
 		else{
-			opf_clear( net->txque );
+			frame_totalclear( net->txque );
 			count = 0;
 		}
 	}
@@ -324,9 +357,11 @@ uint8 dtp_fdsendto( TiDataTreeNetwork * net, uint16 shortaddrto, TiFrame * frame
  * dtp_broadcast() can be called in either root mode or node mode.
  */
 uint8 dtp_broadcast( TiDataTreeNetwork * net, TiFrame * frame, uint8 option )
-{
+{ 
+	
 	uint8 count=0, len;
 	char * pkt;
+	char * pc;
 	
 	hal_assert( frame_length(frame) > 0 );
 
@@ -335,43 +370,34 @@ uint8 dtp_broadcast( TiDataTreeNetwork * net, TiFrame * frame, uint8 option )
 	//
 	if (frame_empty(net->txque))
 	{
-		hal_assert( frame_capacity(net->txque) >= frame_length(frame) );
+
+	//todo hal_assert( frame_capacity(net->txque) >= frame_length(frame) );这一句发出警报，不知道为什么错？
 		
 		count = frame_totalcopyfrom( net->txque, frame ); 
-		request = frame_startptr( net->txque );
-		
+		pkt = frame_startptr( net->txque );
+
 		// If the current hopcount is euqal or more than the maximum hop count 
 		// in the frame, then this frame should be discarded.
 		// request[7] is the current hopcount, and request[8] is the maximum hop count.
-		//
-		if (request[7] < request[8])
+
+		
+		if (DTP_HOPCOUNT(pkt) < DTP_MAX_HOPCOUNT(pkt))
 		{
-			request[0] = DTP_PROTOCOL_IDENTIFER;
-			request[1] |= DTP_BROADCAST;
-			request[3] = 0xFF;
-			request[4] = 0xFF;
-			request[5] = HIGH_BYTE(net->localaddress);
-			request[6] = LOW_BYTE(net->localaddress);
-			request[7]++;
+			DTP_SET_PROTOCAL_IDENTIFIER( pkt, DTP_PROTOCOL_IDENTIFER);
+			DTP_PACKETCONTROL( pkt) |= DTP_BROADCAST;
+			
+			DTP_SET_HOPCOUNT( pkt,DTP_HOPCOUNT(pkt) + 1 );
 			
 			// add the localaddress into the path descriptor inside the frame
 			// request[9] is the node address count in the path descriptor.
+            
+            // save this node address into the packet's path section
+			pc = DTP_PATHDESC_PTR(pkt) + ((DTP_HOPCOUNT(pkt)-1) << 1);
+			pc[1] = (net->localaddress ) & 0xFF;
+			pc[2] = ( net->localaddress ) >> 8;
 			
-			idx = request[9] << 1;
-			request[idx] = HIGH_BYTE( net->localadress );
-			request[idx+1] = LOW_BYTE( net->localadress );
-			request[9] ++; 
-			
-			
-	DTP_SET_PROTOCOL_IDENTIFER(request, DTP_PROTOCOL_IDENTIFER);
-	DTP_SET_CONTROL
-	DTP_SET_SEQID
-	DTP_SET_ADDRTO
-	DTP_SET_ADDRFROM
-	DTP_SET_HOPCOUNT
-	DTP_SET_MAXHOPCOUNT
-	DTP_SET_PATHDESC_COUNT
-			
+			DTP_SET_PATHDESC_COUNT( pkt,DTP_PATHDESC_COUNT(pkt) + 1 );
+            
 			// After sending a request frame, we'd better put it into the cache. This is
 			// done by cache_visit(). This is used to reduce unecessary frame transmission
 			// when flooding a frame among the network. 
@@ -382,16 +408,29 @@ uint8 dtp_broadcast( TiDataTreeNetwork * net, TiFrame * frame, uint8 option )
 			// case, A shouldn't broadcast this frame. This is done by the cache. That's why
 			// we should firstly save the frame into the cache here.
 
-			len = _net_get_frame_feature( opf, &(net->frame_feature[0]), sizeof(net->frame_feature) );  
-			cache_visit( net->cache, &(net->frame_feature[0]), len );
+			 _net_get_frame_feature( frame, &(net->frame_feature[0]), sizeof(net->frame_feature) ); //todo 
+			dtp_cache_visit( net->cache, &(net->frame_feature[0]) );
 		}
 		else{
+
+			
 			frame_totalclear( net->txque );
 			count = 0;
 		}
+		
 	}
 	
-	dtp_evolve( net, NULL );
+	
+
+	// The evolve function will push the state machine forward. During this process, 
+	// the packet will be really sent.
+	
+	
+	
+
+   dtp_evolve( net, NULL );
+
+   
 	return count;
 }
 
@@ -450,24 +489,26 @@ uint8 dtp_unicast( TiDataTreeNetwork * net, TiFrame * frame, uint8 option )
 		hal_assert( count > 0 );
 		
 		
-		//if (opf_parse( net->txque, 0)) 
+		if ( frame_empty( net->txque)) 
 		{
 			pkt = frame_startptr( net->txque );
 			switch (DTP_CMDTYPE(pkt))
 			{
 			case DTP_MAINTAIN_RESPONSE:
 			case DTP_DATA_RESPONSE:
+				/*
 				opf_set_panto( net->txque, net->pan );
 				opf_set_shortaddrto( net->txque, net->parent );
 				opf_set_panfrom( net->txque, net->pan );
 				opf_set_shortaddrfrom( net->txque, net->localaddress );
+				*/
 
 				DTP_SET_SHORTADDRTO( pkt, net->root );
 				DTP_SET_SHORTADDRFROM( pkt, net->localaddress );
 				DTP_SET_HOPCOUNT( pkt, 0 );
 				if (DTP_MAX_HOPCOUNT(pkt) == 0)
 				{
-					DTP_SET_MAX_HOPCOUNT( pkt, CONFIG_DTP_DEF_MAX_HOPCOUNT );
+					DTP_SET_MAX_HOPCOUNT( pkt, CONFIG_DTP_MAX_COUNT );
 				}
 				DTP_SET_PATHDESC_COUNT( pkt, 0 );
 				break;
@@ -486,20 +527,20 @@ uint8 dtp_unicast( TiDataTreeNetwork * net, TiFrame * frame, uint8 option )
 				// if (DTP_MAX_HOPCOUNT(pkt) == 0)
 				//	DTP_SET_MAX_HOPCOUNT( pkt, CONFIG_DTP_DEF_MAX_HOPCOUNT );
 				// DTP_SET_PATHDESC_COUNT( pkt, 0 );
-				opf_clear( net->txque );
+				frame_totalclear( net->txque );
 				count = 0;
 				break;
 
 			default:
-				opf_clear( net->txque );
+				frame_totalclear( net->txque );
 				count = 0;
 				break;
 			}
 		}
 		else{
-			opf_clear( net->txque );
+			frame_totalclear( net->txque );
 			count = 0;
-		}
+		    }
 	}
 
 	dtp_evolve( net, NULL );
@@ -515,7 +556,7 @@ uint8 dtp_unicast_leaftoroot( TiDataTreeNetwork * net, TiFrame * frame, uint8 op
 {
 	uint8 count=0;
     char * pkt;
-	TiIEEE802Frame154Descriptor desc;
+	//todo TiIEEE802Frame154Descriptor desc;
 
 	/* This function will try to put the frame into TiDataTreeNetwork's internal TX buffer. 
 	 * The real sending processing is in dtp_evolve(). 
@@ -525,17 +566,20 @@ uint8 dtp_unicast_leaftoroot( TiDataTreeNetwork * net, TiFrame * frame, uint8 op
 		hal_assert( frame_capacity(net->txque) >= frame_length(frame) );
 		count = frame_totalcopyfrom( net->txque, frame ); 
 		hal_assert( count > 0 );
-		
+		pkt = frame_startptr( net->txque);
+
+		frame_setlength( net->txque,frame_capacity( net->txque));
+
 		if (count > 0)
-		{
-			DTP_SET_PROTOCOL_IDENTIFIER
-			DTP_SET_CONTROL( request, DTP_UNICAST_LEAF2ROOT | DTP_DATA_RESPONSE );
-			DTP_SET_SHORTADDRTO( request, net->root );
-			DTP_SET_SHORTADDRFROM( request, net->localaddress );
-			DTP_SET_HOPCOUNT( request, 0 );
-			if (DTP_MAX_HOPCOUNT(request) == 0)
+		{   
+			DTP_SET_PROTOCAL_IDENTIFIER( pkt,DTP_PROTOCOL_IDENTIFER);
+			DTP_SET_PACKETCONTROL( pkt, DTP_UNICAST_LEAF2ROOT | DTP_DATA_RESPONSE );
+			DTP_SET_SHORTADDRTO( pkt, net->root );
+			DTP_SET_SHORTADDRFROM( pkt, net->localaddress );
+			DTP_SET_HOPCOUNT( pkt, 0 );
+			if (DTP_MAX_HOPCOUNT( pkt) == 0)
 			{
-				DTP_SET_MAX_HOPCOUNT( pkt, CONFIG_DTP_DEF_MAX_HOPCOUNT );
+				DTP_SET_MAX_HOPCOUNT( pkt, CONFIG_DTP_MAX_COUNT );
 			}
 			DTP_SET_PATHDESC_COUNT( pkt, 0 );
 			/*
@@ -600,7 +644,8 @@ uint8 dtp_unicast_roottoleaf( TiDataTreeNetwork * net, TiFrame * frame, uint8 op
 
 	dtp_evolve( net, NULL );
 	return count;
-*/	
+*/
+	return 0;
 }
 
 /* Check for arrived frames, no matter who send them. 
@@ -614,10 +659,11 @@ uint8 dtp_recv( TiDataTreeNetwork * net, TiFrame * frame, uint8 option )
 {
 	uint8 count=0;
 
-	if (!opf_empty(net->rxque))
-	{
-		count = opf_copyto( net->rxque, opf ); 
-		opf_clear( net->rxque );
+	if (!frame_empty(net->rxque))
+	{   
+
+		count = frame_totalcopyto( net->rxque, frame); 
+		frame_totalclear( net->rxque );
 	}
   
 	dtp_evolve( net, NULL );
@@ -636,21 +682,29 @@ uint8 dtp_send_request( TiDataTreeNetwork * net, TiFrame * frame, uint8 max_hopc
 	char * request;
     uint8 len;
 
-    request = opf_msdu( opf );
+    request = frame_startptr( frame);
+
+	DTP_SET_PROTOCAL_IDENTIFIER( request,DTP_PROTOCOL_IDENTIFER);
 	DTP_SET_PACKETCONTROL( request, DTP_BROADCAST | DTP_DATA_REQUEST);
 	DTP_SET_SEQUENCEID( request, net->request_id );
+	DTP_SET_HOPCOUNT( request,0);
 	DTP_SET_MAX_HOPCOUNT( request, max_hopcount );
 
-	len = dtp_broadcast( net, opf, 0x00 );
+	frame_setlength( frame,frame_capacity( frame));
+
+	len = dtp_broadcast( net, frame, 0x00 );
+
 	if (len > 0)
 	{
 		net->request_id ++;
+		
 	}
+	
 
 	return len;
 }
 
-/* dtp_send_request()
+/* dtp_send_response()
  * unicast the response to the root node of the data tree.
  *
  * This function should be called by the sensor node only. If the root node(sink 
@@ -662,22 +716,30 @@ uint8 dtp_send_response( TiDataTreeNetwork * net, TiFrame * frame, uint8 max_hop
 	char * response;
     uint8 len;
 
-	response = opf_msdu( opf );
+	response = frame_startptr( frame );
 
 	DTP_SET_SEQUENCEID( response, net->response_id );
 	DTP_SET_MAX_HOPCOUNT( response, max_hopcount );
 
-	len = dtp_unicast_leaftoroot( net, opf, 0x00 );
+	len = dtp_unicast_leaftoroot( net, frame, 0x00 );
+	if ( len>0)
+	{
+		net->response_id ++;
+	}
 	return len;
 }
 
 void dtp_evolve( void * netptr, TiEvent * e )
 {
+
 	TiDataTreeNetwork * net = (TiDataTreeNetwork *)netptr;
+
 	if (net->option & 0x01)
 		dtp_evolve_sink( netptr, e );		
 	else
 		dtp_evolve_node( netptr, e );
+
+	
 }
 
 /* This function receive events from other services/objects and drive the evolution 
@@ -695,6 +757,7 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 
 	aloha_evolve( net->mac, e );
 
+	
 	/*
 	// This event should be sent from MAC layer. Since the listener function is usually
 	// implemented in upper application layers, the user can call dtp_recv() to get the
@@ -710,7 +773,10 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 	}
 	*/
 
+	
+
 	do{
+
 		switch (net->state)
 		{
 		/* If the current program runs as a general wireless sensor node or router node, 
@@ -720,25 +786,38 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 		 * @attention
 		 * There's no STARTUP state for the sink/gateway node.
 		 */
+	
+
 		case DTP_STATE_STARTUP:
 
 			// In STARTUP state, we repeatly check the received frames for MAINTAIN_REQUEST.
 			// All other type frames will be ignored and dropped. And we needn't to wait
 			// for the net->rxbuf empty in the receiving process.
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 			
 			// Check whether there's incoming frames. If there has, then further check 
 			// whether this is a DTP_MAINTAIN_REQUEST type. The node needs to receive 
 			// an DTP_MAINTAIN_REQUEST packet if it wants to leave the STARTUP state.
 			//
-			if (_dtp_evolve_recv_check( net ))
-			{
+			if (_dtp_evolve_recv_check( net ))                            //todo
+			{   
 				if (_dtp_evolve_startup_maintain_check( net ))
-					net->state = DTP_STATE_IDLE;
+				{
+					  net->state = DTP_STATE_IDLE;
+					  
+				}
+
 			}
+			
 			break;
 
+			//todo 
+			//当状态转入DTP_STATE_IDLE后，程序将不再回到DTP_STATE_STARTUP状态，所以上面的代码应该只会被执行一次。
+
 		/* IDLE is the initial and default state of this state machine. */
+
+    
+
 		case DTP_STATE_IDLE:
 
 			/* @attention
@@ -747,7 +826,7 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 			 * In the last version, aloha_recv() is called when both net->rxbuf and net->rxque
 			 * are empty. The source code is as the following: 
 			 *
-			 *	 if (opf_empty(net->rxbuf) && opf_empty(net->rxque))
+			 *	 if (frame_empty(net->rxbuf) && frame_empty(net->rxque))
 			 *
 			 * This condition can guarantee the frame arrived can be put into appropriate 
 			 * buffer space and wait for dtp_recv() to read it out. However, If the 
@@ -759,7 +838,7 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 			 * APPLICATION layer, I prefer to let the newcoming frame override the 
 			 * old one. So I changed the condition as the following now:
 			 * 
-			 *   if (opf_empty(net->rxbuf))
+			 *   if (frame_empty(net->rxbuf))
 			 *
 			 * This can improve performance. Attention now, the new coming frame in 
 			 * net->rxbuf maybe copied to net->rxque and wait for dtp_recv() to read 
@@ -767,7 +846,7 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 			 * frame will overwrite the old one. I prefer the "overwrite" feature
 			 * because this will let the whole system continue to run smoothly. 
 			 */
-
+             
 			/* If the internal temporary buffer (net->rxbuf) is empty, then try to 
 			 * receive one from MAC layer. 
 			 * 
@@ -777,9 +856,12 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 			 * considering the status of rxbuf. If there's data inside rxbuf, then 
 			 * it can be overwrite by aloha_recv(). I think this is also Ok.
 			 */
-	 		if (opf_empty(net->rxbuf))
-			{
-				if (_dtp_evolve_recv_check(net))
+
+
+	 		if (frame_empty(net->rxbuf))
+			{   
+
+                if (_dtp_evolve_recv_check(net))
 				{
 					_dtp_evolve_node_recv_or_forward( net );
 				}
@@ -790,50 +872,56 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 			// be restarted in the next call of dtp_evolve(). so don't worry about 
 			// the current failure.
 
-			if (!opf_empty(net->txque))
-			{   
-				switch (DTP_TRANTYPE(opf_msdu(net->txque)))
+			if (!frame_empty(net->txque))
+			{  
+
+				switch (DTP_TRANTYPE(frame_startptr(net->txque)))
 				{
 				case DTP_BROADCAST:
 					if (aloha_broadcast( net->mac, net->txque, 0x00 ) > 0)
 					{
-						opf_clear( net->txque );
+						frame_totalclear( net->txque );
 						net->txtrytime = DTP_MAX_TX_TRYTIME;
 					}
 					else{
 						net->txtrytime --;
 						if (net->txtrytime == 0)
 						{
-							opf_clear( net->txque );
+							frame_totalclear( net->txque );
 							net->txtrytime = DTP_MAX_TX_TRYTIME;
 						}
 					}
 					break;
 				case DTP_UNICAST_LEAF2ROOT:
+
 					// if the last bit of the forth parameter of aloha_send() is 
 					// 1, then the aloha will use ACK mechanism.
 					//
-					hal_assert(!(opf_shortaddrto(net->txque)==0x0000));
-					if (aloha_send( net->mac, net->txque, 0x01 ) > 0)
-					{
-						opf_clear( net->txque );
+					//todo hal_assert(!(opf_shortaddrto(net->txque)==0x0000));
+					//todo if (aloha_send( net->mac, net->txque, 0x01 ) > 0)
+
+					if (aloha_send( net->mac,net->parent, net->txque, 0x01 ) > 0)
+					{   
+						frame_totalclear( net->txque );
 						net->txtrytime = DTP_MAX_TX_TRYTIME;
 					}
 					else{
 						net->txtrytime --;
 						if (net->txtrytime == 0)
 						{
-							opf_clear( net->txque );
+							frame_totalclear( net->txque );
 							net->txtrytime = DTP_MAX_TX_TRYTIME;
 						}
 					}
 					break;
 				default:
 					// for unrecognized frame types, just drop it.
-					opf_clear( net->txque );
+					frame_totalclear( net->txque );
 					break;
 				}
 			}
+			
+           
 			break;	
 
 		// todo
@@ -847,12 +935,14 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 			net->state = FLOOD_STATE_IDLE;
 			break;*/
 
+
 		default:
 			net->state = DTP_STATE_IDLE;
 
 		}
 	}while (!done);
 
+	
 	return;
 }
 
@@ -860,8 +950,19 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 {
 	TiDataTreeNetwork * net = (TiDataTreeNetwork *)netptr;
 	bool done = true;
+	char * pkt;
+   
+	aloha_evolve( net->mac, e ); 
 
-	aloha_evolve( net->mac, e );
+/*	if ( !frame_empty(net->txque))
+	{
+		if (aloha_broadcast( net->mac, net->txque, 0x00 ) > 0)
+		{
+           frame_totalclear( net->txque );
+		}
+		
+	}
+	*/
 
 	/*
 	// This event should be sent from MAC layer. Since the listener function is usually
@@ -876,12 +977,14 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 			return;
 		}
 	}
-	*/
-
+	*/ 
+    
+    
 	do{
 		switch (net->state)
 		{
 		/* IDLE is the initial and default state of this state machine. */
+	
 		case DTP_STATE_IDLE:
 
 			/* @attention
@@ -890,7 +993,7 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 			 * In the last version, aloha_recv() is called when both net->rxbuf and net->rxque
 			 * are empty. The source code is as the following: 
 			 *
-			 *	 if (opf_empty(net->rxbuf) && opf_empty(net->rxque))
+			 *	 if (frame_empty(net->rxbuf) && frame_empty(net->rxque))
 			 *
 			 * This condition can guarantee the frame arrived can be put into appropriate 
 			 * buffer space and wait for dtp_recv() to read it out. However, If the 
@@ -902,7 +1005,7 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 			 * APPLICATION layer, I prefer to let the newcoming frame override the 
 			 * old one. So I changed the condition as the following now:
 			 * 
-			 *   if (opf_empty(net->rxbuf))
+			 *   if (frame_empty(net->rxbuf))
 			 *
 			 * This can improve performance. Attention now, the new coming frame in 
 			 * net->rxbuf maybe copied to net->rxque and wait for dtp_recv() to read 
@@ -920,34 +1023,42 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 			 * considering the status of rxbuf. If there's data inside rxbuf, then 
 			 * it can be overwrite by aloha_recv(). I think this is also Ok.
 			 */
-	 		if (opf_empty(net->rxbuf))
+ 
+
+
+	 		if (frame_empty(net->rxbuf))
 			{
 				if (_dtp_evolve_recv_check(net))
 				{
+					
 					_dtp_evolve_sink_recv( net );
 				}
 			}
+			
+			
 
 			// try to send the frame inside net->txque. 
 			// if aloha_broadcast() or aloha_send() failed this time, then it will 
 			// be restarted in the next call of dtp_evolve(). so don't worry about
 			// when the frame in net->txque is really sent.
 
-			if (!opf_empty(net->txque))
+			if (!frame_empty(net->txque))
 			{   
-				switch (DTP_TRANTYPE(opf_msdu(net->txque)))
+				pkt = frame_startptr( net->txque );
+				switch (DTP_TRANTYPE(pkt))
 				{
 				case DTP_BROADCAST:
 					if (aloha_broadcast( net->mac, net->txque, 0x00 ) > 0)
-					{
-						opf_clear( net->txque );
+					{   
+						frame_totalclear( net->txque );
 						net->txtrytime = DTP_MAX_TX_TRYTIME;
 					}
 					else{
+						
 						net->txtrytime --;
 						if (net->txtrytime == 0)
 						{
-							opf_clear( net->txque );
+							frame_totalclear( net->txque );
 							net->txtrytime = DTP_MAX_TX_TRYTIME;
 						}
 					}
@@ -956,11 +1067,12 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 					// if the last bit of the forth parameter of aloha_send() is 
 					// 1, then the aloha will use ACK mechanism.
 					//
-					if (!(opf_shortaddrto(net->txque)==0x0000) )
+					if ( DTP_SHORTADDRTO( pkt)!=0x0000 )
 					{
-						if (aloha_send( net->mac, net->txque, 0x01 ) > 0)
+						//todo if (aloha_send( net->mac, net->txque, 0x01 ) > 0)
+						if (aloha_send( net->mac, DTP_SHORTADDRTO( pkt),net->txque, 0x01 ) > 0)//todo 这一句不确定
 						{
-							opf_clear( net->txque );
+							frame_totalclear( net->txque );
 							net->txtrytime = DTP_MAX_TX_TRYTIME;
 						}
 					}
@@ -968,7 +1080,7 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 						net->txtrytime --;
 						if (net->txtrytime == 0)
 						{
-							opf_clear( net->txque );
+							frame_totalclear( net->txque );
 							net->txtrytime = DTP_MAX_TX_TRYTIME;
 						}
 					}
@@ -981,14 +1093,15 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 					// default send by call aloha_send() with option 0x01(ack required)
 					// if (aloha_send( net->mac, net->txque, 0x01 ) > 0)
 					//{
-					//	opf_clear( net->txque );
+					//	frame_totalclear( net->txque );
 					//}
 
 					// for unrecognized frame types, just drop it.
-					opf_clear( net->txque );
+					frame_totalclear( net->txque );
 					break;
 				}
 			}
+			
 			break;	
 
 		// todo
@@ -1007,8 +1120,10 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 
 		}
 	}while (!done);
+   
+	
 
-	return;
+	//return;
 }
 
 /* _dtp_evolve_recv_check()
@@ -1032,14 +1147,16 @@ bool _dtp_evolve_recv_check( TiDataTreeNetwork * net )
 	{	
 		ret = false;
 	}
+	/* todo
 	else{
 		// drop the frame in net->rxbuf if failed to parsing it.
 		if (!opf_parse( net->rxbuf,0 ))
 		{
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 			ret = false;
 		}
 	}
+	*/
 
 	// The 802.15.4 ACK, BEACON,  and COMMNAD type frames should be ignored
 	// and discarded.
@@ -1048,18 +1165,24 @@ bool _dtp_evolve_recv_check( TiDataTreeNetwork * net )
 	// by the MAC layer. However, we should still enable the following 
 	// judgement to make the program most robust.
 	//
+	
+	/*
 	if (ret)
 	{
 		if (opf_type(net->rxbuf) != FCF_FRAMETYPE_DATA)
 		{   
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 			ret = false;
      	}
 	}
+	*/
 
 	// Check: whether the same frame has already been received. This
 	// is by searching it in the cache. If it cannot find it in the 
 	// cache, then put the frame in the cache.
+
+	
+
 	if (ret)
 	{
 		// If the cache has this packet, which inidcates the current node 
@@ -1068,11 +1191,12 @@ bool _dtp_evolve_recv_check( TiDataTreeNetwork * net )
 		len = _net_get_frame_feature( net->rxbuf, &(net->frame_feature[0]), sizeof(net->frame_feature) );  
 		if (cache_visit(net->cache, &(net->frame_feature[0]), len ))
 		{    
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 			ret = false;
 		}
 	}
-
+	
+    
 	return ret;
 }
 
@@ -1083,17 +1207,18 @@ bool _dtp_evolve_recv_check( TiDataTreeNetwork * net )
 bool _dtp_evolve_startup_maintain_check( TiDataTreeNetwork * net )
 {
 	char * pkt;
+	char * pc;
 	uint8 cur_hopcount, max_hopcount;
 	bool ret = false;
 
 	// assume the incoming frame is in net->rxbuf
-	hal_assert( !opf_empty(net->rxbuf) );
+	hal_assert( !frame_empty(net->rxbuf) );
 
 	// if the destination of this packet matches the address of the 
 	// current node, then this packet arrives its destination.
 	// This line assume the frame has already been parsed successfully
 	// or else the value of "msdu" will be invalid.
-	pkt = opf_msdu( net->rxbuf );
+	pkt = frame_startptr( net->rxbuf );
 
 	switch (DTP_TRANTYPE(pkt))
 	{
@@ -1107,7 +1232,7 @@ bool _dtp_evolve_startup_maintain_check( TiDataTreeNetwork * net )
 		
 		if (DTP_SHORTADDRFROM(pkt) == net->localaddress)
 		{
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 			break;
 		}
 
@@ -1127,11 +1252,14 @@ bool _dtp_evolve_startup_maintain_check( TiDataTreeNetwork * net )
 			{
 				net->depth = cur_hopcount;
 				net->root = DTP_SHORTADDRFROM( pkt );
-				net->parent = opf_shortaddrfrom( net->rxbuf );
+				pc = DTP_PATHDESC_PTR(pkt) + ((DTP_HOPCOUNT(pkt)-1) << 1);//todo
+				net->parent = DTP_MAKEWORD( pc[2],pc[1]);//todo  父亲节点为上一节点的网络地址
 				ret = true;
 			}
 			else
+			{
 				ret = false;
+			}
 
 			// this line shouldn't put into the "if (net->depth < cur_hopcount) {}"
 			// because we'd better guarantee the response_id is the newest id.
@@ -1143,11 +1271,14 @@ bool _dtp_evolve_startup_maintain_check( TiDataTreeNetwork * net )
 			// if this is true.
 			//
 			max_hopcount = DTP_MAX_HOPCOUNT( pkt );
+
 			if (cur_hopcount >= max_hopcount)
-			{
-				opf_clear( net->rxbuf );
+			{   
+				frame_totalclear( net->rxbuf );
 				break;
 			}
+
+			frame_totalcopyto( net->rxbuf, net->rxque );
 
 			// If the txque is empty, then move the frame from rxbuf to txque. For 
 			// efficiency reasons, this is implemented by switching the two pointers. 
@@ -1155,14 +1286,30 @@ bool _dtp_evolve_startup_maintain_check( TiDataTreeNetwork * net )
 			// will continue stay in net->rxbuf and will be moved to txque until 
 			// the next call to function dtp_evolve().
 			
-			if (opf_empty(net->txque))
+			if (frame_empty(net->txque))
 			{
+				
+				
+
+
+				
+
+				/*todo
 				opf_set_panto( net->rxbuf, net->pan );
 				opf_set_shortaddrto( net->rxbuf, OPF_BROADCAST_ADDRESS );
 				opf_set_panfrom( net->rxbuf, net->pan );
 				opf_set_shortaddrfrom( net->rxbuf, net->localaddress );
+				*/
                 cur_hopcount = DTP_HOPCOUNT( pkt );
 				DTP_SET_HOPCOUNT( pkt, ++cur_hopcount );
+
+
+				// save this node address into the packet's path section
+				pc = DTP_PATHDESC_PTR(pkt) + ((DTP_HOPCOUNT(pkt)-1) << 1);
+				pc[1] = (net->localaddress ) & 0xFF;
+				pc[2] = ( net->localaddress ) >> 8;
+
+				DTP_PATHDESC_COUNT( pkt)++;
 
 				// temporarily comment the following
 				// should uncomment in release version
@@ -1173,12 +1320,14 @@ bool _dtp_evolve_startup_maintain_check( TiDataTreeNetwork * net )
 				pc[0] = ( net->localaddress ) >> 8;
 				pc[1] = (net->localaddress ) & 0xFF;
 				*/
-				_switch_ptr( &(net->rxbuf), &(net->txque) );
+
+                _switch_ptr( &(net->rxbuf), &(net->txque) );
+				
 			}
 			break;
 		
 		default:
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 			break;
 		}
 		break;
@@ -1196,17 +1345,19 @@ bool _dtp_evolve_startup_maintain_check( TiDataTreeNetwork * net )
  */
 void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 {
+
 	char * pkt;
 	uint8 cur_hopcount, max_hopcount;
+	char * pc;
 	uint16 addr;
 
-	hal_assert( !opf_empty(net->rxbuf) );
+	hal_assert( !frame_empty(net->rxbuf) );
 
 	// if the destination of this packet matches the address of the 
 	// current node, then this packet arrives its destination.
 	// This line assume the frame has already been parsed successfully
 	// or else the value of "msdu" will be invalid.
-	pkt = opf_msdu( net->rxbuf );
+	pkt = frame_startptr( net->rxbuf );
 
 	switch (DTP_TRANTYPE(pkt))
 	{
@@ -1220,7 +1371,7 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 		
 		if (DTP_SHORTADDRFROM(pkt) == net->localaddress)
 		{
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 			break;
 		}
 
@@ -1234,13 +1385,14 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 			// @attention
 			// only the first DTP_MAINTAIN_REQUEST frame received is used to reconfigure
 			// the data tree. the hopcount of the current node is actually the depth.
-			//
+			
 			cur_hopcount = DTP_HOPCOUNT( pkt );
 			if (net->depth > cur_hopcount)
 			{
 				net->depth = cur_hopcount;
 				net->root = DTP_SHORTADDRFROM( pkt );
-				net->parent = opf_shortaddrfrom( net->rxbuf );
+				pc = DTP_PATHDESC_PTR(pkt) + ((DTP_HOPCOUNT(pkt)-1) << 1);//todo
+				net->parent = DTP_MAKEWORD( pc[2],pc[1]);//todo  父亲节点为上一节点的网络地址
 			}
 
 			// this line shouldn't put into the "if (net->depth < cur_hopcount) {}"
@@ -1255,7 +1407,7 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 			max_hopcount = DTP_MAX_HOPCOUNT( pkt );
 			if (cur_hopcount >= max_hopcount)
 			{
-				opf_clear( net->rxbuf );
+				frame_totalclear( net->rxbuf );
 				break;
 			}
 
@@ -1265,14 +1417,27 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 			// will continue stay in net->rxbuf and will be moved to txque until 
 			// the next call to function dtp_evolve().
 			
-			if (opf_empty(net->txque))
+			if ( frame_empty(net->txque))
 			{
+				
+				
+				frame_totalcopyto( net->rxbuf, net->rxque );
+				/*todo
 				opf_set_panto( net->rxbuf, net->pan );
 				opf_set_shortaddrto( net->rxbuf, OPF_BROADCAST_ADDRESS );
 				opf_set_panfrom( net->rxbuf, net->pan );
 				opf_set_shortaddrfrom( net->rxbuf, net->localaddress );
+				*/
+
                 cur_hopcount = DTP_HOPCOUNT( pkt );
 				DTP_SET_HOPCOUNT( pkt, ++cur_hopcount );
+
+				// save this node address into the packet's path section
+				pc = DTP_PATHDESC_PTR(pkt) + ((DTP_HOPCOUNT(pkt)-1) << 1);
+				pc[1] = (net->localaddress ) & 0xFF;
+				pc[2] = ( net->localaddress ) >> 8;
+
+				DTP_PATHDESC_COUNT( pkt)++;
 
 				// temporarily comment the following
 				// should uncomment in release version
@@ -1303,12 +1468,12 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 			max_hopcount = DTP_MAX_HOPCOUNT( pkt );
 			if (cur_hopcount >= max_hopcount)
 			{
-				opf_clear( net->rxbuf );
+				frame_totalclear( net->rxbuf );
 				break;
 			}
 			
 			// prepare for sending and receiving
-			if (opf_empty(net->txque))
+			if (frame_empty(net->txque))
 			{
 				// copy the received packet to rxque and wait for dtp_recv() to read it out.
 				//
@@ -1320,20 +1485,31 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 				// openwsn still prefer to override the elder packets in the design. 
 				// this enable the network to process newer frames.
 				//
-				opf_copyto( net->rxbuf, net->rxque );
+				frame_totalcopyto( net->rxbuf, net->rxque );
 
 				// move the frame in net->rxbuf to net->rxque and wait for MAC layer 
 				// to send it out. for efficiency reasons, this is done by switching 
 				// the pointers.
+
+				/*todo
 				opf_set_panto( net->rxbuf, net->pan );
 				opf_set_shortaddrto( net->rxbuf, OPF_BROADCAST_ADDRESS );
 				opf_set_panfrom( net->rxbuf, net->pan );
 				opf_set_shortaddrfrom( net->rxbuf, net->localaddress );
+				*/
+
                 cur_hopcount = DTP_HOPCOUNT( pkt );
 				DTP_SET_HOPCOUNT( pkt, ++cur_hopcount );
 
 				// temporarily comment the following
 				// should uncomment in release version
+
+				// save this node address into the packet's path section
+				pc = DTP_PATHDESC_PTR(pkt) + ((DTP_HOPCOUNT(pkt)-1) << 1);
+				pc[1] = (net->localaddress ) & 0xFF;
+				pc[2] = ( net->localaddress ) >> 8;
+
+				DTP_PATHDESC_COUNT( pkt)++;
 
 				// save this node address into the packet's path section
 				/*
@@ -1358,8 +1534,10 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 				// @warning: If the dtp_recv() cannot read out the data in rxque fast 
 				// enough, then the new frame will override the old one.
 				//
+
+				
 				_switch_ptr( &(net->rxbuf), &(net->rxque) );
-				opf_clear( net->rxbuf );
+				frame_totalclear( net->rxbuf );
 			}
 			else{
 				// @attention
@@ -1372,7 +1550,7 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 				//
 				// hal_assert( false );
 				//
-				opf_clear( net->rxbuf );
+				frame_totalclear( net->rxbuf );
 			}
 			break;
 		}
@@ -1380,12 +1558,12 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 
 	// not support multicast yet. The multicast packet will be simply dropped.
 	case DTP_MULTICAST:
-		opf_clear( net->rxbuf );
+		frame_totalclear( net->rxbuf );
 		break;
 
 	// not support yet. The packet will be simply dropped.
 	case DTP_UNICAST_ROOT2LEAF:
-		opf_clear( net->rxbuf );
+		frame_totalclear( net->rxbuf );
 		break;
 
 	case DTP_UNICAST_LEAF2ROOT:
@@ -1402,7 +1580,7 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 			// enough, then the new frame will override the old one.
 			//
 			_switch_ptr( &(net->rxbuf), &(net->rxque) );
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 		}
 		else{ 
 			// forwarding the packet to its parent node in the data tree.
@@ -1415,14 +1593,16 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 			max_hopcount = DTP_MAX_HOPCOUNT( pkt );
 			if (cur_hopcount >= max_hopcount+1)
 			{
-				opf_clear( net->rxbuf );
+				frame_totalclear( net->rxbuf );
 			}
-			else if (opf_empty(net->txque))
-			{
+			else if (frame_empty(net->txque))
+			{   
+                /*
 				opf_set_panto( net->rxbuf, net->pan );
 				opf_set_shortaddrto( net->rxbuf, net->parent );
 				opf_set_panfrom( net->rxbuf, net->pan );
 				opf_set_shortaddrfrom( net->rxbuf, net->localaddress );
+				*/
 				cur_hopcount ++;
 				DTP_SET_HOPCOUNT( pkt, cur_hopcount );
 				_switch_ptr( &(net->rxbuf), &(net->txque) );
@@ -1437,7 +1617,7 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 		// 
 		// if you remove this section, then the frame will continue stay in net->rxbuf.
 		// 
-		opf_clear( net->rxbuf );
+		frame_totalclear( net->rxbuf );
 		break;
 
 	} // switch
@@ -1456,15 +1636,15 @@ void _dtp_evolve_sink_recv( TiDataTreeNetwork * net )
 {
 	char * pkt;
 	//uint8 cur_hopcount, max_hopcount;
-	//uint16 addr;
+	uint16 addr;
 
-	hal_assert( !opf_empty(net->rxbuf) );
+	hal_assert( !frame_empty(net->rxbuf) );
 
 	// if the destination of this packet matches the address of the 
 	// current node, then this packet arrives its destination.
 	// This line assume the frame has already been parsed successfully
 	// or else the value of "msdu" will be invalid.
-	pkt = opf_msdu( net->rxbuf );
+	pkt = frame_startptr( net->rxbuf );
 
 	switch (DTP_TRANTYPE(pkt))
 	{
@@ -1478,7 +1658,7 @@ void _dtp_evolve_sink_recv( TiDataTreeNetwork * net )
 		
 		if (DTP_SHORTADDRFROM(pkt) == net->localaddress)
 		{
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 			break;
 		}
 
@@ -1490,7 +1670,7 @@ void _dtp_evolve_sink_recv( TiDataTreeNetwork * net )
 		case DTP_MAINTAIN_REQUEST:
 		case DTP_DATA_REQUEST:
 		case DTP_MAINTAIN_RESPONSE:
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 			break;
 
 		//case DTP_DATA_RESPONSE:
@@ -1500,15 +1680,15 @@ void _dtp_evolve_sink_recv( TiDataTreeNetwork * net )
 			// For efficiency reason, the moving process is replaced by 
 			// switch the two pointers.
 			//
-			//if (DTP_SHORTADDRTO(pkt) == net->localaddress)
+			if (DTP_SHORTADDRTO(pkt) == net->localaddress)
 			{
 				// @warning: If the dtp_recv() cannot read out the data in rxque fast 
 				// enough, then the new frame will override the old one.
 				//
 				_switch_ptr( &(net->rxbuf), &(net->rxque) );
-				opf_clear( net->rxbuf );
+				frame_totalclear( net->rxbuf );
 			}
-			//else{
+			else{
 				// @attention
 				// currently, we don't support this branch. however, you still shouldn't  
 				// enable the following assert(). This is because sometimes the broadcasting
@@ -1519,8 +1699,8 @@ void _dtp_evolve_sink_recv( TiDataTreeNetwork * net )
 				//
 				// hal_assert( false );
 				//
-			//	opf_clear( net->rxbuf );
-			//}
+			     frame_totalclear( net->rxbuf );
+			     }
 			break;
 		}
 		break;
@@ -1528,33 +1708,36 @@ void _dtp_evolve_sink_recv( TiDataTreeNetwork * net )
 	// not support multicast yet. The multicast packet will be simply dropped.
 	case DTP_MULTICAST:
 		_switch_ptr( &(net->rxbuf), &(net->rxque) );
-		opf_clear( net->rxbuf );
+		frame_totalclear( net->rxbuf );
 		break;
 
 	// not support yet. The packet will be simply dropped.
 	case DTP_UNICAST_ROOT2LEAF:
-		opf_clear( net->rxbuf );
+		frame_totalclear( net->rxbuf );
 		break;
 
 	case DTP_UNICAST_LEAF2ROOT:
-		//addr = DTP_SHORTADDRTO( pkt );
+		addr = DTP_SHORTADDRTO( pkt );
 
 		// if the node reaches its destination, then move the packet 
 		// from net->rxbuf into net->rxque for dtp_recv() using. 
 		// For efficiency reason, the moving process is replaced by 
 		// switch the two pointers.
 		//
-		//if (addr == net->localaddress)
-		{
+
+		
+		if (addr == net->localaddress)
+		{   
+			
 			// @warning: If the dtp_recv() cannot read out the data in rxque fast 
 			// enough, then the new frame will override the old one.
 			//
 			_switch_ptr( &(net->rxbuf), &(net->rxque) );
-			opf_clear( net->rxbuf );
+			frame_totalclear( net->rxbuf );
 		}
-		//else{ 
-		//	opf_clear( net->rxbuf );
-		//}
+		else{ 
+		      frame_totalclear( net->rxbuf );
+		    }
 		break;
 
 	default:
@@ -1565,7 +1748,7 @@ void _dtp_evolve_sink_recv( TiDataTreeNetwork * net )
 		// if you remove this section, then the frame will continue stay in net->rxbuf.
 		// 
 		_switch_ptr( &(net->rxbuf), &(net->rxque) );
-		opf_clear( net->rxbuf );
+		frame_totalclear( net->rxbuf );
 		break;
 
 	} // switch
@@ -1579,7 +1762,7 @@ void _dtp_evolve_sink_recv( TiDataTreeNetwork * net )
 uint8 _net_get_frame_feature( TiFrame * frame, char * feature, uint8 size )
 {
 	memset( feature, 0x00, size );
-	memmove( feature, (char*)frame_startptr(net->rxbuf)+1, size );
+	memmove( feature, (char*)frame_startptr( frame)+1, size );
 
 	return size;
 }

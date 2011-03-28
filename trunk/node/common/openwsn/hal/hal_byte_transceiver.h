@@ -1,5 +1,5 @@
-#ifndef _BYTE_TRANSCEIVER_H_4892_
-#define _BYTE_TRANSCEIVER_H_4892_
+#ifndef _HAL_BYTE_TRANSCEIVER_H_4892_
+#define _HAL_BYTE_TRANSCEIVER_H_4892_
 /*******************************************************************************
  * this file defines the byte based transceiver interface that can be used by the 
  * MAC layer.
@@ -8,6 +8,9 @@
  *
  * @state
  *  developing
+ * 
+ * @reference
+ * 	- hal_frame_transceiver
  *
  * @history
  * @author zhangwei on 200609
@@ -20,6 +23,9 @@
 #include "hal_foundation.h"
 #include "../rtl/rtl_iobuf.h"
 
+/* The byte transceiver can only send byte streams. Which means the micro-controller 
+ * must use software to split the byte stream into continuous frames 
+ */
 #define ETRX_MODE_RX            0
 #define ETRX_MODE_TX            1
 #define ETRX_MODE_SLEEP         2
@@ -60,5 +66,5 @@ struct _TiByteTxRxInterface{
 
 #define TiByteTxRxInterface struct _TiByteTxRxInterface
 
-#endif /* _BYTE_TRANSCEIVER_H_4892_ */
+#endif /* _HAL_BYTE_TRANSCEIVER_H_4892_ */
 
