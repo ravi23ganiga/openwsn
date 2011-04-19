@@ -33,6 +33,9 @@
  * 	- revision today.
  * @modified by yan-shixing(TongJi University) on 20091105
  *  - revision. 
+ * @modified by Zhang Wei(TongJi University) in 2011.04
+ *  - Correct bugs during initialization. The timer_open() call is missed since 
+ *    last revision. 
  ******************************************************************************/ 
 
 #include "../../common/openwsn/svc/svc_configall.h"
@@ -55,6 +58,7 @@ void vti_listener2( void * vtmptr, TiEvent * e );
 
 int main(void)
 {
+	char * msg = "welcome to csma sendnode...";
 	TiTimerAdapter * timeradapter;
 	TiTimerManager * vtm;
 	TiTimer * vti1;
@@ -68,25 +72,33 @@ int main(void)
 	hal_delay( 500 );
 	led_off( LED_ALL );
 
-	dbo_open(0, 38400);
+    rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
+    dbc_mem( msg, strlen(msg) );
 
 	timeradapter = timer_construct( (void *)(&g_timeradapter), sizeof(g_timeradapter) );
 	vtm = vtm_construct( (void*)&g_vtm, sizeof(g_vtm) );
 
+	// We need timer_open() call to set the timer id. The vtm_open() will still 
+	// call timer_open() inside to set vtm_inputevent() callback listener.
+	
+	//timeradapter = timer_open( timeradapter, 0, vtm_inputevent, NULL, 0x00 );
+	timeradapter = timer_open( timeradapter, 0, NULL, NULL, 0x00 );
 	vtm = vtm_open( vtm, timeradapter, VTM_RESOLUTION );
 
+	// vti_setinterval( vti, interval, repeat )
+	
 	vti1 = vtm_apply( vtm );
 	hal_assert( vti1 != NULL );
 	vti_open( vti1, vti_listener1, vti1 );
 	vti_setscale( vti1, 1 );
-	vti_setinterval( vti1, 800, 0x00 );
+	vti_setinterval( vti1, 1000, 0x01 );
 	vti_start( vti1 );
 
 	vti2 = vtm_apply( vtm );
 	hal_assert( vti2 != NULL );
 	vti_open( vti2, vti_listener2, vti2 );
 	vti_setscale( vti2, 1 );
-	vti_setinterval( vti2, 40, 0x01 );
+	vti_setinterval( vti2, 500, 0x01 );
 	vti_start( vti2 );
 
 	hal_enable_interrupts();

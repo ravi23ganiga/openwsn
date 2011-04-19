@@ -349,6 +349,8 @@ void _osx_on_wakeup( TiOSX * osx )
 
 void osx_init( void )
 {
+	// osx_startup();
+	
 	#ifdef CONFIG_OSX_DYNAMIC_MEMORY
 	g_osx = _osx_create( CONFIG_OSX_QUEUE_CAPACITY, CONFIG_OSX_DISPATCHER_CAPACITY );
 	#endif

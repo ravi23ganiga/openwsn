@@ -1,1 +1,1 @@
-remote microphone
+remote microphone sensor node application

@@ -26,12 +26,16 @@
  *
  ******************************************************************************/
 
-
 /**
  * CONFIG_ALOHA_MAX_BACKOFF
  * Maximum backoff delay time. the really backoff time is a random number between 
  * 0 and CONFIG_ALOHA_MAX_BACKOFF. Currently, it's set to 100 milliseconds. You should 
  * optimize it according to your own network parameters.
+ * 
+ * CONFIG_ALOHA_MIN_ACK_TIME
+ * CONFIG_ALOHA_MAX_ACK_TIME
+ * These two macros defines the range for ACK waiting. You should tune it according
+ * to the transceiver parameters.
  */
 
 #define CONFIG_ALOHA_DEFAULT_PANID				0x0001
@@ -42,6 +46,10 @@
 #define CONFIG_ALOHA_ACK_RESPONSE_TIME          10
 
 #define CONFIG_ALOHA_MAX_FRAME_SIZE             128
+
+
+#define CONFIG_ALOHA_MIN_ACK_TIME               1
+#define CONFIG_ALOHA_MAX_ACK_TIME               9
 
 #define CONFIG_ALOHA_MAX_BACKOFF                100
 #define CONFIG_ALOHA_MIN_BACKOFF                0
@@ -56,6 +64,7 @@
 #include "../hal/hal_debugio.h"
 #include "../hal/hal_frame_transceiver.h"
 #include "../hal/hal_timer.h"
+#include "svc_timer.h"
 #include "svc_nio_acceptor.h"
 
 /******************************************************************************* 
@@ -112,7 +121,8 @@ typedef struct{
 	uint8 state;
     TiFrameTxRxInterface * rxtx;
 	TiNioAcceptor *nac;
-	TiTimerAdapter * timer;
+	//TiTimerAdapter * timer;
+	TiTimer * timer;
 	TiFrame * txbuf;
     uint8 retry;
 	uint16 backoff;
@@ -128,6 +138,7 @@ typedef struct{
     void * lisowner;
 	uint8 option;
 	char txbuf_memory[FRAME_HOPESIZE(CONFIG_ALOHA_MAX_FRAME_SIZE)];
+	char rxbuf_ack[FRAME154_ACK_FRAME_SIZE];
 }TiAloha;
 
 #ifdef __cplusplus
@@ -149,7 +160,7 @@ void aloha_destroy( TiAloha * mac );
  * Open the TiNioAloha object for sending and receiving. 
  */
 TiAloha * aloha_open( TiAloha * mac, TiFrameTxRxInterface * rxtx, TiNioAcceptor * nac, uint8 chn, uint16 panid, 
-	uint16 address, TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner, uint8 option );
+	uint16 address, TiTimer * timer, TiFunEventHandler listener, void * lisowner, uint8 option );
 
 /**
  * Close the TiNioAloha object. The closing process will release resource applied by 

@@ -56,8 +56,10 @@
 #include "../../common/openwsn/rtl/rtl_lightqueue.h"
 #include "../../common/openwsn/hal/hal_cc2420const.h"
 #include "../../common/openwsn/hal/hal_uart.h"
+
 #define VTM_RESOLUTION 5
 #include "../../common/openwsn/hal/hal_cc2420.h"
+
 #define SYSQUE_CAPACITY 32
 #define SYSQUEUE_SIZE (LIGHTQUEUE_HOPESIZE(sizeof(TiEvent), SYSQUE_CAPACITY))
 #define UART_ID 0
@@ -70,7 +72,6 @@
 char m_sysque_buffer[SYSQUEUE_SIZE];
 static TiTimerAdapter g_timeradapter;
 static TiTimerManager g_vtm;
-//TiSysQueue * g_sysque;
 TiOsxQueue * g_sysque;
 
 uint16 g_count;
@@ -94,7 +95,6 @@ int main(void)
 	led_off( LED_ALL );
 	dbo_open( UART_ID, 38400 );
 
-	// g_sysque = sysque_construct( &(m_sysque_buffer[0]), SYSQUEUE_SIZE, sizeof(TiEvent) );
     g_sysque = osx_queue_open( &(m_sysque_buffer[0]), SYSQUEUE_SIZE, sizeof(TiEvent) );
 	
 	g_count = 0;
@@ -150,12 +150,7 @@ int main(void)
               sleep_enable();
               sleep_cpu();
 			  sleep_disable();
-			  
-			  
-			
 	  	}
-		
-		
 	}
 }
 

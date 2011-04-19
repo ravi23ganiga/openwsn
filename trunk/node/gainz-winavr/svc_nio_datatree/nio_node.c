@@ -39,7 +39,7 @@
  ******************************************************************************/
 
 #define CONFIG_NIOACCEPTOR_RXQUE_CAPACITY 2
-#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 2
+#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 1
 
 #include "../../common/openwsn/hal/hal_configall.h"  
 #include "../../common/openwsn/svc/svc_configall.h"  
@@ -150,7 +150,7 @@ int main(void)
 	// timeradapter is used by the vtm(virtual timer manager). vtm require to enable the 
 	// period interrupt modal of vtm
 
-	timeradapter   = timer_open( timeradapter, 0, vtm_inputevent, vtm, 0x01 ); 
+	timeradapter   = timer_open( timeradapter, 0, NULL, NULL, 0x01 ); 
 	vtm            = vtm_open( vtm, timeradapter, CONFIG_VTM_RESOLUTION );
 	cc             = cc2420_open(cc, 0, NULL, NULL, 0x00 );
 	rxtx           = cc2420_interface( cc, &m_rxtx );
@@ -180,14 +180,14 @@ int main(void)
 	cc2420_settxpower( cc, CC2420_POWER_1);//cc2420_settxpower( cc, CC2420_POWER_2);
 	cc2420_enable_autoack( cc );
 
-	vti            = vtm_apply( vtm );
-	vti            = vti_open( vti, NULL, NULL );
+	//vti            = vtm_apply( vtm );
+	//vti            = vti_open( vti, NULL, NULL );
 //	ledtune        = ledtune_construct( (void*)(&m_ledtune), sizeof(m_ledtune), vti );
 //	ledtune        = ledtune_open( ledtune );
 
 	/* assert: all the above open() functions return non NULL values */
 
-	hal_assert((vtm != NULL) && (cc != NULL) && (mac != NULL) && (adc != NULL) && (lum != NULL)
+	hal_assert((timeradapter != NULL) && (cc != NULL) && (mac != NULL) && (adc != NULL) && (lum != NULL)
 		&& (rxbuf != NULL) && (txbuf != NULL) && (dtp != NULL));
 
 	hal_enable_interrupts();
@@ -195,8 +195,10 @@ int main(void)
    // dtp->state = DTP_STATE_IDLE;//todo for testing 临时用这一句必须删掉
 
 	//todo for testing
-	/*
-
+   
+	//dtp->root = 0x01;//todo for testing
+	//dtp->parent = 0x03;//todo for testing
+   /*
 	while ( 1)//todo for testing
 	{
 		
@@ -214,14 +216,14 @@ int main(void)
 
         dtp_evolve( dtp, NULL );
 		
-		hal_delay( 1000);//todo for testing
+		hal_delay( 2000);//todo for testing
 
 	}
 
      */
 
 
-	
+
 
 	while(1)
 	{
@@ -237,15 +239,8 @@ int main(void)
 		if (len > 0)
 		{   
 			led_toggle( LED_GREEN);//todo for testing
-            /*
-			dbc_putchar( 0xaa);//todo for testing
-            dbc_uint16( dtp->root);//todo for testing
-			dbc_putchar( 0xbb);//todo for testing
-			dbc_uint16( dtp->parent);//todo for testing
-			dbc_putchar( 0xcc);//todo for testign
-			*/
-
-  		    ieee802frame154_dump( rxbuf);
+            
+  		    //ieee802frame154_dump( rxbuf);
 
 			request = frame_startptr( rxbuf );
 
@@ -254,6 +249,7 @@ int main(void)
 			/* if the frame is DTP_DATA_REQUEST, then the node will measure the data and 
 			 * encapsulate the data into the txbuf, which is a TiOpenFrame and sent it back.
 			 */
+
 
 		
 
@@ -274,14 +270,14 @@ int main(void)
 				value = lum_value( lum ); 
 				payload = DTP_PAYLOAD_PTR(response);
 
-                //payload[0] = 0x11;//todo 第三个节点数据
-				//payload[0] = 0x12;//todo 第三个节点数据
+                //payload[0] = 0x17;//todo 第三个节点数据
+				//payload[1] = 0x18;//todo 第三个节点数据
 
-				payload[0] = 0x13;
-				payload[1] = 0x14;
+				//payload[0] = 0x13;
+				//payload[1] = 0x14;
 
-				//payload[0] = 0x15;//todo 另一个节点
-				//payload[1] = 0x16;//todo 另一个节点
+				payload[0] = 0x15;//todo 另一个节点
+				payload[1] = 0x16;//todo 另一个节点
 
 				/* call dtp_send_response() to send the data in txbuf out.
 				 * 
@@ -298,25 +294,29 @@ int main(void)
 				// try some times until the RESPONSE is successfully sent
 
 			
-
+               
                 for (count=0; count<10; count++)
-                {
-					if (dtp_send_response(dtp, txbuf, 0x01) > 0)
+                {   
+					//hal_delay( 500);
+					if (dtp_send_response(dtp, txbuf, 0x03) > 0)
                     { 
                         led_toggle( LED_RED);//todo for testing
 						break;
                     }
-					hal_delay( 5 );
+					//hal_delay( 50 );
 				}
+                
 				break;
+
 
 			default:
 			    //hal_assert(false);
                 break;
 			}
 		}
-
+        nac_evolve( nac,NULL);//todo for tesitng
 		dtp_evolve( dtp, NULL );
+		hal_delay( 50 );
 	}
 }
 

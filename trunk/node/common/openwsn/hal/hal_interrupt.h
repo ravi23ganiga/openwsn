@@ -23,12 +23,11 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
-
  
 #ifndef _HAL_INTERRUPT_H_4788_
 #define _HAL_INTERRUPT_H_4788_
 
-/******************************************************************************
+/*******************************************************************************
  * hal_interrupt
  * Interrupt Hardware Abstraction. This module is used to control the global 
  * interrupt flag in the CPU only.
@@ -63,6 +62,9 @@
  * two atomic functions.
  * - this module should be OS independent. namely, these functions are existed 
  * no matter there's an RTOS or not.
+ * 
+ * @status 
+ * 	- released. tested ok on ATmega128 micro-controller.
  *
  * @author zhangwei on 2006-07-20
  *	first version.
@@ -74,7 +76,7 @@
  *  add two functions hal_enter_atomic()/hal_leave_atomic()
  * @modified by zhangwei on 200905xx
  *	- revision
- *****************************************************************************/ 
+ ******************************************************************************/ 
 
 #include "hal_configall.h"
 #include "hal_foundation.h"
@@ -137,20 +139,18 @@
 extern "C" {
 #endif
 
-
-/******************************************************************************
+/*******************************************************************************
  * Common Interface Functions
- *****************************************************************************/ 
+ ******************************************************************************/ 
 
 void hal_disable_interrupt( uintx num );
 void hal_enable_interrupt( uintx num );
 
-
-/******************************************************************************
+/*******************************************************************************
  * interrupt number - object's handler mapping table  (abbr. as iht)
  * this table maps integer id to object event handler. so it can actually used
  * with non-interrupt service routines.
- *****************************************************************************/
+ ******************************************************************************/
 
 #ifdef CONFIG_INT2HANDLER_ENABLE
 int hal_attachhandler( uint8 num, TiFunEventHandler handler, void * owner );
@@ -158,7 +158,6 @@ int hal_detachhandler( uint8 num );
 int hal_getobjecthandler( uint8 num, TiFunEventHandler * phandler, void ** powner );
 void hal_invokehandler( uint8 num, TiEvent * e );
 #endif
-
 
 #ifdef __cplusplus
 }

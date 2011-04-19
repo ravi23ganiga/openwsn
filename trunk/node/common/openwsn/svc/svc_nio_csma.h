@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /*******************************************************************************
- * svc_csma
+ * svc_nio_csma
  * This module implements the standard carrier sense multi-access (CSMA) protocol. 
  * If you want more Collision Avoidance (CA) features, you can choose MACA protocol 
  * in module svc_maca.
@@ -66,6 +66,14 @@
  * Maximum backoff delay time. the really backoff time is a random number between 
  * 0 and CONFIG_ALOHA_MAX_BACKOFF. Currently, it's set to 100 milliseconds. You should 
  * optimize it according to your own network parameters.
+ * 
+ * CONFIG_CSMA_TRX_ACK_SUPPORT
+ * If the transceiver support ACK (such as cc2420), then we can use it. Or else
+ * we had to deal with the ACK meachanim in this module. 
+ * 
+ * CONFIG_CSMA_STANDATD
+ * Choose standard CSMA behavior. If not defined, then the software will run as 
+ * an optimized version of CSMA.
  */
 
 #define CONFIG_CSMA_DEFAULT_PANID			    0x0001
@@ -80,8 +88,8 @@
 #define CONFIG_CSMA_MAX_FRAME_SIZE             128
 
 #define CONFIG_CSMA_TRX_ACK_SUPPORT
-#define CONFIG_CSMA_MAX_BACKOFF                100
 #define CONFIG_CSMA_MIN_BACKOFF                0
+#define CONFIG_CSMA_MAX_BACKOFF                0xFE
 
 #define CONFIG_CSMA_STANDATD
 
@@ -196,7 +204,7 @@ TiCsma * csma_open( TiCsma * mac, TiFrameTxRxInterface * rxtx, TiNioAcceptor * n
     TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner );
 void csma_close( TiCsma * mac );
 
-uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option );
+uintx csma_send( TiCsma * mac, uint16 shortaddrto,TiFrame * frame, uint8 option );//uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option );
 uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option );
 uintx csma_recv( TiCsma * mac, TiFrame * frame, uint8 option );
 void csma_evolve( void * macptr, TiEvent * e );

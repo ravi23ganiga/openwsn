@@ -1,3 +1,8 @@
+simplealoha
+This application tests/demonstrates the svc_simplealoha module. The Simple Aloha is an simplified version of Aloha protocol comparing to its standard implementation. The simple version is easy for implementation but the efficiency is pretty low. It's used for teaching only.
+
+
+
 Aloha_send & Aloha_receive
 ========================================================================
 1) Project Description: 

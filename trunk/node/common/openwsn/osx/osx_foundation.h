@@ -64,6 +64,12 @@
  *               osx_foundation.h
  *                      |
  *               osx_configall.h
+ *
+ * 
+ * Q: How to understand the osx_foundation module? (2011.03)
+ * R: This module funtions as an hardware adaptation layer at the bottom of the 
+ * osx kernel. This means the osx kernel can be ported to a new platform only if 
+ * the osx_foundation and related modules are ported successfully. 
  */
 
 #include "osx_configall.h"
@@ -86,6 +92,11 @@ extern "C" {
  * handler can used as an osx task or vice versa. 
  */
 #define TiOsxTask TiFunEventHandler
+
+/*******************************************************************************
+ * Initialize the core hardware to support the osx kernel to run. 
+ ******************************************************************************/
+//void osx_init(); 
 
 /*******************************************************************************
  * Osx Critical Operation Support

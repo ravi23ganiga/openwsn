@@ -56,7 +56,7 @@
 #include "../../common/openwsn/hal/hal_led.h"
 #include "../../common/openwsn/hal/hal_debugio.h"
 #include "../../common/openwsn/hal/hal_assert.h"
-//#include "../../common/openwsn/hal/hal_uart.h"
+#include "../../common/openwsn/hal/hal_uart.h"
 #include "../../common/openwsn/hal/hal_cc2420.h"
 #include "../../common/openwsn/hal/hal_targetboard.h"
 #include "../../common/openwsn/hal/hal_debugio.h"
@@ -66,12 +66,14 @@
 #include "../../common/openwsn/rtl/rtl_debugio.h"
 #include "../../common/openwsn/rtl/rtl_frame.h"
 
-/* This macro controls the apl_ieee802frame154_dump module to output
+/** 
+ * This macro controls the apl_ieee802frame154_dump module to output
  * the frame in binary mode.
  */
 #include "apl_ieee802frame154_dump.h"
 
-/* CONFIG_LISTENER
+/**
+ * CONFIG_LISTENER
  * If you define this macro, the sniffer will be driven by the listener function. 
  * attention currently, the listener of cc2420 adapter is actually called in the 
  * interrupt mode. so you cannot do complicated time consumption operations inside
@@ -94,8 +96,6 @@
 #define DEFAULT_CHANNEL     11
 
 #define MAX_IEEE802FRAME154_SIZE    128
-
-
 
 static TiCc2420Adapter g_cc;
 static char m_frame[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];

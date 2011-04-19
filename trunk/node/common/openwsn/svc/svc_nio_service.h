@@ -56,27 +56,82 @@
  */
 
 typedef struct{
+  uint8 proto_id;
+  void * component;
+  TiFunEventHandler evolve;
+  sibling;
+  next;
+}_TiNioComponentDescriptor;
+
+#define NIO_MAX_LAYER_COUNT 5
+#define NIO_MAX_COMPONENT_COUNT 10
+
+typedef struct{
+  uint8 layerindex[NIO_MAX_LAYER_COUNT];
+  _TiNioComponentDescriptor desc[NIO_MAX_COMPONENT_COUNT]; 
   TiNioAcceptor * nac;
   TiNioDispatcher * dispatcher;
   //TiNioFmqueRwAdapter, TiNioRwQueue 
   TiNioFrameQueue4Rw * rw;
 }TiNioService;
 
+TiNioService * nio_construct( char * mem, uint16 size );
+char * nio_destroy( TiNioService * nio );
+TiNioService * nio_open( TiNioService * nio );
+void nio_close( TiNioService * nio );
 
+/* Register an component in the network I/O service. 
+ * 
+ * attention proto_id != endpoint
+ */
+bool nio_register( TiNioService * nio, uint8 layer, uint8 proto_id, void * object, TiFunEventHandler );
+void nio_evolve( TiNioService * nio, TiEvent * e );
+	
+	
+nvc_rxque_process
+nvc_evolve()
+{
+	if (rxque isnot empty)
+	{
+		while f unchanged and not pass through the whole flow do
+		f = get first frame
+		framelayer = f.curlayer;
+		proto_id = f.buf[0];
+		desc = find by proto_id( protoid );
+		if (desc != NULL)
+			desc->evolve( rx_process event );
+		else
+			delete f from rxque;
+			
+		// after the above processing, rxque first frame contains the frame to be passed to upper layer
+	}
+}
 
-application: addon endpoint
+nio_txque_process
+assume the frame to be sent is already in txque
+{
+	if (txque isnot empty)
+	{
+		while f unchanged and not pass through the whole flow do:
+		
+		f = get first frame;
+		framelayer = f.curlayer;
+		proto_id
+		desc = find by layer and proto_id( framelayer, protoid );
+		if (desc != NULL)
+			desc->evolve( tx_process event );
+	}
+}
 
-nioservice:  port
+acceptor and rwhandler component
+	
+rwhandler/rwadapter component = 
+  rxque 
+  txque
+  send: put the frame into nio->rxque and call nio_txque_process/nio_evolve(tx_event)
+  recv: acceptor.recv into nio->rxque, nio_rxque_process/nio_evolve(rx_event), move frame from nio->rxque to io rw adapter.rxque
 
-nioservice: channel
-
-nio_service_open
-nio_service_close
-nio_service_evolve
-nio_service_register( endpoint, component/addon );
-
-init
-	curlayer
+	
 	
 extract_dispatch_id( frame ) = endpoint
 encapsulate

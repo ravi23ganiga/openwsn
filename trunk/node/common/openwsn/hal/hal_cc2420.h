@@ -41,22 +41,24 @@
  *	- revision
  * @modified by zhangwei on 20090819
  *	- add default settings of panid, local address and pan id in cc2420_open()
- *
  * @modified by zhangwei on 20090927
  *	- revision. divide all the interface functions into serveral group according 
  *    to their functions.
- *
- *	@modified by yanshixing on 20100409
- *	¡¡- and #define SUCCESS 0
- * 
+ * @modified by yanshixing on 20100409
+ *	- and #define SUCCESS 0
  * @modified by zhangwei on 20100510
  *  - add block interface support
+ * @modified by openwsn on 20110405
+ *  - add cc2420_broadcast()
+ * 	- upgrade cc2420_send()
+ * 	- upgrade cc2420_ischannelclear()
  *
  ******************************************************************************/
 
 #include "hal_configall.h"
 #include "hal_foundation.h"
 #include "../rtl/rtl_iobuf.h"
+#include "../rtl/rtl_ieee802frame154.h"
 #include "hal_frame_transceiver.h"
 
 /*******************************************************************************
@@ -73,19 +75,23 @@
 #define CONFIG_CC2420_SFD
 #undef  CONFIG_CC2420_SFD
 
-#define SUCCESS 0
-
-
-
 #define CC2420_DEF_BACKOFF         500
 #define CC2420_SYMBOL_TIME         16 // 2^4
+
 // 20 symbols make up a backoff period
 // 10 jiffy's make up a backoff period
 // due to timer overhead, 30.5us is close enough to 32us per 2 symbols
-#define CC2420_SYMBOL_UNIT         10
-// delay 20 jiffies when waiting for the ack
-#define CC2420_ACK_DELAY           20
+// #define CC2420_SYMBOL_UNIT         10
 
+/* After CC2420_MIN_ACK_DELAY us, the sender will start to check for the ACK frame. 
+ * The maximum time to wait for ACK is decided by CC2420_MAX_ACK_DELAY.
+ * 
+ * @attention Currently, the CC2420_MIN_ACK_DELAY and CC2420_MAX_ACK_DELAY is 
+ * actually implemented in the MAC layer protocol. The cc2420 module doesn't 
+ * use them. 
+ */
+#define CC2420_MIN_ACK_DELAY           20
+#define CC2420_MAX_ACK_DELAY           100
 
 /*******************************************************************************
  * Interface
@@ -103,16 +109,24 @@
 /* the minimal frame is the ACK frame, including only 5 bytes (2B Frame Control, 
  * 1B Sequence, and 2B checksum). The frames received less than 5 bytes will be 
  * ignored by the software.
+ * 
+ * CC2420_MIN_FRAME_LENGTH
+ * Currently the minimal frame size if the ACK frame size, which contains 5 bytes 
+ * only in MAC layer. So a total ACK frame at the PHY layer is 6 bytes including 
+ * the length byte at head.  So this macro equals 6 now. The value of FRAME154_ACK_FRAME_SIZE
+ * is 6 defined in "rtl_ieee802frame154.h"
  */
-#define CC2420_MAX_FRAME_LENGTH         0x7F
-#define CC2420_MIN_FRAME_LENGTH         5
+#define CC2420_MAX_FRAME_LENGTH         (0x7F+1)
+#define CC2420_MIN_FRAME_LENGTH         FRAME154_ACK_FRAME_SIZE
 
 /* The buffer size is 1 larger than cc2420's MAC frame size, because there needs 
  * another byte to save the length of the frame itself. Attention the length value
  * doesn't include the length byte itself. 
  */
-#define CC2420_RXBUFFER_SIZE (CC2420_MAX_FRAME_LENGTH+1)
-#define CC2420_TXBUFFER_SIZE (CC2420_MAX_FRAME_LENGTH+1)
+#define CC2420_RXBUFFER_SIZE (CC2420_MAX_FRAME_LENGTH)
+#define CC2420_TXBUFFER_SIZE (CC2420_MAX_FRAME_LENGTH)
+
+#define CC2420_ACKBUFFER_SIZE FRAME154_ACK_FRAME_SIZE
 
 /* State of TiCc2420Adapter object
  * Attention this state is different from cc2420 transceiver's internal state.
@@ -146,10 +160,10 @@
 /* todo
  * modified by zhangwei on 20100524
  * in the old version, the macro is defined as -38, but in the datasheet of cc2420 transceiver,
- * the recommended value is -45
+ * the recommended value is -45. Which is the correct one?
  * ref: cc2420 datasheet page 47 
  */
-//#define RSSI_OFFSET -45
+#define RSSI_OFFSET -45
 
 #define RSSI_2_ED(rssi)   ((rssi) < RSSI_OFFSET ? 0 : ((rssi) - (RSSI_OFFSET)))
 #define ED_2_LQI(ed) (((ed) > 63 ? 255 : ((ed) << 2)))
@@ -177,10 +191,10 @@ typedef struct{
     uint8 option;
 	volatile uint8 rxlen;
 	volatile char rxbuf[CC2420_RXBUFFER_SIZE];
+	//char ackbuf[CC2420_ACKBUFFER_SIZE];
 	uint8 rssi;
 	uint8 lqi;
 	volatile uint8 spistatus;
-    //TiFrameTxRxInterface intf;
 	uint16 param[14];
 }TiCc2420Adapter;
 
@@ -189,21 +203,31 @@ typedef struct{
  * cc2420_construct
  * Construct the cc2420 object inside the specified memory block
  * 
+ * @return 
+ * 	The pointer to the TiCc2420Adapter object.
+ ******************************************************************************/
+TiCc2420Adapter * cc2420_construct( void * mem, uint16 size );
+
+/*******************************************************************************
  * cc2420_destroy
  * Destroy the memory block allocated to cc2420 object
- *
+ ******************************************************************************/
+void cc2420_destroy( TiCc2420Adapter * cc );
+
+/*******************************************************************************
  * cc2420_open
  * Initialize cc2420 object for read/write. 
  * 
- * cc2420_close
- * Close cc2420 object. Disable related interrupts, and release allocated resources.
- *
+ * @return 
+ * 	The pointer to the TiCc2420Adapter object if opened successfully. 
  ******************************************************************************/
-
-TiCc2420Adapter * cc2420_construct( void * mem, uint16 size );
-void cc2420_destroy( TiCc2420Adapter * cc );
-// todo: TiSpiAdapter
 TiCc2420Adapter * cc2420_open( TiCc2420Adapter * cc, uint8 id, TiFunEventHandler listener, void * lisowner, uint8 option );
+
+/*******************************************************************************
+ * cc2420_close
+ * Close cc2420 object. Disable related interrupts, and release allocated resources
+ * allocated in the cc2420_open() function.
+ ******************************************************************************/
 void cc2420_close( TiCc2420Adapter * cc );
 
 /*******************************************************************************
@@ -227,8 +251,9 @@ void cc2420_restart( TiCc2420Adapter * cc );
 #define cc2420_write(cc,buf,len,option) cc2420_send(cc,buf,len,option)
 #define cc2420_read(cc,buf,len,option) cc2420_recv(cc,buf,len,option)
 
-uint8 cc2420_write( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option );
-uint8 cc2420_read( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option );
+uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option );
+uint8 cc2420_broadcast( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option );
+uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option );
 
 //uint8 cc2420_iobsend( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option );
 //uint8 cc2420_iobrecv( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option );

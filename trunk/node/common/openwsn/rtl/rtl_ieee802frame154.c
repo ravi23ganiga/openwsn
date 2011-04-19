@@ -233,8 +233,6 @@ TiIEEE802Frame154Descriptor * _ieee802frame154_cast_as( TiIEEE802Frame154Descrip
             option = 0x00;
         }
 	}
-	
-	
 
 	if (ret != NULL)
 	{

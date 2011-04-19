@@ -14,7 +14,7 @@
  ******************************************************************************/
 
 #define CONFIG_NIOACCEPTOR_RXQUE_CAPACITY 2
-#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 2
+#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 1
 
 #include "../../common/openwsn/hal/hal_configall.h"
 #include <stdlib.h>
@@ -85,9 +85,7 @@ void csma_sendnode(void)
 	led_on( LED_ALL );
 	hal_delay( 500 );
 	led_off( LED_ALL );
-	led_on( LED_RED );
-    dbo_open( 38400 );
-
+	
     rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
     dbc_mem( msg, strlen(msg) );
 
@@ -141,20 +139,20 @@ void csma_sendnode(void)
         frame_pushback( txbuf, "01234567890123456789", 20 ); 
         #endif
 
-
+        frame_setlength( txbuf,frame_capacity( txbuf));
         // if option is 0x00, then aloha send will not require ACK from the receiver. 
         // if you want to debugging this program alone without receiver node, then
         // suggest you use option 0x00.
         // the default setting is 0x01, which means ACK is required.
         //
-		//option = 0x00;
-		option = 0x01;//todo
+		option = 0x00;
+		//option = 0x01;//todo
 
 		txbuf->option = option;//决定是否用ACK
 
         while (1)
         {   
-            if (csma_send(mac, txbuf, txbuf->option) > 0)
+            if (csma_send(mac,CONFIG_CSMA_REMOTE_ADDRESS, txbuf, txbuf->option) > 0)
             {
 			    dbc_putchar(0x22);		
                 led_toggle( LED_YELLOW );

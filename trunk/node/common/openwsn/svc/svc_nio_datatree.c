@@ -153,6 +153,7 @@ TiDataTreeNetwork * dtp_open( TiDataTreeNetwork * net, TiAloha * mac, uint16 loc
 	net->localaddress = localaddress;
 	net->root = 0x0000;
 	net->parent = 0x0000;
+	net->count = 0;//todo for testing
 	net->depth = ~0;
 	net->distance = ~0;
 	net->mac = mac;
@@ -370,7 +371,7 @@ uint8 dtp_broadcast( TiDataTreeNetwork * net, TiFrame * frame, uint8 option )
 	//
 	if (frame_empty(net->txque))
 	{
-
+       
 	//todo hal_assert( frame_capacity(net->txque) >= frame_length(frame) );这一句发出警报，不知道为什么错？
 		
 		count = frame_totalcopyfrom( net->txque, frame ); 
@@ -693,7 +694,7 @@ uint8 dtp_send_request( TiDataTreeNetwork * net, TiFrame * frame, uint8 max_hopc
 	frame_setlength( frame,frame_capacity( frame));
 
 	len = dtp_broadcast( net, frame, 0x00 );
-
+    
 	if (len > 0)
 	{
 		net->request_id ++;
@@ -799,7 +800,9 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 			// whether this is a DTP_MAINTAIN_REQUEST type. The node needs to receive 
 			// an DTP_MAINTAIN_REQUEST packet if it wants to leave the STARTUP state.
 			//
-			if (_dtp_evolve_recv_check( net ))                            //todo
+
+           
+			if (_dtp_evolve_recv_check( net ))                            
 			{   
 				if (_dtp_evolve_startup_maintain_check( net ))
 				{
@@ -809,6 +812,7 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 
 			}
 			
+			//net->state = DTP_STATE_IDLE;
 			break;
 
 			//todo 
@@ -857,15 +861,35 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 			 * it can be overwrite by aloha_recv(). I think this is also Ok.
 			 */
 
-
+        
 	 		if (frame_empty(net->rxbuf))
-			{   
+			{
+                frame_totalclear( net->rxbuf );//todo
 
-                if (_dtp_evolve_recv_check(net))
+				if (_dtp_evolve_recv_check(net))
 				{
 					_dtp_evolve_node_recv_or_forward( net );
 				}
 			}
+			else{
+				// try move the frame in rxbuf to rxque or txque 
+				_dtp_evolve_node_recv_or_forward( net );
+			}
+			/*
+			else//todo for testing
+			{
+				net->count++;//todo for testing
+				if ( net->count>0x10)//todo for testing
+				{
+					frame_totalclear( net->rxbuf);//todo for testing
+					frame_totalclear( net->rxque);//todo for testing
+					frame_totalclear( net->txque);//todo for testing
+					net->count = 0;//todo for testing
+					hal_delay( 100);//todo for testing
+				}
+
+			}
+			*/
 
 			// If there's a frame inside net->txque, then try to send it out.
 			// if aloha_broadcast() or aloha_send() failed this time, then it will 
@@ -874,7 +898,6 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 
 			if (!frame_empty(net->txque))
 			{  
-
 				switch (DTP_TRANTYPE(frame_startptr(net->txque)))
 				{
 				case DTP_BROADCAST:
@@ -920,7 +943,6 @@ void dtp_evolve_node( void * netptr, TiEvent * e )
 					break;
 				}
 			}
-			
            
 			break;	
 
@@ -978,7 +1000,6 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 		}
 	}
 	*/ 
-    
     
 	do{
 		switch (net->state)
@@ -1044,6 +1065,7 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 
 			if (!frame_empty(net->txque))
 			{   
+
 				pkt = frame_startptr( net->txque );
 				switch (DTP_TRANTYPE(pkt))
 				{
@@ -1070,7 +1092,7 @@ void dtp_evolve_sink( void * netptr, TiEvent * e )
 					if ( DTP_SHORTADDRTO( pkt)!=0x0000 )
 					{
 						//todo if (aloha_send( net->mac, net->txque, 0x01 ) > 0)
-						if (aloha_send( net->mac, DTP_SHORTADDRTO( pkt),net->txque, 0x01 ) > 0)//todo 这一句不确定
+						if (aloha_send( net->mac, DTP_SHORTADDRTO( pkt),net->txque, 0x00 ) > 0)//todo 这一句不确定
 						{
 							frame_totalclear( net->txque );
 							net->txtrytime = DTP_MAX_TX_TRYTIME;
@@ -1140,23 +1162,29 @@ bool _dtp_evolve_recv_check( TiDataTreeNetwork * net )
 {
 	uint8 count, len;
 	bool ret;
+    TiIEEE802Frame154Descriptor * desc;
 
 	ret = true;
+	frame_reset( net->rxbuf,3,20,0);
 	count = aloha_recv( net->mac, net->rxbuf, 0x00 );
 	if (count <= 0)
 	{	
 		ret = false;
 	}
-	/* todo
 	else{
-		// drop the frame in net->rxbuf if failed to parsing it.
-		if (!opf_parse( net->rxbuf,0 ))
+
+		frame_moveouter( net->rxbuf );
+		desc = ieee802frame154_format( &(net->mac->desc), frame_startptr( net->rxbuf), frame_capacity( net->rxbuf), 
+			FRAME154_DEF_FRAMECONTROL_DATA );
+		
+		//todo if (ieee802frame154_parse(desc, frame_startptr(frame), frame_length(frame)))
+        if (!ieee802frame154_parse(desc, frame_startptr( net->rxbuf), frame_capacity( net->rxbuf)))
 		{
 			frame_totalclear( net->rxbuf );
 			ret = false;
 		}
+		frame_moveinner( net->rxbuf );
 	}
-	*/
 
 	// The 802.15.4 ACK, BEACON,  and COMMNAD type frames should be ignored
 	// and discarded.
@@ -1166,22 +1194,19 @@ bool _dtp_evolve_recv_check( TiDataTreeNetwork * net )
 	// judgement to make the program most robust.
 	//
 	
-	/*
 	if (ret)
 	{
-		if (opf_type(net->rxbuf) != FCF_FRAMETYPE_DATA)
+		if (ieee802frame154_type(desc) != FCF_FRAMETYPE_DATA)//if (ieee802frame154_type(net->rxbuf) != FCF_FRAMETYPE_DATA)
 		{   
 			frame_totalclear( net->rxbuf );
 			ret = false;
      	}
 	}
-	*/
 
 	// Check: whether the same frame has already been received. This
 	// is by searching it in the cache. If it cannot find it in the 
 	// cache, then put the frame in the cache.
 
-	
 
 	if (ret)
 	{
@@ -1195,7 +1220,6 @@ bool _dtp_evolve_recv_check( TiDataTreeNetwork * net )
 			ret = false;
 		}
 	}
-	
     
 	return ret;
 }
@@ -1417,17 +1441,9 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 			// will continue stay in net->rxbuf and will be moved to txque until 
 			// the next call to function dtp_evolve().
 			
-			if ( frame_empty(net->txque))
+			if (frame_empty(net->txque))
 			{
-				
-				
 				frame_totalcopyto( net->rxbuf, net->rxque );
-				/*todo
-				opf_set_panto( net->rxbuf, net->pan );
-				opf_set_shortaddrto( net->rxbuf, OPF_BROADCAST_ADDRESS );
-				opf_set_panfrom( net->rxbuf, net->pan );
-				opf_set_shortaddrfrom( net->rxbuf, net->localaddress );
-				*/
 
                 cur_hopcount = DTP_HOPCOUNT( pkt );
 				DTP_SET_HOPCOUNT( pkt, ++cur_hopcount );
@@ -1435,19 +1451,9 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 				// save this node address into the packet's path section
 				pc = DTP_PATHDESC_PTR(pkt) + ((DTP_HOPCOUNT(pkt)-1) << 1);
 				pc[1] = (net->localaddress ) & 0xFF;
-				pc[2] = ( net->localaddress ) >> 8;
-
+				pc[2] = (net->localaddress ) >> 8;
 				DTP_PATHDESC_COUNT( pkt)++;
-
-				// temporarily comment the following
-				// should uncomment in release version
-
-				// save this node address into the packet's path section
-				/*
-				pc = DTP_PATHDESC_PTR(pkt) + ((cur_hopcount-1) << 1);
-				pc[0] = ( net->localaddress ) >> 8;
-				pc[1] = (net->localaddress ) & 0xFF;
-				*/
+				
 				_switch_ptr( &(net->rxbuf), &(net->txque) );
 			}
 			break;
@@ -1507,16 +1513,10 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 				// save this node address into the packet's path section
 				pc = DTP_PATHDESC_PTR(pkt) + ((DTP_HOPCOUNT(pkt)-1) << 1);
 				pc[1] = (net->localaddress ) & 0xFF;
-				pc[2] = ( net->localaddress ) >> 8;
+				pc[2] = (net->localaddress ) >> 8;
 
-				DTP_PATHDESC_COUNT( pkt)++;
+				DTP_PATHDESC_COUNT(pkt)++;
 
-				// save this node address into the packet's path section
-				/*
-				pc = DTP_PATHDESC_PTR(pkt) + ((cur_hopcount-1) << 1);
-				pc[0] = ( net->localaddress ) >> 8;
-				pc[1] = (net->localaddress ) & 0xFF;
-				*/
 				_switch_ptr( &(net->rxbuf), &(net->txque) );
 			}
 			break;
@@ -1534,8 +1534,6 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 				// @warning: If the dtp_recv() cannot read out the data in rxque fast 
 				// enough, then the new frame will override the old one.
 				//
-
-				
 				_switch_ptr( &(net->rxbuf), &(net->rxque) );
 				frame_totalclear( net->rxbuf );
 			}
@@ -1597,15 +1595,11 @@ void _dtp_evolve_node_recv_or_forward( TiDataTreeNetwork * net )
 			}
 			else if (frame_empty(net->txque))
 			{   
-                /*
-				opf_set_panto( net->rxbuf, net->pan );
-				opf_set_shortaddrto( net->rxbuf, net->parent );
-				opf_set_panfrom( net->rxbuf, net->pan );
-				opf_set_shortaddrfrom( net->rxbuf, net->localaddress );
-				*/
 				cur_hopcount ++;
 				DTP_SET_HOPCOUNT( pkt, cur_hopcount );
 				_switch_ptr( &(net->rxbuf), &(net->txque) );
+			}
+			else{
 			}
 		}
 		break;

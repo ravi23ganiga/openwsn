@@ -1,3 +1,41 @@
+===Introduction===
+----
+OpenWSN means Open Wireless Sensor Networks. It's a fundamental platform for WSN research and applications. It was initiated by TongJi University . The first version of OpenWSN is based on LPC213x/LPC214x ARM7 + TI/Chipcon cc2420. The default configuration is LPC2146. The second version is based on Atmega128 MCU and ICT GAINZ hardware.
+
+OpenWSN hopes it can be widely used in the society and powers the smart sensor to make us live better. According to our prediction, the huge number of smart sensors will become an important infrastructure like 3G and Internet-2 in the future. While, while, OpenWSN powers 1/3 of them!
+
+- [http://docs.google.com/View?id=dddjbnk9_111x985twdt OpenWSN FAQ] 
+
+- [https://sourceforge.net/apps/mediawiki/openwsn/index.php?title=Course_Sensor_Network,_System_and_Application Course In TongJi: Sensor Network, System and Applications] ([http://jpkc.tongji.edu.cn/jpkc/sensor/index.html Old])
+
+
+===News===
+
+----
+
+On Hardware Platforms
+
+
+Currently, OpenWSN runs on GAINZ platform only. GAINZ is based on cc2420 and atmega128L which is quite similar to Crossbow's MicaZ node. 
+Please contact [http://www.shenlian-tech.com Shen Lian Tech] (Manager Jiang, Peng) for GAINZ hardware.
+
+
+=============================================================
+
+2011.03.18
+
+Bug fixed and prepare for the next milestone release. Also improved the network architecture. Fully discard the old TiOpenFrame and replace it with TiFrame(in rtl_frame) and TiIEEE802Frame154Descriptor(in rtl_ieee802frame154). Upgraded a lot of network components including aloha(in svc_nio_aloha), csma(in svc_nio_csma), flood(in svc_nio_flood), etc.  Also new example and testings.
+
+- frame improvement (rtl_frame)
+- frame queue bug fixed (rtl_framequeue)
+- fully discard TiOpenFrame (rtl_openframe was removed from project) and it should be replaced with TiFrame(in rtl_frame) and TiIEEE802Frame154Descriptor(in rtl_ieee802frame154)
+- add rtl_cache 
+- upgrade new tinymac (svc_tinymac)
+- upgrade new aloha (svc_nio_aloha)
+- upgrade new csma (svc_nio_csma)
+- upgrade flood (svc_nio_flood)
+
+
 2010-10-18
 =============================================================
 
