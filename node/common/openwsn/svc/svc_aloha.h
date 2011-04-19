@@ -82,6 +82,14 @@
  *	- revision
  * @modified by zhangwei on 2010.08.24
  *  - correct bug in aloha_ischannelclear(). the return value should be bool type
+ * 
+ * @modified by Zhang Wei(TongJi University) on 2010.04.16
+ * 	- Bugs corrected: in the past, the aloha will try to send the frame at once
+ *    if the channel is empty. However, if the sending is failed, it should go into
+ *    backoff state and restarted sending later. But the last implementation simply
+ *    exit the sending work flow.
+ * 	- Improved: replace the TiTimerAdapter with TiTimer now, which can decrease the
+ *    hardware requirements.
  *
  ******************************************************************************/  
 
@@ -109,7 +117,8 @@
 typedef struct{
 	uint8 state;
     TiFrameTxRxInterface * rxtx;
-	TiTimerAdapter * timer;
+	//TiTimerAdapter * timer;
+	TiTimer * timer;
 	TiFrame * txbuf;
     uint8 retry;
 	uint16 backoff;
@@ -134,7 +143,9 @@ extern "C"{
 TiAloha *	aloha_construct( char * buf, uint16 size );
 void        aloha_destroy( TiAloha * mac );
 TiAloha *	aloha_open( TiAloha * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uint16 panid, 
-			uint16 address, TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner, uint8 option );
+			uint16 address, TiTimer * timer, TiFunEventHandler listener, void * lisowner, uint8 option );
+//TiAloha *	aloha_open( TiAloha * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uint16 panid, 
+//			uint16 address, TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner, uint8 option );
 void        aloha_close( TiAloha * mac );
 
 /**

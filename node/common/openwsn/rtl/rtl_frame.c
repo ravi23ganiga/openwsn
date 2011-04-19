@@ -478,6 +478,7 @@ bool frame_skipouter( TiFrame * frame, uintx skiplen, uintx left )
         {
             /* assert: the empty part before this layer must be enough to hold the low
             * layer's header length which is specified by parameter "skiplen" */
+
             rtl_assert( skiplen <= frame->layerstart[cur] );
 
             frame->layerstart[cur-1] = frame->layerstart[cur] - skiplen;

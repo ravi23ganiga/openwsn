@@ -55,7 +55,7 @@
  ******************************************************************************/
 
 #define CONFIG_NIOACCEPTOR_RXQUE_CAPACITY 2
-#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 2
+#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 1
 
 #include "../../common/openwsn/hal/hal_configall.h"
 #include <stdlib.h>
@@ -125,9 +125,7 @@ void aloha_sendnode(void)
 	led_on( LED_ALL );
 	hal_delay( 500 );
 	led_off( LED_ALL );
-	led_on( LED_RED );
-    dbo_open( 38400 );
-
+	
     rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
     dbc_mem( msg, strlen(msg) );
 
@@ -189,7 +187,7 @@ void aloha_sendnode(void)
         frame_pushback( txbuf, "01234567890123456789", 20 ); 
         #endif
 
-
+        frame_setlength( txbuf,frame_capacity( txbuf));//todo
         // if option is 0x00, then aloha send will not require ACK from the receiver. 
         // if you want to debugging this program alone without receiver node, then
         // suggest you use option 0x00.

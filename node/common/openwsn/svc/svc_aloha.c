@@ -24,7 +24,7 @@
  *
  ******************************************************************************/
 
-/****************************************************************************** 
+/******************************************************************************* 
  * svc_aloha.c
  * standard ALOHA medium access control (MAC) protocol 
  *  
@@ -68,7 +68,7 @@
  * @modified by zhangwei on 20091201
  *	- add random backoff time support to delay if confliction encountered.
  *
- *****************************************************************************/
+ ******************************************************************************/
 
 #include "svc_configall.h"
 #include <string.h>
@@ -95,12 +95,15 @@ TiAloha * aloha_construct( char * buf, uint16 size )
 
 void aloha_destroy( TiAloha * mac )
 {
-    timer_stop( mac->timer );
+    vti_stop( mac->timer );
 	return;
 }
 
+/*
+ * assume: the timer object is initialized successfully.
+ */
 TiAloha * aloha_open( TiAloha * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uint16 panid, 
-	uint16 address, TiTimerAdapter * timer, TiFunEventHandler listener, void * lisowner, uint8 option )
+	uint16 address, TiTimer * timer, TiFunEventHandler listener, void * lisowner, uint8 option )
 {
     void * provider;
 
@@ -126,14 +129,6 @@ TiAloha * aloha_open( TiAloha * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uin
 	mac->option = option;
     mac->txbuf = frame_open( &(mac->txbuf_memory[0]), FRAME_HOPESIZE(CONFIG_ALOHA_MAX_FRAME_SIZE), 0, 0, 0 );
 	
-    // @modified by zhangwei on 2010.08.21
-    // @attention: for all hardware components, you should construct and open them 
-    // in the caller function to avoid potential conflictions. so we don't recommend
-    // initialize the timer component here.
-
-	// timer = timer_construct( (void *)&g_timer, sizeof(g_timer) );
-    // timer_open( timer, id, NULL, NULL, 0x00 ); 
-
     hal_assert( mac->timer != NULL );
 
     // initialize the frame transceiver component
@@ -163,7 +158,7 @@ TiAloha * aloha_open( TiAloha * mac, TiFrameTxRxInterface * rxtx, uint8 chn, uin
 
 void aloha_close( TiAloha * mac )
 {
-	timer_stop( mac->timer );
+	vti_stop( mac->timer );
 	mac->state = ALOHA_STATE_NULL;
 }
 
@@ -209,8 +204,8 @@ uintx aloha_send( TiAloha * mac, TiFrame * frame, uint8 option )
         else{
             mac->backoff = rand_uint8( CONFIG_ALOHA_MAX_BACKOFF );
             mac->retry = 0;
-            timer_setinterval( mac->timer, mac->backoff, 0 );
-            timer_start( mac->timer );
+            vti_setinterval( mac->timer, mac->backoff, 0 );
+            vti_start( mac->timer );
             mac->state = ALOHA_STATE_BACKOFF;
         }
         #endif
@@ -221,8 +216,8 @@ uintx aloha_send( TiAloha * mac, TiFrame * frame, uint8 option )
         #ifndef CONFIG_ALOHA_STANDARD
         mac->backoff = rand_uint8( CONFIG_ALOHA_MAX_BACKOFF );
         mac->retry = 0;
-        timer_setinterval( mac->timer, mac->backoff, 0 );
-        timer_start( mac->timer );
+        vti_setinterval( mac->timer, mac->backoff, 0 );
+        vti_start( mac->timer );
         mac->state = ALOHA_STATE_BACKOFF;
         #endif
 
@@ -318,8 +313,8 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
         else{
             mac->backoff = rand_uint8( CONFIG_ALOHA_MAX_BACKOFF );
             mac->retry = 0;
-            timer_setinterval( mac->timer, mac->backoff, 0 );
-            timer_start( mac->timer );
+            vti_setinterval( mac->timer, mac->backoff, 0 );
+            vti_start( mac->timer );
             mac->state = ALOHA_STATE_BACKOFF;
         }
         #endif
@@ -330,8 +325,8 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
         #ifdef CONFIG_ALOHA_STANDARD
         mac->backoff = rand_uint8( CONFIG_ALOHA_MAX_BACKOFF );
         mac->retry = 0;
-        timer_setinterval( mac->timer, mac->backoff, 0 );
-        timer_start( mac->timer );
+        vti_setinterval( mac->timer, mac->backoff, 0 );
+        vti_start( mac->timer );
         mac->state = ALOHA_STATE_BACKOFF;
         #endif
 
@@ -431,10 +426,6 @@ uintx _aloha_trysend( TiAloha * mac, char * buf, uint8 len, uint8 option )
 {    
 	uintx count=0;
 
-    // @modified by openwsn on 2010.08.24
-    // needn't wait for channel clear here. because the caller can guarantee the 
-    // channel is clear enough before calling this function.
-    //
 	// while (!csma_ischannelclear(mac->rxtx))
 	//    continue;
 
@@ -460,7 +451,7 @@ uintx _aloha_trysend( TiAloha * mac, char * buf, uint8 len, uint8 option )
             mac->backoff = CONFIG_ALOHA_MIN_BACKOFF + rand_uint8( mac->backoff << 1 );
             if (mac->backoff > CONFIG_ALOHA_MAX_BACKOFF)
                 mac->backoff = CONFIG_ALOHA_MAX_BACKOFF;
-            timer_restart( mac->timer, mac->backoff, 0 );
+            vti_restart( mac->timer, mac->backoff, 0 );
             mac->state = ALOHA_STATE_BACKOFF;
         }
     }
@@ -480,7 +471,8 @@ uintx _aloha_tryrecv( TiAloha * mac, char * buf, uint8 len, uint8 option )
     count = rxtx->recv( rxtx->provider, buf, len, option );
 	if (count > 0)
 	{   
-        // possible DATA frame check and ACK processing here.
+        // todo: check frame types here. You should ignore non DATA type frames
+		// in the 802.15.4 protocol specification.
 	}
 
 	return count;
@@ -505,7 +497,7 @@ void aloha_evolve( void * macptr, TiEvent * e )
     switch (mac->state)
     {
     case ALOHA_STATE_BACKOFF:
-        if (timer_expired(mac->timer))
+        if (vti_expired(mac->timer))
         {
             // if _aloha_trysend() returns positive value, then it means the frame
             // has been sent successfully. if it returns negative value, then it means
@@ -557,7 +549,7 @@ void aloha_evolve( void * macptr, TiEvent * e )
         /*
         case ADTALOHA_EVENT_SHUTDOWN_REQUEST:
             // no matter what the current state is, then you can do shutdown
-            timer_stop(); 
+            vti_stop(); 
             phy_shutdown();
             mac->state = SHUTDOWN;
             break;    

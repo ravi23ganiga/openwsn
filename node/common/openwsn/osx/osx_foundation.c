@@ -31,3 +31,10 @@
 #include "../rtl/rtl_ringqueue.h"
 #include "osx_foundation.h"
 
+/*******************************************************************************
+ * Initialize the core hardware to support the osx kernel to run. 
+ ******************************************************************************/
+//void osx_init()
+//{
+
+//}

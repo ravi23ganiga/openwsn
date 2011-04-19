@@ -26,19 +26,33 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
+/*******************************************************************************
  * @author zhangwei on 20060906
  * foundation.h
  * this is the base foundation file of all the files in the application.
+ * 
+ * @status 
+ * - Released. Tested ok.
  *
  * @modified by zhangwei on 20060906
  * add "signed" in the typedef of int8
  * this is because some compile will assume char as unsigned type, while here
  * we need a signed char.
- *****************************************************************************/
+ ******************************************************************************/
 
+/**
+ * CONFIG_INT2HANDLER_ENABLE
+ * Enable the interrupt-handler map table. This is the default settings on most
+ * of the microcontrollers.
+ * 
+ * CONFIG_INT2HANDLER_CAPACITY
+ * Configure the interrupt-handler mapping table capacity. Suggested value is from 
+ * 8~32. It depends on how many hardware interrupts you used in your system. 
+ */
 #define CONFIG_INT2HANDLER_ENABLE
 #define CONFIG_INT2HANDLER_CAPACITY 32
+
+// this macro seems no use in hal layer and should move to osx layer. (2011)
 #define CONFIG_NANOS_ENABLE
 
 /* @attention
@@ -87,23 +101,10 @@ extern "C" {
  */
 
 #define TiHalEvent TiEvent
-
-/*
-struct _TiHalEvent{
-  uintx id;
-  void (* handler)(void * object, struct _TiHalEvent * e);
-  void * objectfrom;
-  void * objectto;
-};
-typedef struct _TiHalEvent TiHalEvent;
-*/
-
 #define TiHalEventId uintx
-
 #define TiHalEventHandler TiFunEventHandler
-//typedef void (* TiHalEventHandler)(void * object, TiHalEvent * e);
-typedef void (* TiFunInterruptHandler)(void);
 
+typedef void (* TiFunInterruptHandler)(void);
 
 /* the following type is used to implement atomic mechanism in hal_cpu module.
  * the current settings is adapt to atmega128 8 bit MCU only. you may need to change 
@@ -112,11 +113,9 @@ typedef void (* TiFunInterruptHandler)(void);
 #define hal_atomic_t cpu_atomic_t
 typedef uint8 cpu_atomic_t;
 
-
-
-/******************************************************************************
+/*******************************************************************************
  * global variable
- *****************************************************************************/
+ ******************************************************************************/
 
 /* g_atomic_level: to keep the atmic nested level. defined in this module. */
 
@@ -143,13 +142,13 @@ extern _TiIntHandlerItem m_int2handler[CONFIG_INT2HANDLER_CAPACITY];
 #endif
 
 
-/******************************************************************************
+/*******************************************************************************
  * software initialization of the hal layer
- *****************************************************************************/
+ ******************************************************************************/
 
 void hal_init( TiFunEventHandler listener, void * object );
 
-/******************************************************************************
+/*******************************************************************************
  * interaction with the upper layer such as the osx kernel or other listeners
  *
  * osx is a ultralight OS kernel running on top of the hal layer. the following 
@@ -162,31 +161,14 @@ void hal_init( TiFunEventHandler listener, void * object );
  * @attention
  *	- you must call hal_swinit() some where before you can call the following 
  * functions successfully. 
- *****************************************************************************/
-
+ ******************************************************************************/
 
 void hal_setlistener( TiFunEventHandler listener, void * listener_owner );
 void hal_notifylistener( TiEvent * e );
 void hal_notify_ex( TiEventId eid, void * objectfrom, void * objectto );
 
-
-/*
-defined in hal_timer
-#ifdef CONFIG_TARGET_GAINZ
-  #define tm_value_t uintx
-#else
-  #define tm_value_t uint32
-#endif
-*/
-
-/**
- * TiTimerInterface
- */
-//todo
-
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*_HAL_FOUNDATION_H_*/
+#endif /* _HAL_FOUNDATION_H_3721_ */

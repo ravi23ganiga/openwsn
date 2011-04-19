@@ -136,7 +136,7 @@ void csma_sendnode(void)
         // suggest you use option 0x00.
         // the default setting is 0x01, which means ACK is required.
         //
-		option = 0x00;
+		option = 0x01;
 
         while (1)
         {   

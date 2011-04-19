@@ -25,7 +25,7 @@
  ******************************************************************************/
 
 #define CONFIG_NIOACCEPTOR_RXQUE_CAPACITY 2
-#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 2
+#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 1
 
 /*******************************************************************************
  * aloha_recv
@@ -203,9 +203,6 @@ void recvnode(void)
 		len = aloha_recv( mac, rxbuf, 0x00 );        
 		if (len > 0)
 		{   
-			dbc_putchar( 0xF3 );
-            //len = aloha_recv( mac, rxbuf, 0x00 );
-
             frame_moveouter( rxbuf );
             _output_frame( rxbuf, NULL );
             frame_moveinner( rxbuf );

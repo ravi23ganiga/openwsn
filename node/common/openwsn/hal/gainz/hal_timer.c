@@ -24,7 +24,6 @@
  *
  ******************************************************************************/
 
-
 #include "../hal_configall.h"
 #include <string.h>
 #include <avr/io.h>
@@ -39,7 +38,6 @@
 #include "../hal_timer.h"
 #include "../hal_led.h"
 #include "../hal_debugio.h"
-
 
 /*******************************************************************************
  * atmega 128 
@@ -59,12 +57,12 @@
  *  in atmega128, timer 0 and 2 are 8 bit timer. timer 1 and 3 are 16 bit timer.
  * 
  * reference
- * [] AVR GCC Interrupt in WinAVR (found in your winavr)
+ * [1] AVR GCC Interrupt in WinAVR (found in your winavr)
  *    file:///D:/portable/WinAVR-20080610/doc/avr-libc/avr-libc-user-manual/group__avr__interrupts.html
  *    Attention: Do not use SIGNAL() in new code. Use ISR() instead. 
- * [] Better GCC Interrupt Macro, 2006  (obsolete, but it's still meaningful to understand)
+ * [2] Better GCC Interrupt Macro, 2006  (obsolete, but it's still meaningful to understand)
  *    http://www.avrfreaks.net/index.php?name=PNphpBB2&file=viewtopic&t=37830
- * [] AVR-GCC里定义的API, 2009, 
+ * [3] AVR-GCC里定义的API, 2009, 
  *    http://hi.baidu.com/tao_%CC%CE/blog/item/7441e9eee32c0bf3b3fb9545.html
  *
  * @author zhangwei, tangwen on 2006-08-02
@@ -85,30 +83,27 @@
  * 
  * @modified by zhangwei on 200905xx
  *	- revision 
- * @modified by 谢静(TongJi University) on 20090530
+ * @modified by Xie Jing(TongJi University) on 20090530
  *	- new version implemention on atmegal 128 MCU (ICT GAINZ device)
  *  - in testing now.
+ * @modified by Zhang Wei in 2011.04
+ * 	- Bugs found: the timer 1 and timer 3 are not implemented
+ *	- Bugs found: the timer_start() has wrong timing configure values for timer 1 and 3.
  ******************************************************************************/
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*******************************************************************************
- * interrupt service routine related functions
- * here implements service routines for each timer hardware. in principle, different 
- * hardware may share the same interrupt service routine.
- ******************************************************************************/
-
+/**
+ * The core of the interrupt service routine. This function is actually shared by 
+ * all the the timer adapter objects.
+ */
 static inline void _timer_interrupt_handler( void * object, TiEvent * e );
 
-
-/*******************************************************************************
- * timer interface implementations 
- ******************************************************************************/
-
-/* construct a TiTimerAdapter object in the memory. no hardware operations in this 
- * step 
+/**
+ * Construct a TiTimerAdapter object in the memory. This function should always be 
+ * success. 
  */
 TiTimerAdapter * timer_construct( char * buf, uint8 size )
 {
@@ -117,14 +112,30 @@ TiTimerAdapter * timer_construct( char * buf, uint8 size )
 	return (TiTimerAdapter *)buf;
 }
 
+/**
+ * Destroy the timer and revoke allocated resources for this timer before.
+ * 
+ * @attention This function assumes the timer object has already been stopped before.
+ * You should call timer_stop() first before calling this function.
+ */
 void timer_destroy( TiTimerAdapter * timer )
 {
 	timer_disable( timer );
 }
 
-/* @param
- *	option		bit7...bit0
- *              bit0 == 0 interrupt driven bit (default), bit0 == 1, query driven
+/**
+ * Initialize the timer adapter object (TiTimerAdapter) for further operation. 
+ * 
+ * @attention You should still manually start the timer by call timer_start() or 
+ *  	timer_restart().
+ *
+ * @param id Start from 0. This id is used to distinguish different hardware timers.
+ * @param listener This is a call back listener be called when the timer expired.
+ *		It can be NULL.
+ * @param object The owner of the listener function. 
+ * @param option[bit7...bit0]
+ *      bit0 == 0 interrupt driven bit (default)(中断驱动模式)
+ *      bit0 == 1, query driven (查询驱动模式)
  */
 TiTimerAdapter * timer_open( TiTimerAdapter * timer, uint8 id, TiFunEventHandler listener, void * listenowner, uint8 option )
 {
@@ -133,7 +144,8 @@ TiTimerAdapter * timer_open( TiTimerAdapter * timer, uint8 id, TiFunEventHandler
 	timer->listenowner = listenowner;
 	timer->option = option;
 
-	if ((option & 0x01) == 1)//当option为1时，为中断模式；否则为查询模式。——Yan
+	// if this timer is interrupt driven
+	if ((option & 0x01) == 1)
 	{
 	switch (timer->id)
 	{
@@ -158,7 +170,7 @@ void timer_close( TiTimerAdapter * timer )
 {
 	timer_stop( timer );
 
-
+	// if this timer is interrupt driven
 	if ((timer->option & 0x01) == 1)
 	{
 	switch (timer->id)
@@ -193,44 +205,45 @@ void timer_close( TiTimerAdapter * timer )
  *        0        timer stop
  */
 
-//此函数貌似无用，建议删除——Yan
-
-void timer_setinterval_base( TiTimerAdapter * timer, uint8 prescale_factor, uint16 count, uint8 repeat )
-{
-	timer->prescale_factor = prescale_factor;
-	timer->count = count;
-	timer->repeat = repeat;
-}
-
-/* the value of "interval" is important! it should NOT be too small
- * to enable the application process the timer interrupt successfully. and it
- * should NOT be too large so that no calculation overflow occured! 
+/**
+ * Set the timing interval. The timer will set expired flag when the timing interval
+ * elapsed after the timer is started.
  *
- * param
- *	interval       determins when the timer expires from start() call. (milliseconds)
- *	repeat         decide whether the timer should work periodically
- *                 TRUE/1   period triggering
- *                 FALSE/0  trigger only once
+ * @attentioin The input value of "interval" parameter is important! It's hardware
+ * dependent. It should NOT be too small to enable the application have enough time 
+ * to finish the execution of the ISR. And it should NOT be too large so that no 
+ * calculation overflow occured! 
  * 
- * result
- *	nothing happens if failed.
+ * @attention The GAINZ hardware node adopts the Atmega128 microcontroller. The valid
+ *	input range for "interval" paramete is 1~8.
+ *
+ * @param timer TiTimerAdapter object
+ * @param interval Determins the timing duration when the timer expires from timer_start() call. 
+ *		It's based on milliseconds.
+ * @param repeat Decides whether the timer should work periodically.
+ *      FALSE/0  trigger only once (default)
+ *  	TRUE/1   period triggering
+ *
+ * @return Nothing happens even if failed.
  *
  * @warning
- * @attention
- *	be careful with your input values! the automatic tuning may generate wrong 
- * results inside. 
+ *	Be careful with your input interval range! The automatic tuning inside this function
+ * may generate wrong results inside. 
+ * 
+ * @todo repeat isn't implemented yet!!!!
  */
-
- //repeat参数在此timerAdapter尚未定义功能。——YAN
 void timer_setinterval( TiTimerAdapter * timer, uint16 interval, uint8 repeat )
 {
 	// if ((timer->interval == interval) && (timer->repeat == repeat))
 	// 	return;
 
 	uint16 idx=0;
-	uint16 pulscount = interval * (CONFIG_GAINZ_CLOCK_FREQUENCY / 1000);//interval的范围1~8
+	uint16 pulscount = interval * (CONFIG_GAINZ_CLOCK_FREQUENCY / 1000);
 	bool found = false;
 
+	// Q: Shall we add critical pair in this function?
+	// hal_enter_critical()
+	
 	/* searching for the largest bit of parameter "interval" */
 	for (idx=0; idx<16; idx++)
 	{
@@ -242,8 +255,9 @@ void timer_setinterval( TiTimerAdapter * timer, uint16 interval, uint8 repeat )
 	}
 
 	if (found)
-		{idx = 15 - idx;
-		}
+	{
+		idx = 15 - idx;
+	}
 	else
 		return;
 
@@ -253,105 +267,131 @@ void timer_setinterval( TiTimerAdapter * timer, uint16 interval, uint8 repeat )
 
 	switch (timer->id){
 	case 0:
-//just for timer0
-	/* prescale_factor | prescale 
-	 *        7            1024
-	 *        6             256
-	 *        5             128
-	 *        4              64
-	 *        3              32
-	 *        2              8
-	 *        1              1
-	 *        0        timer stop
-	 */
-	if (idx > 11)
-	{
-		timer->prescale_factor = 7; // prescale is 1024
-		timer->count = (pulscount & 0xFC00) >> 10;
-	}
-	else if (idx > 9)
-	{
-		timer->prescale_factor = 6;//prescale is 256
-		timer->count = (pulscount & 0xFF00) >> 8;
-	}
-	else if (idx > 7)
-	{
-		timer->prescale_factor = 4;//prescale is 64
-		timer->count = (pulscount & 0xFFC0) >> 6;
-	}
-	else if (idx > 4)
-	{
-		timer->prescale_factor = 2;//prescale is 8
-		timer->count = (pulscount & 0xFFF8) >> 3;
-	}
-	else
-	{
-		timer->prescale_factor = 1;//prescale is 1
-		timer->count = pulscount;
-	}
-	break;
+		/* For hardware Timer0 */
+		/* prescale_factor | prescale 
+		 *        7            1024
+		 *        6             256
+		 *        5             128
+		 *        4              64
+		 *        3              32
+		 *        2              8
+		 *        1              1
+		 *        0        timer stop
+		 */
+		if (idx > 11)
+		{
+			timer->prescale_factor = 7; // prescale is 1024
+			timer->count = (pulscount & 0xFC00) >> 10;
+		}
+		else if (idx > 9)
+		{
+			timer->prescale_factor = 6;//prescale is 256
+			timer->count = (pulscount & 0xFF00) >> 8;
+		}
+		else if (idx > 7)
+		{
+			timer->prescale_factor = 4;//prescale is 64
+			timer->count = (pulscount & 0xFFC0) >> 6;
+		}
+		else if (idx > 4)
+		{
+			timer->prescale_factor = 2;//prescale is 8
+			timer->count = (pulscount & 0xFFF8) >> 3;
+		}
+		else
+		{
+			timer->prescale_factor = 1;//prescale is 1
+			timer->count = pulscount;
+		}
+		break;
 
+	case 1:  
+		/* For hardware timer 1 */
+		hal_assert( false );
+		// @todo 
+		break;
+		
 	case 2:
-	//default:
-	/* prescale_factor | prescale 
-	 *        7             T2引脚外部时钟源，上升沿有效
-	 *        6             T2引脚外部时钟源，下降沿有效
-	 *        5             1024
-	 *        4              256
-	 *        3              64
-	 *        2              8
-	 *        1              1
-	 *        0        timer stop
-	 */
-	if (idx > 11)
-	{
-		timer->prescale_factor = 5; // prescale is 1024
-		timer->count = (pulscount & 0xFC00) >> 10;
-	}
-	else if (idx > 9)
-	{
-		timer->prescale_factor = 4;//prescale is 256
-		timer->count = (pulscount & 0xFF00) >> 8;
-	}
-	else if (idx > 7)
-	{
-		timer->prescale_factor = 3;//prescale is 64
-		timer->count = (pulscount & 0xFFC0) >> 6;
-	}
-	else if (idx > 4)
-	{
-		timer->prescale_factor = 2;//prescale is 8
-		timer->count = (pulscount & 0xFFF8) >> 3;
-	}
-	else
-	{
-		timer->prescale_factor = 1;//prescale is 1
-		timer->count = pulscount;
-	}
-	break;
+		/* For hardware timer 2 */
+		/* prescale_factor | prescale 
+		 *        7             T2引脚外部时钟源，上升沿有效
+		 *        6             T2引脚外部时钟源，下降沿有效
+		 *        5             1024
+		 *        4              256
+		 *        3              64
+		 *        2              8
+		 *        1              1
+		 *        0        timer stop
+		 */
+		if (idx > 11)
+		{
+			timer->prescale_factor = 5; // prescale is 1024
+			timer->count = (pulscount & 0xFC00) >> 10;
+		}
+		else if (idx > 9)
+		{
+			timer->prescale_factor = 4;//prescale is 256
+			timer->count = (pulscount & 0xFF00) >> 8;
+		}
+		else if (idx > 7)
+		{
+			timer->prescale_factor = 3;//prescale is 64
+			timer->count = (pulscount & 0xFFC0) >> 6;
+		}
+		else if (idx > 4)
+		{
+			timer->prescale_factor = 2;//prescale is 8
+			timer->count = (pulscount & 0xFFF8) >> 3;
+		}
+		else
+		{
+			timer->prescale_factor = 1;//prescale is 1
+			timer->count = pulscount;
+		}
+		break;
+		
+	case 3:  
+		/* For hardware timer 3 */
+		hal_assert( false );
+		// @todo 
+		break;		
 	}
 	
-	//timer->option = repeat;
+	// hal_leave_critical()
 }
 
+/**
+ * Start the timer according to the interval, scale and repeat settings. 
+ * If the timer interrupt is enabled, then the callback listener function will be 
+ * called automatically if listener isn't NULL.
+ */
 void timer_start( TiTimerAdapter * timer )
 {
-	/* set prescalar according to timer->interval and timer->repeat */
-	//todo 
-	//dbo_putchar(timer->count);
-	//dbo_putchar(timer->prescale_factor);
+	/* 
+	#ifdef CONFIG_DEBUG
+	dbc_putchar(timer->count);
+	dbc_putchar(timer->prescale_factor);
+	#endif
+	*/
 
+	/* Set prescalar according to timer->interval and timer->repeat */
+	
+	// Q: shall we add critical management in this function?
+	
+	// hal_enter_critical()
+	
     // TCCR: timer control register
 
 	switch (timer->id)
 	{
-	case 0://8位计时器
+	case 0:
+		// Time 0 is a 8bit timer
 
-		// for overflow mode
-		//TCNT0 = 0xFF - timer->count;
-		//TCCR0 = timer->prescale_factor;
-		//led_on(LED_RED);
-		//loop_until_bit_is_set(TIFR,TOV0);中断标志位为TOV0.
+		// For overflow mode
+		// TCNT0 = 0xFF - timer->count;
+		// TCCR0 = timer->prescale_factor;
+		// interrupt flag bit is TOV0.
+		// loop_until_bit_is_set(TIFR,TOV0);
 
 		//上面为TCCR0的前几位设为0，将timer设为普通模式，但个人认为使用CTC模式更优。
 		//因为普通模式写入TCNT0后，计数计到0xFF后中断，返回0，若要再次计数需要重写TCNT0；
@@ -359,8 +399,7 @@ void timer_start( TiTimerAdapter * timer )
 		//CTC模式为上层timer调用时，只需记录中断次数就可重复使用；而普通模式需要记录中断且重写TCNT0，当然如果使用最大计数值则无此顾虑
 		//但是注意两种模式的中断标志位不同。
 
-
-		//CTC mode
+		// For CTC mode
 		OCR0 = timer->count;
 		TCCR0 = (_BV(WGM01) & (~_BV(WGM00)));
 		TCCR0 |= timer->prescale_factor;
@@ -372,6 +411,8 @@ void timer_start( TiTimerAdapter * timer )
 	case 1://16位计时器
 		// for CTC mode
 		
+		// @todo: the following OCR1A value is wrong!!! but the program can run
+		hal_assert( false );
 		OCR1A = 0x005f;//timer->count;
 	    TCCR1A=0;       //WGM13:0 = 1 1 0 0  for CTC mode
 		TCCR1B=(~_BV(WGM13) & (_BV(WGM12)));
@@ -380,13 +421,13 @@ void timer_start( TiTimerAdapter * timer )
 		break;
 
 	case 2:
-		// for overflow mode
-		//TCNT2 = 0xFF - timer->count;
-    	//TCCR2 = timer->prescale_factor;
-		//loop_until_bit_is_set(TIFR,TOV2);中断标志位为TOV2.
+		//-- For overflow mode
+		// TCNT2 = 0xFF - timer->count;
+    	// TCCR2 = timer->prescale_factor;
+		//-- The interrupt flag is TOV2
+		// loop_until_bit_is_set(TIFR,TOV2);
 
-		//CTC mode
-		   
+		// For CTC mode (we use this mode now)
 		OCR2 = timer->count;
 		TCCR2 = (_BV(WGM21) & (~_BV(WGM20)));
 		TCCR2 |= timer->prescale_factor;
@@ -409,12 +450,16 @@ void timer_start( TiTimerAdapter * timer )
 		break;
 	}
 
+	// hal_leave_critical();
+
 	if ((timer->option & 0x01) == 0x01)
-		timer_enable(timer);
+		timer_enable(timer);		
 }
 
-/* a value of zero of the prescalar value in the TCCRx will stop the cooresponding timer.
+/* A value of zero of the prescalar value in the TCCRx will stop the cooresponding timer.
  * attention the prescalar is still running
+ * 
+ * @todo: check whether this function affect other timer object
  */
 void timer_stop( TiTimerAdapter * timer )
 {
@@ -441,21 +486,34 @@ void timer_stop( TiTimerAdapter * timer )
 	}
 }
 
+/** 
+ * Restart the timer. This function is the combination of timer_setinterval() and 
+ * timer_start() function.
+ * 
+ * @atttention: If the timer is still running, then this function will discard the 
+ * current execution and start the timing from the timer point this function is called.
+ * 
+ * @param timer TiTimerAdapter object
+ * @param interval Timing interval.
+ * @param repeat 0 means this's a one time only timing. 1 means the timer will restart
+ * 		after each expiration. 
+ */
 void timer_restart( TiTimerAdapter * timer, uint16 interval, uint8 repeat )
 {
-	/* attention: 
-	 * assume timer is already stoped here */
 	timer_setinterval( timer, interval, repeat );
 	timer_start( timer );
 }
 
 
-/* enable timer interrupt 
+/* Enable timer interrupt. This funtion is only meaningful when the timer object 
+ * runs in interrupt driven mode. For query driven mode, this function doesn nothing.
+ *
  * timer interrupt related registers: TIFR, ETIFR, TIMSK, ETIMSK
  * ref to atmega128 datasheet
  */
 void timer_enable( TiTimerAdapter * timer )
 {
+	// if the timer object is interrupt driven
 	if ((timer->option & 0x01) == 0x01)
 	{  
 		switch (timer->id)
@@ -518,7 +576,10 @@ void timer_enable( TiTimerAdapter * timer )
 	}
 }
 
-/* disable timer interrupt */
+/**
+ * Disable timer interrupt. This funtion is only meaningful when the timer object 
+ * runs in interrupt driven mode. For query driven mode, this function doesn nothing.
+ */
 void timer_disable( TiTimerAdapter * timer )
 {
 	if ((timer->option & 0x01) == 0x01)
@@ -560,6 +621,7 @@ void timer_setlistener( TiTimerAdapter * timer, TiFunEventHandler listener, void
 void timer_setchannel( TiTimerAdapter * timer, uint8 channel )
 {
 	timer->channel = channel;
+	hal_assert( false );
 	// todo
 }
 
@@ -600,7 +662,7 @@ tm_value_t timer_elapsed( TiTimerAdapter * timer )
 	return ret;
 }
 
-/* to judge whether the timer object is expired or not. this function will reset
+/* Judge whether the timer object is expired or not. this function will reset
  * the expired flag automatically. since the expired flag is often a bit in the 
  * timer's state register, it may also be cleared by the hardware when you read 
  * it out 
@@ -648,8 +710,6 @@ bool timer_expired( TiTimerAdapter * timer )
 			ETIFR |= _BV(OCF3A);
 		}
 		break;
-
-		break;
 	}
 	return ret;
 }
@@ -666,11 +726,10 @@ tm_value_t timer_clocksperms( TiTimerAdapter * timer )
 	return 8;
 	#endif
 
-	return 1000;
+	return 8;
 }
 
 /* old source code
-
 uint8_t Timer3_setIntervalAndScale(uint16_t interval, uint8_t scale)
 {
 
@@ -705,55 +764,47 @@ void  Timer3_sethalfsymbol(uint16_t symbols)
       Timer3_setIntervalAndScale(halfsymbols, 0x5);
      
 }
-
-uint16_t Timer3_setInterval(uint16_t interval)
-{
-      uint32 temp;
-       temp=interval;
- 	if (temp>=65535) temp=temp-65535;
-	return (temp);
-}
 */
 
-/*******************************************************************************
- * interrupt service routine related functions
- * here implements service routines for each timer hardware. in principle, different 
- * hardware may share the same interrupt service routine.
- ******************************************************************************/
-
-/* @attention
- *	- this function will be called by the hal_invokehandler() function. so you 
- * must call hal_attachhandler() and configure the interrupt number - handler map
+/**
+ * The core of the interrupt service routine. This function is actually shared by 
+ * all the the timer adapter objects.
+ *
+ * @attention
+ *	- This function will be called by the hal_invokehandler() function. So you 
+ * must call hal_attachhandler() and configure the "interrupt number - handler" map.
  * before you can call it successfully inside hal_invokehandler().
- *	- this function is still inside the interrupt context. 
- *  - you can distinguish the which timer raised the interrupt by the parameter "object".
+ *	- This function is still executed inside the interrupt context. 
+ *  - You can distinguish the which timer raised the interrupt by the parameter "object".
  */ 
 void _timer_interrupt_handler( void * object, TiEvent * e )
 {
-	//led_twinkle( LED_RED | LED_GREEN, 1000 );
-
     TiTimerAdapter * timer = (TiTimerAdapter *)object;
-	//timer = timer;
-	//TiEvent ev;
+	TiEvent ev;
 
-	/* You can use timer->id to identify the current timer */
-
-	/* cpu_atomic_t atomic = _cpu_atomic_begin();
-	{
-      	//if (Timer3_set_flag!=0) 
-		{
-			//OCR3A  = Timer3_setInterval(2000);
-	    	//Timer3_set_flag--;
-      	}
-    }
-    _cpu_atomic_end(atomic); 
+	/* @attention You can use timer->id to identify which hardware timer generate
+	 * this interrupt request. */
+ 	
+	/*
+	#ifdef CONFIG_DEBUG
+	led_twinkle( LED_RED | LED_GREEN, 300 );
+	dbc_putchar(0x12);
+	#endif
 	*/
-	//memset( &ev, 0x00, sizeof(TiEvent) );
-	//dbo_putchar(0x12);
+
+	memset( &ev, 0x00, sizeof(TiEvent) );
+	ev.id = EVENT_TIMER_EXPIRED;
 	
-	//ev.id = EVENT_TIMER_EXPIRED;
+	/* If some object want to be notified when the timer is expired, it can register
+	 * an callback listener function to this timer object, and it will call the
+	 * calback listener function. 
+	 * 
+	 * @attention The callback listener is still running in interrupt context.
+	 */
 	if (timer->listener != NULL)
-		timer->listener(timer->listenowner, NULL);//timer->listener( NULL, NULL );--------------Modified by Yan Shixing, 2009.11.5
+	{
+		timer->listener(timer->listenowner, &ev);
+	}
 }
 
 #ifdef __cplusplus

@@ -307,6 +307,7 @@ typedef struct{
  */
 typedef struct{
 	uint8               state;
+	uint8               count;//todo for tesitng
 	uint8               option;
 	TiNioAcceptor *     nac;
 	uint16              pan;

@@ -108,7 +108,6 @@
 #define TIMER_STATE_INTERRUPT 	0x04
 #define TIMER_STATE_CAPTURE 	0x08
 
-
 typedef struct{
   uint8 id;
   uint8 channel;
@@ -128,17 +127,108 @@ typedef struct{
 extern "C" {   
 #endif
 
+/**
+ * Construct a TiTimerAdapter object in the memory. This function should always be 
+ * success. 
+ */
 TiTimerAdapter* timer_construct( char * buf, uint8 size );
-void       timer_destroy( TiTimerAdapter * timer );
+
+/**
+ * Destroy the timer and revoke allocated resources for this timer before.
+ * 
+ * @attention This function assumes the timer object has already been stopped before.
+ * You should call timer_stop() first before calling this function.
+ */
+void timer_destroy( TiTimerAdapter * timer );
+
+/**
+ * Initialize the timer adapter object (TiTimerAdapter) for further operation. 
+ * 
+ * @attention You should still manually start the timer by call timer_start() or 
+ *  	timer_restart().
+ *
+ * @param id Start from 0. This id is used to distinguish different hardware timers.
+ * @param listener This is a call back listener be called when the timer expired.
+ *		It can be NULL.
+ * @param object The owner of the listener function. 
+ * @param option[bit7...bit0]
+ *      bit0 == 0 interrupt driven bit (default)(中断驱动模式)
+ *      bit0 == 1, query driven (查询驱动模式)
+ */
 TiTimerAdapter* timer_open( TiTimerAdapter * timer, uint8 id, TiFunEventHandler listener, void * object, uint8 option );
-void       timer_close( TiTimerAdapter * timer );
-void       timer_setinterval( TiTimerAdapter * timer, uint16 interval, uint8 repeat );
-void       timer_start( TiTimerAdapter * timer );
-void       timer_restart( TiTimerAdapter * timer, uint16 interval, uint8 repeat );
-void       timer_stop( TiTimerAdapter * timer );
-void       timer_enable( TiTimerAdapter * timer );
-void       timer_disable( TiTimerAdapter * timer );
+void timer_close( TiTimerAdapter * timer );
+
+/**
+ * Set the timing interval. The timer will set expired flag when the timing interval
+ * elapsed after the timer is started.
+ *
+ * @attentioin The input value of "interval" parameter is important! It's hardware
+ * dependent. It should NOT be too small to enable the application have enough time 
+ * to finish the execution of the ISR. And it should NOT be too large so that no 
+ * calculation overflow occured! 
+ * 
+ * @attention The GAINZ hardware node adopts the Atmega128 microcontroller. The valid
+ *	input range for "interval" paramete is 1~8.
+ *
+ * @param timer TiTimerAdapter object
+ * @param interval Determins the timing duration when the timer expires from timer_start() call. 
+ *		It's based on milliseconds.
+ * @param repeat Decides whether the timer should work periodically.
+ *      FALSE/0  trigger only once (default)
+ *  	TRUE/1   period triggering
+ *
+ * @return Nothing happens even if failed.
+ *
+ * @warning
+ *	Be careful with your input interval range! The automatic tuning inside this function
+ * may generate wrong results inside. 
+ * 
+ * @todo repeat isn't implemented yet!!!!
+ */
+void timer_setinterval( TiTimerAdapter * timer, uint16 interval, uint8 repeat );
+
+/**
+ * Start the timer according to the interval, scale and repeat settings. 
+ * If the timer interrupt is enabled, then the callback listener function will be 
+ * called automatically if listener isn't NULL.
+ */
+void timer_start( TiTimerAdapter * timer );
+
+/** 
+ * Restart the timer. This function is the combination of timer_setinterval() and 
+ * timer_start() function.
+ * 
+ * @atttention: If the timer is still running, then this function will discard the 
+ * current execution and start the timing from the timer point this function is called.
+ * 
+ * @param timer TiTimerAdapter object
+ * @param interval Timing interval.
+ * @param repeat 0 means this's a one time only timing. 1 means the timer will restart
+ * 		after each expiration. 
+ */
+void timer_restart( TiTimerAdapter * timer, uint16 interval, uint8 repeat );
+void timer_stop( TiTimerAdapter * timer );
+
+/**
+ * Enable the interrupt. The timer hardware can generate interrupt request to drive
+ * the timer object to run. 
+ * 
+ * This funtion is only meaningful when the timer object runs in interrupt driven 
+ * mode. For query driven mode, this function doesn nothing.
+ * 
+ * @attention If the timer is disabled, the timer hardware can still run. But you 
+ * 	should check the timer status frequently to get whether the timer is expired
+ *  or not. 
+ * 
+ * Q: What's the different between timer_enable() and timer_start()?
+ * R: timer_enable() affect interrupt setting, while timer_start() affect the running 
+ * or not of the hardware. The default setting is timer enabled. 
+ */
+void timer_enable( TiTimerAdapter * timer );
+void timer_disable( TiTimerAdapter * timer );
+
 void       timer_setlistener( TiTimerAdapter * timer, TiFunEventHandler listener, void * object );
+
 void       timer_setchannel( TiTimerAdapter * timer, uint8 channel );
 void       timer_setprior( TiTimerAdapter * timer, uint8 prior );
 void       timer_setvalue( TiTimerAdapter * timer, tm_value_t value );
@@ -146,7 +236,6 @@ tm_value_t timer_getvalue( TiTimerAdapter * timer );
 tm_value_t timer_elapsed( TiTimerAdapter * timer );
 bool       timer_expired( TiTimerAdapter * timer );
 tm_value_t timer_clocksperms( TiTimerAdapter * timer );
-
 
 #ifdef __cplusplus
 }

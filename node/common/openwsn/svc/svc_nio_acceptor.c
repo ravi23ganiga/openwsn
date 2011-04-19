@@ -26,14 +26,15 @@
 
 #include "svc_configall.h"
 #include "../rtl/rtl_frame.h"
+#include "../rtl/rtl_dumpframe.h"
 #include "../rtl/rtl_framequeue.h"
 #include "../rtl/rtl_debugio.h"
 #include "../hal/hal_cc2420.h"
 #include "../hal/hal_led.h"
 #include "../hal/hal_debugio.h"
+//#include "../hal/gainz/hpl_cpu.h"
 #include "svc_foundation.h"
 #include "svc_nio_acceptor.h"
-#include "../hal/gainz/hpl_cpu.h"
 
 #ifdef CONFIG_DEBUG
 #include "../rtl/rtl_dumpframe.h"
@@ -148,18 +149,23 @@ TiFrameQueue * nac_rxque( TiNioAcceptor * nac )
  */
 intx nac_send( TiNioAcceptor * nac, TiFrame * item, uint8 option )
 {   
-	
+	TiFrameRxTxInterface * rxtx = &(nac->rxtx);
+	uint8 first = frame_firstlayer(item);
+	return rxtx->send( rxtx->provider, frame_layerstartptr(item,first), frame_layercapacity(item,first), item->option );
+
+	// old version
+	// The old version maintains an txque. But the txque seems meaningless in this layer.
+	/*
 	if (fmque_pushback( nac->txque, item ) > 0)
 	{  
-		
+		fmque_rear(nac->txque)->option = option;
 		nac_evolve( nac,NULL );
-		return frame_capacity(item);
+		return frame_length(item);
 	}
-	else
-	{   
-		
+	else{
 		return 0;
 	}
+	*/
 }
 
 /**
@@ -176,7 +182,7 @@ intx nac_recv( TiNioAcceptor * nac, TiFrame * item , uint8 option )
 	{
 		frame_totalcopyfrom( item, front );
 		fmque_popfront( nac->rxque );
-		return frame_capacity(front);
+		return frame_length(front);
 	}
 	else
 		return 0;
@@ -195,8 +201,15 @@ void nac_evolve ( TiNioAcceptor * nac, TiEvent * event )
 
     if (!fmque_empty(nac->txque))
 	{   
+
 		f =  fmque_front( nac->txque );
-        
+		/*
+		#ifdef CONFIG_DEBUG
+		ieee802frame154_dump(f);
+		#endif
+		*/
+		
+        /*
 		// @attention: The developer often forget to call frame_setlength(f) after
 		// copy the data into the frame. It's the developer's responsibility to set
 		// correct length value of the frame, or else frame_length(f) may probably 
@@ -206,32 +219,29 @@ void nac_evolve ( TiNioAcceptor * nac, TiEvent * event )
 		// with frame_capacity(f). 
 		//
 		// @todo: 2011.03
+		*/
 		first = frame_firstlayer(f);
 		
+		// @attention
+		//	- Bug fixed. You needn't judge whether the rxtx->send() is successfully
+		// or not. We assume all the frames in the txque should be sent immediately.
+		rxtx->send( rxtx->provider, frame_layerstartptr(f,first), frame_layercapacity(f,first), f->option );
+		fmque_popfront( nac->txque );
+		
+		/* 
 		//todo
 		//发送函数中的frame_layerstartptr(f,first)是有问题的，其中，first = f->firstlayer,
-		
-		count = rxtx->send( rxtx->provider, frame_layerstartptr(f,first), frame_layercapacity(f,first), 0x00 );//todo 没用f->option
-		// count = rxtx.send( rxtx.provider, frame_startptr(f), frame_capacity(f), frame->option );
-		// count = rxtx.send( rxtx.provider, frame_startptr(f), frame_length(f), frame->option );
-		
-		// the following is for debug only
-		/*#ifdef CONFIG_DEBUG
-		ieee802frame154_dump(f);
-		#endif*/
-		
+		count = rxtx->send( rxtx->provider, frame_layerstartptr(f,first), frame_layercapacity(f,first), f->option );
 		if (count > 0)
 		{   
 			fmque_popfront( nac->txque );
-			
 		}
-		
-		
+		*/
 	}
-	
-	
+		
 	if (!fmque_full(nac->rxque ))
-	{
+	{   
+		
 		#ifdef CONFIG_NIOACCEPTOR_LISTENER_ENABLE
 		hal_enter_critical();
 		#endif
@@ -254,7 +264,7 @@ void nac_evolve ( TiNioAcceptor * nac, TiEvent * event )
 	}
 }
 
-
+/*
 TiNioSession * nac_getcursession( TiNioAcceptor * nac, TiNioSession * session )
 {
 	session->rxque = nac->rxque;
@@ -262,6 +272,7 @@ TiNioSession * nac_getcursession( TiNioAcceptor * nac, TiNioSession * session )
 	session->option = 0x00;
 	return session;
 }
+*/
 
 /*
  * This listener can be called by the transceiver component when a new frame arrives.
@@ -279,7 +290,7 @@ void nac_on_frame_arrived_listener( TiNioAcceptor * nac, TiEvent * e )
 	TiFrame * f = nac->rxframe;
 	
 	hal_atomic_begin();
-	count = rxtx.recv( rxtx.provider, frame_startptr(f), frame_capacity(f), 0x00 );
+	count = rxtx->recv( rxtx->provider, frame_startptr(f), frame_capacity(f), 0x00 );
 	if (count > 0)
 	{
 		frame_setlength( f, count );

@@ -34,7 +34,7 @@
  ******************************************************************************/
 
 #define CONFIG_NIOACCEPTOR_RXQUE_CAPACITY 2
-#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 2
+#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 1
 
 #include "../../common/openwsn/hal/hal_configall.h"  
 #include "../../common/openwsn/hal/hal_foundation.h"
@@ -85,6 +85,7 @@
 #define LOWBYTE(w) ((uint8)(w & 0xFF))
 
 static TiTimerAdapter 		m_hwtimer0;
+static TiTimerAdapter 		m_hwtimer2;
 static TiTimerManager 		m_vtm;
 static TiCc2420Adapter		m_cc;
 static TiFrameRxTxInterface m_rxtx;
@@ -106,6 +107,7 @@ int main(void)
 	uint16 value;
 
 	TiTimerAdapter * hwtimer0;
+	TiTimerAdapter * hwtimer2;
 	TiTimerManager * vtm;
 	TiTimer * vti;
 	TiCc2420Adapter * cc;
@@ -130,6 +132,7 @@ int main(void)
 	dbc_write( msg, strlen(msg) );
 
 	hwtimer0        = timer_construct( (void *)(&m_hwtimer0), sizeof(m_hwtimer0) );
+	hwtimer2       = timer_construct( (void *)(&m_hwtimer2), sizeof(m_hwtimer2) );
 	vtm             = vtm_construct( (void*)&m_vtm, sizeof(m_vtm) );
 	cc              = cc2420_construct( (char *)(&m_cc), sizeof(TiCc2420Adapter) );
 	nac             = nac_construct( &m_nacmem[0], NAC_SIZE );
@@ -144,7 +147,8 @@ int main(void)
 	hal_assert( rxtx != NULL );
 	nac             = nac_open( nac, rxtx, CONFIG_NIOACCEPTOR_RXQUE_CAPACITY, CONFIG_NIOACCEPTOR_TXQUE_CAPACITY);
 	hal_assert( nac != NULL ); 
-	mac             = aloha_open( mac, rxtx,nac, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,hwtimer0, NULL, NULL,0x01);
+	hwtimer2	   	= timer_open( hwtimer2, 2, NULL, NULL, 0x00 ); 
+	mac             = aloha_open( mac, rxtx,nac, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,hwtimer2, NULL, NULL,0x01);
 	
 	
 
@@ -216,9 +220,8 @@ int main(void)
 		for( i=DTP_HEADER_SIZE( GATW_MAX_HOPCOUNT)+2; i < frame_capacity( txbuf); i++)
 			request[i] = 0x81;
 
-		frame_setlength( txbuf,frame_capacity( txbuf));//todo
+		frame_setlength( txbuf,frame_capacity( txbuf));//todo 
 
-		
          while (1)
         {
 		    if ( dtp_send_request(dtp, txbuf, GATW_MAX_HOPCOUNT) > 0)
@@ -231,11 +234,11 @@ int main(void)
 		// todo: you should check whether the packet is maintain response type.
 	
 		vti_setscale( vti, 1 );
-		vti_setinterval( vti, 3000, 0x00 );
+		vti_setinterval( vti, 2000, 0x00 );
 		vti_start( vti );
 		while (!vti_expired(vti))
 		{
-		    
+
 			if( frame_empty( rxbuf))//todo
 			{   
 

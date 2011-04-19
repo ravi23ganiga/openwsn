@@ -221,9 +221,11 @@ void floodnode(void)
 	
 		if (len > 0)
 		{   
-		    
+		    frame_skipinner( frame,4,0);//todo 
+			dbo_write( frame_startptr(frame), frame_capacity(frame) );//todo for testing
 			pc = frame_startptr( frame);
-			if (pc[4])
+			
+			if (pc[0])
 				led_on( LED_RED );
 
 			else

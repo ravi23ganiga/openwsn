@@ -24,14 +24,14 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
+/*******************************************************************************
  * @author zhangwei on 20070610
  * @description
  * "hal_foundation" module, contains some general utility functions used frequvently
  * in other modules.
  *  
  * @state
- *  developing
+ *  - released. tested ok.
  * 
  * @modified by zhangwei on 20070610
  * 	- add hal_delay()
@@ -41,14 +41,21 @@
  *    and short as possible.
  *	- add interrupt num-object-handler map table support in this module.
  * @modified by zhangwei on 20090528
- *	- revison
+ *	- revised.
  *  
- *****************************************************************************/ 
+ ******************************************************************************/ 
+ 
 #include "../hal_configall.h"
 #include <string.h>
 #include "../hal_foundation.h"
-//#include "../hal_assert.h"
 
+/* @attention: You cannot include "hal_assert" module here for testing purpose, 
+ * because this module is included by "hal_assert". This is a bottom layer module 
+ * in the hal including tree.
+ *
+ * #include "../hal_assert.h"
+ */
+ 
 uint8 g_atomic_level = 0;
 TiFunEventHandler m_listener = NULL;
 void * m_listener_owner = NULL;
@@ -57,11 +64,9 @@ void * m_listener_owner = NULL;
 _TiIntHandlerItem m_int2handler[CONFIG_INT2HANDLER_CAPACITY];
 #endif
 
-
-
-/******************************************************************************
+/*******************************************************************************
  * software initialization of the hal layer
- *****************************************************************************/
+ ******************************************************************************/
 
 void hal_init( TiFunEventHandler listener, void * object )
 {
@@ -71,11 +76,9 @@ void hal_init( TiFunEventHandler listener, void * object )
 	memset( &(m_int2handler[0]), 0x00, sizeof(m_int2handler) );
 }
 
-
 /******************************************************************************
  * interaction with upper layer using listener mechanism
  *****************************************************************************/
-
 
 inline void hal_setlistener( TiFunEventHandler listener, void * listener_owner )
 {

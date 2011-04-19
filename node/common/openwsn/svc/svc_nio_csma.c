@@ -60,6 +60,7 @@
 #include "../rtl/rtl_ieee802frame154.h"
 #include "../hal/hal_foundation.h"
 #include "../hal/hal_assert.h"
+#include "../hal/hal_cpu.h"
 #include "../hal/hal_debugio.h"
 #include "../hal/hal_frame_transceiver.h"
 #include "svc_nio_acceptor.h"
@@ -198,7 +199,7 @@ void csma_close( TiCsma * mac )
  *	> 0			success
  *	0           failed. no byte has been sent successfully
  */
-uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
+uintx csma_send( TiCsma * mac, uint16 shortaddrto,TiFrame * frame, uint8 option )
 {
 	TiIEEE802Frame154Descriptor * desc;
     uintx ret=0;
@@ -215,7 +216,7 @@ uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
     {
     case CSMA_STATE_IDLE:
         frame_totalcopyfrom( mac->txbuf, frame );
-
+        ret = frame_length( frame);
         // according to 802.15.4 specification:
         // header 12 B = 1B frame length (required by the transceiver driver currently) 
         //  + 2B frame control + 1B sequence number + 2B destination pan + 2B destination address
@@ -226,16 +227,31 @@ uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
         rtl_assert( desc != NULL );
         ieee802frame154_set_sequence( desc, mac->seqid );
         ieee802frame154_set_panto( desc, mac->panto );
-        ieee802frame154_set_shortaddrto( desc, mac->shortaddrto );
+        ieee802frame154_set_shortaddrto( desc, shortaddrto ); //ieee802frame154_set_shortaddrto( desc, mac->shortaddrto );
         ieee802frame154_set_panfrom( desc, mac->panfrom );
         ieee802frame154_set_shortaddrfrom( desc, mac->shortaddrfrom );
 
-        mac->sendoption = option;
+		// option = [b7,...,b0]
+		// b0 = 1: require ACK. 
+		// b1 = 1: require carrier sense (CCA) before sending. 
+		// The csma protocol needs ACK and CCA.
 
+        //mac->sendoption = (option | 0x03);
+
+		mac->sendoption = (option | 0x02);
+
+		//mac->sendoption = 0x02;//require cca,no ack;
+
+		// This is the standard CSMA protocol behavior. First do carrier sense. 
+		// If the node found the channel is empty, then send the frame, or else
+		// wait for some time and restart the sending after the timer expires.
+		//
+        frame_setlength( mac->txbuf,( ret+14));
+		
         #ifdef CONFIG_CSMA_STANDATD
         if (mac->rxtx->ischnclear(mac))
         {   
-            ret = _csma_trysend( mac, mac->txbuf, option );
+            ret = _csma_trysend( mac, mac->txbuf, mac->sendoption );
         }
         else{
             mac->backoff = rand_uint8( CONFIG_CSMA_MAX_BACKOFF );
@@ -246,9 +262,10 @@ uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
         }
         #endif
 
-        // optimized aloha protocol behavior. it will insert a random delay before
-        // sending to decrease the probability of conflictions.
-        // wait for a random period before really start the transmission
+		// This is another version of CSMA protocol. It will insert a random delay 
+        // before sending to decrease the probability of conflictions.
+        // Wait for a random period before really start the transmission.
+		//
         #ifndef CONFIG_CSMA_STANDATD
         mac->backoff = rand_uint8( CONFIG_CSMA_MAX_BACKOFF );
         mac->retry = 0;
@@ -257,13 +274,23 @@ uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
         mac->state = CSMA_STATE_BACKOFF;
         #endif
 
-       // ret = frame_capacity( mac->txbuf );
+		// @todo: for Jiang Ridong: 2011.04
+		// I found the following assignment is commented. I think it should be enabled.
+		// how do you think about it? but we should think whether frame_length here.
+		// 
+		// If this line is commented, then this function 
+
+		if ( ret)//todo  直接使用ret = frame_capacity( mac->txbuf );没办法判断是否发送成功。
+		{
+			ret = frame_capacity( mac->txbuf );
+		}
+        //ret = frame_capacity( mac->txbuf );
 
         csma_evolve( mac, NULL );
 
         // @attention
         // if you want to guarantee the frame is sent inside this function, you can 
-        // try the following source code:
+        // try the following source code. This is only for testing purpose.
         // do {
         //      csma_evolve( mac, NULL );
         // }while (mac->state != CSMA_STATE_IDLE);
@@ -278,7 +305,7 @@ uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
 
         // @attention
         // if you want to guarantee the frame is sent inside this function, you can 
-        // try the following source code:
+        // try the following source code. This is only for testing purpose.
         // do {
         //      csma_evolve( mac, NULL );
         // }while (mac->state != CSMA_STATE_IDLE);
@@ -301,11 +328,13 @@ uintx csma_send( TiCsma * mac, TiFrame * frame, uint8 option )
 uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option )
 {
     uintx ret=0;
+	//uintx cur;//todo
     TiIEEE802Frame154Descriptor * desc;
 
     switch (mac->state)
     {
     case CSMA_STATE_IDLE:
+		
         frame_totalcopyfrom( mac->txbuf, frame );
 
         // according to 802.15.4 specification:
@@ -313,8 +342,13 @@ uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option )
         //  + 2B frame control + 1B sequence number + 2B destination pan + 2B destination address
         //  + 2B source pan + 2B source address
         //
+		//cur = mac->txbuf->curlayer;
+		//rtl_assert( 12 <= mac->txbuf->layerstart[cur] );
+
         frame_skipouter( mac->txbuf, 12, 2 );
-        desc = ieee802frame154_format( &(mac->desc), frame_startptr(frame), frame_capacity(frame), FRAME154_DEF_FRAMECONTROL_DATA_NOACK );
+        //desc = ieee802frame154_format( &(mac->desc), frame_startptr(frame), frame_capacity(frame), FRAME154_DEF_FRAMECONTROL_DATA_NOACK );
+		//desc = ieee802frame154_format( &(mac->desc), frame_startptr(mac->txbuf), frame_capacity(mac->txbuf), FRAME154_DEF_FRAMECONTROL_DATA );
+		desc = ieee802frame154_format( &(mac->desc), frame_startptr(mac->txbuf), frame_capacity(mac->txbuf), FRAME154_DEF_FRAMECONTROL_DATA_NOACK );
         rtl_assert( desc != NULL );
         ieee802frame154_set_sequence( desc, mac->seqid );
 	    ieee802frame154_set_panto( desc, mac->panto );
@@ -322,20 +356,22 @@ uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option )
 	    ieee802frame154_set_panfrom( desc, mac->panfrom );
 	    ieee802frame154_set_shortaddrfrom( desc, mac->shortaddrfrom );
 
+		// @attention
+		// The above programming style is clear but less efficient. The following
+		// is an efficient but not clear style:
+		// 
         // char * fcf;
         // char * shortaddrto;
-
-        // fcf = frame_startptr(frame);
+		//
+        // fcf = frame_startptr(frame) + 0;
         // shortaddrto = (char*)(frame_startptr(frame)) + 3;  // todo: according to IEEE 802.15.4 format, 加几？请参考15.4文档确认
-
-
+		//
         // for broadcasting frames, we don't need acknowledgements. so we clear the ACK 
-        // REQUEST bit in the frame control field. 
-        // refer to 802.15.4 protocol format
+        // REQUEST bit in the frame control field directly.
         //
         // fcf ++;
         // (*fcf) &= 0xFA; // TODO: this value should changed according to 802.15.4 format 
-
+		//
         // 0xFFFFFFFF the broadcast address according to 802.15.4 protocol format
         // attention: we only set the destination short address field to broadcast address.
         // the destination pan keeps unchanged.
@@ -343,12 +379,16 @@ uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option )
         // *shortaddrto ++ = 0xFF;
         // *shortaddrto ++ = 0xFF;
 
-        mac->sendoption = option;
+		// option = [b7,...,b0]
+		// b0 = 1: require ACK. 
+		// b1 = 1: require carrier sense (CCA) before sending. 
+		// The csma protocol needs ACK and CCA.
+        mac->sendoption = option & 0x02;
 
         #ifdef CONFIG_CSMA_STANDATD
         if (mac->rxtx->ischnclear(mac))
         {   
-           ret =  _csma_trysend( mac, mac->txbuf, option );
+           ret =  _csma_trysend( mac, mac->txbuf, mac->sendoption );
         }
         else{
             mac->backoff = rand_uint8( CONFIG_CSMA_MAX_BACKOFF );
@@ -378,6 +418,7 @@ uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option )
         // in this state, there's already a frame pending inside the aloha object. 
         // you have no better choice but wait for this frame to be processed.
         //
+
         csma_evolve( mac, NULL );
         ret = 0;
         break;
@@ -396,57 +437,108 @@ uintx csma_broadcast( TiCsma * mac, TiFrame * frame, uint8 option )
 
 
 /**
- * Check whether there's some frame arrivaled. This function can be called anytime. 
+ * Check whether there's some frame arrivaled. If there're frames arrived, then 
+ * this function will place the earliest into parameter "frame". This function can 
+ * be called anytime.
  */
 uintx csma_recv( TiCsma * mac, TiFrame * frame, uint8 option )
 {
-    const uint8 HEADER_SIZE = 12, TAIL_SIZE = 2;
+/*todo for testing
+
+	const uint8 HEADER_SIZE = 12, TAIL_SIZE = 2;
 	uint8 count;
     char * ptr=NULL;
 
     // move the frame current layer to mac protocol related layer. the default layer
     // only contains the data (mac payload) rather than mac frame.
-    //
-    frame_skipouter( frame, HEADER_SIZE, TAIL_SIZE );
-    // assert: the skipouter must be success
+	//
+	   frame_skipouter( frame, HEADER_SIZE, TAIL_SIZE );//todo for testing 临时删掉
+       // assert: the skipouter must be success
 
-	count = _csma_tryrecv( mac, frame, option );
-	if (count > 0)
-	{
-        // the first byte in the frame buffer is the length byte. it represents the 
-        // MPDU length. after received the frame, we first check whether this is an
-        // incomplete frame or not. if it's an bad frame, then we should ignore it.
-        //
-        ptr = frame_startptr(frame);
-        if (*ptr == count-1)
-        {
-            // get the pointer to the frame control field according to 802.15.4 frame format
-            // we need to check whether the current frame is a DATA type frame.
-			// only the DATA type frame will be transfered to upper layers. The other types, 
-            // such as COMMAND, BEACON and ACK will be ignored here.
-			// buf[0] is the length byte. buf[1] and buf[2] are frame control bytes.
-            ptr ++;
-			if (FCF_FRAMETYPE(*(ptr)) != FCF_FRAMETYPE_DATA)
-			{
-				count = 0;
-			}
-			else{
-                frame_setlength( frame, count );
-                frame_setcapacity( frame, count );  
-			}
-        }
-    }
-    frame_moveinner( frame );
+	   count = _csma_tryrecv( mac, frame, option );
+	   if (count > 0)
+	   {
+            // the first byte in the frame buffer is the length byte. it represents the 
+            // MPDU length. after received the frame, we first check whether this is an
+            // incomplete frame or not. if it's an bad frame, then we should ignore it.
+            //
+            ptr = frame_startptr(frame);
+            if (*ptr == count-1)
+            {
+               // get the pointer to the frame control field according to 802.15.4 frame format
+               // we need to check whether the current frame is a DATA type frame.
+			   // only the DATA type frame will be transfered to upper layers. The other types, 
+               // such as COMMAND, BEACON and ACK will be ignored here.
+			   // buf[0] is the length byte. buf[1] and buf[2] are frame control bytes.
+               ptr ++;
+			   if (FCF_FRAMETYPE(*(ptr)) != FCF_FRAMETYPE_DATA)
+			   {
+				  count = 0;
+			   }
+			   else{
+                    frame_setlength( frame, count );
+                    frame_setcapacity( frame, count );  
+			   }
+            }
+       }
+       frame_moveinner( frame );
 
-    if (count > 0)
-    {
-        frame_setlength( frame, count - HEADER_SIZE - TAIL_SIZE );
-        //frame_setcapacity( frame, count - HEADER_SIZE - TAIL_SIZE );//todo
-    }
-    else{
-        frame_setlength( frame, 0 );
-    }
+       if (count > 0)
+       {
+          frame_setlength( frame, count - HEADER_SIZE - TAIL_SIZE );
+          //frame_setcapacity( frame, count - HEADER_SIZE - TAIL_SIZE );//todo
+       }
+       else{
+           frame_setlength( frame, 0 );
+       }
+*/
+/************************************************************************************************************/
+	   const uint8 HEADER_SIZE = 12, TAIL_SIZE = 2;
+	   uint8 count;
+	   char * ptr=NULL;
 
+	   //count = nac_recv( mac->nac, frame, option);
+	   count = _csma_tryrecv( mac, frame, option );
+
+	   if (count > 0)
+	   {
+		   // the first byte in the frame buffer is the length byte. it represents the 
+		   // MPDU length. after received the frame, we first check whether this is an
+		   // incomplete frame or not. if it's an bad frame, then we should ignore it.
+		   //
+		   ptr = frame_startptr(frame);
+		   if (*ptr == count-1)
+		   {
+			   // get the pointer to the frame control field according to 802.15.4 frame format
+			   // we need to check whether the current frame is a DATA type frame.
+			   // only the DATA type frame will be transfered to upper layers. The other types, 
+			   // such as COMMAND, BEACON and ACK will be ignored here.
+			   // buf[0] is the length byte. buf[1] and buf[2] are frame control bytes.
+			   ptr ++;
+			   if (FCF_FRAMETYPE(*(ptr)) != FCF_FRAMETYPE_DATA)
+			   {
+				   count = 0;
+			   }
+			   else{
+				   frame_setlength( frame, count );
+				   frame_setcapacity( frame, count );
+			   }
+		   }
+	   }
+
+	   if (count > 0)
+	   {   
+		   frame_skipinner( frame,  HEADER_SIZE, TAIL_SIZE );
+		   frame_setlength( frame, count - HEADER_SIZE - TAIL_SIZE );
+
+		   // - bug fix: since frame_skipinner can calculate correct layer capacity, 
+		   // the following line is unecessary now
+		   // frame_setcapacity( frame, count - HEADER_SIZE - TAIL_SIZE );
+	   }
+	   else{
+		   frame_setlength( frame, 0 );
+	   }
+/*************************************************************************************************************/
 	csma_evolve( mac, NULL );
 	return count;
 }
@@ -456,52 +548,83 @@ uintx csma_recv( TiCsma * mac, TiFrame * frame, uint8 option )
  *	0           failed. no byte has been sent successfully. when it returns 0, 
  *              mac->retry will increase by 1.
  */
-#ifdef CONFIG_CSMA_TRX_ACK_SUPPORT      //todo 在.h文件中被定义过了
+#ifdef CONFIG_CSMA_TRX_ACK_SUPPORT     
 uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option )
 {
 	uintx count=0;
+	uint8 i;
 
-    // @modified by openwsn on 2010.08.24
-    // needn't wait for channel clear here. because the caller can guarantee the 
-    // channel is clear enough before calling this function.
+    // @attention
+    // Needn't do carrier sense and wait for channel clear here. In most cases, 
+	// this is guaranteed by the caller. And there's one exception, if the evolve()
+	// function finds the timer expired, it will not check for whether the channel 
+	// is clear or not now.
+	// 
+	// @modified by zhangwei in 2011.04
+	// I use this "bad" behavior in order to speed the response. But it seems not
+	// a good idea now. 
+	
+	// @attention
+	// @todo
+	// If you want to perform channel clear checking (carrier sense process) here, 
+	// you can uncomment the following code. But you should check it for some time.
+	// Remember to avoid such infinite loops. 
     //
 	// while (!csma_ischannelclear(mac->rxtx))
 	//    continue;
-   uintx len = frame_capacity(frame);
-   
-   if ( len > 0)
-   {
+	
+	// @modified by zhangwei in 2011.04
+	// - improved the channel clear assessment. The following is better:
+	// 
+	// option & 0x02 is 1 means clear channel assessment (CCA) required.
+	if (option & 0x02) 
+	{
+		for (i=0; i<200; i++)
+		{
+			if (csma_ischannelclear(mac))
+				break;
+			hal_delayus(2);
+		}
+	}
+	
+	count = frame_capacity(frame);
+
+	if (count > 0)
+	{  
+		
 	   if (rand_uint8(100) <= mac->sendprob)
-	   {
+	   {   
+
 		   // attention whether the sending process will wait for ACK or not depends on 
 		   // "option" parameter.
 		   //count = mac->rxtx->send( mac->rxtx->provider, frame_startptr(frame), frame_capacity(frame), option );
-		   count = nac_send( mac->nac, frame, option);
-			   if (count > 0)
-			   {
-				   mac->seqid ++;
-				   mac->retry = 0;
-				   mac->state = CSMA_STATE_IDLE;
-			   }
-			   else if (mac->retry >= CONFIG_CSMA_MAX_RETRY)
-			   {    
-				   mac->seqid ++;
-				   mac->retry = 0;
-				   mac->state = CSMA_STATE_IDLE;
-				   mac->sendfailed ++;
-			   }
-			   else{
-				   mac->retry++;
-				   mac->backoff = _csma_get_backoff( mac );
-				   timer_restart( mac->timer, mac->backoff, 0 );
-				   mac->state = CSMA_STATE_BACKOFF;
-			   }
+			count = nac_send( mac->nac, frame, option );
+			if (count > 0)
+			{  
+				mac->seqid ++;
+				mac->retry = 0;
+				mac->state = CSMA_STATE_IDLE;
+			}
+			else if (mac->retry >= CONFIG_CSMA_MAX_RETRY)
+			{    
+				mac->seqid ++;
+				mac->retry = 0;
+				mac->state = CSMA_STATE_IDLE;
+				mac->sendfailed ++;
+			}
+			else{
+				mac->retry++;
+				mac->backoff = _csma_get_backoff( mac );
+				timer_restart( mac->timer, mac->backoff, 0 );
+				mac->state = CSMA_STATE_BACKOFF;
+			}
 	   }
 	   else{
 		   // give up this sending try and restart the sending process after backoff duration.
 		   mac->backoff = _csma_get_backoff( mac );
 		   timer_restart( mac->timer, mac->backoff, 0 );
 		   mac->state = CSMA_STATE_BACKOFF;
+		   count = 0;
 	   }
    }
 
@@ -524,6 +647,8 @@ uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option )
 uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option )
 {
 /*
+	// todo
+	
 	uintx count = 0;
     uint16 ctrl;
     bool expired;
@@ -594,7 +719,7 @@ uintx _csma_trysend( TiCsma * mac, TiFrame * frame, uint8 option )
 
 uintx _csma_tryrecv( TiCsma * mac, TiFrame * frame, uint8 option )
 {
-    TiFrameTxRxInterface  * rxtx = mac->rxtx;
+    // TiFrameTxRxInterface * rxtx = mac->rxtx;
 	uintx count;
 
     // @attention: According to ALOHA protocol, the program should send ACK/NAK after 
@@ -709,6 +834,7 @@ void csma_evolve( void * macptr, TiEvent * e )
 
             _csma_trysend( mac, mac->txbuf, mac->sendoption );
         }
+        mac->state = CSMA_STATE_IDLE;//todo for testing
         break;
 
     case CSMA_STATE_SLEEPING:

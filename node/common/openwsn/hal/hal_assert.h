@@ -42,6 +42,9 @@
 extern "C" {
 #endif
 
+/** 
+ * An implementation of the assert mechanism for runtime debugging.
+ */
 #ifdef CONFIG_DEBUG
   #define hal_assert(v) hal_assert_report((v), __FILE__, __LINE__)
 #else
@@ -49,6 +52,25 @@ extern "C" {
 #endif
 
 void hal_assert_report( bool cond, char * file, uint16 line );
+
+/**
+ * An implementation of the assert mechanism for compiling stage debugging. If the 
+ * assertion failed, then the compiler will report "divide by 0 error".
+ *
+ * @reference
+ * - Compile-Time Assertions, Dr. Dobbs Website, 2004, http://drdobbs.com/184401873
+ * - static_assert, Visual Studio 2010, http://msdn.microsoft.com/en-us/library/dd293588.aspx
+ * - Chapter 20. Boost.StaticAssert, http://www.boost.org/doc/libs/1_46_1/doc/html/boost_staticassert.html
+ * - static_assert, http://www.pixelbeat.org/programming/gcc/static_assert.html
+ * - Proposal to Add Static Assertions to the Core Language (Revision 3),
+ *   http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1720.html
+ * - C++0x features in VC2010 - static_assert, 
+ *   http://blogs.msdn.com/b/xiangfan/archive/2010/05/09/c-0x-features-in-vc2010-static-assert.aspx
+ */
+#define assert_static(e) \
+	do { \
+		enum { assert_static__ = 1/(e) }; \
+    } while (0)
 
 #ifdef __cplusplus
 }

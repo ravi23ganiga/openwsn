@@ -6,7 +6,9 @@
 PROJECT = isrqueue
 MCU = atmega128
 TARGET = isrqueue.elf
-CC = avr-gcc
+CC = AVR-GCC.EXE
+
+CPP = avr-g++
 
 ## Options common to compile, link and assembly rules
 COMMON = -mmcu=$(MCU)
@@ -35,7 +37,7 @@ HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
 ## Objects that must be built in order to link
-OBJECTS = isrqueue.o hal_assert.o hal_cpu.o hal_debugio.o hal_foundation.o hal_interrupt.o hal_led.o hal_target.o hal_timer.o hpl_atmega128.o rtl_lightqueue.o osx_queue.o 
+OBJECTS = isrqueue.o hal_assert.o hal_cpu.o hal_debugio.o hal_foundation.o hal_interrupt.o hal_led.o hal_timer.o hpl_atmega128.o rtl_lightqueue.o hal_targetboard.o rtl_debugio.o rtl_foundation.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
@@ -45,37 +47,40 @@ all: $(TARGET) isrqueue.hex isrqueue.eep isrqueue.lss## Compile
 isrqueue.o: ../isrqueue.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_assert.o: ../../common/hal/hal_assert.c
+hal_assert.o: ../../../common/openwsn/hal/gainz/hal_assert.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_cpu.o: ../../common/hal/hal_cpu.c
+hal_cpu.o: ../../../common/openwsn/hal/gainz/hal_cpu.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_debugio.o: ../../common/hal/hal_debugio.c
+hal_debugio.o: ../../../common/openwsn/hal/gainz/hal_debugio.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_foundation.o: ../../common/hal/hal_foundation.c
+hal_foundation.o: ../../../common/openwsn/hal/gainz/hal_foundation.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_interrupt.o: ../../common/hal/hal_interrupt.c
+hal_interrupt.o: ../../../common/openwsn/hal/gainz/hal_interrupt.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_led.o: ../../common/hal/hal_led.c
+hal_led.o: ../../../common/openwsn/hal/gainz/hal_led.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_target.o: ../../common/hal/hal_target.c
+hal_timer.o: ../../../common/openwsn/hal/gainz/hal_timer.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_timer.o: ../../common/hal/hal_timer.c
+hpl_atmega128.o: ../../../common/openwsn/hal/gainz/hpl_atmega128.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hpl_atmega128.o: ../../common/hal/hpl_atmega128.c
+rtl_lightqueue.o: ../../../common/openwsn/rtl/rtl_lightqueue.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-rtl_lightqueue.o: ../../common/rtl/rtl_lightqueue.c
+hal_targetboard.o: ../../../common/openwsn/hal/gainz/hal_targetboard.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-osx_queue.o: ../../common/osx/osx_queue.c
+rtl_debugio.o: ../../../common/openwsn/rtl/rtl_debugio.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+rtl_foundation.o: ../../../common/openwsn/rtl/rtl_foundation.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link

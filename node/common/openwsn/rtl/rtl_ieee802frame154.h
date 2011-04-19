@@ -12,7 +12,7 @@
 #include "rtl_configall.h"
 #include "rtl_foundation.h"
 
-/******************************************************************************
+/*******************************************************************************
  * IEEE 802.15.4 PPDU format
  * [4B Preamble][1B SFD][7b Framelength, 1b Reserved][nB PSDU/Payload]
  * 
@@ -34,7 +34,7 @@
  * b2b1b0  	frame type 000 beacon, 001 data 010 ACK 011 command 100-111 reserved
  * b12b13 	reserved.
  * 
- *****************************************************************************/
+ ******************************************************************************/
 
 /* the maximum frame length according to IEEE 802.15.4 specification 
  * frame size includes the length byte itself  */ 
@@ -42,10 +42,14 @@
 /* FRAME154_PSDU_SIZE				     
  * the maximum mac layer PSDU size is 127. it doesn't include the length byte which
  * is part of the physical layer.
+ *
+ * FRAME154_ACK_FRAME_SIZE
+ * The size of the ACK frame, including the frame length byte. 
  */
 #define FRAME154_PSDU_SIZE				     0x7F 
 #define FRAME154_MAX_FRAME_LENGTH            (FRAME154_PSDU_SIZE+1) 
 #define FRAME154_MIN_FRAME_LENGTH            5
+#define FRAME154_ACK_FRAME_SIZE              6
 
 #define FRAME154_BROADCAST_PAN               0xFFFF
 #define FRAME154_BROADCAST_ADDRESS           0xFFFF
@@ -194,7 +198,6 @@
 //#define FRAME154_DEF_OPTION                    (1 << FRAME154_OPTION_CRC)
 #define FRAME154_DEF_OPTION                      0x00
 
-
 /* TiOpenFrame 
  * denotes the network PHY or MAC layer frame. 
  *	
@@ -262,12 +265,14 @@
 
 
 /**
- * IEEE 802.15.4 Frame Descriptor
+ * IEEE 802.15.4 Frame Descriptor. The variable of this type describe the IEEE 802.15.4
+ * frame buffer organization. It helps the parsing and assembling of a standard 802.15.4
+ * frame inside byte buffer. 
+ *
  * member variable
  *  total_length: real data length inside the buffer.
  *  datalen: value of the length byte in the frame. 
  */
-
 typedef struct{
   char *    buf;
   uint8     capacity;

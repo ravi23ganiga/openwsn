@@ -29,7 +29,8 @@
 
 /*******************************************************************************
  * @file
- * @brief TiNioSession is an data structure to transfer REQUEST/RESPONSE pair between components.
+ * @brief TiNioSession is an data structure to transfer REQUEST/RESPONSE pair between 
+ * components.
  *
  * @author Jiang Ridong (jrd072623@163.com)
  * @since 1.2
@@ -44,14 +45,24 @@
  *	- first created
  * @modified by zhangwei on 2010.12.12
  * 	- Regualted the interface functions.
+ * 
+ * @modified by zhangwei on 2011.04.10
+ * 	- Bug fix. You should try send the frame in the txque for only one time. The 
+ *    frame should be removed from the txque no matter success or failed. Or else
+ *    the nac_evolve() function will continue try to sending it. Every frame wrotten
+ *    into the txque in nio acceptor is assumed to be transmitted imdiately and 
+ *    successfully. Whether the sending is really received successfully depends 
+ *    on the ACK mechanism.
+ * @modified by zhangwei on 2011.04.11
+ *	- Revised.
  ******************************************************************************/ 
 
 #ifndef CONFIG_NIOACCEPTOR_RXQUE_CAPACITY 
-#define CONFIG_NIOACCEPTOR_RXQUE_CAPACITY 4
+#define CONFIG_NIOACCEPTOR_RXQUE_CAPACITY 2
 #endif
 
 #ifndef CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 
-#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 4
+#define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 1
 #endif
 
 #include "svc_configall.h"
@@ -59,7 +70,7 @@
 #include "../rtl/rtl_frame.h"
 #include "../rtl/rtl_framequeue.h"
 #include "svc_foundation.h"
-#include "svc_nio_session.h"
+// #include "svc_nio_session.h"
 
 #undef CONFIG_NIOACCEPTOR_LISTENER_ENABLE
 
@@ -137,8 +148,6 @@ void nac_evolve ( TiNioAcceptor * nac, TiEvent * event );
 #define nac_txque_empty(nac) fmque_empty(nac_txque(nac))
 #define nac_txque_full(nac) fmque_full(nac_txque(nac))
 
-//char * nac_getrxbuf( TiNioAcceptor * nac );
-
 /**
  * @brief Get the current active session from the acceptor. 
  * 
@@ -153,7 +162,7 @@ void nac_evolve ( TiNioAcceptor * nac, TiEvent * event );
  * Different to the embedded linux, the session here is only used to pass REQUEST/RESPONSE
  * pair between objects. The life time is pretty short.
  */
-TiNioSession * nac_getcursession( TiNioAcceptor * nac, TiNioSession * session );
+//TiNioSession * nac_getcursession( TiNioAcceptor * nac, TiNioSession * session );
 
 /**
  * This function is registered into the transceiver component. If there's a new frame
