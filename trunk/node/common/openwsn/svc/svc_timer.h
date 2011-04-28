@@ -228,7 +228,9 @@ void vti_start( TiTimer * vti );
  */
 void vti_stop( TiTimer * vti );
 
-void vti_restart( TiTimer * vti, uint16 interval, uint8 option );
+//void vti_restart( TiTimer * vti, uint16 interval, uint8 option );
+void vti_restart( TiTimer * vti, uint16 interval,uint16 scale, uint8 option );//todo modified by Jiang Ridong on 2011.04.18
+
 
 void vti_forward( TiTimer * vti, uint16 steps );
 

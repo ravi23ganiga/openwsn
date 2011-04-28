@@ -102,7 +102,7 @@ TiTimerManager * vtm_open( TiTimerManager * vtm, TiTimerAdapter * timeradapter, 
 	// zhangwei thinks the third parameter should be 0x01 because we may need to 
 	// restart the timer each time it expires.
 	//
-	timer_setinterval( timeradapter, resolution, 0 ); 
+	timer_setinterval( timeradapter, resolution, 0x00 ); 
 	timer_start( timeradapter );
 
 	return vtm;
@@ -254,10 +254,14 @@ void vti_setscale( TiTimer * vti, uint16 scale )
 // interval的单位：毫秒ms，最大65536 ms，约65s
 // option: 决定是否周期性触发还是单次触发
 void vti_setinterval( TiTimer * vti, uint16 interval, uint8 option )
-{
+{   
 	vti->interval = interval;
 	vti->interval_counter = interval;
 	vti->option = option;
+	if ( option<=0)//todo added by Jiang Ridong
+	{
+		vti->expired = false;
+	}
 }
 
 void vti_start( TiTimer * vti )
@@ -271,9 +275,10 @@ void vti_stop( TiTimer * vti )
 	vti->state = VTIMER_STATE_ALLOCATED;
 }
 
-void vti_restart( TiTimer * vti, uint16 interval, uint8 option )
+void vti_restart( TiTimer * vti, uint16 interval,uint16 scale, uint8 option )//todo modified by Jiang Ridong on 2011.04.18
 {
-	vti_stop( vti );
+	//vti_stop( vti );
+	vti_setscale( vti,scale );
 	vti_setinterval( vti, interval, option );
 	vti_start( vti );
 }
@@ -339,9 +344,13 @@ uint16 vti_backward( TiTimer * vti, uint16 steps )
 bool vti_expired( TiTimer * vti )
 {
 	bool ret = vti->expired;
-	if ( ret)
+	if ( vti->option)//todo added by Jiang Ridong on 2011.04.18
 	{
-		vti->expired = false;
+		if ( ret)
+		{
+			vti->expired = false;
+		}
 	}
+	
 	return ret;
 }

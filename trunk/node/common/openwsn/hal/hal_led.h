@@ -24,8 +24,8 @@
  *
  ******************************************************************************/
 
-#ifndef _LED_H_1329_
-#define _LED_H_1329_
+#ifndef _HAL_LED_H_1329_
+#define _HAL_LED_H_1329_
 
 /*******************************************************************************
  * @author zw (tongji university) on 20051001
@@ -57,7 +57,7 @@ extern "C" {
  * the parameter "id" should be the macro defined above
  *	id	= { LED_GREEN, LED_YELLOW, LED_RED } 
  *
- * @attention: you must call led_init() before you call other LED functions
+ * @attention: you must call led_open() before you call other LED functions
  * @attention: you should NOT use "led_twinkle()" in interrupts. because it may 
  *	lead to quite a long delay.
  ****************************************************************************/ 
@@ -65,7 +65,21 @@ extern "C" {
 void led_open( void );
 void led_close( void );
 void led( uint8 id, bool state );
+
+/** 
+ * Turn the specific LED on 
+ * @param id The LED id, usually represented by the macro LED1~LED3 or LED_RED ~ LED_YELLOW.
+ *		id	= { LED_GREEN, LED_YELLOW, LED_RED } 
+ * @return None
+ */
 void led_on( uint8 id );
+
+/** 
+ * Turn the specific LED off
+ * @param id The LED id, usually represented by the macro LED1~LED3 or LED_RED ~ LED_YELLOW.
+ *		id	= { LED_GREEN, LED_YELLOW, LED_RED } 
+ * @return None
+ */
 void led_off( uint8 id );
 void led_toggle( uint8 id );
 void led_twinkle( uint8 id, uint16 interval, uintx count );

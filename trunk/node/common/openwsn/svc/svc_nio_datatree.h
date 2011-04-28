@@ -313,6 +313,7 @@ typedef struct{
 	uint16              pan;
 	uint16              root;
 	uint16		        parent;
+	uint8               rssi;		// rssi extracted from the parent frame
 	uint16              localaddress;
 	uint8		        depth;    
 	uint8				distance;

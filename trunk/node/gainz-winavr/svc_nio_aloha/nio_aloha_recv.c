@@ -92,10 +92,14 @@
 
 #define NAC_SIZE NIOACCEPTOR_HOPESIZE(CONFIG_NIOACCEPTOR_RXQUE_CAPACITY,CONFIG_NIOACCEPTOR_TXQUE_CAPACITY)
 
+#define VTM_RESOLUTION                          5
+
+
 static TiCc2420Adapter		        m_cc;
 static TiFrameRxTxInterface         m_rxtx;
 static TiAloha                      m_aloha;
 static TiTimerAdapter               m_timer;
+static TiTimerManager               m_vtm;
 static char                         m_rxbufmem[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
 static char                         m_nacmem[NAC_SIZE];
 
@@ -119,6 +123,8 @@ void recvnode(void)
 	TiNioAcceptor * nac;
     TiAloha * mac;
 	TiTimerAdapter   *timer;
+	TiTimerManager * vtm;
+	TiTimer * mac_timer;
 	TiFrame * rxbuf;
 	char * msg = "welcome to aloha recv test...";
 	int len=0;
@@ -144,13 +150,18 @@ void recvnode(void)
 	nac = nac_construct( &m_nacmem[0], NAC_SIZE );
     mac = aloha_construct( (char *)(&m_aloha), sizeof(TiAloha) );
     timer= timer_construct(( char *)(&m_timer),sizeof(TiTimerAdapter));
+	vtm = vtm_construct( (void*)&m_vtm, sizeof(m_vtm) );
+    timer = timer_open( timer, 2, NULL, NULL, 0x00 ); 
+	vtm = vtm_open( vtm, timer, VTM_RESOLUTION );
+	mac_timer = vtm_apply( vtm );
+	vti_open( mac_timer, NULL, NULL );
 
 	#ifdef CONFIG_TSET_LISTENER
 	// cc = cc2420_open( cc, 0, _aloha_listener, NULL, 0x00 );
     cc = cc2420_open( cc, 0, aloha_evolve, mac, 0x00 );
     rxtx = cc2420_interface( cc, &m_rxtx );
 	mac = aloha_open( mac, rxtx, CONFIG_ALOHA_CHANNEL, CONFIG_ALOHA_PANID, CONFIG_ALOHA_LOCAL_ADDRESS, 
-        timer, _aloha_listener, NULL,0x00 );
+        mac_timer, _aloha_listener, NULL,0x00 );
 	#endif
 
     #ifndef CONFIG_TSET_LISTENER
@@ -158,7 +169,7 @@ void recvnode(void)
     rxtx = cc2420_interface( cc, &m_rxtx );
 	nac_open( nac, rxtx, CONFIG_NIOACCEPTOR_RXQUE_CAPACITY, CONFIG_NIOACCEPTOR_TXQUE_CAPACITY);
 	mac = aloha_open( mac, rxtx, nac,CONFIG_ALOHA_CHANNEL, CONFIG_ALOHA_PANID, CONFIG_ALOHA_LOCAL_ADDRESS, 
-        timer, NULL, NULL,0x00 );
+        mac_timer, NULL, NULL,0x00 );
 	#endif
  
 	cc2420_setchannel( cc, CONFIG_ALOHA_CHANNEL );

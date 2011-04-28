@@ -49,6 +49,7 @@ void ieee802frame154_dump( TiFrame * f )
     len = frame_length(f);
 	if (len > 0)
 	{   
+		
 		dbc_putchar( 0xFA );
 		dbc_putchar( 0xFA );
 	    dbc_putchar( frame_curlayer(f) );

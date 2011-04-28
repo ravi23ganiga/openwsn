@@ -40,19 +40,21 @@
 #include <string.h>
 #include <avr/wdt.h>
 #include "../../common/openwsn/hal/hal_foundation.h"
+#include "../../common/openwsn/rtl/rtl_frame.h"
 #include "../../common/openwsn/hal/hal_cpu.h"
 #include "../../common/openwsn/hal/hal_interrupt.h"
 #include "../../common/openwsn/hal/hal_led.h"
 #include "../../common/openwsn/hal/hal_assert.h"
 #include "../../common/openwsn/hal/hal_uart.h"
 #include "../../common/openwsn/hal/hal_cc2420.h"
-#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
 #include "../../common/openwsn/hal/hal_debugio.h"
+#include "../../common/openwsn/rtl/rtl_dumpframe.h"
 
 #define CONFIG_LISTENER    
 #undef  CONFIG_LISTENER    
 
-#define TEST_CHOICE 2
+#define TEST_CHOICE 1
 //#define TEST_ACK
 //#undef  TEST_ACK
 
@@ -62,10 +64,15 @@
 #define REMOTE_ADDRESS		0x01
 #define BUF_SIZE			128
 #define DEFAULT_CHANNEL     11
+#define MAX_IEEE802FRAME154_SIZE                128
+
+static char                 m_rxbuf[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
+
 
 TiCc2420Adapter             g_cc;
 TiUartAdapter	            g_uart;
 
+/*
 #if (TEST_CHOICE == 1)
 static void recvnode1(void);
 #endif
@@ -74,10 +81,12 @@ static void recvnode1(void);
 static void recvnode2(void);
 static void _cc2420_listener( void * ccptr, TiEvent * e );
 #endif
-
+*/
 
 int main(void)
 {
+   recvnode1();
+   /*
     #if (TEST_CHOICE == 1)
 	recvnode1();
     #endif
@@ -85,15 +94,15 @@ int main(void)
     #if (TEST_CHOICE == 2)
 	recvnode2();
     #endif
+	*/
 }
 
-#if (TEST_CHOICE == 1)
+//#if (TEST_CHOICE == 1)
 void recvnode1(void)
 {
     TiCc2420Adapter * cc;
-	TiUartAdapter * uart;
 	char * msg = "welcome to recvnode...";
-	char buf[BUF_SIZE];
+	TiFrame * rxbuf;
 	uint8 len;
 
 	target_init();
@@ -104,18 +113,16 @@ void recvnode1(void)
 	led_on( LED_RED );
 	hal_delay( 500 );
 	led_off( LED_ALL );
-
+	rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
+	dbc_mem( msg, strlen(msg) );
 	cc = cc2420_construct( (void *)(&g_cc), sizeof(TiCc2420Adapter) );
-	uart = uart_construct( (void *)(&g_uart), sizeof(TiUartAdapter) );
 
-	uart_open( uart, 0, 38400, 8, 1, 0x00 );
-	uart_write( uart, msg, strlen(msg), 0x00 );
 	cc2420_open( cc, 0, NULL, NULL, 0x00 );
 	
 	cc2420_setchannel( cc, DEFAULT_CHANNEL );
 	cc2420_setrxmode( cc );							//Enable RX
-	//cc2420_enable_addrdecode( cc );					//使能地址译码
-	cc2420_disable_addrdecode(cc);
+	cc2420_enable_addrdecode( cc );					//使能地址译码
+	//cc2420_disable_addrdecode(cc);
 	#ifdef TEST_ACK
 	cc2420_enable_autoack(cc);
 	#endif
@@ -123,26 +130,38 @@ void recvnode1(void)
 	cc2420_setpanid( cc, PANID );					//网络标识
 	cc2420_setshortaddress( cc, LOCAL_ADDRESS );	//网内标识
 
+	rxbuf = frame_open( (char*)(&m_rxbuf), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 0, 0, 0 );
+
 	hal_enable_interrupts();	
 	// when use this scan mode to receive data, interrupt should be disable; otherwise the data will be
 	// read twice and in the second time there are no data actually which leads to a assert.
  	// Attention: in this scan mode, MCU always try to read and in my  test it is faster than the transmission of data. 
 	// Thus, after 4 times, there no data at all, and the MCU still want to read, which lead to an assert. So we'd better
 	// not use this scan mode.
+    
 	while(1) 
 	{
-		cc2420_evolve( cc );
+		frame_reset( rxbuf,0,0,0);
 		
-		len = cc2420_read( cc, (char*)(&buf[0]), BUF_SIZE, 0x00 );
-		if (len >= 5)
+		cc2420_evolve( cc );
+
+		len = cc2420_read( cc, frame_startptr( rxbuf), frame_capacity( rxbuf), 0x00 );
+        if ( len)
+        {
+			ieee802frame154_dump( rxbuf);
+			led_toggle( LED_GREEN);
+        }
+		
+		//len = cc2420_read( cc, (char*)(&buf[0]), BUF_SIZE, 0x00 );
+	/*	if (len >= 5)
 		{
 			// output this frame to the computer through uart
 			dbo_write( (char*)(&buf[0]), len );
-		}
+		}*/
 		
 	}
 }
-#endif
+//#endif
 
 #if (TEST_CHOICE == 2)
 void recvnode2(void)
@@ -172,6 +191,7 @@ void recvnode2(void)
 	cc2420_disable_addrdecode( cc );					//使能地址译码
 	cc2420_setpanid( cc, PANID );					//网络标识
 	cc2420_setshortaddress( cc, LOCAL_ADDRESS );	//网内标识
+	cc2420_enable_autoack(cc);
 	#ifdef TEST_ACK
 	cc2420_enable_autoack(cc);
 	#endif

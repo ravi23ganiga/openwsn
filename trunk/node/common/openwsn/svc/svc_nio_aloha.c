@@ -76,6 +76,7 @@
 #include <string.h>
 #include "svc_foundation.h"
 #include "../rtl/rtl_frame.h"
+#include "svc_timer.h"
 #include "../rtl/rtl_random.h"
 #include "../rtl/rtl_debugio.h"
 #include "../rtl/rtl_ieee802frame154.h"
@@ -134,6 +135,7 @@ TiAloha * aloha_open( TiAloha * mac, TiFrameTxRxInterface * rxtx, TiNioAcceptor 
     mac->sendfailed = 0;
 	mac->option = option;
     mac->txbuf = frame_open( &(mac->txbuf_memory[0]), FRAME_HOPESIZE(CONFIG_ALOHA_MAX_FRAME_SIZE), 0, 0, 0 );
+	mac->success = 0;//todo added by Jiang Ridong on 2011.04
 	
     // @modified by zhangwei on 2010.08.21
     // @attention: for all hardware components, you should construct and open them 
@@ -166,7 +168,7 @@ TiAloha * aloha_open( TiAloha * mac, TiFrameTxRxInterface * rxtx, TiNioAcceptor 
     // again here.
 
     rand_open( 0x3212 );
-
+    
     return mac;
 }
 
@@ -268,6 +270,11 @@ uintx aloha_send( TiAloha * mac,  uint16 shortaddrto, TiFrame * frame, uint8 opt
          */
         //ret = frame_capacity( mac->txbuf );
         aloha_evolve( mac, NULL );
+		//如果没有下面这一句，即使在evolve中发送成功，send的返回值还是不为真，同一个帧可能被连续发送多次。
+		if ( failed)//todo added by Jiang Ridong on 2011.04
+		{
+			ret = mac->success;
+		}
         break;
 
     case ALOHA_STATE_BACKOFF:
@@ -347,6 +354,7 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
 		{
             mac->backoff = rand_uint8( CONFIG_ALOHA_MAX_BACKOFF );
             mac->retry = 0;
+			vti_setscale( mac->timer,1);
             vti_setinterval( mac->timer, mac->backoff, 0 );
             vti_start( mac->timer );
             mac->state = ALOHA_STATE_BACKOFF;
@@ -360,6 +368,7 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
         #ifndef CONFIG_ALOHA_STANDARD
         mac->backoff = rand_uint8( CONFIG_ALOHA_MAX_BACKOFF );
         mac->retry = 0;
+		vti_setscale( mac->timer,1);
         vti_setinterval( mac->timer, mac->backoff, 0 );
         vti_start( mac->timer );
         mac->state = ALOHA_STATE_BACKOFF;
@@ -449,24 +458,27 @@ uintx _aloha_trysend( TiAloha * mac, TiFrame * frame, uint8 option )
 		// If this frame requires ACK response
 		if (option & 0x01)
 		{
-            vti_restart( mac->timer, CONFIG_ALOHA_MIN_ACK_TIME, 0 );
-			while (!vti_expired(mac->timer)) {};
+            vti_restart( mac->timer, CONFIG_ALOHA_MIN_ACK_TIME, 1,0 );
+			while (!vti_expired(mac->timer)) 
+			{
+				
+			}
 			
 			// @attention: For this timer, the maximum duration input is 8 due to 
 			// the limited width of the timer hardware (8 bits only). So I add the
 			// following assertion to do the check. This is only on GAINZ node.
-			hal_assert( CONFIG_ALOHA_MAX_ACK_TIME - CONFIG_ALOHA_MIN_ACK_TIME <= 8 );
+			//hal_assert( CONFIG_ALOHA_MAX_ACK_TIME - CONFIG_ALOHA_MIN_ACK_TIME <= 80 );
 			
-			vti_restart( mac->timer, CONFIG_ALOHA_MAX_ACK_TIME - CONFIG_ALOHA_MIN_ACK_TIME, 0 );
+			vti_restart( mac->timer, CONFIG_ALOHA_MAX_ACK_TIME - CONFIG_ALOHA_MIN_ACK_TIME,1, 0 );
 			ack_success = false;
 			while (!vti_expired(mac->timer)) 
-			{
+			{   
 				buf = &(mac->rxbuf_ack[0]);
 				memset( buf, 0x00, FRAME154_ACK_FRAME_SIZE );
 				mac->rxtx->recv( mac->rxtx->provider,buf,FRAME154_ACK_FRAME_SIZE, 0x00 );
 				//rxtx->recv( rxtx->provider, buf, FRAME154_ACK_FRAME_SIZE, 0x00 );
 				if (buf[0] > 1)
-				{
+				{   
 					// If the received frame is acknowledgement and the sequence 
 					// number is idential to the frame just sent, then we can deduce
 					// that the frame is accepted successfully by the receiver.
@@ -505,7 +517,7 @@ uintx _aloha_trysend( TiAloha * mac, TiFrame * frame, uint8 option )
 				mac->backoff = CONFIG_ALOHA_MIN_BACKOFF + rand_uint8( mac->backoff << 1 );
 				if (mac->backoff > CONFIG_ALOHA_MAX_BACKOFF)
 					mac->backoff = CONFIG_ALOHA_MAX_BACKOFF;
-				vti_restart( mac->timer, mac->backoff, 0 );
+				vti_restart( mac->timer, mac->backoff, 1,0 );
 				mac->state = ALOHA_STATE_BACKOFF;
 			}
 		}
@@ -540,11 +552,11 @@ uintx aloha_recv( TiAloha * mac, TiFrame * frame, uint8 option )
 	
     // assert: the skipouter must be success
 	// attention the network acceptor requirement of the frame layer
-
 	count = _aloha_tryrecv( mac, frame, option );
 
 	if (count > 0)
-	{
+	{   
+		
         // the first byte in the frame buffer is the length byte. it represents the 
         // MPDU length. after received the frame, we first check whether this is an
         // incomplete frame or not. if it's an bad frame, then we should ignore it.
@@ -580,8 +592,22 @@ uintx aloha_recv( TiAloha * mac, TiFrame * frame, uint8 option )
 
     if (count > 0)
 	{   
-		frame_skipinner( frame,  HEADER_SIZE, TAIL_SIZE );
-        frame_setlength( frame, count - HEADER_SIZE - TAIL_SIZE );
+		uintx cur;
+        cur = frame->curlayer;
+		if(frame->layercapacity[cur] >= (HEADER_SIZE + TAIL_SIZE))
+		{   
+			//todo frame_skipinne执行完后会使应用层帧的seqid清零，不知道为什么？
+			if(!frame_skipinner( frame,  HEADER_SIZE, TAIL_SIZE ))
+			{
+				count = 0;
+			}
+			frame_setlength( frame, count - HEADER_SIZE - TAIL_SIZE );
+		}
+		else
+		{
+			count = 0;
+		}
+
 		
 		// - bug fix: since frame_skipinner can calculate correct layer capacity, 
 		// the following line is unecessary now
@@ -621,6 +647,7 @@ uintx _aloha_tryrecv( TiAloha * mac, TiFrame * frame, uint8 option )
 void aloha_evolve( void * macptr, TiEvent * e )
 {  
 	TiAloha * mac = (TiAloha *)macptr;
+	uintx ret;
 
     mac->rxtx->evolve( mac->rxtx, NULL );
 
@@ -633,9 +660,13 @@ void aloha_evolve( void * macptr, TiEvent * e )
 
 		// Retry sending the frame inside mac->txbuf. if sending successfully, then 
 		// transfer to IDLE state. if failed, then still in WAITFOR_SENDING state.
-
+        while ( !vti_expired( mac->timer))//我觉得这一句应该加上去
+        {
+        }
+		hal_assert( vti_expired( mac->timer));
         if (vti_expired(mac->timer))
 		{
+			ret = 0;
 			// Try to send the frame in mac->txbuf again. The _aloha_trysend() function
 			// will deal with necessary ACK processing, sequence processing and 
 			// try limitation checking. 
@@ -648,7 +679,14 @@ void aloha_evolve( void * macptr, TiEvent * e )
 			// the state will still in ALOHA_STATE_BACKOFF state. The backoff timer
 			// will also be started by _aloha_trysend() function.
 			
-			_aloha_trysend(  mac, mac->txbuf, mac->txbuf->option );
+
+			//todo 我觉得这里即使发送成功，状态也不会转变，所以要加上状态装换语句。
+			ret = _aloha_trysend(  mac, mac->txbuf, mac->txbuf->option );
+			if ( ret>0)
+			{
+				mac->state = ALOHA_STATE_IDLE;
+			}
+			mac->success = ret;
 		}
 		
 		/*原代码
@@ -727,6 +765,8 @@ void aloha_evolve( void * macptr, TiEvent * e )
 
 	return;
 }
+
+
 
 void aloha_statistics( TiAloha * mac, uint16 * sendcount, uint16 * sendfailed )
 {
