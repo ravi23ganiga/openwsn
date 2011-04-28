@@ -85,7 +85,6 @@
 #define LOWBYTE(w) ((uint8)(w & 0xFF))
 
 static TiTimerAdapter 		m_hwtimer0;
-static TiTimerAdapter 		m_hwtimer2;
 static TiTimerManager 		m_vtm;
 static TiCc2420Adapter		m_cc;
 static TiFrameRxTxInterface m_rxtx;
@@ -107,9 +106,9 @@ int main(void)
 	uint16 value;
 
 	TiTimerAdapter * hwtimer0;
-	TiTimerAdapter * hwtimer2;
 	TiTimerManager * vtm;
 	TiTimer * vti;
+	TiTimer *mac_timer;
 	TiCc2420Adapter * cc;
 	TiFrameRxTxInterface * rxtx;
     TiAloha * mac;
@@ -132,7 +131,6 @@ int main(void)
 	dbc_write( msg, strlen(msg) );
 
 	hwtimer0        = timer_construct( (void *)(&m_hwtimer0), sizeof(m_hwtimer0) );
-	hwtimer2       = timer_construct( (void *)(&m_hwtimer2), sizeof(m_hwtimer2) );
 	vtm             = vtm_construct( (void*)&m_vtm, sizeof(m_vtm) );
 	cc              = cc2420_construct( (char *)(&m_cc), sizeof(TiCc2420Adapter) );
 	nac             = nac_construct( &m_nacmem[0], NAC_SIZE );
@@ -147,8 +145,6 @@ int main(void)
 	hal_assert( rxtx != NULL );
 	nac             = nac_open( nac, rxtx, CONFIG_NIOACCEPTOR_RXQUE_CAPACITY, CONFIG_NIOACCEPTOR_TXQUE_CAPACITY);
 	hal_assert( nac != NULL ); 
-	hwtimer2	   	= timer_open( hwtimer2, 2, NULL, NULL, 0x00 ); 
-	mac             = aloha_open( mac, rxtx,nac, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,hwtimer2, NULL, NULL,0x01);
 	
 	
 
@@ -157,7 +153,11 @@ int main(void)
 	hwtimer0	   	= timer_open( hwtimer0, 0, vtm_inputevent, vtm, 0x01 ); 
 	vtm             = vtm_open( vtm, hwtimer0, GATW_VTM_RESOLUTION );
 	vti             = vtm_apply( vtm );
-	vti             = vti_open( vti, NULL, NULL );
+	vti             = vti_open( vti, NULL, vti );
+	mac_timer       = vtm_apply( vtm);
+	mac_timer       = vti_open( vti,NULL,vti);
+	mac             = aloha_open( mac, rxtx,nac, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,mac_timer, NULL, NULL,0x01);
+
 	dtp             = dtp_construct( (void *)(&m_dtp), sizeof(m_dtp) );
 	dtp             = dtp_open( dtp, mac, CONFIG_NODE_ADDRESS, NULL, NULL, 0x01 );
 	adc             = adc_open( adc, 0, NULL, NULL, 0 );

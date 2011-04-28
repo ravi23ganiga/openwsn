@@ -25,7 +25,6 @@
  ******************************************************************************/
 
 #include "../hal_configall.h"
-//#include <avr/io.h>
 #include "../hal_foundation.h"
 #include "../hal_targetboard.h"
 #include "../hal_cpu.h"

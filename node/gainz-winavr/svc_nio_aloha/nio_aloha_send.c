@@ -89,6 +89,9 @@
 #define CONFIG_ALOHA_REMOTE_ADDRESS		        0x02
 #define CONFIG_ALOHA_CHANNEL                    11
 
+#define VTM_RESOLUTION                          5
+
+
 #define MAX_IEEE802FRAME154_SIZE                128
 #define NAC_SIZE NIOACCEPTOR_HOPESIZE(CONFIG_NIOACCEPTOR_RXQUE_CAPACITY,CONFIG_NIOACCEPTOR_TXQUE_CAPACITY)
 static TiCc2420Adapter		                    m_cc;
@@ -96,6 +99,7 @@ static TiFrameRxTxInterface                     m_rxtx;
 static char                                     m_nacmem[NAC_SIZE];
 static TiAloha                                  m_aloha;
 static TiTimerAdapter                           m_timer;
+static TiTimerManager                          	m_vtm;
 static char                                     m_txbuf[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
 
 void aloha_sendnode(void);
@@ -113,6 +117,8 @@ void aloha_sendnode(void)
 	TiNioAcceptor        * nac;
     TiAloha * mac;
 	TiTimerAdapter   *timer;
+	TiTimerManager * vtm;
+	TiTimer * mac_timer;
 	TiFrame * txbuf;
 	char * pc;
 
@@ -133,7 +139,8 @@ void aloha_sendnode(void)
 	nac = nac_construct( &m_nacmem[0], NAC_SIZE );//todo
 	mac = aloha_construct( (char *)(&m_aloha), sizeof(TiAloha) );
     timer= timer_construct(( char *)(&m_timer),sizeof(TiTimerAdapter));
-    	
+	vtm = vtm_construct( (void*)&m_vtm, sizeof(m_vtm) );
+	
 	cc2420_open(cc, 0, NULL, NULL, 0x00 );
     rxtx = cc2420_interface( cc, &m_rxtx );
 
@@ -144,18 +151,24 @@ void aloha_sendnode(void)
     //
     // Q: is the second parameter be 2 or 3 for atmega's 16 bit timer?
     timer = timer_open( timer, 2, NULL, NULL, 0x00 ); 
-
+	vtm = vtm_open( vtm, timer, VTM_RESOLUTION );
+	mac_timer = vtm_apply( vtm );
+	vti_open( mac_timer, NULL, mac_timer );
     // initialize the standard aloha component for sending/recving
     hal_assert( (rxtx != NULL) && (timer != NULL) );
+	hal_assert((cc != NULL) && (nac != NULL) && (mac != NULL));
+	hal_assert((timer != NULL ) && (vtm != NULL));
+
 	nac_open( nac, rxtx, CONFIG_NIOACCEPTOR_RXQUE_CAPACITY, CONFIG_NIOACCEPTOR_TXQUE_CAPACITY);
     //aloha_open( mac, rxtx, CONFIG_ALOHA_CHANNEL, CONFIG_ALOHA_PANID, CONFIG_ALOHA_LOCAL_ADDRESS, 
         //timer, NULL, NULL, 0x01);
 	aloha_open( mac,rxtx,nac, CONFIG_ALOHA_CHANNEL, CONFIG_ALOHA_PANID, 
-	CONFIG_ALOHA_LOCAL_ADDRESS, timer, NULL, NULL, 0x00 );//原版本是0x01
+	CONFIG_ALOHA_LOCAL_ADDRESS, mac_timer , NULL, NULL, 0x00 );//原版本是0x01
     txbuf = frame_open( (char*)(&m_txbuf), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 25 );
     
 	hal_enable_interrupts();
-
+    
+	
 	while(1) 
 	{
 		aloha_setremoteaddress( mac, CONFIG_ALOHA_REMOTE_ADDRESS );
@@ -201,6 +214,7 @@ void aloha_sendnode(void)
 
         while (1)
         {   
+		    
             if (aloha_send(mac,CONFIG_ALOHA_REMOTE_ADDRESS, txbuf, txbuf->option) > 0)
             {	
 			    dbc_putchar(0x22);		

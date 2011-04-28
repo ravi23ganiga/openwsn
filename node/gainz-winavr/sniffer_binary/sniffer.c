@@ -169,7 +169,7 @@ void sniffer(void)
         {
             frame_setlength( frame, len );
             ieee802frame154_dump( frame );
-			led_toggle( LED_YELLOW );
+			led_toggle( LED_RED );
         }
 		cc2420_evolve( cc );
 	}
@@ -203,7 +203,6 @@ void _cc2420_listener( void * owner, TiEvent * e )
 		return;
 
 	g_listener_running = true;
-	dbc_putchar( 0xF0 );
 	
 	while (1)
 	{
@@ -213,7 +212,10 @@ void _cc2420_listener( void * owner, TiEvent * e )
         {
             frame_setlength( frame, len );
             ieee802frame154_dump( frame );
-			led_toggle( LED_YELLOW );
+			dbc_putchar( 0xdd);
+			dbc_putchar( 0xdd);
+			led_toggle( LED_RED );
+			len = 0;
         }
         else
             break;

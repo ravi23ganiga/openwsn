@@ -116,7 +116,7 @@ int main(void)
 
 	TiTimerAdapter * timeradapter;
 	TiTimerManager * vtm;
-	TiTimer * vti;
+	TiTimer * mac_timer;
 	TiCc2420Adapter * cc;
 	TiFrameRxTxInterface * rxtx;
 	TiNioAcceptor * nac;
@@ -150,16 +150,18 @@ int main(void)
 	// timeradapter is used by the vtm(virtual timer manager). vtm require to enable the 
 	// period interrupt modal of vtm
 
-	timeradapter   = timer_open( timeradapter, 0, NULL, NULL, 0x01 ); 
+	//timeradapter   = timer_open( timeradapter, 0, NULL, NULL, 0x01 ); 
 	vtm            = vtm_open( vtm, timeradapter, CONFIG_VTM_RESOLUTION );
 	cc             = cc2420_open(cc, 0, NULL, NULL, 0x00 );
 	rxtx           = cc2420_interface( cc, &m_rxtx );
+	mac_timer      = vtm_apply( vtm );
+	mac_timer      = vti_open( mac_timer, NULL, mac_timer);
 	hal_assert( rxtx != NULL );
 	nac            = nac_open( nac, rxtx, CONFIG_NIOACCEPTOR_RXQUE_CAPACITY, CONFIG_NIOACCEPTOR_TXQUE_CAPACITY);
 	hal_assert( nac != NULL ); 
     
 
-	mac             = aloha_open( mac, rxtx,nac, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,timeradapter, NULL, NULL,0x01);
+	mac             = aloha_open( mac, rxtx,nac, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,mac_timer, NULL, NULL,0x01);
 
 	adc            = adc_open( adc, 0, NULL, NULL, 0 );
 	lum            = lum_open( lum, 0, adc );
@@ -180,8 +182,7 @@ int main(void)
 	cc2420_settxpower( cc, CC2420_POWER_1);//cc2420_settxpower( cc, CC2420_POWER_2);
 	cc2420_enable_autoack( cc );
 
-	//vti            = vtm_apply( vtm );
-	//vti            = vti_open( vti, NULL, NULL );
+	
 //	ledtune        = ledtune_construct( (void*)(&m_ledtune), sizeof(m_ledtune), vti );
 //	ledtune        = ledtune_open( ledtune );
 
@@ -238,7 +239,6 @@ int main(void)
 		len = dtp_recv( dtp, rxbuf, 0x00 );
 		if (len > 0)
 		{   
-			led_toggle( LED_GREEN);//todo for testing
             
   		    //ieee802frame154_dump( rxbuf);
 

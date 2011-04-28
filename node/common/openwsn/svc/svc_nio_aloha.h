@@ -48,8 +48,8 @@
 #define CONFIG_ALOHA_MAX_FRAME_SIZE             128
 
 
-#define CONFIG_ALOHA_MIN_ACK_TIME               1
-#define CONFIG_ALOHA_MAX_ACK_TIME               9
+#define CONFIG_ALOHA_MIN_ACK_TIME               5
+#define CONFIG_ALOHA_MAX_ACK_TIME               200
 
 #define CONFIG_ALOHA_MAX_BACKOFF                100
 #define CONFIG_ALOHA_MIN_BACKOFF                0
@@ -139,6 +139,7 @@ typedef struct{
 	uint8 option;
 	char txbuf_memory[FRAME_HOPESIZE(CONFIG_ALOHA_MAX_FRAME_SIZE)];
 	char rxbuf_ack[FRAME154_ACK_FRAME_SIZE];
+	uintx success;//todo
 }TiAloha;
 
 #ifdef __cplusplus
