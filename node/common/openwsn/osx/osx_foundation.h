@@ -41,7 +41,7 @@
  *  - add macro osx_assert()
  * 
  * @modified by openwsn on 2010.09.02
- *  - merge osx_foundation and osx_timer.h. and osx_timer.h will be removed from
+ *  - merge osx_foundation and osx_ticker.h. and osx_ticker.h will be removed from
  * this project.
  ******************************************************************************/
 
@@ -79,7 +79,7 @@
 #include "../hal/hal_interrupt.h"
 #include "../hal/hal_cpu.h"
 #include "../hal/hal_assert.h"
-#include "../hal/hal_systimer.h"
+#include "../hal/hal_ticker.h"
 
 #define osx_assert(x) hal_assert(x)
 

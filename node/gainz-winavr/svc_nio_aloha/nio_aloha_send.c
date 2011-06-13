@@ -165,7 +165,8 @@ void aloha_sendnode(void)
 	aloha_open( mac,rxtx,nac, CONFIG_ALOHA_CHANNEL, CONFIG_ALOHA_PANID, 
 	CONFIG_ALOHA_LOCAL_ADDRESS, mac_timer , NULL, NULL, 0x00 );//Ô­°æ±¾ÊÇ0x01
     txbuf = frame_open( (char*)(&m_txbuf), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 25 );
-    
+    cc2420_settxpower( cc, CC2420_POWER_1);//cc2420_settxpower( cc, CC2420_POWER_2);CC2420_POWER_1
+
 	hal_enable_interrupts();
     
 	
@@ -206,8 +207,8 @@ void aloha_sendnode(void)
         // suggest you use option 0x00.
         // the default setting is 0x01, which means ACK is required.
         //
-		//option = 0x00;
-		option = 0x01;//ack  todo
+		option = 0x00;
+		//option = 0x01;//ack  todo
         txbuf->option = option;//todo
 
 		//dbc_putchar(*(pc+1));
@@ -228,7 +229,7 @@ void aloha_sendnode(void)
                 dbo_putchar( seqid );
 				nac_evolve( mac->nac, NULL);//todo
 			}
-            hal_delay(1000);
+            //hal_delay(2000);
         }
 		
 		// for simple aloha, you needn't to call aloha_evolve(). it's necessary for 

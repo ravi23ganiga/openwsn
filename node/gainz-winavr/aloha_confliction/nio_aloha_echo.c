@@ -194,7 +194,7 @@ void recvnode(void)
 			
 		}
     }
-	*/	
+*/
 
 	while ( 1)
 	{
@@ -261,8 +261,8 @@ void recvnode(void)
 		/*
 		dbc_putchar( recvcount );
 		dbc_putchar( sendcount );
-		dbc_putchar( sendfailed );
-        */
+		dbc_putchar( sendfailed );*/
+        
 		aloha_evolve( mac, NULL );
 	}
 	

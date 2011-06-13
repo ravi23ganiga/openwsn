@@ -156,12 +156,7 @@ uintx flood_broadcast( TiFloodNetwork * net, TiFrame * frame, uint8 option )
 		PACKET_SET_HOPCOUNT( pc,0 );
 		PACKET_SET_MAX_HOPCOUNT(pc , CONFIG_FLOOD_MAX_COUNT );
 		PACKET_SET_CURSEQID(pc, net->seqid );
-
-		
-        
 	}
-
-	
 
 	flood_evolve( net, NULL );
 	return count;
@@ -194,7 +189,6 @@ uintx flood_recv( TiFloodNetwork * net, TiFrame * frame, uint8 option )
 		count = frame_totalcopyfrom( frame, net->rxque );
 		frame_bufferclear( net->rxque );
 	}
-  
 	
 	return count;
 }
@@ -257,9 +251,9 @@ void flood_evolve( void * netptr, TiEvent * e )
 				len = aloha_broadcast( net->mac, net->txque, net->txque->option );
 				
 				if (len > 0)
+				{
 					frame_bufferclear( net->txque );
-
-				
+				}
 
 				// @attention
 				// @todo: if the aloha_send() is non-blocked operation, then you should
@@ -273,11 +267,8 @@ void flood_evolve( void * netptr, TiEvent * e )
 			// Check if the RX queue is empty, then try to receive one from MAC layer
           	if ((frame_empty(net->rxbuf)) && frame_empty(net->rxque))
 			{   
-               
-				
 				cont = true;
 				count = aloha_recv( net->mac, net->rxbuf, 0x00 );
-                
 				
 				if (count <= 0)
 					cont = false;
@@ -292,7 +283,6 @@ void flood_evolve( void * netptr, TiEvent * e )
 				//
 	            if (cont)
 				{   
-					
 					if (flood_cache_visit( net->cache, (char*)frame_startptr(net->rxbuf) ))//todo 我将CONFIG_FLOOD_CACHE_CAPACITY改成了1原先为8，不改的话不再接收新的帧.
 					{   
 						

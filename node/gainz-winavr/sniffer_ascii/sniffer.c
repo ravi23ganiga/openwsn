@@ -71,7 +71,6 @@
  */
 #define CONFIG_ASCII_OUTPUT
 #include "apl_ieee802frame154_dump.h"
-
 /**
  * CONFIG_LISTENER
  * If you define this macro, the sniffer will be driven by the listener function. 
@@ -85,13 +84,13 @@
  * will convert the binary frame values into hex ascii format. each byte will be 
  * represented as two ascii characters.
  */
-
+/*
 #undef  CONFIG_LISTENER    
 #define CONFIG_LISTENER    
-
+*/
 #define PANID						0x0001
-#define LOCAL_ADDRESS				0x02
-#define REMOTE_ADDRESS				0x01
+#define LOCAL_ADDRESS				0x05
+#define REMOTE_ADDRESS				0x04
 #define BUF_SIZE					128
 #define DEFAULT_CHANNEL     		11
 
@@ -149,6 +148,7 @@ void sniffer(void)
 	cc2420_setshortaddress( cc, LOCAL_ADDRESS );	// in network address, seems no use in sniffer mode
 	cc2420_disable_addrdecode( cc );				// disable address decoding
 	cc2420_disable_autoack( cc );
+	cc2420_settxpower( cc, CC2420_POWER_1);//cc2420_settxpower( cc, CC2420_POWER_2);CC2420_POWER_1
 
     frame = frame_open( (char*)(&m_frame), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 0, 0, 0 );
 
@@ -161,14 +161,22 @@ void sniffer(void)
 	#ifndef CONFIG_LISTENER
 	while(1) 
 	{
+		uint8 first ;
+		uint8 count;
+		len = 0;
+		count = 0;
         frame_reset( frame, 0, 0, 0 );
         len = cc2420_read( cc, frame_startptr(frame), frame_capacity(frame), 0x00 );
-        if (len > 0)
+
+        if ( len > 0)
         {
             frame_setlength( frame, len );
-            ieee802frame154_dump( frame );
+            //ieee802frame154_dump( frame );
+			dbc_write( frame_startptr(frame), len );
+			dbc_putchar( 0xfe);//todo for testing
 			led_toggle( LED_RED );
         }
+		//hal_delay( 1000);
 		cc2420_evolve( cc );
 	}
 	#endif 
@@ -201,17 +209,41 @@ void _cc2420_listener( void * owner, TiEvent * e )
 		return;
 
 	g_listener_running = true;
-	dbc_putchar( 0xF0 );
+	//dbc_putchar( 0xF0 );
 	
 	while (1)
 	{
+		uint8 first ;
+		uint8 count;
+		char * ptr;
+		len = 0;
         frame_reset(frame, 0, 0, 0);
         len = cc2420_read( cc, frame_startptr(frame), frame_capacity(frame), 0x00 );
         if (len > 0)
         {
+			
+            
             frame_setlength( frame, len );
-            ieee802frame154_dump( frame );
+            //ieee802frame154_dump( frame );
+			//dbc_putchar( 0xab);//todo for tesitng
+			dbc_write( frame_startptr(frame), len );
+			dbc_putchar( 0xfe);//todo for testing
+			
+			/*frame_skipouter( frame,3,2);
+			ptr = frame_startptr( frame);
+			ptr[0] = (uint8)(LOCAL_ADDRESS >>8);
+			ptr[1] = (uint8)(LOCAL_ADDRESS&0xff);
+			frame_setlength( frame, (len+5) );
+			first  = frame_firstlayer( frame);*/
 			led_toggle( LED_RED );
+
+		//	hal_delay( 370);
+			//count = cc2420_send( cc,frame_layerstartptr( frame,first), frame_length( frame), 0x00);
+          /*  if ( count)
+            {
+				led_toggle( LED_GREEN);
+            }*/
+			
         }
         else
             break;

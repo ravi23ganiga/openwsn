@@ -45,7 +45,7 @@ typedef struct{
   uint16 activelist;
   TiBlockPoolItem * blocktable;
   char * blockdata;
-  uint16 chunksize
+  uint16 chunksize;
   uint16 blocksize;
   uint16 blockcapacity;
   uint16 blockcount;

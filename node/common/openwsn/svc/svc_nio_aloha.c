@@ -346,6 +346,7 @@ uintx aloha_broadcast( TiAloha * mac, TiFrame * frame, uint8 option )
 			ret = _aloha_trysend( mac, mac->txbuf, option );
 			if (ret > 0)
 				failed = false;
+			
         }
 		
 		// If the channel currently is busy or the sending is failed, then we should
@@ -602,6 +603,7 @@ uintx aloha_recv( TiAloha * mac, TiFrame * frame, uint8 option )
 				count = 0;
 			}
 			frame_setlength( frame, count - HEADER_SIZE - TAIL_SIZE );
+			count = count - HEADER_SIZE - TAIL_SIZE;//todo for testing
 		}
 		else
 		{

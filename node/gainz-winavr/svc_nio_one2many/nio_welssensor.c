@@ -56,16 +56,13 @@
 #include "../../common/openwsn/svc/svc_timer.h"
 #include "../../common/openwsn/svc/svc_nio_one2many.h"
 
-
-
 #define CONFIG_NODE_ADDRESS 0x02
 #define CONFIG_NODE_PANID 0x01
 #define CONFIG_NODE_CHANNEL 11
 #define CONFIG_RESPONSE_SIZE             7
 
-
 #define VTM_RESOLUTION 7
-#define MAX_IEEE802FRAME154_SIZE                128 
+#define MAX_IEEE802FRAME154_SIZE 128 
 
 #define NAC_SIZE NIOACCEPTOR_HOPESIZE(CONFIG_NIOACCEPTOR_RXQUE_CAPACITY,CONFIG_NIOACCEPTOR_TXQUE_CAPACITY)
 
@@ -80,7 +77,6 @@ static TiAdcAdapter         m_adc;
 static TiLumSensor          m_lum;
 static char                 m_nacmem[NAC_SIZE];
 
-
 int main(void)
 {
 
@@ -90,7 +86,6 @@ int main(void)
 	char * request;
 	char * response;
 	char * msg = "welcome to wlssensor node...";
-	
 
 	TiTimerAdapter * timeradapter;
 	TiTimerManager * vtm;
@@ -99,8 +94,6 @@ int main(void)
 	TiFrameRxTxInterface * rxtx;
 	TiNioAcceptor * nac;
     TiAloha * mac;
-
-	
 
 	TiAdcAdapter * adc;
 	TiLumSensor * lum;
@@ -121,11 +114,6 @@ int main(void)
 	rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
 	dbc_write( msg, strlen(msg) );
 
-	
-
-
-	
-
 	timeradapter = timer_construct( (void *)(&m_timeradapter), sizeof(m_timeradapter) );
 	vtm = vtm_construct( (void*)&m_vtm, sizeof(m_vtm) );
 	
@@ -133,16 +121,15 @@ int main(void)
 	nac = nac_construct( &m_nacmem[0], NAC_SIZE );
 	mac = aloha_construct( (char *)(&m_aloha), sizeof(TiAloha) );
 
-
-	adc     = adc_construct( (void *)&m_adc, sizeof(TiAdcAdapter) );
-	lum     = lum_construct( (void *)&m_lum, sizeof(TiLumSensor) );
+	adc = adc_construct( (void *)&m_adc, sizeof(TiAdcAdapter) );
+	lum = lum_construct( (void *)&m_lum, sizeof(TiLumSensor) );
 
 	vtm = vtm_open( vtm, timeradapter, VTM_RESOLUTION );
 
-	cc   = cc2420_open(cc, 0, NULL, NULL, 0x00 );
+	cc = cc2420_open(cc, 0, NULL, NULL, 0x00 );
 	rxtx = cc2420_interface( cc, &m_rxtx );
 	timeradapter = timer_open( timeradapter, 0, vtm_inputevent, vtm, 0x01 ); 
-	nac  = nac_open( nac, rxtx, CONFIG_NIOACCEPTOR_RXQUE_CAPACITY, CONFIG_NIOACCEPTOR_TXQUE_CAPACITY);
+	nac = nac_open( nac, rxtx, CONFIG_NIOACCEPTOR_RXQUE_CAPACITY, CONFIG_NIOACCEPTOR_TXQUE_CAPACITY);
 	mac =  aloha_open( mac, rxtx,nac, CONFIG_NODE_CHANNEL, CONFIG_NODE_PANID, CONFIG_NODE_ADDRESS,timeradapter, NULL, NULL,0x01);
 
 	adc_open( adc, 0, NULL, NULL, 0 );
@@ -170,7 +157,6 @@ int main(void)
 	{
 		len = one2many_recv( o2m, rxbuf, 0x00 );
 		
-		
 		if (len > 0)
 		{
 			// request[0] == 0x01 indicate this is REQUEST type. 0x02 indicate this is RESPONSE.
@@ -181,8 +167,6 @@ int main(void)
 				continue;
 			for(uint8 i=0;i<len;i++)
 				dbo_putchar(request[i]);
-
-			
 
 			// start measurement;
 			// adc_start
@@ -202,19 +186,14 @@ int main(void)
 			response[6] = (uint8)(value & 0x0F);
 			iobuf_setlength( txbuf, CONFIG_RESPONSE_SIZE );
 
-			
-
 			len = one2many_send( o2m,addr,txbuf, 0x00 );
 			//len = one2many_send( o2m,0x01,txbuf, 0x00 );
 			if (len <= 0)
 			{
 				dbo_string( "send response failed" );
 			}
-			
 		}
-		
 
 		one2many_evolve(o2m, NULL);
 	}
-
 }

@@ -80,7 +80,7 @@
 #include "osx_configall.h"
 #include "osx_foundation.h"
 #include "../rtl/rtl_dispatcher.h"
-#include "osx_timer.h"
+#include "osx_ticker.h"
 #include "osx_queue.h"
 
 #ifdef CONFIG_OSX_DBA_ENABLE
@@ -137,7 +137,7 @@ typedef struct{
 	TiDebugAgent *          dba;
 	#endif
 	#ifdef CONFIG_OSX_TIMER_ENABLE
-	TiOsxTimer *            systimer;
+	TiOsxTicker *            ticker;
 	#endif
 }TiOSX;
 

@@ -43,56 +43,53 @@
 #include "svc_timer.h"
 #include "svc_nio_one2many.h"
 
-
-
-#define CONFIG_PANTO 0x01
-
 TiOne2Many * one2many_construct( void * mem, uint16 memsize )
 {
 	memset( mem, 0x00, memsize );
 	return (TiOne2Many *)mem;
 }
 
-
 void one2many_destroy( TiOne2Many * o2m )
 {
+	/* The following line is used to eliminate the compiling warning only */
 	o2m = o2m;
 	return;
 }
 
-
-TiOne2Many * one2many_open( TiOne2Many * o2m, TiAloha * mac )
+TiOne2Many * one2many_open( TiOne2Many * o2m, TiAloha * mac, TiSvcTimer * timer )
 {
+	TiIEEE802Frame154Descriptor * desc = &(o2m->desc);
+	
 	o2m->seqid = 0;
 	o2m->mac = mac;
-/*
-	o2m->uart = uart;
-	o2m->vti = vti;
-	o2m->siobuf = iobuf_construct( (void *)(&o2m->siobuf_memory[0]), 
-		sizeof(o2m->siobuf_memory) );
-	o2m->opf = opf_open( (void *)(&o2m->opf_memory[0]), sizeof(o2m->opf_memory), 
-		OPF_FRAMECONTROL_UNKNOWN, OPF_DEF_OPTION );
 
+	// o2m->uart = uart;
+	o2m->vti = timer;
+    o2m->rxbuf = frame_open( (char*)(&o2m->rxbuf_memory), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 0 );
+    o2m->txbuf = frame_open( (char*)(&o2m->txbuf_memory), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 0 );
+    o2m->tmpbuf = frame_open( (char*)(&o2m->tmpbuf_memory), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 0 );
+	TiIEEE802Frame154Descriptor * desc;
 
 	if(o2m->type==GATEWAYTYPE)
 	{
-		o2m->vti = vtm_apply( vtm );
+		//o2m->vti = vtm_apply( vtm );
 		vti_open( o2m->vti, _vti_listener, o2m );
 		vti_setscale( o2m->vti, 1 );
 		vti_setinterval( o2m->vti, 100, 0x00 );
 		vti_start( o2m->vti );
 
-		uint8 fcf = OPF_DEF_FRAMECONTROL_DATA; 
-		uint8 total_length = 20;
-		opf_cast( o2m->opf, total_length, fcf );
-        opf_set_sequence( o2m->opf, 0xAA );
-		opf_set_panto( o2m->opf, MAC_GATE_PANID );
-		opf_set_shortaddrto( o2m->opf, MAC_GATE_REMOTE );
-		opf_set_panfrom( o2m->opf, MAC_GATE_PANID);
-		opf_set_shortaddrfrom( o2m->opf, MAC_GATE_LOCAL );
-
-		for (i=0; i<opf->msdu_len; i++)
-			(o2m->opf)->msdu[i] = i;
+        desc = ieee802frame154_format( desc, frame_startptr(o2m->txbuf), 20, /*frame_capacity(o2m->txbuf), */
+			FRAME154_DEF_FRAMECONTROL_DATA );
+        rtl_assert( desc != NULL );
+        ieee802frame154_set_sequence( desc, 0xAA );
+        ieee802frame154_set_panto( desc, MAC_GATE_PANID );
+        ieee802frame154_set_shortaddrto( desc, MAC_GATE_REMOTE );
+        ieee802frame154_set_panfrom( desc, MAC_GATE_PANID );
+        ieee802frame154_set_shortaddrfrom( desc, MAC_GATE_LOCAL );
+		
+		buf = ieee802frame154_msdu( desc );
+		for (i=0; i<ieee802frame154_msdu_len(desc); i++)
+			buf[i] = i;
 	}
 	else if(o2m->type==SENSORTYPE)
 	{
@@ -102,8 +99,6 @@ TiOne2Many * one2many_open( TiOne2Many * o2m, TiAloha * mac )
 	{
 		o2m->vti = NULL
 	}
-
-	*/
 
 	return o2m;
 }

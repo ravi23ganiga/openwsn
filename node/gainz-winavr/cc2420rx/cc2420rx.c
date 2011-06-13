@@ -68,7 +68,6 @@
 
 static char                 m_rxbuf[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
 
-
 TiCc2420Adapter             g_cc;
 TiUartAdapter	            g_uart;
 
@@ -145,10 +144,12 @@ void recvnode1(void)
 		
 		cc2420_evolve( cc );
 
-		len = cc2420_read( cc, frame_startptr( rxbuf), frame_capacity( rxbuf), 0x00 );
+		//len = cc2420_read( cc, frame_startptr( rxbuf), frame_capacity( rxbuf), 0x00 );
+		len = cc2420_read( cc, frame_startptr(rxbuf), frame_capacity(rxbuf), 0x00 );
         if ( len)
         {
-			ieee802frame154_dump( rxbuf);
+			frame_setlength( rxbuf,len);
+			dbc_write( frame_startptr( rxbuf), len );
 			led_toggle( LED_GREEN);
         }
 		

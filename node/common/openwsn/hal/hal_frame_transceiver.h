@@ -83,4 +83,12 @@ struct _TiFrameTxRxInterface{
 
 #define TiFrameTxRxInterface struct _TiFrameTxRxInterface
 
+
+/* @modified by openwsn on 2011.05
+ * - Improve support to component based architecture
+ */
+/*
+#define IMPL_FRAME_TRANSCEIVER_BY_COMPONENT(intf,impl,identifier)
+*/  
+
 #endif  /* _FRAME_TRANSCEIVER_H_4892_ */

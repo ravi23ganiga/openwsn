@@ -177,6 +177,7 @@ void recvnode(void)
 	cc2420_setpanid( cc, CONFIG_ALOHA_PANID );					// network identifier, seems no use in sniffer mode
 	cc2420_setshortaddress( cc, CONFIG_ALOHA_LOCAL_ADDRESS );	// in network address, seems no use in sniffer mode
 	cc2420_enable_autoack( cc );
+	cc2420_settxpower( cc, CC2420_POWER_1);//cc2420_settxpower( cc, CC2420_POWER_2);CC2420_POWER_1
 
 	#ifdef CONFIG_TEST_ADDRESSRECOGNITION
 	cc2420_enable_addrdecode( cc );
@@ -210,14 +211,21 @@ void recvnode(void)
 	#ifndef CONFIG_TEST_LISTENER
 	while(1) 
 	{	
+		char * ptr;//todo for testing
         frame_reset( rxbuf, 3, 20, 0 );
 		len = aloha_recv( mac, rxbuf, 0x00 );        
 		if (len > 0)
 		{   
             frame_moveouter( rxbuf );
             _output_frame( rxbuf, NULL );
-            frame_moveinner( rxbuf );
-            
+           frame_moveinner( rxbuf );
+			/*
+			dbc_write( frame_startptr( rxbuf),frame_length( rxbuf));//todo for testing
+            ptr = frame_startptr( rxbuf);//todo for testing
+			dbc_putchar( 0xff);//todo for testing
+			dbc_uint8( ptr[ (frame_length( rxbuf)-2)]);//todo for testing
+			dbc_putchar( 0xff);//todo for testing
+            frame_moveinner( rxbuf );//todo for testing*/
 			//led_off( LED_RED );
 
 			/* warning: You shouldn't wait too long in the while loop, or else 
@@ -227,7 +235,7 @@ void recvnode(void)
 			 */
 			//hal_delay( 500 );
 			led_toggle( LED_RED );
-			hal_delay( 1000);
+		
         }
 
 		aloha_evolve(mac, NULL );
