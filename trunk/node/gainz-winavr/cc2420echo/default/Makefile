@@ -8,6 +8,8 @@ MCU = atmega128
 TARGET = cc2420echo.elf
 CC = avr-gcc
 
+CPP = avr-g++
+
 ## Options common to compile, link and assembly rules
 COMMON = -mmcu=$(MCU)
 
@@ -41,13 +43,15 @@ LIBDIRS = -L"D:\dev\openwsn\source\node\gainz-winavr\lib"
 LIBS = -lwsn 
 
 ## Objects that must be built in order to link
-OBJECTS = cc2420echo.o echonode.o hal_assert.o hal_cc2420.o hal_cpu.o hal_debugio.o hal_foundation.o hal_interrupt.o hal_led.o hal_target.o hal_uart.o hpl_atmega128.o rtl_iobuf.o rtl_openframe.o 
+OBJECTS = cc2420echo.o echonode.o hal_assert.o hal_cc2420.o hal_cpu.o hal_debugio.o hal_foundation.o hal_interrupt.o hal_led.o hal_uart.o hpl_atmega128.o rtl_iobuf.o rtl_openframe.o hal_targetboard.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = 
 
 ## Build
-all: $(TARGET) cc2420echo.hex cc2420echo.eep cc2420echo.lss## Compile
+all: $(TARGET) cc2420echo.hex cc2420echo.eep cc2420echo.lss size
+
+## Compile
 cc2420echo.o: ../cc2420echo.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
@@ -75,9 +79,6 @@ hal_interrupt.o: ../../../common/openwsn/hal/gainz/hal_interrupt.c
 hal_led.o: ../../../common/openwsn/hal/gainz/hal_led.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-hal_target.o: ../../../common/openwsn/hal/gainz/hal_target.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
 hal_uart.o: ../../../common/openwsn/hal/gainz/hal_uart.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
@@ -88,6 +89,9 @@ rtl_iobuf.o: ../../../common/openwsn/rtl/rtl_iobuf.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 rtl_openframe.o: ../../../common/openwsn/rtl/rtl_openframe.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+hal_targetboard.o: ../../../common/openwsn/hal/gainz/hal_targetboard.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link
@@ -102,6 +106,10 @@ $(TARGET): $(OBJECTS)
 
 %.lss: $(TARGET)
 	avr-objdump -h -S $< > $@
+
+size: ${TARGET}
+	@echo
+	@avr-size -C --mcu=${MCU} ${TARGET}
 
 ## Clean target
 .PHONY: clean

@@ -24,8 +24,8 @@
  *
  ******************************************************************************/
 
-#include "../rtl/rtl_timer.h"
-#include "../hal/hal_timer.h"
+#include "../rtl/rtl_time.h"
+#include "../hal/hal_clock.h"
 
 采用TiTime80表示time
 提供长时间、高精度的时间获取与调整

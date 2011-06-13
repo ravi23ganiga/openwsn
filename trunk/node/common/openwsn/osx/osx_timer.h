@@ -1,96 +1,78 @@
-#ifndef _OSX_TIMER_H_4353_
-#define _OSX_TIMER_H_4353_
-/*******************************************************************************
- * This file is part of OpenWSN, the Open Wireless Sensor Network Platform.
- *
- * Copyright (C) 2005-2010 zhangwei(TongJi University)
- * 
- * OpenWSN is a free software; you can redistribute it and/or modify it under 
- * the terms of the GNU General Public License as published by the Free Software 
- * Foundation; either version 2 or (at your option) any later version.
- * 
- * OpenWSN is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
- * Place, Suite 330, Boston, MA 02111-1307 USA.
- * 
- * For non-opensource or commercial applications, please choose commercial license.
- * Refer to OpenWSN site http://code.google.com/p/openwsn/ for more detail.
- * 
- * For other questions, you can contact the author through email openwsn#gmail.com
- * or the mailing address: Dr. Wei Zhang, Dept. of Control, Dianxin Hall, TongJi 
- * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
- * 
- ******************************************************************************/ 
 
-/*******************************************************************************
- * TiOsxTimer
- * the osx timer is used to drive the evolution of the whole osx kernel by periodically
- * calling the osx_hardevolve() function. it can also be used to drive some inaccurate
- * sampling tasks. if there's no osx timer, then the system can also drive the
- * osx kernel by infinite loop run. refer to the osx_execute() function. the infinite
- * loop run or osx_execute() can be placed into a separate thread of other RTOS.
- *
- * the MCU's hardware timers are usually very powerful. furthermore, they maybe
- * varies from chip suppliers. however, the OS core only needs a relatively simple
- * timer. it should be lightweight and efficient.
- *
- * for some MCU such as the ARM Cortex M3, the MCU core has already provide a
- * hardware SysTimer to help implement a OS core.
- ******************************************************************************/
+/*
+ * This module implements a high precision timer used by the whole system. It keeps
+ * the accurate time currently and is capable to generate event when timing expired.
+ */
+
+#include "osx_configall.h"
+#include "osx_foundation.h"
+#include "../rtl/rtl_time.h"
+#include "../hal/hal_ticker.h"
 
 #define TiOsxTimer TiSysTimer
 
-/*******************************************************************************
- * For developers
- * - TiOsxTimer is actually an timer/ticker interface required by the osx kernel.
- *   Any component providing this interface can be used to drive the osx kernel.
- * - Usually the TiOsxTimer can be implemented based on TiTimerAdapter, TiRtcAdapter,
- *   TiSysTimer or even the TiTimer component. The default is based on TiSysTimer
- *   as the following. System timer is a special timer which is used to drive
- *   the operating systems only.
- * 
- * @todo
- * - low power features can be added to this component in the future.
- ******************************************************************************/
+/*
+#define tm_value_t uint16  
 
-inline TiOsxTimer * _osx_timer_construct( char * buf, uint8 size )
-{
-	return systm_construct( buf, size );
-}
+typedef struct{
+  uint8 state;
+  //uint8 prescale_selector;
+  //uint16 prescale;
+  tm_value_t interval;
+  uint8 reginterval;
+  TiFunEventHandler listener;
+  void * lisowner;
+  uint16 TCCR;
+  uint16 OCR3;
+}TiSysTimer; // will be upgraded to TiTickerAdapter
 
-inline void _osx_timer_destroy( TiOsxTimer * timer )
-{
-	systm_destroy( timer );
-}
+TiSysTimer * systm_construct( char * buf, uint8 size );
+void systm_destroy( TiSysTimer * timer );
+TiSysTimer * systm_open( TiSysTimer * timer, tm_value_t interval, TiFunEventHandler listener, void * lisowner );
+void systm_close( TiSysTimer * timer );
+void systm_start( TiSysTimer * timer );
+void systm_stop( TiSysTimer * timer );
+bool systm_expired( TiSysTimer * timer );
+*/
 
-inline TiOsxTimer * _osx_timer_open( TiOsxTimer * timer, tm_value_t interval, TiFunEventHandler listener, void * lisowner )
-{
-	return systm_open( timer, interval, listener, lisowner );
-}
+TiOsxTimer * _osx_timer_construct( char * buf, uint8 size );
 
-inline void _osx_timer_close( TiOsxTimer * timer )
-{
-	systm_close( timer );
-}
 
-inline void _osx_timer_start( TiOsxTimer * timer )
-{
-	systm_start( timer );
-}
+void _osx_timer_destroy( TiOsxTimer * timer );
 
-inline void _osx_timer_stop( TiOsxTimer * timer )
-{
-	//void systm_stop( timer );
-}
 
-inline bool _osx_timer_expired( TiOsxTimer * timer )
-{
-	//return systm_expired( timer );
-    return true;
-}
+TiOsxTimer * _osx_timer_open( TiOsxTimer * timer, TiSystemTime interval, TiFunEventHandler listener, void * lisowner );
 
-#endif
+
+void _osx_timer_close( TiOsxTimer * timer );
+
+void _osx_timer_start( TiOsxTimer * timer );
+
+
+void _osx_timer_stop( TiOsxTimer * timer );
+
+
+int osx_timer_restart( TiOsxTimer * timer, TiSystemTime * interval, uint8 option );
+
+bool _osx_timer_expired( TiOsxTimer * timer );
+
+
+void clock_forward( TiOsxTimer * timer,TiSystemTime ms);
+void clock_backward( TiOsxTimer * timer,TiSystemTime ms);
+void clock_set( TiOsxTimer * timer,TiSystemTime ms);
+TiSystemTime clock_get( TiOsxTimer * timer);
+
+
+
+/*
+osx_timer_( TiOsxTimer * timer, TiSystemTime *  )
+osx_timer_pause
+clcok_resume
+clock_forward
+clock_backward
+clock_adjust
+clock_current = clock_snapshot
+clock_set/get
+clock_disable
+clock_enable
+*/

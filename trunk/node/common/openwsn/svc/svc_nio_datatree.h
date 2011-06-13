@@ -178,7 +178,7 @@
 
 #define DTP_MAX_TX_TRYTIME            0x04
 
-#define DTP_HEADER_SIZE(maxhopcount) (10+(maxhopcount-1)*2)//(9+(maxhopcount-1)*2)
+#define DTP_HEADER_SIZE(maxhopcount) (9+(maxhopcount-1)*2)//(10+(maxhopcount-1)*2)//(9+(maxhopcount-1)*2)
 #define DTP_MAKEWORD(high,low) (((uint16)high<<8) | ((uint8)low))
 
 #define DTP_PACKETCONTROL(pkt) ((pkt)[1])
@@ -188,7 +188,7 @@
 #define DTP_HOPCOUNT(pkt) ((pkt)[7])
 #define DTP_MAX_HOPCOUNT(pkt) ((pkt)[8])
 #define DTP_PATHDESC_COUNT(pkt) ((pkt)[9])
-#define DTP_PATHDESC_PTR(pkt) (&(pkt[10]))
+#define DTP_PATHDESC_PTR(pkt) (&(pkt[9]))
 #define DTP_PAYLOAD_PTR(pkt) ((char*)(pkt)+DTP_HEADER_SIZE(DTP_MAX_HOPCOUNT((pkt))))
 
 #define DTP_SET_PROTOCAL_IDENTIFIER(pkt,value) (pkt)[0]=(value)

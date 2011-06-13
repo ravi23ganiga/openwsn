@@ -212,15 +212,17 @@ int main(void)
        txbuf    = frame_open( (char*)(&m_txbuf), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 0 );//todo reset txbuf
 
         request = frame_startptr( txbuf );
-		payload = DTP_PAYLOAD_PTR(request);
-		value = lum_value( lum ); 
-		payload[0] = LOWBYTE( value );
-		payload[1] = HIGHBYTE( value );
+		
+		//payload = DTP_PAYLOAD_PTR(request);
+		//value = lum_value( lum ); 
+		//payload[0] = LOWBYTE( value );
+		//payload[1] = HIGHBYTE( value );
 
-		for( i=DTP_HEADER_SIZE( GATW_MAX_HOPCOUNT)+2; i < frame_capacity( txbuf); i++)
+		for( i=DTP_HEADER_SIZE( GATW_MAX_HOPCOUNT)+2; i < 25; i++)
 			request[i] = 0x81;
 
-		frame_setlength( txbuf,frame_capacity( txbuf));//todo 
+		//frame_setlength( txbuf,frame_capacity( txbuf));//todo 
+		frame_setlength( txbuf,21);
 
          while (1)
         {

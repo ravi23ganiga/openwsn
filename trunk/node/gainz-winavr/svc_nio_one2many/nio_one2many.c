@@ -23,6 +23,7 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
+ 
 /*******************************************************************************
  * wireless sensor node (wlssensor, S nodes)
  * This demonstration/testing program will accept DATA_REQUEST frames from the gateway
@@ -35,7 +36,6 @@
 
 #define CONFIG_NIOACCEPTOR_RXQUE_CAPACITY 2
 #define CONFIG_NIOACCEPTOR_TXQUE_CAPACITY 2
-
 
 #include "../../common/openwsn/hal/hal_configall.h"  
 #include "../../common/openwsn/svc/svc_configall.h"  
@@ -59,8 +59,6 @@
 #include "../../common/openwsn/svc/svc_ledtune.h"
 #include "../../common/openwsn/svc/svc_nio_acceptor.h"
 #include "../../common/openwsn/svc/svc_nio_one2many.h"
-
-
 
 #define CONFIG_NODE_ADDRESS             0x0001
 #define CONFIG_NODE_PANID               0x0001
@@ -121,12 +119,11 @@ int main(void)
 	hal_delay( 500 );
 	led_off( LED_ALL );
 
-	//dbo_open(0, 38400);
 	rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
 	dbc_write( msg, strlen(msg) );
 
-	hwtimer0        = timer_construct( (void *)(&m_hwtimer0), sizeof(m_hwtimer0) );
-	vtm             = vtm_construct( (void*)&m_vtm, sizeof(m_vtm) );
+	hwtimer0  = timer_construct( (void *)(&m_hwtimer0), sizeof(m_hwtimer0) );
+	vtm = vtm_construct( (void*)&m_vtm, sizeof(m_vtm) );
 	cc = cc2420_construct( (char *)(&m_cc), sizeof(TiCc2420Adapter) );
 	nac = nac_construct( &m_nacmem[0], NAC_SIZE );
 	mac = aloha_construct( (char *)(&m_aloha), sizeof(TiAloha) );
@@ -200,25 +197,21 @@ int main(void)
 		// configure the time interval as 2 seconds. non-periodical
 		// the "vti" timer will automatically stopped when it's expired.
 		//
-		   
 		vti_setscale( vti, 1 );
 		vti_setinterval( vti, 1000, 0x00 );
 		vti_start( vti );
 
-         
-
-			while (!vti_expired(vti))
+		while (!vti_expired(vti))
 		{
 			len = one2many_recv( o2m, rxbuf, 0x00 );
 			
 			if (len > 0)
 			{	
-				led_toggle( LED_GREEN);//todo for testing
+				led_toggle( LED_GREEN);
 				response = iobuf_ptr( rxbuf );
 				if(response[0] == 0x02)
 				{
 					_output_iobuf( rxbuf, uart );
-
                     //ledtune_write( ledtune, O2M_MAKEWORD(response[2], response[1]) );
 				}
 			}
@@ -236,22 +229,22 @@ void _output_iobuf( TiIoBuf * buf, TiUartAdapter * uart )
 	if (iobuf_length(buf) > 0)
 	{
 		response = iobuf_ptr(buf);
-		/*dbo_string( "response:\r\n" );
+		/*dbc_string( "response:\r\n" );
 
-		dbo_string( "shortaddrto: " );
-		dbo_n8toa( response[1] );
-		dbo_n8toa( response[2] );
+		dbc_string( "shortaddrto: " );
+		dbc_n8toa( response[1] );
+		dbc_n8toa( response[2] );
 
-		dbo_string( "\r\nshortaddrfrom: " );
-		dbo_n8toa( response[3] );
-		dbo_n8toa( response[4] );
+		dbc_string( "\r\nshortaddrfrom: " );
+		dbc_n8toa( response[3] );
+		dbc_n8toa( response[4] );
 
-		dbo_string( "\r\nsensor value:" );
-		dbo_n8toa( response[5] );
-		dbo_n8toa( response[6] );
-		dbo_string( "\r\n" );
+		dbc_string( "\r\nsensor value:" );
+		dbc_n8toa( response[5] );
+		dbc_n8toa( response[6] );
+		dbc_string( "\r\n" );
 		*/
-		dbo_putchar(response[5]);
-		dbo_putchar(response[6]);
+		dbc_putchar(response[5]);
+		dbc_putchar(response[6]);
 	}
 }

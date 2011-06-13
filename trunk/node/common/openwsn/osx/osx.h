@@ -33,7 +33,7 @@
 #include "osx_configall.h"
 #include "osx_foundation.h"
 #include "osx_dba.h"
-#include "osx_timer.h"
+#include "osx_ticker.h"
 #include "osx_queue.h"
 #include "osx_taskpool.h"
 #include "osx_taskheap.h"

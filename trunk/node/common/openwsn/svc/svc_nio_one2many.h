@@ -24,21 +24,32 @@
  *
  ******************************************************************************/
 
-#ifndef _SVC_ONE2MANY_H_7244_
-#define _SVC_ONE2MANY_H_7244_
+#ifndef _SVC_NIO_ONE2MANY_H_7244_
+#define _SVC_NIO_ONE2MANY_H_7244_
 
-/*程序设想：
- *	TiOne2Many有两种类型，一为GATE，另一为SENSOR。
- *	对于GATE来说，其任务为定时发送DATA_REQUEST frame（用到svc_timer、mac、和特定格式的opf对象），然后等待并接受S节点数据
- *	（用到mac 和opf 对象和TiIoBuf对象 ），等待一定时间后统计好，然后发到串口（用到UART对象）
- *	所以状态有四个：IDLE、WIO_SENDING、WIO_RECEIVING、SIO_SENDING
+/* 程序设想：
+ * TiOne2Many有两种类型，一为GATE，另一为SENSOR。
+ * 对于GATE来说，其任务为定时发送DATA_REQUEST frame（用到svc_timer、mac、和特定
+ * 格式的frame对象），然后等待并接受S节点数据（用到mac 和 frame 对象和TiIoBuf对象 ），
+ * 等待一定时间后统计好，然后发到串口（用到UART对象）
+ * 所以状态有四个：IDLE、WIO_SENDING、WIO_RECEIVING、SIO_SENDING
  *
- *	对于SENSOR, 其任务为等待，然后收到DATA_REQUEST frame（opf和mac）时，借鉴hal_remoteled 模块的代码读取数据，然后发送回G。
- *	所以状态有两个：WIO_RECEIVING、DATA_COLLECT_AND_SEND
- *
+ * 对于SENSOR, 其任务为等待，然后收到DATA_REQUEST frame（opf和mac）时，借鉴hal_remoteled
+ * 模块的代码读取数据，然后发送回G。
+ * 所以状态有两个：WIO_RECEIVING、DATA_COLLECT_AND_SEND
  */
 
+#include "svc_configall.h"  
+#include "../rtl/rtl_iobuf.h"
 #include "../rtl/rtl_frame.h"
+#include "../hal/hal_debugio.h"
+#include "../hal/hal_uart.h"
+#include "../hal/hal_led.h"
+#include "../hal/hal_adc.h"
+#include "../hal/hal_luminance.h"
+#include "svc_foundation.h"
+#include "svc_nio_aloha.h"
+#include "svc_timer.h"
 
 #define GATEWAYTYPE 1
 #define SENSORTYPE 0
@@ -46,13 +57,14 @@
 #define TIMEISUP 1
 #define TIMEISNOTUP 0
 
+#define CONFIG_PANTO 0x01
+
 #define CONFIG_SIOBUF_SIZE 88
 #define MAX_IEEE802FRAME154_SIZE                128
 
 #define MAC_GATE_PANID 0xFF
 #define MAC_GATE_LOCAL 0x99
 #define MAC_GATE_REMOTE 0xFF
-
 
 //#define O2M_MAX_TX_TRYTIME            0x04
 
@@ -90,8 +102,6 @@
 //#define O2M_CMDTYPE(pkt) (pkt[1] & 0x03)
 //#define O2M_SET_CMDTYPE(pkt,newtype) (pkt[1] = (pkt[1] & 0xFC) | (newtype))
 
-
-
 /* TiOne2Many
  * an data collection service. 
  * 
@@ -108,6 +118,15 @@ typedef struct{
 	TiAloha * mac;
 	//TiTimer * timer;
 	//TiTimer * vti;
+	
+	TiFrame * txbuf;
+	TiFrame * rxbuf;
+	TiFrame * tmpbuf;
+	char txbuf_memory[FRAME_HOPESIZE(CONFIG_ALOHA_MAX_FRAME_SIZE)];
+	char rxbuf_memory[FRAME_HOPESIZE(CONFIG_ALOHA_MAX_FRAME_SIZE)];
+	char tmpbuf_memory[FRAME_HOPESIZE(CONFIG_ALOHA_MAX_FRAME_SIZE)];
+	TiIEEE802Frame154Descriptor desc;
+	
 	//TiIoBuf * siobuf;
 	//TiOpenFrame * txbuf;
 	//TiOpenFrame * rxbuf;
@@ -142,7 +161,6 @@ void one2many_evolve( void * svcptr, TiEvent * e );
 uint8 one2many_send( TiOne2Many * svc,uint16 addr, TiIoBuf * buf, uint8 option );
 uint8 one2many_broadcast( TiOne2Many * svc, TiIoBuf * buf, uint8 option );
 
-
 /* one2many_recv()
  * Try to receive RESPONSE replied from neighbor nodes. The RESPONSE will be put 
  * into "buf". Attention the "size" must be larger enough to hold the RESPONSE.
@@ -154,5 +172,4 @@ uint8 one2many_broadcast( TiOne2Many * svc, TiIoBuf * buf, uint8 option );
  */
 uint8 one2many_recv( TiOne2Many * svc, TiIoBuf * buf, uint8 option );
 
-
-#endif /* _SVC_ONE2MANY_H_7244_ */
+#endif /* _SVC_NIO_ONE2MANY_H_7244_ */

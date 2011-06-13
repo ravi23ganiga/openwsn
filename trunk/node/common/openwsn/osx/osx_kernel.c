@@ -297,10 +297,10 @@ void _osx_hardexecute( TiOSX * osx )
 	//dispa_attach( osx->dispatcher, EVENT_REBOOT, _osx_target_handler );
 	//dispa_attach( sche->dispatcher, EVENT_SHUTDOWN, _osx_target_shutdown );
 /* todo
-	_osx_timer_construct( &osx->systimer, sizeof(TiOsxTimer) );
-	osx->systimer = _osx_timer_open( &osx->systimer, CONFIG_OSX_TIMER_INTERVAL, _osx_hardevolve, osx );
-	hal_assert( osx->systimer != NULL );
-	_osx_timer_start( osx );
+	_osx_ticker_construct( &osx->systimer, sizeof(TiOsxTicker) );
+	osx->ticker = _osx_timer_open( &osx->ticker, CONFIG_OSX_TIMER_INTERVAL, _osx_hardevolve, osx );
+	hal_assert( osx->ticker != NULL );
+	_osx_ticker_start( osx );
 
 	hal_enable_interrupts();
 	//hal_setlistener( (TiFunEventHandler)_osx_post, osx );

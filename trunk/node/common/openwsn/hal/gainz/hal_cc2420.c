@@ -560,7 +560,7 @@ uint8 _cc2420_writetxfifo( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 op
 	// hal_assert( len == buf[0] );
 	if ((len < CC2420_MIN_FRAME_LENGTH) || (len >= CC2420_TXFIFO_SIZE))
 		return 0;
-	
+
 	// Cc2420's SFD pin goes high when the SFD field has been completely transmitted. 
 	// It goes low again when the complete MPDU (as defined  by  the length field) 
 	// has been transmitted or if an underflow is detected.
@@ -586,7 +586,8 @@ uint8 _cc2420_writetxfifo( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 op
 	//	for (j=0; j<0xFE; j++)
 	//		if (HAL_READ_CC_SFD_PIN() == 0)
 	//			break;
-	
+	//wait for the former frame to be sent completely. 
+	while (HAL_READ_CC_SFD_PIN() == 1) {};
 
 	cpu_atomic_t cpu_status = _cpu_atomic_begin();
 	{
@@ -608,7 +609,6 @@ uint8 _cc2420_writetxfifo( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 op
 		HAL_SET_CC_CS_PIN();
 	}
 	_cpu_atomic_end(cpu_status);
-
 	return len;
 }
 
@@ -644,7 +644,7 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 	
 	_cc2420_waitfor_crystal_oscillator( cc );
 
-	do{	   
+	do{	 
 		status = cc2420_sendcmd( cc, CC2420_SNOP );
 	}while (!(status & (1 << CC2420_XOSC16M_STABLE)));
 
@@ -666,8 +666,9 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 		// the SPI status register with SPIF set, then accessing the SPI data register.
 		// reference: SPSR register in atmega128L datasheet. 
 
-		// Read RXFIFO register					
-		cc->spistatus = _cc2420_spi_put( CC2420_RXFIFO | 0x40 );	
+		// Read RXFIFO register	
+
+	    cc->spistatus = _cc2420_spi_put( CC2420_RXFIFO | 0x40 );	
 
 		/* Read the length byte from cc2420 transceiver. Attention the value of the 
 		 * length byte doesn't include itself. It assumes the first byte in the 
@@ -682,7 +683,7 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 		 * 
 		 * hal_assert( len < size );
 		 */
-
+		
 		/* @attention
 		 * Though cc2420 datasheet tells us this transceiver supports frames longer
 		 * than 128 bytes(including the length byte itself), the TiCc2420Adapter doesn't
@@ -693,6 +694,7 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 		 */
 		if (len+1 < CC2420_MIN_FRAME_LENGTH)
 		{
+			
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 			// hal_delayus(5);
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
@@ -710,6 +712,8 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 			// It's not an standard 802.15.4 feature. You can deal with this case 
 			// if you need long frame support. 
 			//
+
+			
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 			while (HAL_READ_CC_SFD_PIN()) {};
@@ -774,9 +778,16 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 			 * to read them out. they've already been read out and put into the "buf".
 			 */
 		}
+
+		//Maybe we should clear the frame in the rxfifo after reading,but i don't know if we may loss some important frames such as ack.
+		/*
+		cc2420_sendcmd( cc, CC2420_SFLUSHRX );
+		cc2420_sendcmd( cc, CC2420_SFLUSHRX );
+		while (HAL_READ_CC_SFD_PIN()) {};*/
 		HAL_SET_CC_CS_PIN();
     }
     //_cpu_atomic_end(cpu_status); 
+	
 	return count;
 }
 
@@ -841,7 +852,7 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 	//
 	// If the RF Transmission is active, we can further judge SFD pin. Though this
 	// may still miss some cases.
-	status = cc2420_sendcmd( CC2420_SNOP );
+	status = cc2420_sendcmd( cc,CC2420_SNOP );
 	if ((status & 0x04) == 1)
 	{
 		while (HAL_READ_CC_SFD_PIN() == 1) {};
@@ -849,7 +860,7 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 
 	// Assert the oscillator is running now. If it failed to run, you should restart
 	// the transceiver chip.
-	hal_assert( state & (1 << CC2420_XOSC16M_STABLE) );
+	hal_assert( status & (1 << CC2420_XOSC16M_STABLE) );
 	
 	count = _cc2420_writetxfifo( cc, (char*)&(buf[0]), len, option );
 	
@@ -889,8 +900,9 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 	// Writing to the TXFIFO after a frame has been transmitted will cause the TXFIFO 
 	// to be automatically flushed before the new byte is written. The only exception  
 	// is if a TXFIFO  underflow  has occurred, when a SFLUSHTX command strobe is required. 
-	
-
+	//
+	//the following four sentences are to send the packet.
+    //cc2420_sendcmd( cc,CC2420_SRFOFF);
 	// Send the STXON command to cc2420 to start the transmitting now
 	cc2420_sendcmd( cc, CC2420_STXON );
 	
@@ -911,8 +923,8 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 	// hal_delay( at least 12 symbole time );
 
 	// Check whether the TX process encounters underflow error
-	status = cc2420_sendcmd( CC2420_SNOP );
-	if (status & 0x10) 
+	status = cc2420_sendcmd(cc, CC2420_SNOP );
+	if (status & 0x20) 
 	{
 		cc2420_sendcmd( cc, CC2420_SFLUSHTX );
 		cc2420_sendcmd( cc, CC2420_SFLUSHTX );
@@ -924,7 +936,7 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 	// loss because the last sending may not complete in time.
 	// Suggest to wait some time in the transition between sending and receiving. 
 	
-	cc->state = CC2420_STATE_RECVING;
+	//cc->state = CC2420_STATE_RECVING;
 	
 	// modified by zhangwei on 2011.04.10
 	// The cc2420 adapter is an light weight encapsulation of the cc2420 hardware.
@@ -1207,7 +1219,7 @@ uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 				cc->rxlen = 0;
 			}
 
-			/*
+			
 			// we should move the frame inside cc2420 transceiver to MCU's RAM as fast as 
 			// possible. they will reduce the possibility for frame dropping.
 			//
@@ -1219,7 +1231,7 @@ uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 			{
 				cc->rxlen = _cc2420_readrxfifo( cc, (char*)(&cc->rxbuf[0]), CC2420_RXBUFFER_SIZE, 0x00 );
 
-				* @attention
+				/* @attention
 				 * If the frame has an ACK request, then the transceiver cc2420's hardware will
 				 * send ACK back automatically. However, you must enable the AUTOACK feature 
 				 * of cc2420 during its initialization. 
@@ -1235,7 +1247,7 @@ uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 				 * attention here cc->rxlen should be large enough or else this frame must 
 				 * be an invalid frame, and it should be discarded. 
 				 * attention cc->rxlen includes the first length byte.
-				 *
+				 */
 				hal_assert( (cc->rxlen == 0) || (cc->rxlen >= CC2420_MIN_FRAME_LENGTH) );
 				if (cc->rxlen >= CC2420_MIN_FRAME_LENGTH)
 				{
@@ -1248,21 +1260,33 @@ uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 						cc->rxlen = 0;
 					}
 				}
-				
+
+				if ( CC_READ_FIFOP_PIN())
+				{
+					if ( !HAL_READ_CC_FIFO_PIN())
+					{
+						cc2420_sendcmd( cc, CC2420_SFLUSHRX );
+						cc2420_sendcmd( cc, CC2420_SFLUSHRX );
+						while (HAL_READ_CC_SFD_PIN()) {};
+					}
+				}
+				/*
 				if (HAL_READ_CC_FIFO_PIN()) 
 				{
 					cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 					cc2420_sendcmd( cc, CC2420_SFLUSHRX );
-				}
+				}*/
 			}
 			else{ 
 				// @attention: Needn't clear the cc2420 RXFIFO every time. This will
 				// degrade the performance.
 				//
-				// cc2420_sendcmd( cc, CC2420_SFLUSHRX );
-				// cc2420_sendcmd( cc, CC2420_SFLUSHRX );
+			
+				 cc2420_sendcmd( cc, CC2420_SFLUSHRX );
+				 cc2420_sendcmd( cc, CC2420_SFLUSHRX );
+				 
 			}
-			*/
+			
 		}
 
 		/* If there's no frame pending inside the rxbuf, then try to pull a frame from 
@@ -1285,18 +1309,15 @@ uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 					
 					// Send SFLUSHRX twice to clear cc2420's RXFIFO and wait SFD pin and 
 					// FIFO pin go back to low. 
-
+                  
 					cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 					cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 					while (HAL_READ_CC_SFD_PIN()) {};
+					
 				}
 			}
 			
-			if (ret == 0)
-			{
-				ret = _cc2420_readrxfifo( cc, (char*)(&cc->rxbuf[0]), CC2420_RXBUFFER_SIZE, 0x00 );
-			}
-		
+			
 		
 			/*
 			if (CC_READ_FIFOP_PIN() && HAL_READ_CC_FIFO_PIN()) 
@@ -1349,7 +1370,7 @@ uint8 cc2420_recv( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option )
 		}
 	}
     _cpu_atomic_end(cpu_status); 
-
+  
 	return ret;
 }
 /*
@@ -1367,11 +1388,13 @@ uint8 cc2420_iobrecv( TiCc2420Adapter * cc, TiIoBuf * iobuf, uint8 option )
 */
 void cc2420_evolve( TiCc2420Adapter * cc )
 {
+	/*
 	if (cc->rxlen > 0) 
 	{
 		if (cc->listener != NULL)
-			cc->listener( cc->lisowner );
+			cc->listener( cc->lisowner,NULL );
 	}
+	*/
 	// the following section will check flag variable and try to read data from 
 	// cc2420 hardware to MCU's memory when there's incomming frame pending inside
 	// cc2420
@@ -2203,7 +2226,6 @@ void _cc2420_fifop_handler( void * ccptr, TiEvent * e )
 	// A SFLUSHRX command strobe is required after a RXFIFO overflow to  enable 
 	// reception  of new data. Note that the SFLUSHRX command strobe should be 
 	// issued twice to ensure  that  the  SFD pin goes back to its idle state. 
-	
 	if (!HAL_READ_CC_FIFO_PIN())
 	{
 		// (HAL_READ_CC_FIFO_PIN() == 0) and (CC_READ_FIFOP_PIN() == 1) indicates
@@ -2220,20 +2242,12 @@ void _cc2420_fifop_handler( void * ccptr, TiEvent * e )
 		// on all microcontrollers. So I finally decided to insert hal_delayus() 
 		// here.
 		
-		hal_delayus( 2 );
 		if (CC_READ_FIFOP_PIN())
 		{
-			// Though overflow occurs, the first part in the RXFIFO may contains 
-			// an correct frame. We can still choose to read it out.
-			cc->rxlen = _cc2420_readrxfifo( cc, (char*)(&cc->rxbuf[0]), CC2420_RXBUFFER_SIZE, 0x00 );
 			
-			// Send SFLUSHRX twice to clear cc2420's RXFIFO and wait SFD pin and 
-			// FIFO pin go back to low. 
-
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
-			// hal_delayus( 5 );
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
-			// hal_delayus( 5 );
+			
 
 			while (HAL_READ_CC_SFD_PIN()) {};
 			return;
@@ -2251,8 +2265,8 @@ void _cc2420_fifop_handler( void * ccptr, TiEvent * e )
 	// - if there's overflow in the RXFIFO, then the first correct frame will also be 
 	// cleared. 
 
-	//if (cc->listener != NULL)
-	//{
+	if (cc->listener != NULL)
+	{
 		// @attention
 		// @warning
 		// if you use listener, the master program must repeated call cc2420_recv()
@@ -2261,11 +2275,14 @@ void _cc2420_fifop_handler( void * ccptr, TiEvent * e )
 		// second time if RXFIFO is overflow. => this may lead the whole application
 		// looks deadlock and receive any frames therefore.
 		//
-		//cc->listener( cc->lisowner, NULL );
-	//}
-	//else if (cc->rxlen == 0)
-	if (cc->rxlen == 0)
-	{	
+		cc->rxlen = _cc2420_readrxfifo( cc, (char*)(&cc->rxbuf[0]), CC2420_RXBUFFER_SIZE, 0x00 );
+
+		cc->listener( cc->lisowner, NULL );
+	}
+	else if (cc->rxlen == 0)
+	//if (cc->rxlen == 0)
+	{
+		
 		// @attention
 		// @warning
 		//	If the master program cannot serve the incoming frames fast enough, then the
@@ -2274,12 +2291,6 @@ void _cc2420_fifop_handler( void * ccptr, TiEvent * e )
 		cc->rxlen = _cc2420_readrxfifo( cc, (char*)(&cc->rxbuf[0]), CC2420_RXBUFFER_SIZE, 0x00 );
 	}
 	else{
-		// do nothing in the interrupt handler if the (cc->rxbuf) is still used. 
-		// attention the FIFO pin will still keep high because RXFIFO isn't empty now.
-		// but no interrupt will be generated later. the master program must call cc2420_recv()
-		// to read the data out from cc2420 transceiver's RXFIFO or else overflow 
-		// may occur.  and the second interrupt will not raised because FIFOP is already 
-		// high.
 
 		// @modified by zhangwei on 20090919
 		// The above analysis is correct. In order to simplify the whole process,

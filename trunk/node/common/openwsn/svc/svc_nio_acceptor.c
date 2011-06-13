@@ -151,7 +151,8 @@ intx nac_send( TiNioAcceptor * nac, TiFrame * item, uint8 option )
 {   
 	TiFrameRxTxInterface * rxtx = &(nac->rxtx);
 	uint8 first = frame_firstlayer(item);
-	return rxtx->send( rxtx->provider, frame_layerstartptr(item,first), frame_layercapacity(item,first), item->option );
+	//return rxtx->send( rxtx->provider, frame_layerstartptr(item,first), frame_layercapacity(item,first), item->option );
+	return rxtx->send( rxtx->provider, frame_startptr( item), frame_length( item), item->option );
 
 	// old version
 	// The old version maintains an txque. But the txque seems meaningless in this layer.

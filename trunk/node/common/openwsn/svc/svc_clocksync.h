@@ -27,8 +27,8 @@
  * If a node want to force its neighbor nodes do synchronization with him, then it
  * can broadcast a sync-force frame.
  * 
- * For developer friendly consideratioins, this module uses TiCalTime structure to
- * represents the time.
+ * //For developer friendly consideratioins, this module uses TiCalTime structure to
+ * //represents the time.
  *
  * 
  * Packet Format

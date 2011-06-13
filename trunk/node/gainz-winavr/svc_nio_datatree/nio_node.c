@@ -193,7 +193,7 @@ int main(void)
 
 	hal_enable_interrupts();
 
-   // dtp->state = DTP_STATE_IDLE;//todo for testing 临时用这一句必须删掉
+    dtp->state = DTP_STATE_IDLE;//todo for testing 临时用这一句必须删掉
 
 	//todo for testing
    
@@ -234,7 +234,6 @@ int main(void)
 		 */
 		//dbo_putchar(0x33);
 
-	
 
 		len = dtp_recv( dtp, rxbuf, 0x00 );
 		if (len > 0)
@@ -267,17 +266,18 @@ int main(void)
 				//opf_cast( txbuf, 50, OPF_DEF_FRAMECONTROL_DATA_ACK );
 				response = frame_startptr( txbuf );
 
-				value = lum_value( lum ); 
+				value = lum_value( lum );
+				DTP_SET_MAX_HOPCOUNT( response,0x03);//todo for testing
 				payload = DTP_PAYLOAD_PTR(response);
 
                 //payload[0] = 0x17;//todo 第三个节点数据
 				//payload[1] = 0x18;//todo 第三个节点数据
 
-				//payload[0] = 0x13;
-				//payload[1] = 0x14;
+			    //payload[1] = 0x13;
+				//payload[2] = 0x14;
 
-				payload[0] = 0x15;//todo 另一个节点
-				payload[1] = 0x16;//todo 另一个节点
+				payload[1] = 0x15;//todo 另一个节点
+			    payload[2] = 0x16;//todo 另一个节点
 
 				/* call dtp_send_response() to send the data in txbuf out.
 				 * 
@@ -315,6 +315,7 @@ int main(void)
 			}
 		}
         nac_evolve( nac,NULL);//todo for tesitng
+		aloha_evolve( mac,NULL);//todo for testing
 		dtp_evolve( dtp, NULL );
 		hal_delay( 50 );
 	}

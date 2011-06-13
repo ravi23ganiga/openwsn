@@ -72,16 +72,12 @@
 #define BUF_SIZE			128
 #define DEFAULT_CHANNEL     11
 
-static TiCc2420Adapter		g_cc;
+static TiCc2420Adapter		m_cc;
 static char                 m_txbuf[FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE)];
-TiIEEE802Frame154Descriptor desc;
-
-
-
+TiIEEE802Frame154Descriptor m_desc;
 
 void sendnode1(void);
 //void sendnode2(void);
-
 
 int main(void)
 {
@@ -106,7 +102,7 @@ void sendnode1(void)
 	led_off( LED_ALL );
 	rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
 	dbc_mem( msg, strlen(msg) );
-	cc = cc2420_construct( (void *)(&g_cc), sizeof(TiCc2420Adapter) );
+	cc = cc2420_construct( (void *)(&m_cc), sizeof(TiCc2420Adapter) );
 	cc2420_open( cc, 0, NULL, NULL, 0x00 );
 	cc2420_setchannel( cc, DEFAULT_CHANNEL );
 	cc2420_setrxmode( cc );							//Enable RX
@@ -115,7 +111,7 @@ void sendnode1(void)
 	cc2420_setshortaddress( cc, LOCAL_ADDRESS );	//ÍøÄÚ±êÊ¶
 	cc2420_enable_autoack( cc );
 
-	desc = ieee802frame154_open( &( desc) );
+	desc = ieee802frame154_open( &m_desc );
 	txbuf = frame_open( (char*)(&m_txbuf), FRAME_HOPESIZE(MAX_IEEE802FRAME154_SIZE), 3, 20, 0 );
 
     option = 0x00;
@@ -126,7 +122,7 @@ void sendnode1(void)
         frame_reset( txbuf,3,20,0);
 		ptr = frame_startptr( txbuf);
 
-		for ( i = 0;i< frame_capacity( txbuf);i++)
+		for ( i = 0;i< 6;i++)
 			ptr[i] = i;
         frame_skipouter( txbuf,12,2);
 		desc = ieee802frame154_format( &( desc), frame_startptr( txbuf), frame_capacity( txbuf ), 
@@ -137,14 +133,15 @@ void sendnode1(void)
 		ieee802frame154_set_shortaddrto( desc, REMOTE_ADDRESS );
 		ieee802frame154_set_panfrom( desc,  PANID );
 		ieee802frame154_set_shortaddrfrom( desc, LOCAL_ADDRESS );
-
+        frame_setlength( txbuf,20);
 		first = frame_firstlayer( txbuf);
 
-		len = cc2420_write(cc, frame_layerstartptr(txbuf,first), frame_layercapacity(txbuf,first), option);
+		//len = cc2420_write(cc, frame_layerstartptr(txbuf,first), frame_layercapacity(txbuf,first), option);
+		len = cc2420_write(cc, frame_layerstartptr(txbuf,first), frame_length( txbuf), option);
 		if( len)
 		{
-		   led_toggle( LED_RED);
-
+		   led_toggle( LED_GREEN);
+           seqid++;
         }
         hal_delay( 1000);
 		
@@ -173,7 +170,7 @@ void sendnode2(void)
 	hal_delay( 500 );
 	led_on( LED_RED );
 
-    cc = cc2420_construct( (void *)(&g_cc), sizeof(TiCc2420Adapter) );
+    cc = cc2420_construct( (void *)(&m_cc), sizeof(TiCc2420Adapter) );
     uart = uart_construct( (void *)(&g_uart), sizeof(TiUartAdapter) );
 
     uart_open( uart, 0, 38400, 8, 1, 0x00 );
