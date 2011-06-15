@@ -153,6 +153,10 @@
 #define CC2420_POWER_8  0x08                     //  0dBm   17.4mA
 
 
+#define CC2420_OPTION_DEFAULT 0x00
+#define CC2420_OPTION_ACK 0x01
+#define CC2420_OPTION_CCA 0x02
+
 /* RSSI to Energy Detection conversion
  * RSSI_OFFSET defines the RSSI level where the PLME.ED generates a zero-value 
  */
