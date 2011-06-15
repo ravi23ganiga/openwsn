@@ -23,6 +23,7 @@
  * University, 4800 Caoan Road, Shanghai, China. Zip: 201804
  *
  ******************************************************************************/
+ 
 /*******************************************************************************
  * adc_light
  *
@@ -30,7 +31,8 @@
  *	tested ok
  * @author xu-xizhou(TongJi University), zhangwei(TongJi University) in 200907
  *	- first created
- *
+ * @modified by zhangwei on 20110614
+ *  - revised.
  ******************************************************************************/
 
 #include "../../common/openwsn/hal/hal_configall.h"
@@ -42,7 +44,7 @@
 #include "../../common/openwsn/hal/hal_led.h"
 #include "../../common/openwsn/hal/hal_interrupt.h"
 #include "../../common/openwsn/hal/hal_assert.h"
-#include "../../common/openwsn/hal/hal_target.h"
+#include "../../common/openwsn/hal/hal_targetboard.h"
 #include "../../common/openwsn/hal/hal_debugio.h"
 #include "../../common/openwsn/hal/hal_luminance.h"
 
@@ -58,34 +60,32 @@ int main(void)
     char * welcome = "welcome to adc_light";
     uint16 val;
 
-	// in the future, you should eliminate the following macro
 	target_init();
-	HAL_SET_PIN_DIRECTIONS();
-	wdt_disable();
 
 	led_open();
 	led_off( LED_ALL );
 	hal_delay( 500 );
 	led_on( LED_RED );
-	dbo_open(0, 38400);
+
+	rtl_init( (void *)dbio_open(38400), (TiFunDebugIoPutChar)dbio_putchar, (TiFunDebugIoGetChar)dbio_getchar, hal_assert_report );
+    dbc_write( welcome, strlen(welcome) );
 
 	adc = adc_construct( (void *)&g_adc, sizeof(TiAdcAdapter) );
 	light = light_construct( (void *)&g_light, sizeof(TiLightSensor) );
-	uart = uart_construct( (void *)&g_uart, sizeof(TiUartAdapter) );
+	// uart = uart_construct( (void *)&g_uart, sizeof(TiUartAdapter) );
 
 	// xiao-yuezhang changed the second parameter from 5 to 0
-	//adc_open( adc, 0, NULL, NULL, 0 );
 	adc_open( adc, 0, NULL, NULL, 0 );
 	light_open( light, 0, adc );
-	uart_open( uart, 0, 38400, 8, 1, 0 );
-    uart_write( uart, welcome, strlen(welcome), 0x00 );
+	// uart_open( uart, 0, 38400, 8, 1, 0 );
+    // uart_write( uart, welcome, strlen(welcome), 0x00 );
 
 
 	while (1)
 	{
-		dbo_putchar( '>' );
+		dbc_putchar( '>' );
 		val = light_value( light );
-		dbo_n16toa( val );
+		dbc_n16toa( val );
 		hal_delay( 1000 );
 	}
 
