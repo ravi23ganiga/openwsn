@@ -88,6 +88,7 @@
  * If you want to disable all the assertions in this macro, you should undef CONFIG_DEBUG.
  * You should do this in release version */
 
+// @todo You should avoid define CONFIG_DEBUG directly here
 #undef  CONFIG_DEBUG
 #define CONFIG_DEBUG
 
@@ -120,20 +121,27 @@ enum{
 static inline int8 _cc2420_pin_init( TiCc2420Adapter * cc );
 static inline int8 _cc2420_reg_init( TiCc2420Adapter * cc );
 static inline bool _cc2420_setreg( TiCc2420Adapter * cc );
-void _cc2420_waitfor_crystal_oscillator( TiCc2420Adapter * cc );
-static uint8       _cc2420_writetxfifo( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option );
-static uint8       _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option );
-static void        _cc2420_fifop_handler( void * ccptr, TiEvent * e );
+static inline void _cc2420_waitfor_crystal_oscillator( TiCc2420Adapter * cc );
+static uint8 _cc2420_writetxfifo( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option );
+static uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 option );
+static void _cc2420_fifop_handler( void * ccptr, TiEvent * e );
 
 #ifdef CONFIG_CC2420_SFD
-static void        _cc2420_sfd_handler( void * ccptr, TiEvent * e );
+static void _cc2420_sfd_handler( void * ccptr, TiEvent * e );
 #endif
 
 /******************************************************************************
- * cc2420 service management 
+ * cc2420 service management functions
  * construct(), destroy(), open() and close()
  *****************************************************************************/
 
+/*******************************************************************************
+ * cc2420_construct
+ * Construct the cc2420 object inside the specified memory block
+ * 
+ * @return 
+ * 	The pointer to the TiCc2420Adapter object.
+ ******************************************************************************/
 TiCc2420Adapter * cc2420_construct( void * mem, uint16 size )
 {
 	hal_assert( sizeof(TiCc2420Adapter) <= size );
@@ -141,11 +149,22 @@ TiCc2420Adapter * cc2420_construct( void * mem, uint16 size )
 	return (TiCc2420Adapter *)mem;
 }
 
+/*******************************************************************************
+ * cc2420_destroy
+ * Destroy the memory block allocated to cc2420 object
+ ******************************************************************************/
 void cc2420_destroy( TiCc2420Adapter * cc )
 {
 	cc2420_close( cc );
 }
 
+/*******************************************************************************
+ * cc2420_open
+ * Initialize cc2420 object for read/write. 
+ * 
+ * @return 
+ * 	The pointer to the TiCc2420Adapter object if opened successfully. 
+ ******************************************************************************/
 TiCc2420Adapter * cc2420_open( TiCc2420Adapter * cc, uint8 id, TiFunEventHandler listener, 
 	void * lisowner, uint8 option )
 {
@@ -261,12 +280,21 @@ TiCc2420Adapter * cc2420_open( TiCc2420Adapter * cc, uint8 id, TiFunEventHandler
     return cc;
 } 
 
+/*******************************************************************************
+ * cc2420_close
+ * Close cc2420 object. Disable related interrupts, and release allocated resources
+ * allocated in the cc2420_open() function.
+ ******************************************************************************/
 void cc2420_close( TiCc2420Adapter * cc )
 {
 	cc2420_disable_fifop( cc );
     hal_detachhandler( INTNUM_CC2420_FIFOP );
 }
 
+/**
+ * Return the state of TiCc2420Adapter object
+ * @return the state of TiCc2420Adapter object
+ */
 uint8 cc2420_state( TiCc2420Adapter * cc )
 {
 	return cc->state;
@@ -491,6 +519,7 @@ inline bool _cc2420_setreg( TiCc2420Adapter * cc )
 	return true;
 }
 
+// todo
 /*void cc2420_restart( TiCc2420Adapter * cc )
 {
 	uint8 status;
@@ -586,11 +615,12 @@ uint8 _cc2420_writetxfifo( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 op
 	//	for (j=0; j<0xFE; j++)
 	//		if (HAL_READ_CC_SFD_PIN() == 0)
 	//			break;
-	//wait for the former frame to be sent completely. 
+	//wait for the previous frame to be sent completely. 
 	while (HAL_READ_CC_SFD_PIN() == 1) {};
 
 	cpu_atomic_t cpu_status = _cpu_atomic_begin();
 	{
+        // cc2420_sendcmd( cc, CC2420_SFLUSHTX );
 		HAL_CLR_CC_CS_PIN();
 	    
 		// attention
@@ -636,18 +666,19 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 {
 	cpu_atomic_t cpu_status;
 	uint8 i, len, count=0;
-	uint8 status;
+	//uint8 status;
 
+	// @todo
 	// attention: the crystal oscillator must be running for access the RXFIFO(0x3F) 
 	// Wait for the oscillator stable. If it's not stable, then you may had to restart
 	// the transceiver chip. (not implemented now)
 	
 	_cc2420_waitfor_crystal_oscillator( cc );
-
+/*
 	do{	 
 		status = cc2420_sendcmd( cc, CC2420_SNOP );
 	}while (!(status & (1 << CC2420_XOSC16M_STABLE)));
-
+*/
 	/* @todo since the readrxfifo is called in both non-interrupt mode and interrupt
 	 * node, I suggest to develope two version of readrxfifo to satisfy different
 	 * contexts.
@@ -657,7 +688,7 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 	 * we should place _cpu_atomic_begin() at the very begging of the implementation.
 	 */
 	 
-	//cpu_status = _cpu_atomic_begin();
+	cpu_status = _cpu_atomic_begin();
 	{
 		HAL_CLR_CC_CS_PIN();
 		
@@ -679,7 +710,8 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 		 *	- Bug fix. You cannot enable the following assertion in real applications. 
 		 * If two frames encounter collision during their transmission, the len byte 
 		 * read out may longer than size. This is the feature of wireless communication
-		 * and not our own design fault. 
+		 * and not our own design fault. However, this condition will cause the 
+		 * the following assertion to fail.
 		 * 
 		 * hal_assert( len < size );
 		 */
@@ -690,7 +722,7 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 		 * plan to support this feature. 
 		 * 
 		 * The frames which are very short and very long(larger than 128) are all
-		 * discarded by TiCc2420Adapter. 
+		 * discarded by TiCc2420Adapter automatically. 
 		 */
 		if (len+1 < CC2420_MIN_FRAME_LENGTH)
 		{
@@ -711,9 +743,7 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 			// Actually, the cc2420 transceiver support frames longer than 127. 
 			// It's not an standard 802.15.4 feature. You can deal with this case 
 			// if you need long frame support. 
-			//
-
-			
+			//	
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 			while (HAL_READ_CC_SFD_PIN()) {};
@@ -766,9 +796,14 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 				}
 			}
 			else{
+				/* If the frame length inside the transceiver is smaller than the 
+				 * the buffer provided, then we prefer to discard the frame. This 
+				 * can avoid the current frame block the receiving process, so that
+				 * the next frame can still be accepted by the transceiver.
+				 */
 				cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 				cc2420_sendcmd( cc, CC2420_SFLUSHRX );
-				while (HAL_READ_CC_SFD_PIN()) {};
+				while (HAL_READ_CC_SFD_PIN()) {}
 				count = 0;
 			}
 
@@ -779,14 +814,12 @@ uint8 _cc2420_readrxfifo( TiCc2420Adapter * cc, char * buf, uint8 size, uint8 op
 			 */
 		}
 
-		//Maybe we should clear the frame in the rxfifo after reading,but i don't know if we may loss some important frames such as ack.
-		/*
-		cc2420_sendcmd( cc, CC2420_SFLUSHRX );
-		cc2420_sendcmd( cc, CC2420_SFLUSHRX );
-		while (HAL_READ_CC_SFD_PIN()) {};*/
+		// You cannot clear the RXFIFO after reading. Because this may cause unnecessary
+		// frame loss, because the RXFIFO may contains two or more frames.
+		
 		HAL_SET_CC_CS_PIN();
     }
-    //_cpu_atomic_end(cpu_status); 
+    _cpu_atomic_end(cpu_status); 
 	
 	return count;
 }
@@ -814,6 +847,7 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 {
 	uint16 count, rxlen, loopcount;
 	uint8 status;
+	cpu_atomic_t cpu_status;
 
 	hal_assert( len > 0 );
 
@@ -831,7 +865,7 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 	// If b5 in the frame control byte is set to 1, then it indicates ACK request
 	// according to cc2420 and 802.15.4 specification
 	
-	if (option & 0x01)
+	if (option & CC2420_OPTION_ACK)
 	{
 		buf[1] |= (0x01 << 5);
 	}
@@ -858,6 +892,7 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 		while (HAL_READ_CC_SFD_PIN() == 1) {};
 	}
 
+	// @todo
 	// Assert the oscillator is running now. If it failed to run, you should restart
 	// the transceiver chip.
 	hal_assert( status & (1 << CC2420_XOSC16M_STABLE) );
@@ -865,15 +900,16 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 	count = _cc2420_writetxfifo( cc, (char*)&(buf[0]), len, option );
 	
 	// Perform carrier channel assessment (CCA)
-	if (option & 0x02)
+	//
+	// Before sending the STXON command to start the wireless transmitting, it is 
+	// necessary to check the CCA pin to see whether the channel is clear. If it 
+	// is clear, the CCA pin might be 1 (whether 0 or 1 to indicate CCA depends 
+	// on cc2420's configuration. ) 
+	// Referring to the graph in the checkpoint3.pdf, page 7 and the cc2420 datasheet, 
+	// page 63, the CCA_MODE.
+	//
+	if (option & CC2420_OPTION_CCA)
 	{
-		// Before sending the STXON command to start the wireless transmitting, it is 
-		// necessary to check the CCA pin to see whether the channel is clear. If it 
-		// is clear, the CCA pin might be 1 (whether its 0 or 1 depends on cc2420's 
-		// configuration.  
-		// Referring to the graph in the checkpoint3.pdf, page 7 and the cc2420 datasheet, 
-		// page 63, the CCA_MODE.
-	
 		while (1)
 		{
 			if (cc2420_ischannelclear(cc))
@@ -904,6 +940,8 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 	//the following four sentences are to send the packet.
     //cc2420_sendcmd( cc,CC2420_SRFOFF);
 	// Send the STXON command to cc2420 to start the transmitting now
+	
+	cpu_status = _cpu_atomic_begin();
 	cc2420_sendcmd( cc, CC2420_STXON );
 	
 	// The SFD pin goes high when the SFD field has been completely transmitted. 
@@ -920,6 +958,7 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 	
 	while (!(HAL_READ_CC_SFD_PIN() == 1)) {};
 	while (HAL_READ_CC_SFD_PIN() == 1) {};
+
 	// hal_delay( at least 12 symbole time );
 
 	// Check whether the TX process encounters underflow error
@@ -927,8 +966,12 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 	if (status & 0x20) 
 	{
 		cc2420_sendcmd( cc, CC2420_SFLUSHTX );
+        // todo
+		//it seems to need only one SFLUSHTX command.
+		//cc2420_sendcmd( cc, CC2420_SFLUSHTX );
 		cc2420_sendcmd( cc, CC2420_SFLUSHTX );
 	}
+    _cpu_atomic_end(cpu_status); 	
 	
 	
 	// @attention
@@ -1126,7 +1169,7 @@ uint8 cc2420_send( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 uint8 cc2420_broadcast( TiCc2420Adapter * cc, char * buf, uint8 len, uint8 option )
 {
 	/* clear the ACK REQUEST bit in the option parameter */
-	option &= (~(0x01));
+	option &= (~CC2420_OPTION_ACK);
 	return cc2420_send( cc, buf, len, option );
 }
 
@@ -1603,11 +1646,11 @@ inline uint8 cc2420_oscon( TiCc2420Adapter * cc )
 {
 	uint8 i;
 	uint8 status;
-	bool osx_stable = FALSE;
+	bool osc_stable = FALSE;
 	
 	i = 0;
 	cc2420_sendcmd( cc, CC2420_SXOSCON );
-	while ((i < 200) && (osx_stable == FALSE))
+	while ((i < 200) && (osc_stable == FALSE))
 	{
 		hal_delayus(100);
 		status = cc2420_sendcmd( cc, CC2420_SNOP );
@@ -1617,14 +1660,14 @@ inline uint8 cc2420_oscon( TiCc2420Adapter * cc )
 
 		if (status & (1 << 6))
 		{
-	        osx_stable = TRUE;
+	        osc_stable = TRUE;
 			break;
         }
 
 		i++;
     }
   
-	if (!osx_stable) 
+	if (!osc_stable) 
 	{
 		// attention: when there's problems, you can add the following assert() in
 		// the source code and check whether the oscillator is really started or not.
@@ -2246,6 +2289,7 @@ void _cc2420_fifop_handler( void * ccptr, TiEvent * e )
 		{
 			
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
+			
 			cc2420_sendcmd( cc, CC2420_SFLUSHRX );
 			
 
