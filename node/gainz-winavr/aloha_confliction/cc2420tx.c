@@ -92,7 +92,7 @@
 #define CONFIG_OPTION_CARRIER_SENSE
 #undef CONFIG_OPTION_CARRIER_SENSE
 
-#define CONFIG_SENDING_INTERVAL 	1
+#define CONFIG_SENDING_INTERVAL 	2
 
 #define MAX_IEEE802FRAME154_SIZE    128
 #define PANID						0x0001
@@ -173,10 +173,12 @@ void sendnode1(void)
         
 		ptr = frame_startptr( frame);
 		
-		for ( i=0;i<frame_capacity( frame);i++)
+		for ( i=0;i< 6;i++)
 		{
 			ptr[i] = 0xff;
 		}
+
+		frame_setlength( frame,6);
 		// Set mac layer frame format
 		frame_skipouter( frame, 12, 2 );  
 		desc = ieee802frame154_format( &(m_desc), frame_startptr(frame), frame_capacity(frame), FRAME154_DEF_FRAMECONTROL_DATA  );
@@ -201,12 +203,12 @@ void sendnode1(void)
 		// Broadcast a frame out to interfere the communication of other nodes.
 		// The "bad guy" node doesn't care whether the sending is really successfully
 		// or not.
-
+        frame_setlength( frame,20);
 		first = frame_firstlayer(frame);
 		// @todo
 		// Q: shall we replace cc2420_write with broadcast and the destination address with 0xFFFF?
 		// len = cc2420_write(cc, frame_layerstartptr(frame,first), frame_layercapacity(frame,first), 0x00);
-		len = cc2420_write(cc, frame_layerstartptr(frame,first), frame_layercapacity(frame,first), option);
+		len = cc2420_write(cc, frame_startptr(frame), frame_length(frame), option);
         if (len > 0)
         {   
 			led_toggle( LED_GREEN);
@@ -225,7 +227,8 @@ void sendnode1(void)
 		// this bad guy node occpys the channel. It should give up the channel 
 		// occasionally to give other nodes the chance to sending.
 		
- 		hal_delay( CONFIG_SENDING_INTERVAL );
+ 		//hal_delay( CONFIG_SENDING_INTERVAL );
+		hal_delayus( 5000);
 		//hal_delay( 1000 );
 
 		// @modified by zhangwei in 2008

@@ -98,6 +98,7 @@ void _aloha_sendnode(void)
 
 	char * msg = "welcome to aloha sendnode...";
 	uint8 seqid=0, option,len;
+	uint8 failed =0;
 	uint8 state;
 	uint16 sendcount, succeed;
 
@@ -186,10 +187,12 @@ void _aloha_sendnode(void)
 				_init_request( txbuf, CONFIG_ALOHA_LOCAL_ADDRESS, CONFIG_ALOHA_REMOTE_ADDRESS, seqid );
 				if (aloha_send(mac, CONFIG_ALOHA_REMOTE_ADDRESS, txbuf, option) > 0)
 				{  
-					seqid ++;
+					//seqid ++;
 					sendcount ++;
 					state = WAIT_RESPONSE_STATE;
 				}
+				seqid ++;
+
 			}
 			break;
 		
@@ -214,10 +217,11 @@ void _aloha_sendnode(void)
 				_init_request( txbuf, CONFIG_ALOHA_LOCAL_ADDRESS, CONFIG_ALOHA_REMOTE_ADDRESS, seqid );
 				if (aloha_send(mac, CONFIG_ALOHA_REMOTE_ADDRESS, txbuf, option) > 0)
 				{
-					seqid ++;
+					//seqid ++;
 					sendcount ++;
 					state = WAIT_RESPONSE_STATE;
 				}
+				seqid ++;
 			}
 			break;
 		}
@@ -253,9 +257,9 @@ void _init_request( TiFrame * txbuf, uint16 addrfrom, uint16 addrto, uint8 seqid
 
 	ptr[3] = seqid;
 
-	for (i=4; i<frame_capacity(txbuf); i++)
+	for (i=4; i < 6; i++)//for (i=4; i<frame_capacity(txbuf); i++)
 		ptr[i] = 9;
-			
+	frame_setlength( txbuf,6);		
 	#ifdef CONFIG_DEBUG
 	// _output_frame( frame );
 	#endif
