@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#Developing Management
 #sidebar Table_Of_Contents
 
 = Introduction =
@@ -7,6 +7,13 @@ Add your content here.
 
 
 = Details =
+
+Version Management
+
+Git Community Book, http://book.git-scm.com/
+  (You can also download the PDF version)
+
+
 
 Add your content here.  Format your content with:
   * Text in *bold* or _italic_
