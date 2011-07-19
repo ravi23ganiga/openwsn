@@ -1,5 +1,5 @@
-#Developing Management
 #sidebar Table_Of_Contents
+#Developing Management
 
 = Introduction =
 
