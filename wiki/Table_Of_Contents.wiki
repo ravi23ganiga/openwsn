@@ -1,4 +1,4 @@
-  * [- OpenWSN Introduction -]
+  * [OpenWSN Introduction]
   * [OpenWSN News]
   * [OpenWSN Course In TongJi.edu]
   * [OpenWSN Tutorial]
@@ -21,3 +21,4 @@
     * [OpenWSN On Internet]
     * [Howto Wiki]
   * [Reference]
+[http://code.google.com/ http://code.google.com/images/code_sm.png]
