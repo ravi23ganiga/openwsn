@@ -1,4 +1,4 @@
-  * [OpenWSN Introduction]
+  * [{{{OpenWSN Introduction}}}]
   * [OpenWSN News]
   * [OpenWSN Course In TongJi.edu]
   * [OpenWSN Tutorial]
