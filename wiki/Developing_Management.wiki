@@ -15,7 +15,7 @@ Git Community Book, http://book.git-scm.com/
 
 Git User Manual by/for Standard Students, 
 http://www-cs-students.stanford.edu/~blynn//gitmagic/
-or http://www-cs-students.stanford.edu/~blynn/gitmagic/intl/zh_cn/ [Simplified Chinese]
+or http://www-cs-students.stanford.edu/~blynn/gitmagic/intl/zh_cn/ [ Simplified Chinese ]
 
 git-svn, http://www.kernel.org/pub/software/scm/git/docs/git-svn.html
 
