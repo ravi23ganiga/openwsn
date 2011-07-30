@@ -50,6 +50,8 @@ After creating your local working repository, you can do developing based on it.
 
 8 If you want to upload you changes to the public repository, you should firstly commit your changes to local repository and then push to the public repository. You may be required to pull other's modifications from the public repository first. Remember to read the git feedback message. 
 
+One attention is that you should tell your private key to TortoiseGit or else the github will refused your network connection. You can do this at TortoiseGit=>Settings. You need firstly set your user name and email first and then restart the window to see more configurations.
+
 
 All above operations can be done with TortoiseGit.
 
